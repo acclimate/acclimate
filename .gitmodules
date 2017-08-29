@@ -1,0 +1,3 @@
+[submodule "lib/settingsnode/lib/yaml-cpp"]
+	path = lib/settingsnode/lib/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
