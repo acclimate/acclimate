@@ -1,0 +1,8 @@
+/build/
+*~
+compile_commands.json
+.dir-locals.el
+GPATH
+GRTAGS
+GSYMS
+GTAGS

@@ -1,0 +1,33 @@
+{
+    "description": "Acclimate - Model for economic loss propagation",
+    "license": {
+        "id": "AGPL-3.0"
+    },
+    "title": "acclimate v3.0.0",
+    "upload_type": "software",
+    "creators": [
+        {
+            "name": "Sven Willner",
+            "affiliation": "Potsdam Institute for Climate Impact Research",
+            "orcid": "0000-0001-6798-6247"
+        },
+        {
+            "name": "Christian Otto",
+            "affiliation": "Potsdam Institute for Climate Impact Research",
+            "orcid": "0000-0001-5500-6774"
+        }
+    ],
+    "access_right": "open",
+    "related_identifiers": [
+        {
+            "scheme": "url",
+            "identifier": "https://github.com/acclimate/acclimate/tree/v3.0.0",
+            "relation": "isSupplementTo"
+        },
+        {
+            "scheme": "doi",
+            "identifier": "10.1016/j.jedc.2017.08.001",
+            "relation": "references"
+        }
+    ]
+}
