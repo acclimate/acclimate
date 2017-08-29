@@ -1,3 +1,6 @@
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.853346-blue.svg)](http://dx.doi.org/10.5281/zenodo.853346)
+
+
 # Acclimate - a model for economic loss propagation
 
 C++11-Implementation of the Acclimate model by [Sven Willner](https://github.com/swillner) and [Christian Otto](https://github.com/cstotto).
