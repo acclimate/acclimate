@@ -3,11 +3,6 @@
 C++11-Implementation of the Acclimate model by [Sven Willner](https://github.com/swillner) and [Christian Otto](https://github.com/cstotto).
 
 
-## Class diagram
-
-![](./figures/class_diagram.png)
-
-
 ## Description / Citation
 
 The newest ("price") version of the Acclimate model is described in (please cite when using this code):
@@ -17,6 +12,11 @@ The newest ("price") version of the Acclimate model is described in (please cite
   The dynamic agent-based model acclimate](http://www.pik-potsdam.de/~willner/otto-willner17.pdf)**.
   Journal of Economic Dynamics and Control.
   doi:[10.1016/j.jedc.2017.08.001](http://dx.doi.org/10.1016/j.jedc.2017.08.001).
+
+
+## Class diagram
+
+[![Class diagram](./figures/class_diagram_small.png)](./figures/class_diagram.png)
 
 
 ## Dependencies
