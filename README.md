@@ -12,7 +12,7 @@ The newest ("price") version of the Acclimate model is described in (please cite
 
 - Otto C, Willner SN, Wenz L, Frieler K, Levermann A. (2017).
   **[Modeling loss-propagation in the global supply network:
-  The dynamic agent-based model acclimate](http://www.pik-potsdam.de/~willner/otto-willner17.pdf)**.
+  The dynamic agent-based model acclimate](http://www.pik-potsdam.de/~willner/files/otto-willner17.pdf)**.
   Journal of Economic Dynamics and Control.
   doi:[10.1016/j.jedc.2017.08.001](http://dx.doi.org/10.1016/j.jedc.2017.08.001).
 
