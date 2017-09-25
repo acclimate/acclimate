@@ -182,16 +182,20 @@ void NetCDFOutput<ModelVariant>::internal_iterate_end() {
         meta->sizes[0] = 1;
         meta->nc_var.putVar(meta->index, meta->sizes, &var.second.data[0]);
     }
+#ifdef ACCLIMATE_HAVE_NEW_NETCDF_CPP
     if (flush > 0) {
         if ((model->timestep() % flush) == 0) {
             file->sync();
         }
     }
+#endif
 }
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::internal_end() {
+#ifdef ACCLIMATE_HAVE_NEW_NETCDF_CPP
     file->close();
+#endif
     file.reset();
 }
 

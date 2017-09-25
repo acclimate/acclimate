@@ -21,23 +21,12 @@
 #ifndef ACCLIMATE_NETCDF_HEADERS_H
 #define ACCLIMATE_NETCDF_HEADERS_H
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
 #include <ncDim.h>
 #include <ncFile.h>
 #include <ncGroupAtt.h>
 #include <ncType.h>
 #include <ncVar.h>
 #include <netcdf>
-#pragma GCC diagnostic pop
-
-namespace netCDF {
-class UNUSED_file_id_class {
-    static void UNUSED_file_id() {  // prevent error from compiler
-        (void)(netCDF::file_id);
-    }
-};
-}  // namespace netCDF
 
 using namespace netCDF;
 

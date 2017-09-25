@@ -48,6 +48,8 @@ Under Ubuntu-like Linux distributions you can install these using:
 sudo apt-get install libnetcdf-dev libnetcdf-c++4-dev libnlopt-dev libyaml-cpp-dev
 ```
 
+(older versions of `libyaml-cpp-dev` also require the installation of `libboost-dev`)
+
 Built-in dependecies (included in this repository as subtrees):
 
 - [swillner/cmake-modules](https://github.com/swillner/cmake-modules)

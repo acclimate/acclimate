@@ -410,7 +410,9 @@ void ModelInitializer<ModelVariant>::read_centroids_netcdf(const std::string& fi
         for (std::size_t i = 0; i < regions_count; i++) {
             region_centroids.emplace(regions_val[i], GeographicPoint("centroid", lons_val[i], lats_val[i]));
         }
+#ifdef ACCLIMATE_HAVE_NEW_NETCDF_CPP
         file.close();
+#endif
     }
 
     const settings::SettingsNode& transport = settings["transport"];

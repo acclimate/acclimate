@@ -1,8 +1,9 @@
 variant: prices
 network:
-  file: data.nc
-  threshold: 1000
-  type: netcdf
+    type: csv
+    index: i2.csv
+    threshold: 1000
+    file: data_2009.csv
 transport:
   file: transit_times.csv
   index: indices.csv
@@ -29,8 +30,7 @@ parameters:
 firm:
   - possible_overcapacity_ratio: 1.1
 sector:
-  - consumption_elasticity: -2.0
-    consumption_price_elasticity: -0.5
+  - consumption_price_elasticity: -0.5
     initial_storage_fill_factor: 15
     initial_markup: 0.05
     price_increase_production_extension: 5.0
@@ -47,7 +47,7 @@ scenario:
       to: 3
       type: shock
       targets:
-        - production_site:
+        - firm:
             region: JPN
             sector: MACH
             remaining_capacity: 0.01

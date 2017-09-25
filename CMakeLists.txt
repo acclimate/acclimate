@@ -49,7 +49,6 @@ if(ACCLIMATE_PARALLELIZATION)
   find_package(OpenMP REQUIRED)
   set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS})
   set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS})
-  target_link_libraries(acclimate OpenMP::OpenMP_CXX)
 endif()
 
 option(ACCLIMATE_BASED_ON_INT "automatic rounding based on internal integers" ON)
@@ -103,6 +102,18 @@ find_package(NETCDF_CPP4 REQUIRED)
 message(STATUS "NetCDF_c++4 include directory: ${NETCDF_CPP4_INCLUDE_DIR}")
 message(STATUS "NetCDF_c++4 library: ${NETCDF_CPP4_LIBRARY}")
 target_link_libraries(acclimate netcdf_c++4)
+
+include(CheckCXXSourceCompiles)
+set(NETCDF_CHECK_CODE "
+#include <ncFile.h>
+int main() { netCDF::NcFile file; file.sync(); file.close(); return 0; }
+")
+set(CMAKE_REQUIRED_LIBRARIES "${NETCDF_CPP4_LIBRARY}" "${NETCDF_LIBRARY}")
+set(CMAKE_REQUIRED_INCLUDES "${NETCDF_CPP4_INCLUDE_DIR}" "${NETCDF_INCLUDE_DIR}")
+check_cxx_source_compiles("${NETCDF_CHECK_CODE}" HAVE_NEW_NETCDF_CPP)
+if(HAVE_NEW_NETCDF_CPP)
+  target_compile_definitions(acclimate PRIVATE ACCLIMATE_HAVE_NEW_NETCDF_CPP)
+endif()
 
 include(lib/libmrio/libmrio.cmake)
 target_link_libraries(acclimate libmrio)
