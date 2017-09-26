@@ -545,7 +545,7 @@ void Output<ModelVariant>::iterate() {
     internal_iterate_begin();
     for (const auto& observables : output_node["observables"].as_sequence()) {
         for (const auto& observable : observables.as_map()) {
-            const settings::hstring name = observable.first;
+            const auto name = settings::hstring(observable.first);
             const settings::SettingsNode& it = observable.second;
             switch (name) {
                 case settings::hstring::hash("firm"): {

@@ -115,11 +115,11 @@ if(HAVE_NEW_NETCDF_CPP)
   target_compile_definitions(acclimate PRIVATE ACCLIMATE_HAVE_NEW_NETCDF_CPP)
 endif()
 
+include(lib/settingsnode/settingsnode.cmake)
+target_link_libraries(acclimate settingsnode)
+
 include(lib/libmrio/libmrio.cmake)
 target_link_libraries(acclimate libmrio)
 mark_as_advanced(LIBMRIO_WITH_NETCDF)
-
-include(lib/settingsnode/settingsnode.cmake)
-target_link_libraries(acclimate settingsnode)
 
 add_cpp_tools(acclimate)
