@@ -54,7 +54,7 @@ inline IntType iround(const FloatType x) {
 }
 
 template<class T>
-static inline FloatType to_float(const T& a) {
+inline FloatType to_float(const T& a) {
     return a.get_float();
 }
 
@@ -74,6 +74,7 @@ class Type {
     friend std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
         return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float() << std::defaultfloat;
     }
+    virtual ~Type(){};
 };
 
 #define INCLUDE_STANDARD_OPS(T)                                                                                          \

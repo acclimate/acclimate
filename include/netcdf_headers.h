@@ -28,6 +28,4 @@
 #include <ncVar.h>
 #include <netcdf>
 
-using namespace netCDF;
-
 #endif

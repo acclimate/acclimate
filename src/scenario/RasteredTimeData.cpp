@@ -25,7 +25,7 @@ namespace acclimate {
 template<typename T>
 RasteredTimeData<T>::RasteredTimeData(const std::string& filename_p, const std::string& variable_name) : RasteredData<T>::RasteredData(filename_p) {
     try {
-        file.reset(new NcFile(filename, NcFile::read, NcFile::nc4));
+        file.reset(new netCDF::NcFile(filename, netCDF::NcFile::read, netCDF::NcFile::nc4));
     } catch (netCDF::exceptions::NcException& ex) {
         error("Could not open '" + filename + "'");
     }
@@ -55,7 +55,7 @@ const std::string RasteredTimeData<T>::calendar_str() const {
         std::string res;
         time_variable.getAtt("calendar").getValues(res);
         return res;
-    } catch (exceptions::NcException& e) {
+    } catch (netCDF::exceptions::NcException& e) {
         error("Could not read calendar attribute in " << filename << ": " << e.what());
     }
 }
@@ -66,7 +66,7 @@ const std::string RasteredTimeData<T>::time_units_str() const {
         std::string res;
         time_variable.getAtt("units").getValues(res);
         return res;
-    } catch (exceptions::NcException& e) {
+    } catch (netCDF::exceptions::NcException& e) {
         error("Could not read time units attribute in " << filename << ": " << e.what());
     }
 }

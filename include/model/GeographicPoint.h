@@ -35,7 +35,7 @@ class GeographicPoint {
     FloatType distance_to(const GeographicPoint& other) const;
     inline FloatType lon() const { return lon_; };
     inline FloatType lat() const { return lat_; };
-    operator std::string() const { return name; };
+    explicit operator std::string() const { return name; };
 };
 }  // namespace acclimate
 

@@ -25,9 +25,9 @@
 namespace acclimate {
 
 template<typename T>
-void RasteredData<T>::read_boundaries(const NcFile* file) {
+void RasteredData<T>::read_boundaries(const netCDF::NcFile* file) {
     {
-        NcVar x_var = file->getVar("x");
+        netCDF::NcVar x_var = file->getVar("x");
         if (x_var.isNull()) {
             x_var = file->getVar("lon");
             if (x_var.isNull()) {
@@ -48,7 +48,7 @@ void RasteredData<T>::read_boundaries(const NcFile* file) {
         t_x_gridsize = std::abs(x_gridsize);
     }
     {
-        NcVar y_var = file->getVar("y");
+        netCDF::NcVar y_var = file->getVar("y");
         if (y_var.isNull()) {
             y_var = file->getVar("lat");
             if (y_var.isNull()) {
@@ -78,13 +78,13 @@ RasteredData<T>::RasteredData(std::string filename_p) : filename(std::move(filen
 
 template<typename T>
 RasteredData<T>::RasteredData(std::string filename_p, const std::string& variable_name) : filename(std::move(filename_p)), x(*this), y(*this) {
-    std::unique_ptr<NcFile> file;
+    std::unique_ptr<netCDF::NcFile> file;
     try {
-        file.reset(new NcFile(filename, NcFile::read));
+        file.reset(new netCDF::NcFile(filename, netCDF::NcFile::read));
     } catch (netCDF::exceptions::NcException& ex) {
         error("Could not open '" + filename + "'");
     }
-    NcVar variable = file->getVar(variable_name);
+    netCDF::NcVar variable = file->getVar(variable_name);
     if (variable.isNull()) {
         error("Cannot find variable '" << variable_name << "' in '" << filename << "'");
     }

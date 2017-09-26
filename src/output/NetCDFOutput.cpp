@@ -55,7 +55,7 @@ void NetCDFOutput<ModelVariant>::initialize() {
     } else {
         filename = output_node["file"].template as<std::string>();
     }
-    file.reset(new NcFile(filename, NcFile::replace, NcFile::nc4));
+    file.reset(new netCDF::NcFile(filename, netCDF::NcFile::replace, netCDF::NcFile::nc4));
     if (!file) {
         error("Could not create output file " << filename);
     }
@@ -63,36 +63,36 @@ void NetCDFOutput<ModelVariant>::initialize() {
     dim_time = file->addDim("time");
     dim_sector = file->addDim("sector", sectors_size);
     dim_region = file->addDim("region", regions_size);
-    NcDim dim_event = file->addDim("event");
-    NcDim dim_event_type = file->addDim("event_type", Acclimate::event_names.size());
-    NcCompoundType event_compound_type = file->addCompoundType("event_compound_type", sizeof(typename ArrayOutput<ModelVariant>::Event));
-    event_compound_type.addMember("time", NcType::nc_UINT, offsetof(typename ArrayOutput<ModelVariant>::Event, time));
-    event_compound_type.addMember("type", NcType::nc_UBYTE, offsetof(typename ArrayOutput<ModelVariant>::Event, type));
-    event_compound_type.addMember("sector_from", NcType::nc_INT, offsetof(typename ArrayOutput<ModelVariant>::Event, sector_from));
-    event_compound_type.addMember("region_from", NcType::nc_INT, offsetof(typename ArrayOutput<ModelVariant>::Event, region_from));
-    event_compound_type.addMember("sector_to", NcType::nc_INT, offsetof(typename ArrayOutput<ModelVariant>::Event, sector_to));
-    event_compound_type.addMember("region_to", NcType::nc_INT, offsetof(typename ArrayOutput<ModelVariant>::Event, region_to));
-    event_compound_type.addMember("value", NcType::nc_DOUBLE, offsetof(typename ArrayOutput<ModelVariant>::Event, value));
+    netCDF::NcDim dim_event = file->addDim("event");
+    netCDF::NcDim dim_event_type = file->addDim("event_type", Acclimate::event_names.size());
+    netCDF::NcCompoundType event_compound_type = file->addCompoundType("event_compound_type", sizeof(typename ArrayOutput<ModelVariant>::Event));
+    event_compound_type.addMember("time", netCDF::NcType::nc_UINT, offsetof(typename ArrayOutput<ModelVariant>::Event, time));
+    event_compound_type.addMember("type", netCDF::NcType::nc_UBYTE, offsetof(typename ArrayOutput<ModelVariant>::Event, type));
+    event_compound_type.addMember("sector_from", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput<ModelVariant>::Event, sector_from));
+    event_compound_type.addMember("region_from", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput<ModelVariant>::Event, region_from));
+    event_compound_type.addMember("sector_to", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput<ModelVariant>::Event, sector_to));
+    event_compound_type.addMember("region_to", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput<ModelVariant>::Event, region_to));
+    event_compound_type.addMember("value", netCDF::NcType::nc_DOUBLE, offsetof(typename ArrayOutput<ModelVariant>::Event, value));
     var_events = file->addVar("events", event_compound_type, {dim_event});
     var_events.setCompression(false, true, 7);
 
-    var_time_variable = file->addVar("time", NcType::nc_INT, {dim_time});
+    var_time_variable = file->addVar("time", netCDF::NcType::nc_INT, {dim_time});
     var_time_variable.setCompression(false, true, 7);
 
     include_events = true;
-    const NcVar& event_type_var = file->addVar("event_types", NcType::nc_STRING, {dim_event_type});
+    const auto& event_type_var = file->addVar("event_types", netCDF::NcType::nc_STRING, {dim_event_type});
     event_type_var.setCompression(false, true, 7);
     for (std::size_t i = 0; i < Acclimate::event_names.size(); i++) {
         event_type_var.putVar({i}, std::string(Acclimate::event_names[i]));
     }
 
-    const NcVar& sector_var = file->addVar("sector", NcType::nc_STRING, {dim_sector});
+    const auto& sector_var = file->addVar("sector", netCDF::NcType::nc_STRING, {dim_sector});
     sector_var.setCompression(false, true, 7);
     for (std::size_t i = 0; i < model->sectors_C.size(); i++) {
         sector_var.putVar({i}, *model->sectors_C[i]);
     }
 
-    const NcVar& region_var = file->addVar("region", NcType::nc_STRING, {dim_region});
+    const auto& region_var = file->addVar("region", netCDF::NcType::nc_STRING, {dim_region});
     region_var.setCompression(false, true, 7);
     for (std::size_t i = 0; i < model->regions_R.size(); i++) {
         region_var.putVar({i}, *model->regions_R[i]);
@@ -110,7 +110,7 @@ void NetCDFOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_th
     std::string str = asctime(timestamp);
     str.erase(str.end() - 1);
     file->putAtt("start_time", str);
-    file->putAtt("max_threads", NcType::nc_INT, max_threads);
+    file->putAtt("max_threads", netCDF::NcType::nc_INT, max_threads);
     file->putAtt("version", ACCLIMATE_VERSION);
     file->putAtt("options", ACCLIMATE_OPTIONS);
 #ifdef ACCLIMATE_HAS_DIFF
@@ -120,7 +120,7 @@ void NetCDFOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_th
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::internal_write_footer(tm* duration) {
-    file->putAtt("duration", NcType::nc_INT, mktime(duration));
+    file->putAtt("duration", netCDF::NcType::nc_INT, mktime(duration));
 }
 
 template<class ModelVariant>
@@ -133,7 +133,7 @@ void NetCDFOutput<ModelVariant>::internal_write_settings() {
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const std::string& path, const std::string& name) {
     auto meta = new VariableMeta();
-    std::vector<NcDim> dims;
+    std::vector<netCDF::NcDim> dims;
     meta->index.push_back(0);
     meta->sizes.push_back(1);
     dims.push_back(dim_time);
@@ -149,8 +149,8 @@ void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<Model
             dims.push_back(dim_region);
         }
     }
-    NcGroup& group = create_group(path);
-    NcVar nc_var = group.addVar(name, NcType::nc_DOUBLE, dims);
+    netCDF::NcGroup& group = create_group(path);
+    netCDF::NcVar nc_var = group.addVar(name, netCDF::NcType::nc_DOUBLE, dims);
     meta->nc_var = nc_var;
     meta->nc_var.setFill(true, std::numeric_limits<FloatType>::quiet_NaN());
     meta->nc_var.setCompression(false, true, 7);
@@ -158,7 +158,7 @@ void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<Model
 }
 
 template<class ModelVariant>
-NcGroup& NetCDFOutput<ModelVariant>::create_group(const std::string& name) {
+netCDF::NcGroup& NetCDFOutput<ModelVariant>::create_group(const std::string& name) {
     auto group_it = groups.find(name);
     if (group_it == groups.end()) {
         group_it = groups.emplace(name, file->addGroup(name)).first;

@@ -48,20 +48,20 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     struct VariableMeta {
         std::vector<std::size_t> index;
         std::vector<std::size_t> sizes;
-        NcVar nc_var;
+        netCDF::NcVar nc_var;
     };
     using ArrayOutput<ModelVariant>::regions_size;
     using ArrayOutput<ModelVariant>::sectors_size;
     using ArrayOutput<ModelVariant>::variables;
     using ArrayOutput<ModelVariant>::stack;
     using ArrayOutput<ModelVariant>::include_events;
-    NcDim dim_time;
-    NcDim dim_sector;
-    NcDim dim_region;
-    std::unordered_map<std::string, NcGroup> groups;
-    std::unique_ptr<NcFile> file;
-    NcVar var_events;
-    NcVar var_time_variable;
+    netCDF::NcDim dim_time;
+    netCDF::NcDim dim_sector;
+    netCDF::NcDim dim_region;
+    std::unordered_map<std::string, netCDF::NcGroup> groups;
+    std::unique_ptr<netCDF::NcFile> file;
+    netCDF::NcVar var_events;
+    netCDF::NcVar var_time_variable;
     TimeStep flush;
     unsigned int event_cnt;
 
@@ -73,7 +73,7 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     void internal_iterate_end() override;
     void internal_start() override;
     void internal_end() override;
-    NcGroup& create_group(const std::string& name);
+    netCDF::NcGroup& create_group(const std::string& name);
     void create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const std::string& path, const std::string& name) override;
     bool internal_handle_event(typename ArrayOutput<ModelVariant>::Event& event) override;
 

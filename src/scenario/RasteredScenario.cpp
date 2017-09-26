@@ -146,9 +146,9 @@ Time RasteredScenario<ModelVariant>::start() {
         const std::string& variable = scenario_node["isoraster"]["variable"].as<std::string>("iso");
         const std::string& filename = scenario_node["isoraster"]["file"].as<std::string>();
         iso_raster.reset(new RasteredData<int>(filename, variable));
-        std::unique_ptr<NcFile> file(new NcFile(filename, NcFile::read));
+        std::unique_ptr<netCDF::NcFile> file(new netCDF::NcFile(filename, netCDF::NcFile::read));
         const std::string& index_name = scenario_node["isoraster"]["index"].as<std::string>("index");
-        NcVar index_var = file->getVar(index_name);
+        netCDF::NcVar index_var = file->getVar(index_name);
         if (index_var.isNull()) {
             error("Cannot find variable '" << index_name << "' in '" << filename << "'");
         }

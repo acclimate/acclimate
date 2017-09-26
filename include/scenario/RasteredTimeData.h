@@ -35,9 +35,9 @@ class RasteredTimeData : public RasteredData<T> {
     using RasteredData<T>::filename;
     TimeStep time_index;
     TimeStep time_index_count;
-    std::unique_ptr<NcFile> file;
-    NcVar variable;
-    NcVar time_variable;
+    std::unique_ptr<netCDF::NcFile> file;
+    netCDF::NcVar variable;
+    netCDF::NcVar time_variable;
 
   public:
     RasteredTimeData(const std::string& filename_p, const std::string& variable_name);

@@ -37,7 +37,7 @@ class RasteredData {
     std::size_t y_count = 0;
     const std::string filename;
 
-    void read_boundaries(const NcFile* file);
+    void read_boundaries(const netCDF::NcFile* file);
     unsigned int x_index(const FloatType& x_var) const;
     unsigned int y_index(const FloatType& y_var) const;
     RasteredData();
@@ -96,7 +96,7 @@ class RasteredData {
     bool is_compatible(const RasteredData<T2>& other) const;
     T read(const FloatType& x_var, const FloatType& y_var) const;
 #ifdef DEBUG
-    virtual inline operator std::string() const { return "RASTER " + filename; }
+    virtual inline explicit operator std::string() const { return "RASTER " + filename; }
 #endif
 };
 }  // namespace acclimate
