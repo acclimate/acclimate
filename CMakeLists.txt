@@ -111,8 +111,8 @@ int main() { netCDF::NcFile file; file.sync(); file.close(); return 0; }
 set(CMAKE_REQUIRED_LIBRARIES "${NETCDF_CPP4_LIBRARY}" "${NETCDF_LIBRARY}")
 set(CMAKE_REQUIRED_INCLUDES "${NETCDF_CPP4_INCLUDE_DIR}" "${NETCDF_INCLUDE_DIR}")
 check_cxx_source_compiles("${NETCDF_CHECK_CODE}" HAVE_NEW_NETCDF_CPP)
-if(HAVE_NEW_NETCDF_CPP)
-  target_compile_definitions(acclimate PRIVATE ACCLIMATE_HAVE_NEW_NETCDF_CPP)
+if(NOT HAVE_NEW_NETCDF_CPP)
+  message(FATAL_ERROR "Need a newer NetCDF library version")
 endif()
 
 include(lib/settingsnode/settingsnode.cmake)

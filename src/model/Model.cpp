@@ -45,57 +45,41 @@ void Model<ModelVariant>::start(const Time& start_time) {
 template<class ModelVariant>
 void Model<ModelVariant>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    std::size_t i;
-#pragma omp parallel default(shared) private(i)
-    {
-#pragma omp for schedule(guided)
-        for (i = 0; i < sectors_C.size(); i++) {
-            sectors_C[i]->iterate_consumption_and_production();
-        }
+#pragma omp parallel for default(shared) schedule(guided)
+    for (std::size_t i = 0; i < sectors_C.size(); ++i) {
+        sectors_C[i]->iterate_consumption_and_production();
+    }
 
-#pragma omp for schedule(guided)
-        for (i = 0; i < regions_R.size(); i++) {
-            regions_R[i]->iterate_consumption_and_production();
-        }
+#pragma omp parallel for default(shared) schedule(guided)
+    for (std::size_t i = 0; i < regions_R.size(); ++i) {
+        regions_R[i]->iterate_consumption_and_production();
     }
 }
 
 template<class ModelVariant>
 void Model<ModelVariant>::iterate_expectation() {
     assertstep(EXPECTATION);
-    std::size_t i;
-#pragma omp parallel default(shared) private(i)
-    {
-#pragma omp for schedule(guided)
-        for (i = 0; i < regions_R.size(); i++) {
-            regions_R[i]->iterate_expectation();
-        }
+#pragma omp parallel for default(shared) schedule(guided)
+    for (std::size_t i = 0; i < regions_R.size(); ++i) {
+        regions_R[i]->iterate_expectation();
     }
 }
 
 template<class ModelVariant>
 void Model<ModelVariant>::iterate_purchase() {
     assertstep(PURCHASE);
-    std::size_t i;
-#pragma omp parallel default(shared) private(i)
-    {
-#pragma omp for schedule(guided)
-        for (i = 0; i < regions_R.size(); i++) {
-            regions_R[i]->iterate_purchase();
-        }
+#pragma omp parallel for default(shared) schedule(guided)
+    for (std::size_t i = 0; i < regions_R.size(); ++i) {
+        regions_R[i]->iterate_purchase();
     }
 }
 
 template<class ModelVariant>
 void Model<ModelVariant>::iterate_investment() {
     assertstep(INVESTMENT);
-    std::size_t i;
-#pragma omp parallel default(shared) private(i)
-    {
-#pragma omp for schedule(guided)
-        for (i = 0; i < regions_R.size(); i++) {
-            regions_R[i]->iterate_investment();
-        }
+#pragma omp parallel for default(shared) schedule(guided)
+    for (std::size_t i = 0; i < regions_R.size(); ++i) {
+        regions_R[i]->iterate_investment();
     }
 }
 

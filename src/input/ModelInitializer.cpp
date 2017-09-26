@@ -124,12 +124,11 @@ Region<ModelVariant>* ModelInitializer<ModelVariant>::add_region(const std::stri
                 for (auto& region_to : model->regions_R) {
                     TransportDelay transport_delay_tau;
                     if (transport_time_base == TransportTimeBase::CENTROIDS) {
-                        try {
-                            const GeographicPoint& c = region_centroids.at(name);
-                            region->set_centroid(new GeographicPoint("centroid", c.lon(), c.lat()));
-                        } catch (std::out_of_range&) {
+                        const auto c = region_centroids.find(name);
+                        if (c == std::end(region_centroids)) {
                             error("Centroid for " << name << " not found");
                         }
+                        region->set_centroid(new GeographicPoint("centroid", c->second.lon(), c->second.lat()));
                         unsigned int transport_delay_tau_int;
                         const FloatType distance = region->centroid()->distance_to(*region_to->centroid());
                         if (distance >= threshold_road_transport) {
@@ -410,9 +409,7 @@ void ModelInitializer<ModelVariant>::read_centroids_netcdf(const std::string& fi
         for (std::size_t i = 0; i < regions_count; i++) {
             region_centroids.emplace(regions_val[i], GeographicPoint("centroid", lons_val[i], lats_val[i]));
         }
-#ifdef ACCLIMATE_HAVE_NEW_NETCDF_CPP
         file.close();
-#endif
     }
 
     const settings::SettingsNode& transport = settings["transport"];

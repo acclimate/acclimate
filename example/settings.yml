@@ -1,9 +1,8 @@
 variant: prices
 network:
-    type: csv
-    index: i2.csv
-    threshold: 1000
-    file: data_2009.csv
+  file: data.nc
+  type: netcdf
+  threshold: 1000
 transport:
   file: transit_times.csv
   index: indices.csv

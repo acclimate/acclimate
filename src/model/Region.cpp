@@ -66,18 +66,12 @@ void Region<ModelVariant>::iterate_consumption_and_production() {
     import_flow_Z_[model->other_register()] = Flow(0.0);
     consumption_flow_Y_[model->other_register()] = Flow(0.0);
     iterate_consumption_and_production_variant();
-    std::size_t i;
 #ifdef SUB_PARALLELIZATION
-#pragma omp parallel default(shared) private(i)
-    {
-#pragma omp for schedule(guided) nowait
+#pragma omp parallel for default(shared) schedule(guided)
 #endif
-        for (i = 0; i < economic_agents.size(); i++) {
-            economic_agents[i]->iterate_consumption_and_production();
-        }
-#ifdef SUB_PARALLELIZATION
+    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+        economic_agents[i]->iterate_consumption_and_production();
     }
-#endif
 }
 
 template<>
@@ -97,18 +91,12 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_expectation() {
     assertstep(EXPECTATION);
     iterate_expectation_variant();
-    std::size_t i;
 #ifdef SUB_PARALLELIZATION
-#pragma omp parallel default(shared) private(i)
-    {
-#pragma omp for schedule(guided) nowait
+#pragma omp parallel for default(shared) schedule(guided)
 #endif
-        for (i = 0; i < economic_agents.size(); i++) {
-            economic_agents[i]->iterate_expectation();
-        }
-#ifdef SUB_PARALLELIZATION
+    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+        economic_agents[i]->iterate_expectation();
     }
-#endif
 }
 
 template<>
@@ -128,18 +116,12 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_purchase() {
     assertstep(PURCHASE);
     iterate_purchase_variant();
-    std::size_t i;
 #ifdef SUB_PARALLELIZATION
-#pragma omp parallel default(shared) private(i)
-    {
-#pragma omp for schedule(guided) nowait
+#pragma omp parallel for default(shared) schedule(guided)
 #endif
-        for (i = 0; i < economic_agents.size(); i++) {
-            economic_agents[i]->iterate_purchase();
-        }
-#ifdef SUB_PARALLELIZATION
+    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+        economic_agents[i]->iterate_purchase();
     }
-#endif
 }
 
 template<>
@@ -159,18 +141,12 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_investment() {
     assertstep(INVESTMENT);
     iterate_investment_variant();
-    std::size_t i;
 #ifdef SUB_PARALLELIZATION
-#pragma omp parallel default(shared) private(i)
-    {
-#pragma omp for schedule(guided) nowait
+#pragma omp parallel for default(shared) schedule(guided)
 #endif
-        for (i = 0; i < economic_agents.size(); i++) {
-            economic_agents[i]->iterate_investment();
-        }
-#ifdef SUB_PARALLELIZATION
+    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+        economic_agents[i]->iterate_investment();
     }
-#endif
 }
 
 template<>
@@ -201,7 +177,11 @@ const Path<ModelVariant>& Region<ModelVariant>::find_path_to(const Region<ModelV
         }
     }
 #else
-        return paths.at(region);
+    const auto& it = paths.find(region);
+    if (it == std::end(paths)) {
+        error("No transport data from " << std::string(*this) << " to " << std::string(*region));
+    }
+    return it->second;
 #endif
 }
 
