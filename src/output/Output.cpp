@@ -298,9 +298,6 @@ bool Output<VariantPrices>::write_input_storage_parameter_variant(const Storage<
         case settings::hstring::hash("total_transport_penalty"):
             internal_write_value(name, s->purchasing_manager->total_transport_penalty());
             break;
-        case settings::hstring::hash("total_storage_penalty"):
-            internal_write_value(name, s->purchasing_manager->total_storage_penalty());
-            break;
         case settings::hstring::hash("storage_demand"):
             internal_write_value(name, s->purchasing_manager->storage_demand());
             break;

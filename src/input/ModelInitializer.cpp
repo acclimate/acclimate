@@ -682,11 +682,8 @@ void ModelInitializer<ModelVariant>::pre_initialize_variant() {
     const settings::SettingsNode& parameters = settings["parameters"];
     model->parameters_writable().transport_penalty_small = parameters["transport_penalty_small"].as<Price>();
     model->parameters_writable().transport_penalty_large = parameters["transport_penalty_large"].as<Price>();
-    model->parameters_writable().storage_penalty_small = parameters["storage_penalty_small"].as<FloatType>();
-    model->parameters_writable().storage_penalty_large = parameters["storage_penalty_large"].as<FloatType>();
     model->parameters_writable().optimization_maxiter = parameters["optimization_maxiter"].as<unsigned int>();
     model->parameters_writable().optimization_timeout = parameters["optimization_timeout"].as<unsigned int>();
-    model->parameters_writable().quadratic_storage_penalty = parameters["quadratic_storage_penalty"].as<bool>();
     model->parameters_writable().quadratic_transport_penalty = parameters["quadratic_transport_penalty"].as<bool>();
     model->parameters_writable().maximal_decrease_reservation_price_limited_by_markup =
         parameters["maximal_decrease_reservation_price_limited_by_markup"].as<bool>();

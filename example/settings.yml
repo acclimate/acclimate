@@ -21,11 +21,8 @@ parameters:
   optimization_algorithm: slsqp
   optimization_maxiter: 500000
   optimization_timeout: 40
-  quadratic_storage_penalty: false
   quadratic_transport_penalty: true
   relative_transport_penalty: true
-  storage_penalty_large: 0.05
-  storage_penalty_small: 0.15
 firm:
   - possible_overcapacity_ratio: 1.1
 sector:

@@ -480,7 +480,6 @@ void PurchasingManagerPrices<ModelVariant>::iterate_purchase() {
     desired_purchase_ = FlowQuantity(0.0);
     expected_costs_ = FlowValue(0.0);
     total_transport_penalty_ = FlowValue(0.0);
-    total_storage_penalty_ = FlowValue(0.0);
 
     calc_desired_purchase(&data);
     if (round(desired_purchase_) <= 0.0) {

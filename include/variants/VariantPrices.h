@@ -39,8 +39,6 @@ class VariantPrices : public Variant {
     using SalesManagerType = SalesManagerPrices<VariantPrices>;
     class ModelParameters : public Variant::ModelParameters {
       public:
-        FloatType storage_penalty_large;
-        FloatType storage_penalty_small;
         Price cheapest_price_range_width = Price(0.0);
         Price transport_penalty_large = Price(0.0);
         Price transport_penalty_small = Price(0.0);
@@ -52,7 +50,6 @@ class VariantPrices : public Variant {
         bool deviation_penalty;
         bool maximal_decrease_reservation_price_limited_by_markup;
         bool naive_expectations;           // incoming demand is never extended
-        bool quadratic_storage_penalty;    // quadratic instead of linear storage penalty
         bool quadratic_transport_penalty;  // quadratic instead of linear transport penalty
         bool relative_transport_penalty;
         bool respect_markup_in_production_extension;

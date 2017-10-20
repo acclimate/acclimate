@@ -52,7 +52,6 @@ class PurchasingManagerPrices : public PurchasingManager<ModelVariant> {
     FlowQuantity desired_purchase_ = FlowQuantity(0.0);
     FlowValue expected_costs_ = FlowValue(0.0);
     FlowValue total_transport_penalty_ = FlowValue(0.0);
-    FlowValue total_storage_penalty_ = FlowValue(0.0);
 
   public:
     inline const FloatType& optimized_value() const {
@@ -80,10 +79,6 @@ class PurchasingManagerPrices : public PurchasingManager<ModelVariant> {
     inline const FlowValue& total_transport_penalty() const {
         assertstepnot(PURCHASE);
         return total_transport_penalty_;
-    }
-    inline const FlowValue& total_storage_penalty() const {
-        assertstepnot(PURCHASE);
-        return total_storage_penalty_;
     }
     explicit PurchasingManagerPrices(Storage<ModelVariant>* storage_p);
     virtual ~PurchasingManagerPrices(){};
