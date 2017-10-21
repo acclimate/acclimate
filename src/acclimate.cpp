@@ -37,6 +37,7 @@
 #include "output/NetCDFOutput.h"
 #include "output/Output.h"
 #include "scenario/DirectPopulation.h"
+#include "scenario/EventSeriesScenario.h"
 #include "scenario/Flooding.h"
 #include "scenario/Hurricanes.h"
 #include "scenario/Scenario.h"
@@ -115,6 +116,8 @@ Acclimate::Run<ModelVariant>::Run() {
             scenario = new Hurricanes<ModelVariant>(settings, model);
         } else if (type == "direct_population") {
             scenario = new DirectPopulation<ModelVariant>(settings, model);
+        } else if (type == "event_series") {
+            scenario = new EventSeriesScenario<ModelVariant>(settings, model);
         } else {
             error_("Unknown scenario type '" << type << "'");
         }

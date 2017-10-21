@@ -21,9 +21,8 @@
 #ifndef ACCLIMATE_RASTEREDSCENARIO_H
 #define ACCLIMATE_RASTEREDSCENARIO_H
 
+#include "scenario/ExternalScenario.h"
 #include "scenario/RasteredData.h"
-#include "scenario/RasteredTimeData.h"
-#include "scenario/Scenario.h"
 
 namespace acclimate {
 
@@ -31,7 +30,7 @@ template<class ModelVariant>
 class Region;
 
 template<class ModelVariant>
-class RasteredScenario : public Scenario<ModelVariant> {
+class RasteredScenario : public ExternalScenario<ModelVariant> {
   public:
     struct RegionInfo {
         Region<ModelVariant>* region;
@@ -41,50 +40,30 @@ class RasteredScenario : public Scenario<ModelVariant> {
     };
 
   protected:
-    using Scenario<ModelVariant>::settings;
-    using Scenario<ModelVariant>::set_firm_property;
-    using Scenario<ModelVariant>::set_consumer_property;
-    using Scenario<ModelVariant>::start_time;
-    using Scenario<ModelVariant>::stop_time;
+    using ExternalScenario<ModelVariant>::forcing;
+    using ExternalScenario<ModelVariant>::model;
+    using ExternalScenario<ModelVariant>::settings;
 
-    std::string forcing_file;
-    std::string expression;
-    std::string variable_name;
-    bool remove_afterwards = false;
-    unsigned int file_index_from = 0;
-    unsigned int file_index_to = 0;
-    unsigned int file_index = 0;
-    std::string calendar_str_;
-    std::string time_units_str_;
-    Time next_time = Time(0.0);
-    Time time_offset = Time(0.0);
-    int time_step_width = 1;
-    bool stop_time_known = false;
-
-    std::unique_ptr<RasteredTimeData<FloatType>> forcing;
     std::unique_ptr<RasteredData<int>> iso_raster;
     std::unique_ptr<RasteredData<FloatType>> population;
     FloatType people_affected_ = 0;
     std::vector<RegionInfo> region_forcings;
-    bool next_forcing_file();
+
     virtual void set_forcing(Region<ModelVariant>* region, const FloatType& forcing_) const = 0;
     virtual FloatType get_affected_population_per_cell(const FloatType& x,
                                                        const FloatType& y,
                                                        const FloatType& population,
                                                        const FloatType& external_forcing) const = 0;
-    std::string fill_template(const std::string& in) const;
+    void internal_start() override;
+    bool internal_iterate() override;
+    void iterate_first_timestep() override;
+    ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
+    void read_forcings() override;
     RasteredScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
 
   public:
-    using Scenario<ModelVariant>::model;
-    using Scenario<ModelVariant>::is_first_timestep;
     virtual ~RasteredScenario(){};
-    bool iterate() override;
-    Time start() override;
-    void end() override;
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
-    std::string calendar_str() const override { return calendar_str_; };
-    std::string time_units_str() const override { return time_units_str_; };
     inline FloatType people_affected() const { return people_affected_; };
 };
 }  // namespace acclimate

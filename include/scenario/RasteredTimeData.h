@@ -21,30 +21,26 @@
 #ifndef ACCLIMATE_RASTEREDTIMEDATA_H
 #define ACCLIMATE_RASTEREDTIMEDATA_H
 
+#include "scenario/ExternalForcing.h"
 #include "scenario/RasteredData.h"
+#include "netcdf_headers.h"
 
 namespace acclimate {
 
 template<typename T>
-class RasteredTimeData : public RasteredData<T> {
+class RasteredTimeData : public RasteredData<T>, public ExternalForcing {
   protected:
     using RasteredData<T>::read_boundaries;
     using RasteredData<T>::data;
     using RasteredData<T>::x_count;
     using RasteredData<T>::y_count;
     using RasteredData<T>::filename;
-    TimeStep time_index;
-    TimeStep time_index_count;
-    std::unique_ptr<netCDF::NcFile> file;
-    netCDF::NcVar variable;
-    netCDF::NcVar time_variable;
+    using ExternalForcing::time_index;
+    using ExternalForcing::variable;
+    void read_data();
 
   public:
     RasteredTimeData(const std::string& filename_p, const std::string& variable_name);
-    virtual ~RasteredTimeData(){};
-    int next();
-    const std::string calendar_str() const;
-    const std::string time_units_str() const;
 };
 }  // namespace acclimate
 
