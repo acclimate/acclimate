@@ -18,22 +18,35 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "scenario/RasteredTimeData.h"
+#ifndef ACCLIMATE_EXTERNALFORCING_H
+#define ACCLIMATE_EXTERNALFORCING_H
+
+#include "netcdf_headers.h"
+#include "scenario/ExternalForcing.h"
+#include "scenario/RasteredData.h"
 
 namespace acclimate {
 
-template<typename T>
-RasteredTimeData<T>::RasteredTimeData(const std::string& filename_p, const std::string& variable_name)
-    : RasteredData<T>::RasteredData(filename_p), ExternalForcing::ExternalForcing(filename_p, variable_name) {
-    read_boundaries(file.get());
-    data = new T[y_count * x_count];
-}
+class ExternalForcing {
+  protected:
+    std::string filename;
+    TimeStep time_index;
+    TimeStep time_index_count;
+    std::unique_ptr<netCDF::NcFile> file;
+    netCDF::NcVar variable;
+    netCDF::NcVar time_variable;
+    virtual void read_data() = 0;
 
-template<typename T>
-void RasteredTimeData<T>::read_data() {
-    variable.getVar({time_index, 0, 0}, {1, y_count, x_count}, data);
-}
-
-template class RasteredTimeData<int>;
-template class RasteredTimeData<FloatType>;
+  public:
+    ExternalForcing(const std::string& filename_p, const std::string& variable_name);
+    virtual ~ExternalForcing(){};
+    int next_timestep();
+    const std::string calendar_str() const;
+    const std::string time_units_str() const;
+#ifdef DEBUG
+    virtual inline explicit operator std::string() const { return "FORCING"; }
+#endif
+};
 }  // namespace acclimate
+
+#endif

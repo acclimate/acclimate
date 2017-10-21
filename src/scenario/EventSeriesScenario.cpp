@@ -18,22 +18,29 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "scenario/RasteredTimeData.h"
+#include "scenario/EventSeriesScenario.h"
+
+#include <sstream>
+
+#include "model/Firm.h"
+#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<typename T>
-RasteredTimeData<T>::RasteredTimeData(const std::string& filename_p, const std::string& variable_name)
-    : RasteredData<T>::RasteredData(filename_p), ExternalForcing::ExternalForcing(filename_p, variable_name) {
-    read_boundaries(file.get());
-    data = new T[y_count * x_count];
+template<class ModelVariant>
+EventSeriesScenario<ModelVariant>::EventSeriesScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
+    : ExternalScenario<ModelVariant>(settings_p, model_p) {}
+
+template<class ModelVariant>
+ExternalForcing* EventSeriesScenario<ModelVariant>::read_forcing_file(const std::string& filename, const std::string& variable_name) {
+    return new EventForcing(filename, variable_name);
 }
 
-template<typename T>
-void RasteredTimeData<T>::read_data() {
-    variable.getVar({time_index, 0, 0}, {1, y_count, x_count}, data);
+template<class ModelVariant>
+void EventSeriesScenario<ModelVariant>::read_forcings() {
+    auto forcing_l = static_cast<EventForcing*>(forcing.get());
+    // TODO apply forcing in forcings vector to firm
 }
 
-template class RasteredTimeData<int>;
-template class RasteredTimeData<FloatType>;
+INSTANTIATE_BASIC(EventSeriesScenario);
 }  // namespace acclimate
