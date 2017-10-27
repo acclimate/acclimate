@@ -35,23 +35,24 @@ template<class ModelVariant>
 class EventSeriesScenario : public ExternalScenario<ModelVariant> {
   protected:
     using ExternalScenario<ModelVariant>::forcing;
-
-    struct AgentForcing {
-        Firm<ModelVariant>* firm;
-        FloatType forcing;
-    };
+    using ExternalScenario<ModelVariant>::model;
 
     class EventForcing : public ExternalForcing {
+        friend class EventSeriesScenario<ModelVariant>;
+
       protected:
-        std::vector<AgentForcing> forcings;
-        void read_data() override{
-            // TODO read values from variable into forcing of forcings vector
-        };
+        using ExternalForcing::file;
+        using ExternalForcing::time_index;
+        using ExternalForcing::variable;
+        std::vector<Firm<ModelVariant>*> firms;
+        std::vector<Forcing> forcings;
+        std::size_t regions_count;
+        std::size_t sectors_count;
+
+        void read_data() override;
 
       public:
-        EventForcing(const std::string& filename, const std::string& variable_name) : ExternalForcing(filename, variable_name){
-            // TODO read region and sector and build firm in forcings vector accordingly
-        };
+        EventForcing(const std::string& filename, const std::string& variable_name, const Model<ModelVariant>* model);
     };
 
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
