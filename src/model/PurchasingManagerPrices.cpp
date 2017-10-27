@@ -159,7 +159,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::purchase_constraint(const Float
                 grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r]) * 1.0 / partial_use_scaled_use();
 #ifdef OPTIMIZATION_WARNINGS
                 if (grad[r] > MAX_GRADIENT) {
-                    warning(string(*data->business_connections[r]) << ": large gradient of " << grad[r]);
+                    warning(std::string(*data->business_connections[r]) << ": large gradient of " << grad[r]);
                 }
 #endif
             }
@@ -205,7 +205,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
                           / partial_objective_scaled_objective();
 #ifdef OPTIMIZATION_WARNINGS
                 if (grad[r] > MAX_GRADIENT) {
-                    warning(string(*data->business_connections[r]) << ": large gradient of " << grad[r]);
+                    warning(std::string(*data->business_connections[r]) << ": large gradient of " << grad[r]);
                 }
 #endif
             }
@@ -505,12 +505,12 @@ void PurchasingManagerPrices<ModelVariant>::iterate_purchase() {
 
 #ifdef OPTIMIZATION_WARNINGS
             if (round(demand_request_D.get_quantity()) > round(FlowQuantity(unscaled_D_r(data.upper_bounds[r], data.business_connections[r])))) {
-                warning(string(*data.business_connections[r])
+                warning(std::string(*data.business_connections[r])
                         << ": upper limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_max: " << data.upper_bounds[r]
                         << " D_star: " << data.business_connections[r]->initial_flow_Z_star().get_quantity());
             }
             if (round(demand_request_D.get_quantity()) < round(FlowQuantity(unscaled_D_r(data.lower_bounds[r], data.business_connections[r])))) {
-                warning(string(*data.business_connections[r])
+                warning(std::string(*data.business_connections[r])
                         << ": lower limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_min: " << data.lower_bounds[r]
                         << " D_star: " << data.business_connections[r]->initial_flow_Z_star().get_quantity());
             }
