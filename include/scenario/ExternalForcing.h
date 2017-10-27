@@ -38,7 +38,7 @@ class ExternalForcing {
     virtual void read_data() = 0;
 
   public:
-    ExternalForcing(const std::string& filename_p, const std::string& variable_name);
+    ExternalForcing(std::string filename_p, const std::string& variable_name);
     virtual ~ExternalForcing(){};
     int next_timestep();
     const std::string calendar_str() const;

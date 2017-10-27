@@ -33,13 +33,53 @@ EventSeriesScenario<ModelVariant>::EventSeriesScenario(const settings::SettingsN
 
 template<class ModelVariant>
 ExternalForcing* EventSeriesScenario<ModelVariant>::read_forcing_file(const std::string& filename, const std::string& variable_name) {
-    return new EventForcing(filename, variable_name);
+    return new EventForcing(filename, variable_name, model);
 }
 
 template<class ModelVariant>
 void EventSeriesScenario<ModelVariant>::read_forcings() {
     auto forcing_l = static_cast<EventForcing*>(forcing.get());
-    // TODO apply forcing in forcings vector to firm
+    for (std::size_t i = 0; i < forcing_l->firms.size(); ++i) {
+        if (forcing_l->firms[i]) {
+            if (std::isnan(forcing_l->forcings[i])) {
+                forcing_l->firms[i]->forcing_lambda(1.0);
+            } else {
+                forcing_l->firms[i]->forcing_lambda(forcing_l->forcings[i]);
+            }
+        }
+    }
+}
+
+template<class ModelVariant>
+void EventSeriesScenario<ModelVariant>::EventForcing::read_data() {
+    variable.getVar({time_index, 0, 0}, {1, sectors_count, regions_count}, &forcings[0]);
+}
+
+template<class ModelVariant>
+EventSeriesScenario<ModelVariant>::EventForcing::EventForcing(const std::string& filename, const std::string& variable_name, const Model<ModelVariant>* model)
+    : ExternalForcing(filename, variable_name) {
+    std::vector<const char*> regions(file->getDim("region").getSize());
+    file->getVar("region").getVar(&regions[0]);
+    std::vector<const char*> sectors(file->getDim("sector").getSize());
+    file->getVar("sector").getVar(&sectors[0]);
+    regions_count = regions.size();
+    sectors_count = sectors.size();
+    firms.reserve(regions_count * sectors_count);
+    forcings.reserve(regions_count * sectors_count);
+    for (const auto& sector_name : sectors) {
+        Sector<ModelVariant>* sector = model->find_sector(sector_name);
+        if (!sector) {
+            error("sector '" + std::string(sector_name) + "' not found");
+        }
+        for (const auto& region_name : regions) {
+            Firm<ModelVariant>* firm = model->find_firm(sector, region_name);
+            if (!firm) {
+                warning("firm '" + std::string(sector_name) + ":" + std::string(region_name) + "' not found");
+            }
+            firms.push_back(firm);
+            forcings.push_back(1.0);
+        }
+    }
 }
 
 INSTANTIATE_BASIC(EventSeriesScenario);

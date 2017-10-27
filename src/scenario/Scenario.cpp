@@ -90,7 +90,6 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                             }
                         } else {
                             error("Sector " << it["sector"].template as<std::string>() << " not found");
-                            ;
                         }
                     }
                 } else {
@@ -104,7 +103,6 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                             }
                         } else {
                             error("Region " << it["region"].template as<std::string>() << " not found");
-                            ;
                         }
                     } else {
                         for (auto& s : model->sectors_C) {
