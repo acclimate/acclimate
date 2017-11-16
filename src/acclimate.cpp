@@ -39,6 +39,7 @@
 #include "scenario/DirectPopulation.h"
 #include "scenario/EventSeriesScenario.h"
 #include "scenario/Flooding.h"
+#include "scenario/HeatLaborProductivity.h"
 #include "scenario/Hurricanes.h"
 #include "scenario/Scenario.h"
 #include "scenario/Taxes.h"
@@ -116,6 +117,8 @@ Acclimate::Run<ModelVariant>::Run() {
             scenario = new Hurricanes<ModelVariant>(settings, model);
         } else if (type == "direct_population") {
             scenario = new DirectPopulation<ModelVariant>(settings, model);
+        } else if (type == "heat_labor_productivity") {
+            scenario = new HeatLaborProductivity<ModelVariant>(settings, model);
         } else if (type == "event_series") {
             scenario = new EventSeriesScenario<ModelVariant>(settings, model);
         } else {

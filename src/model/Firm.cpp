@@ -84,7 +84,7 @@ void Firm<VariantBasic>::iterate_expectation() {
     sales_manager->iterate_expectation();
     for (const auto& is : input_storages) {
         is->set_desired_used_flow_U_tilde(round(capacity_manager->desired_production_X_tilde() * is->get_technology_coefficient_a()
-                                                * forcing_lambda_  // Consider forcing to avoid buying goods that cannot be used when production is limited
+                                                * forcing_  // Consider forcing to avoid buying goods that cannot be used when production is limited
                                                 ));
     }
 }
@@ -95,7 +95,7 @@ void Firm<VariantDemand>::iterate_expectation() {
     sales_manager->iterate_expectation();
     for (const auto& is : input_storages) {
         is->set_desired_used_flow_U_tilde(round(capacity_manager->desired_production_X_tilde() * is->get_technology_coefficient_a()
-                                                * forcing_lambda_  // Consider forcing to avoid buying goods that cannot be used when production is limited
+                                                * forcing_  // Consider forcing to avoid buying goods that cannot be used when production is limited
                                                 ));
     }
 }

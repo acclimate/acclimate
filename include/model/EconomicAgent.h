@@ -37,14 +37,17 @@ class EconomicAgent {
   public:
     enum class Type { CONSUMER, FIRM };
 
+  private:
+    typename ModelVariant::AgentParameters parameters_;
+
+  protected:
+    Forcing forcing_ = Forcing(1.0);
+
   public:
     Sector<ModelVariant>* const sector;
     Region<ModelVariant>* const region;
     std::vector<std::unique_ptr<Storage<ModelVariant>>> input_storages;
     const Type type;
-
-  private:
-    typename ModelVariant::AgentParameters parameters_;
 
   public:
     inline const typename ModelVariant::AgentParameters& parameters() const { return parameters_; };
@@ -57,6 +60,12 @@ class EconomicAgent {
     EconomicAgent(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p);
 
   public:
+    inline const Forcing& forcing() const { return forcing_; };
+    inline void forcing(const Forcing& forcing_p) {
+        assertstep(SCENARIO);
+        assert(forcing_p >= 0.0);
+        forcing_ = forcing_p;
+    };
     virtual Firm<ModelVariant>* as_firm();
     virtual const Firm<ModelVariant>* as_firm() const;
     virtual Consumer<ModelVariant>* as_consumer();

@@ -29,14 +29,13 @@ namespace acclimate {
 template<class ModelVariant>
 class Region;
 
-template<class ModelVariant>
+template<class ModelVariant, class RegionForcingType>
 class RasteredScenario : public ExternalScenario<ModelVariant> {
   public:
     struct RegionInfo {
         Region<ModelVariant>* region;
-        FloatType population;
-        FloatType people_affected;
-        FloatType forcing;
+        FloatType proxy_sum;
+        RegionForcingType forcing;
     };
 
   protected:
@@ -45,15 +44,19 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     using ExternalScenario<ModelVariant>::settings;
 
     std::unique_ptr<RasteredData<int>> iso_raster;
-    std::unique_ptr<RasteredData<FloatType>> population;
-    FloatType people_affected_ = 0;
+    std::unique_ptr<RasteredData<FloatType>> proxy;
     std::vector<RegionInfo> region_forcings;
+    FloatType total_current_proxy_sum_;
 
-    virtual void set_forcing(Region<ModelVariant>* region, const FloatType& forcing_) const = 0;
-    virtual FloatType get_affected_population_per_cell(const FloatType& x,
-                                                       const FloatType& y,
-                                                       const FloatType& population,
-                                                       const FloatType& external_forcing) const = 0;
+    virtual RegionForcingType new_region_forcing(Region<ModelVariant>* region) const = 0;
+    virtual void set_region_forcing(Region<ModelVariant>* region, RegionForcingType& forcing,
+                                    const FloatType& proxy_sum) const = 0;  // must reset forcing
+    virtual FloatType add_cell_forcing(const FloatType& x,
+                                       const FloatType& y,
+                                       const FloatType& proxy_value,
+                                       const FloatType& cell_forcing,
+                                       const Region<ModelVariant>* region,
+                                       RegionForcingType& region_forcing) const = 0;  // must return current net proxy for cell
     void internal_start() override;
     bool internal_iterate() override;
     void iterate_first_timestep() override;
@@ -64,7 +67,7 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
   public:
     virtual ~RasteredScenario(){};
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
-    inline FloatType people_affected() const { return people_affected_; };
+    inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; };
 };
 }  // namespace acclimate
 

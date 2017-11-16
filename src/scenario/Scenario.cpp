@@ -49,9 +49,9 @@ void Scenario<ModelVariant>::set_firm_property(Firm<ModelVariant>* firm, const s
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
         if (name == "remaining_capacity") {
-            firm->forcing_lambda(reset ? 1.0 : it.as<Forcing>() / firm->capacity_manager->possible_overcapacity_ratio_beta);
+            firm->forcing(reset ? 1.0 : it.as<Forcing>() / firm->capacity_manager->possible_overcapacity_ratio_beta);
         } else if (name == "forcing") {
-            firm->forcing_lambda(reset ? Forcing(1.0) : it.as<Forcing>());
+            firm->forcing(reset ? Forcing(1.0) : it.as<Forcing>());
         }
     }
 }
@@ -62,7 +62,7 @@ void Scenario<ModelVariant>::set_consumer_property(Consumer<ModelVariant>* consu
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
         if (name == "remaining_consumption_rate") {
-            consumer->forcing_kappa(reset ? Forcing(1.0) : it.as<Forcing>());
+            consumer->forcing(reset ? Forcing(1.0) : it.as<Forcing>());
         }
     }
 }

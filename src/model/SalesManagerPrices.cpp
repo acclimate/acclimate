@@ -212,7 +212,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_supply_distributi
     if (possible_production_X_hat_p.get_quantity() <= 0.0) {
         // no production due to supply shortage or forcing == 0
 
-        if (firm->forcing_lambda() <= 0.0) {
+        if (firm->forcing() <= 0.0) {
             warning("no production due to total forcing");
         } else {
             Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_PRODUCTION_SUPPLY_SHORTAGE, firm);
@@ -384,7 +384,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
     if (possible_production_X_hat_p.get_quantity() <= 0.0) {
         // no production due to supply shortage or forcing <= 0
 
-        if (firm->forcing_lambda() <= 0.0) {
+        if (firm->forcing() <= 0.0) {
             warning("no expected production due to total forcing");
         } else {
             Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_EXP_PRODUCTION_SUPPLY_SHORTAGE, firm);

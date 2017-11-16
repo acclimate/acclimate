@@ -29,9 +29,7 @@ namespace acclimate {
 
 template<class ModelVariant>
 Consumer<ModelVariant>::Consumer(Region<ModelVariant>* region_p)
-    : EconomicAgent<ModelVariant>(region_p->model->consumption_sector, region_p, EconomicAgent<ModelVariant>::Type::CONSUMER) {
-    forcing_kappa_ = 1;
-}
+    : EconomicAgent<ModelVariant>(region_p->model->consumption_sector, region_p, EconomicAgent<ModelVariant>::Type::CONSUMER) {}
 
 template<class ModelVariant>
 inline Consumer<ModelVariant>* Consumer<ModelVariant>::as_consumer() {
@@ -42,7 +40,7 @@ template<>
 void Consumer<VariantBasic>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     for (const auto& is : input_storages) {
-        Flow desired_used_flow_U_tilde = round(is->initial_input_flow_I_star() * forcing_kappa_);
+        Flow desired_used_flow_U_tilde = round(is->initial_input_flow_I_star() * forcing_);
         Flow used_flow_U = round(std::min(desired_used_flow_U_tilde, is->get_possible_use_U_hat()));
 
         is->set_desired_used_flow_U_tilde(desired_used_flow_U_tilde);
@@ -56,7 +54,7 @@ template<>
 void Consumer<VariantDemand>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     for (const auto& is : input_storages) {
-        Flow desired_used_flow_U_tilde = round(is->initial_input_flow_I_star() * forcing_kappa_);
+        Flow desired_used_flow_U_tilde = round(is->initial_input_flow_I_star() * forcing_);
         Flow used_flow_U = round(std::min(desired_used_flow_U_tilde, is->get_possible_use_U_hat()));
 
         is->set_desired_used_flow_U_tilde(desired_used_flow_U_tilde);
@@ -84,7 +82,7 @@ void Consumer<ModelVariant>::iterate_consumption_and_production() {
         }
         assert(reservation_price > 0.0);
 
-        const Flow desired_used_flow_U_tilde = Flow(round(is->initial_input_flow_I_star().get_quantity() * forcing_kappa_
+        const Flow desired_used_flow_U_tilde = Flow(round(is->initial_input_flow_I_star().get_quantity() * forcing_
                                                           * pow(reservation_price / Price(1.0), is->sector->parameters().consumption_price_elasticity)),
                                                     reservation_price);
         const Flow used_flow_U = Flow(std::min(desired_used_flow_U_tilde.get_quantity(), possible_used_flow_U_hat.get_quantity()), reservation_price);

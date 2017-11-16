@@ -26,13 +26,16 @@
 namespace acclimate {
 
 template<class ModelVariant>
-class DirectPopulation : public RasteredScenario<ModelVariant> {
+class DirectPopulation : public RasteredScenario<ModelVariant, FloatType> {
   protected:
-    void set_forcing(Region<ModelVariant>* region, const FloatType& forcing_p) const override;
-    FloatType get_affected_population_per_cell(const FloatType& x,
-                                               const FloatType& y,
-                                               const FloatType& population_p,
-                                               const FloatType& external_forcing) const override;
+    FloatType new_region_forcing(Region<ModelVariant>* region) const override;
+    void set_region_forcing(Region<ModelVariant>* region, FloatType& forcing, const FloatType& proxy_sum) const override;
+    FloatType add_cell_forcing(const FloatType& x,
+                               const FloatType& y,
+                               const FloatType& proxy_value,
+                               const FloatType& cell_forcing,
+                               const Region<ModelVariant>* region,
+                               FloatType& region_forcing) const override;
 
   public:
     DirectPopulation(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);

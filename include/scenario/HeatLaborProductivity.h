@@ -18,27 +18,30 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_FLOODING_H
-#define ACCLIMATE_FLOODING_H
+#ifndef ACCLIMATE_HEATLABORPRODUCTIVITY_H
+#define ACCLIMATE_HEATLABORPRODUCTIVITY_H
 
 #include "scenario/RasteredScenario.h"
 
 namespace acclimate {
 
+using HeatLaborProductivityRegionForcingType = std::vector<FloatType>;
+
 template<class ModelVariant>
-class Flooding : public RasteredScenario<ModelVariant, FloatType> {
+class HeatLaborProductivity : public RasteredScenario<ModelVariant, HeatLaborProductivityRegionForcingType> {
   protected:
-    FloatType new_region_forcing(Region<ModelVariant>* region) const override;
-    void set_region_forcing(Region<ModelVariant>* region, FloatType& forcing, const FloatType& proxy_sum) const override;
+    using RegionForcingType = HeatLaborProductivityRegionForcingType;
+    RegionForcingType new_region_forcing(Region<ModelVariant>* region) const override;
+    void set_region_forcing(Region<ModelVariant>* region, RegionForcingType& forcing, const FloatType& proxy_sum) const override;
     FloatType add_cell_forcing(const FloatType& x,
                                const FloatType& y,
                                const FloatType& proxy_value,
                                const FloatType& cell_forcing,
                                const Region<ModelVariant>* region,
-                               FloatType& region_forcing) const override;
+                               RegionForcingType& region_forcing) const override;
 
   public:
-    Flooding(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    HeatLaborProductivity(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
 };
 }  // namespace acclimate
 

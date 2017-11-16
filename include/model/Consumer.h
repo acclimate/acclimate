@@ -37,7 +37,9 @@ class Consumer : public EconomicAgent<ModelVariant> {
     using EconomicAgent<ModelVariant>::region;
 
   protected:
-    Forcing forcing_kappa_;
+    using EconomicAgent<ModelVariant>::forcing_;
+
+  protected:
     void add_revenue_to_budget();
     void substract_input_costs_from_budget();
 #ifdef DEBUG
@@ -46,11 +48,6 @@ class Consumer : public EconomicAgent<ModelVariant> {
 
   public:
     Consumer<ModelVariant>* as_consumer() override;
-    inline const Forcing& forcing_kappa() const { return forcing_kappa_; };
-    inline void forcing_kappa(const Forcing& forcing_kappa_p) {
-        assertstep(SCENARIO);
-        forcing_kappa_ = forcing_kappa_p;
-    };
     explicit Consumer(Region<ModelVariant>* region_p);
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;

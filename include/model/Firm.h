@@ -32,21 +32,21 @@ class BusinessConnection;
 
 template<class ModelVariant>
 class Firm : public EconomicAgent<ModelVariant> {
+  private:
+    Flow initial_production_X_star_ = Flow(0.0);
+    Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
+    Flow initial_total_use_U_star_ = Flow(0.0);
+    BusinessConnection<ModelVariant>* self_supply_connection_ = nullptr;
+
+  protected:
+    using EconomicAgent<ModelVariant>::forcing_;
+
   public:
     using EconomicAgent<ModelVariant>::input_storages;
     using EconomicAgent<ModelVariant>::region;
     using EconomicAgent<ModelVariant>::sector;
-
-  public:
     std::unique_ptr<typename ModelVariant::CapacityManagerType> const capacity_manager;
     std::unique_ptr<typename ModelVariant::SalesManagerType> const sales_manager;
-
-  private:
-    Flow initial_production_X_star_ = Flow(0.0);
-    Forcing forcing_lambda_ = Forcing(1.0);
-    Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
-    Flow initial_total_use_U_star_ = Flow(0.0);
-    BusinessConnection<ModelVariant>* self_supply_connection_ = nullptr;
 
   public:
     Firm<ModelVariant>* as_firm() override;
@@ -65,17 +65,17 @@ class Firm : public EconomicAgent<ModelVariant> {
     };
     inline const Flow& initial_production_X_star() const { return initial_production_X_star_; };
     inline const Flow& initial_total_use_U_star() const { return initial_total_use_U_star_; };
-    inline const Flow forced_initial_production_lambda_X_star() const { return round(initial_production_X_star_ * forcing_lambda_); };
+    inline const Flow forced_initial_production_lambda_X_star() const { return round(initial_production_X_star_ * forcing_); };
     inline const Flow maximal_production_beta_X_star() const { return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta); };
     inline const Flow forced_maximal_production_lambda_beta_X_star() const {
-        return round(initial_production_X_star_ * forcing_lambda_ * capacity_manager->possible_overcapacity_ratio_beta);
+        return round(initial_production_X_star_ * forcing_ * capacity_manager->possible_overcapacity_ratio_beta);
     };
     inline const FlowQuantity& initial_production_quantity_X_star() const { return initial_production_X_star_.get_quantity(); };
     inline const FlowQuantity forced_initial_production_quantity_lambda_X_star() const {
-        return round(initial_production_X_star_.get_quantity() * forcing_lambda_);
+        return round(initial_production_X_star_.get_quantity() * forcing_);
     };
     inline FloatType forced_initial_production_quantity_lambda_X_star_float() const {
-        return to_float(initial_production_X_star_.get_quantity() * forcing_lambda_);
+        return to_float(initial_production_X_star_.get_quantity() * forcing_);
     };
     inline const FlowQuantity maximal_production_quantity_beta_X_star() const {
         return round(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
@@ -84,14 +84,13 @@ class Firm : public EconomicAgent<ModelVariant> {
         return to_float(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
     };
     const FlowQuantity forced_maximal_production_quantity_lambda_beta_X_star() const {
-        return round(initial_production_X_star_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_lambda_));
+        return round(initial_production_X_star_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
     };
     FloatType forced_maximal_production_quantity_lambda_beta_X_star_float() const {
-        return to_float(initial_production_X_star_.get_quantity()) * (capacity_manager->possible_overcapacity_ratio_beta * forcing_lambda_);
+        return to_float(initial_production_X_star_.get_quantity()) * (capacity_manager->possible_overcapacity_ratio_beta * forcing_);
     };
-    inline const Forcing& forcing_lambda() const { return forcing_lambda_; };
     inline const Flow direct_loss() const {
-        return Flow(round(initial_production_X_star_.get_quantity() * Forcing(1.0 - forcing_lambda_)),
+        return Flow(round(initial_production_X_star_.get_quantity() * Forcing(1.0 - forcing_)),
                     production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0), true);
     };
     inline const Flow total_loss() const {
@@ -99,11 +98,6 @@ class Firm : public EconomicAgent<ModelVariant> {
                     production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0), true);
     };
     inline const FlowValue total_value_loss() const { return (initial_production_X_star_ - production_X_).get_value(); };
-    inline void forcing_lambda(const Forcing& forcing_lambda_p) {
-        assertstep(SCENARIO);
-        assert(forcing_lambda_p >= 0.0);
-        forcing_lambda_ = forcing_lambda_p;
-    };
 
   protected:
     void produce_X();
