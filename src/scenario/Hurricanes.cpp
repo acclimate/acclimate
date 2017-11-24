@@ -53,7 +53,7 @@ inline FloatType Hurricanes<ModelVariant>::add_cell_forcing(const FloatType& x,
                                                             FloatType& region_forcing) const {
     UNUSED(x);
     UNUSED(y);
-    region_forcing = cell_forcing > threshold ? proxy_value : 0.0;
+    region_forcing += cell_forcing > threshold ? proxy_value : 0.0;
     return region_forcing;
 }
 

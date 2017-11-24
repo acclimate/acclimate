@@ -40,7 +40,9 @@ inline void HeatLaborProductivity<ModelVariant>::set_region_forcing(Region<Model
                                                                     HeatLaborProductivity<ModelVariant>::RegionForcingType& forcing,
                                                                     const FloatType& proxy_sum) const {
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
-        region->economic_agents[i]->forcing(1 - forcing[i] / proxy_sum);
+        if (proxy_sum > 0.0) {
+            region->economic_agents[i]->forcing(1 - forcing[i] / proxy_sum);
+        }
         forcing[i] = 0.0;
     }
 }

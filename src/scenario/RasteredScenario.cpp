@@ -62,11 +62,13 @@ void RasteredScenario<ModelVariant, RegionForcingType>::internal_start() {
         index_var.getVar(&index_val[0]);
         for (const auto& r : index_val) {
             const auto region = model->find_region(r);
-            region_forcings.emplace_back(RegionInfo{
-                region,                     // region
-                0,                          // proxy_sum
-                new_region_forcing(region)  // forcing
-            });
+            if (region != nullptr) {
+                region_forcings.emplace_back(RegionInfo{
+                    region,                     // region
+                    0,                          // proxy_sum
+                    new_region_forcing(region)  // forcing
+                });
+            }
         }
     }
 
@@ -91,17 +93,13 @@ void RasteredScenario<ModelVariant, RegionForcingType>::iterate_first_timestep()
                 const FloatType proxy_value = proxy->read(x, y);
                 total_proxy_sum_all += proxy_value;
                 region_forcings[i].proxy_sum += proxy_value;
-                if (region_forcings[i].region) {
-                    total_proxy_sum += proxy_value;
-                }
+                total_proxy_sum += proxy_value;
             }
         }
     }
 #ifdef DEBUG
     for (auto& r : region_forcings) {
-        if (r.region) {
-            info(std::string(*r.region) << ": proxy sum: " << r.proxy_sum);
-        }
+        info(std::string(*r.region) << ": proxy sum: " << r.proxy_sum);
     }
     info("Total proxy sum: " << total_proxy_sum << " (" << total_proxy_sum_all << ")");
 #endif
@@ -119,9 +117,7 @@ void RasteredScenario<ModelVariant, RegionForcingType>::read_forcings() {
                 const FloatType forcing_v = forcing_l->read(x, y);
                 const FloatType proxy_value = proxy->read(x, y);
                 RegionInfo& region_info = region_forcings[i];
-                if (region_info.region) {
-                    total_current_proxy_sum_ += add_cell_forcing(x, y, proxy_value / sub_cnt / sub_cnt, forcing_v, region_info.region, region_info.forcing);
-                }
+                total_current_proxy_sum_ += add_cell_forcing(x, y, proxy_value / sub_cnt / sub_cnt, forcing_v, region_info.region, region_info.forcing);
             }
         }
     }
@@ -131,9 +127,7 @@ void RasteredScenario<ModelVariant, RegionForcingType>::read_forcings() {
 template<class ModelVariant, class RegionForcingType>
 bool RasteredScenario<ModelVariant, RegionForcingType>::internal_iterate() {
     for (auto& r : region_forcings) {
-        if (r.region) {
-            set_region_forcing(r.region, r.forcing, r.proxy_sum);
-        }
+        set_region_forcing(r.region, r.forcing, r.proxy_sum);
     }
     return true;
 }

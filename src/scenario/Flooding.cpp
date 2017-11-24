@@ -51,7 +51,7 @@ inline FloatType Flooding<ModelVariant>::add_cell_forcing(const FloatType& x,
                                                           FloatType& region_forcing) const {
     UNUSED(x);
     UNUSED(y);
-    region_forcing = cell_forcing * proxy_value;
+    region_forcing += cell_forcing * proxy_value;
     return region_forcing;
 }
 

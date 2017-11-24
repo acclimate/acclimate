@@ -51,7 +51,7 @@ inline FloatType DirectPopulation<ModelVariant>::add_cell_forcing(const FloatTyp
                                                                   FloatType& region_forcing) const {
     UNUSED(x);
     UNUSED(y);
-    region_forcing = std::min(cell_forcing, proxy_value);
+    region_forcing += std::min(cell_forcing, proxy_value);
     return region_forcing;
 }
 
