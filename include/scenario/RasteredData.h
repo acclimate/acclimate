@@ -31,9 +31,19 @@ class RasteredData {
   protected:
     T* data;
     unsigned int time_step = 0;
-    FloatType x_min = 0, x_max = 0, x_gridsize = 0, t_x_gridsize = 0, t_x_min = 0, t_x_max = 0;
+    FloatType x_min = 0;
+    FloatType x_max = 0;
+    FloatType x_gridsize = 0;
+    FloatType t_x_gridsize = 0;
+    FloatType t_x_min = 0;
+    FloatType t_x_max = 0;
     std::size_t x_count = 0;
-    FloatType y_min = 0, y_max = 0, y_gridsize = 0, t_y_gridsize = 0, t_y_min = 0, t_y_max = 0;
+    FloatType y_min = 0;
+    FloatType y_max = 0;
+    FloatType y_gridsize = 0;
+    FloatType t_y_gridsize = 0;
+    FloatType t_y_min = 0;
+    FloatType t_y_max = 0;
     std::size_t y_count = 0;
     const std::string filename;
 
@@ -53,7 +63,8 @@ class RasteredData {
 
       public:
         using iterator_category = std::forward_iterator_tag;
-        iterator(const FloatType& l_, const std::size_t& c_, const FloatType& gridsize_, const std::size_t& count_) : l(l_), c(c_), gridsize(gridsize_), count(count_){};
+        iterator(const FloatType& l_, const std::size_t& c_, const FloatType& gridsize_, const std::size_t& count_)
+            : l(l_), c(c_), gridsize(gridsize_), count(count_){};
         iterator operator++() {
             if (c < count) {
                 c++;

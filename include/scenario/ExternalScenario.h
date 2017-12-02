@@ -31,14 +31,6 @@ class Region;
 
 template<class ModelVariant>
 class ExternalScenario : public Scenario<ModelVariant> {
-  public:
-    struct RegionInfo {
-        Region<ModelVariant>* region;
-        FloatType population;
-        FloatType people_affected;
-        FloatType forcing;
-    };
-
   protected:
     using Scenario<ModelVariant>::settings;
     using Scenario<ModelVariant>::set_firm_property;
