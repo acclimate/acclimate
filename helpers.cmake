@@ -17,6 +17,18 @@ set(HELPER_MODULES_PATH ${CMAKE_CURRENT_LIST_DIR})
 include(CMakeParseArguments)
 
 
+function(add_doxygen_documentation PATH TARGET)
+  find_package(Doxygen)
+  if(DOXYGEN_FOUND)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${PATH}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/${PATH}/Doxyfile @ONLY)
+    add_custom_target(${TARGET}
+      ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/${PATH}/Doxyfile
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Generating documentation..." VERBATIM)
+  endif(DOXYGEN_FOUND)
+endfunction()
+
+
 function(set_advanced_cpp_warnings TARGET)
   if(ARGN GREATER 1)
     option(CXX_WARNINGS ON)
@@ -36,6 +48,8 @@ function(set_default_build_type BUILD_TYPE)
   if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE ${BUILD_TYPE} CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
   endif()
+  set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS} -pg")
+  set(CMAKE_EXE_LINKER_FLAGS_PROFILE "${CMAKE_EXE_LINKER_FLAGS} -pg")
 endfunction()
 
 
@@ -48,6 +62,18 @@ function(set_build_type_specifics TARGET)
     target_compile_definitions(${TARGET} PUBLIC NDEBUG)
   else()
     target_compile_definitions(${TARGET} PRIVATE DEBUG)
+  endif()
+endfunction()
+
+
+function(set_ccache_use)
+  find_program(CCACHE_FOUND ccache)
+  if(CCACHE_FOUND)
+    option(USE_CCACHE "Use ccache if available" ON)
+    if(USE_CCACHE)
+      set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+      set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+    endif()
   endif()
 endfunction()
 
@@ -263,6 +289,7 @@ function(add_git_version TARGET)
     "#define ${ARGS_DPREFIX}_VERSION_H\n"
     "#define ${ARGS_DPREFIX}_VERSION \"${ARGS_FALLBACK_VERSION}\"\n"
     "#endif")
+  target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/git_version)
   if(NOT ARGS_DIFF_VAR)
     string(TOLOWER ${ARGS_DPREFIX}_git_diff ARGS_DIFF_VAR)
   endif()
@@ -283,8 +310,6 @@ function(add_git_version TARGET)
       set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/git_version/version.h
         PROPERTIES GENERATED TRUE
         HEADER_FILE_ONLY TRUE)
-
-      target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/git_version)
 
       add_dependencies(${TARGET} ${TARGET}_version)
 
