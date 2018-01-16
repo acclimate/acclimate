@@ -22,7 +22,6 @@
 #include "acclimate.h"
 #include "model/Model.h"
 #include "output/ArrayOutput.h"
-#include "settings.h"
 #include "variants/VariantPrices.h"
 #include "version.h"
 
