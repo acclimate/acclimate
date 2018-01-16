@@ -38,6 +38,8 @@ endif()
 target_include_directories(acclimate PRIVATE include)
 target_compile_options(acclimate PRIVATE -std=c++11)
 
+add_doxygen_documentation(doc doc)
+set_ccache_use()
 set_advanced_cpp_warnings(acclimate)
 set_build_type_specifics(acclimate)
 add_git_version(acclimate
