@@ -482,6 +482,36 @@ void Output<ModelVariant>::write_region_parameters(const Region<ModelVariant>* r
             case settings::hstring::hash("people_affected"):
                 // handled in iterate
                 break;
+            case settings::hstring::hash("sent_flow"): {
+                std::vector<Flow> flows(model->regions_R.size(), Flow(0.0));
+                for (const auto& ea : region->economic_agents) {
+                    if (ea->is_firm()) {
+                        for (const auto& bc : ea->as_firm()->sales_manager->business_connections) {
+                            flows[bc->buyer->storage->economic_agent->region->index()] += bc->last_shipment_Z();
+                        }
+                    }
+                }
+                for (const auto& region_to : model->regions_R) {
+                    internal_start_target("regions", region_to.get());
+                    internal_write_value("sent_flow", flows[region_to->index()]);
+                    internal_end_target();
+                }
+            } break;
+            case settings::hstring::hash("received_flows"): {
+                std::vector<Flow> flows(model->regions_R.size(), Flow(0.0));
+                for (const auto& ea : region->economic_agents) {
+                    if (ea->is_firm()) {
+                        for (const auto& bc : ea->as_firm()->sales_manager->business_connections) {
+                            flows[bc->buyer->storage->economic_agent->region->index()] += bc->last_delivery_Z();
+                        }
+                    }
+                }
+                for (const auto& region_to : model->regions_R) {
+                    internal_start_target("regions", region_to.get());
+                    internal_write_value("received_flow", flows[region_to->index()]);
+                    internal_end_target();
+                }
+            } break;
             default:
                 if (!write_region_parameter_variant(region, name)) {
                     parameter_not_found(name);
