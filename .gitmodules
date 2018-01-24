@@ -1,9 +1,10 @@
 [submodule "lib/settingsnode/lib/yaml-cpp"]
 	path = lib/settingsnode/lib/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
-[submodule "lib/libmrio/lib/settingsnode/lib/yaml-cpp"]
+[submodule "lib/limrio/lib/settingsnode/lib/yaml-cpp"]
 	path = lib/libmrio/lib/settingsnode/lib/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
 	update = none
 [submodule "lib/tqdm.cpp"]
 	path = lib/tqdm.cpp
-	url = git@github.com:swillner/tqdm.cpp.git
+	url = https://github.com/swillner/tqdm.cpp.git
