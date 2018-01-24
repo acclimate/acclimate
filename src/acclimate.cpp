@@ -36,6 +36,7 @@
 #include "output/JSONOutput.h"
 #include "output/NetCDFOutput.h"
 #include "output/Output.h"
+#include "output/ProgressOutput.h"
 #include "scenario/DirectPopulation.h"
 #include "scenario/Flooding.h"
 #include "scenario/Hurricanes.h"
@@ -151,6 +152,8 @@ Acclimate::Run<ModelVariant>::Run() {
             output = new DamageOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "array") {
             output = new ArrayOutput<ModelVariant>(settings, model, scenario, node);
+        } else if (type == "progress") {
+            output = new ProgressOutput<ModelVariant>(settings, model, scenario, node);
         } else {
             error_("Unknown output format '" << type << "'");
         }

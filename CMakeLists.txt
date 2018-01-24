@@ -66,6 +66,10 @@ option(ACCLIMATE_CLEANUP_INFO "show additional information about the cleanup (on
 option(ACCLIMATE_OPTIMIZATION_WARNINGS "show warnings for optimization (only for Debug)" OFF)
 option(ACCLIMATE_OPTIMIZATION_PROBLEMS_FATAL "make optimization problems fatal (only for Debug)" OFF)
 option(ACCLIMATE_ENABLE_DMTCP "" ON)
+option(ACCLIMATE_USE_TQDM "" ON)
+if(ACCLIMATE_USE_TQDM)
+  target_include_directories(acclimate PRIVATE lib/tqdm.cpp/include)
+endif()
 
 set(ACCLIMATE_OPTIONS "")
 function(acclimate_include_option OPT NAME)

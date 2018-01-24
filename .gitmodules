@@ -4,3 +4,6 @@
 [submodule "lib/libmrio/lib/settingsnode/lib/yaml-cpp"]
 	path = lib/libmrio/lib/settingsnode/lib/yaml-cpp
 	update = none
+[submodule "lib/tqdm.cpp"]
+	path = lib/tqdm.cpp
+	url = git@github.com:swillner/tqdm.cpp.git
