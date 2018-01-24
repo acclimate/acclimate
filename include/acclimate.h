@@ -94,7 +94,7 @@ class Acclimate {
         std::unique_ptr<Model<ModelVariant>> model_m;
         std::vector<std::unique_ptr<Output<ModelVariant>>> outputs_m;
         static void initialize();
-        void run();
+        int run();
         void cleanup();
         Run();
 
@@ -144,7 +144,7 @@ class Acclimate {
     unsigned int thread_count();
     std::string timeinfo();
     static void initialize(const settings::SettingsNode& settings_p);
-    void run();
+    int run();
     void cleanup();
 };
 }

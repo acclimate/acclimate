@@ -65,6 +65,7 @@ option(ACCLIMATE_STRICT_MIN_DERIVATIVE "" OFF)
 option(ACCLIMATE_CLEANUP_INFO "show additional information about the cleanup (only for Debug)" OFF)
 option(ACCLIMATE_OPTIMIZATION_WARNINGS "show warnings for optimization (only for Debug)" OFF)
 option(ACCLIMATE_OPTIMIZATION_PROBLEMS_FATAL "make optimization problems fatal (only for Debug)" OFF)
+option(ACCLIMATE_ENABLE_DMTCP "" ON)
 
 set(ACCLIMATE_OPTIONS "")
 function(acclimate_include_option OPT NAME)
@@ -82,6 +83,8 @@ acclimate_include_option(ACCLIMATE_STRICT_MIN_DERIVATIVE "STRICT_MIN_DERIVATIVE"
 acclimate_include_option(ACCLIMATE_CLEANUP_INFO "CLEANUP_INFO")
 acclimate_include_option(ACCLIMATE_OPTIMIZATION_WARNINGS "OPTIMIZATION_WARNINGS")
 acclimate_include_option(ACCLIMATE_OPTIMIZATION_PROBLEMS_FATAL "OPTIMIZATION_PROBLEMS_FATAL")
+acclimate_include_option(ACCLIMATE_ENABLE_DMTCP "ENABLE_DMTCP")
+acclimate_include_option(ACCLIMATE_USE_TQDM "USE_TQDM")
 
 target_compile_definitions(acclimate PRIVATE ${ACCLIMATE_OPTIONS})
 string(REPLACE ";" ", " ACCLIMATE_OPTIONS "${ACCLIMATE_OPTIONS}")

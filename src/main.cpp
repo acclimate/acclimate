@@ -113,8 +113,9 @@ int main(int argc, char* argv[]) {
                 std::ifstream settings_file(arg);
                 acclimate::Acclimate::initialize(settings::SettingsNode(settings_file));
             }
-            acclimate::Acclimate::instance()->run();
+            auto res = acclimate::Acclimate::instance()->run();
             acclimate::Acclimate::instance()->cleanup();
+            return res;
         }
 #ifndef DEBUG
     } catch (std::exception& ex) {

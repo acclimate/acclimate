@@ -43,6 +43,17 @@
 #include "scenario/Taxes.h"
 #include "variants/ModelVariants.h"
 
+#ifdef ENABLE_DMTCP
+#ifndef __clang_major__
+#define __clang_major__ 0
+#endif
+#ifndef __clang_minor__
+#define __clang_minor__ 0
+#endif
+#include <dmtcp.h>
+#include <thread>
+#endif
+
 namespace acclimate {
 
 #ifdef FLOATING_POINT_EXCEPTIONS
@@ -154,7 +165,7 @@ Acclimate::Run<ModelVariant>::Run() {
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::run() {
+int Acclimate::Run<ModelVariant>::run() {
     info_("Starting model run on max. " << Acclimate::instance()->thread_count() << " threads");
 
     Acclimate::instance()->step(IterationStep::INITIALIZATION);
@@ -167,9 +178,40 @@ void Acclimate::Run<ModelVariant>::run() {
     Acclimate::instance()->time_m = 0;
 
     Acclimate::instance()->step(IterationStep::SCENARIO);
+#ifdef ENABLE_DMTCP
+    auto dmtcp_timer = std::chrono::system_clock::now();
+#endif
     auto t0 = std::chrono::high_resolution_clock::now();
 
     while (scenario_m->iterate()) {
+#ifdef ENABLE_DMTCP
+        if (Acclimate::instance()->settings.has("checkpoint")) {
+            if (Acclimate::instance()->settings["checkpoint"].as<std::size_t>()
+                < std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - dmtcp_timer).count()) {
+                if (!dmtcp_is_enabled()) {
+                    error_("dmtcp is not enabled");
+                }
+                int original_generation = dmtcp_get_generation();
+                info_("Writing checkpoint");
+                int retval = dmtcp_checkpoint();
+                if (retval == DMTCP_AFTER_CHECKPOINT) {
+                    while (dmtcp_get_generation() == original_generation) {
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                    }
+                    return 7;
+                } else if (retval == DMTCP_AFTER_RESTART) {
+                    info_("Resuming from checkpoint");
+                    dmtcp_timer = std::chrono::system_clock::now();
+                    t0 = std::chrono::high_resolution_clock::now();
+                } else if (retval == DMTCP_NOT_PRESENT) {
+                    error_("dmtcp not present");
+                } else {
+                    error_("unknown dmtcp result " << retval);
+                }
+            }
+        }
+#endif
+
         info_("Iteration started");
 
         model_m->switch_registers();
@@ -202,10 +244,40 @@ void Acclimate::Run<ModelVariant>::run() {
         t0 = t2;
 #endif
 
+#ifdef ENABLE_DMTCP
+        if (Acclimate::instance()->settings.has("checkpoint")) {
+            if (Acclimate::instance()->settings["checkpoint"].as<std::size_t>()
+                < std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - dmtcp_timer).count()) {
+                if (!dmtcp_is_enabled()) {
+                    error_("dmtcp is not enabled");
+                }
+                int original_generation = dmtcp_get_generation();
+                int retval = dmtcp_checkpoint();
+                if (retval == DMTCP_AFTER_CHECKPOINT) {
+                    info_("Writing checkpoint");
+                    // Wait long enough for checkpoint request to be written out.
+                    while (dmtcp_get_generation() == original_generation) {
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                    }
+                    break;
+                } else if (retval == DMTCP_AFTER_RESTART) {
+                    info_("Resuming from checkpoint");
+                    dmtcp_timer = std::chrono::system_clock::now();
+                    t0 = std::chrono::high_resolution_clock::now();
+                } else if (retval == DMTCP_NOT_PRESENT) {
+                    error_("dmtcp not present");
+                } else {
+                    error_("unknown dmtcp result " << retval);
+                }
+            }
+        }
+#endif
+
         Acclimate::instance()->step(IterationStep::SCENARIO);
         model_m->tick();
         ++Acclimate::instance()->time_m;
     }
+    return 0;
 }
 
 template<class ModelVariant>
@@ -344,17 +416,16 @@ void Acclimate::initialize(const settings::SettingsNode& settings_p) {
     }
 }
 
-void Acclimate::run() {
+int Acclimate::run() {
     switch (variant_m) {
         case ModelVariantType::BASIC:
-            Acclimate::Run<VariantBasic>::instance()->run();
-            break;
+            return Acclimate::Run<VariantBasic>::instance()->run();
         case ModelVariantType::DEMAND:
-            Acclimate::Run<VariantDemand>::instance()->run();
-            break;
+            return Acclimate::Run<VariantDemand>::instance()->run();
         case ModelVariantType::PRICES:
-            Acclimate::Run<VariantPrices>::instance()->run();
-            break;
+            return Acclimate::Run<VariantPrices>::instance()->run();
+        default:
+            return 254;
     }
 }
 
