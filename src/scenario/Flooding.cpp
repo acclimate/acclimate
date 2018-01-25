@@ -19,6 +19,7 @@
 */
 
 #include "scenario/Flooding.h"
+#include <algorithm>
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
