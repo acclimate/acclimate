@@ -45,12 +45,6 @@
 #include "variants/ModelVariants.h"
 
 #ifdef ENABLE_DMTCP
-#ifndef __clang_major__
-#define __clang_major__ 0
-#endif
-#ifndef __clang_minor__
-#define __clang_minor__ 0
-#endif
 #include <dmtcp.h>
 #include <thread>
 #endif
@@ -183,6 +177,11 @@ int Acclimate::Run<ModelVariant>::run() {
     Acclimate::instance()->step(IterationStep::SCENARIO);
 #ifdef ENABLE_DMTCP
     auto dmtcp_timer = std::chrono::system_clock::now();
+    if (Acclimate::instance()->settings.has("checkpoint")) {
+        if (!dmtcp_is_enabled()) {
+            error_("dmtcp is not enabled");
+        }
+    }
 #else
     if (Acclimate::instance()->settings.has("checkpoint")) {
         error_("dmtcp is not available in this binary");
@@ -191,6 +190,7 @@ int Acclimate::Run<ModelVariant>::run() {
     auto t0 = std::chrono::high_resolution_clock::now();
 
     while (scenario_m->iterate()) {
+
 #ifdef ENABLE_DMTCP
         if (Acclimate::instance()->settings.has("checkpoint")) {
             if (Acclimate::instance()->settings["checkpoint"].as<std::size_t>()
