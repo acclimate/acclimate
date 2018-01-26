@@ -183,6 +183,10 @@ int Acclimate::Run<ModelVariant>::run() {
     Acclimate::instance()->step(IterationStep::SCENARIO);
 #ifdef ENABLE_DMTCP
     auto dmtcp_timer = std::chrono::system_clock::now();
+#else
+    if (Acclimate::instance()->settings.has("checkpoint")) {
+        error_("dmtcp is not available in this binary");
+    }
 #endif
     auto t0 = std::chrono::high_resolution_clock::now();
 
@@ -198,6 +202,7 @@ int Acclimate::Run<ModelVariant>::run() {
                 info_("Writing checkpoint");
                 int retval = dmtcp_checkpoint();
                 if (retval == DMTCP_AFTER_CHECKPOINT) {
+                    // Wait long enough for checkpoint request to be written out.
                     while (dmtcp_get_generation() == original_generation) {
                         std::this_thread::sleep_for(std::chrono::seconds(1));
                     }
@@ -245,35 +250,6 @@ int Acclimate::Run<ModelVariant>::run() {
         auto t2 = std::chrono::high_resolution_clock::now();
         info_("Output took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count() << " ms");
         t0 = t2;
-#endif
-
-#ifdef ENABLE_DMTCP
-        if (Acclimate::instance()->settings.has("checkpoint")) {
-            if (Acclimate::instance()->settings["checkpoint"].as<std::size_t>()
-                < std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - dmtcp_timer).count()) {
-                if (!dmtcp_is_enabled()) {
-                    error_("dmtcp is not enabled");
-                }
-                int original_generation = dmtcp_get_generation();
-                int retval = dmtcp_checkpoint();
-                if (retval == DMTCP_AFTER_CHECKPOINT) {
-                    info_("Writing checkpoint");
-                    // Wait long enough for checkpoint request to be written out.
-                    while (dmtcp_get_generation() == original_generation) {
-                        std::this_thread::sleep_for(std::chrono::seconds(1));
-                    }
-                    break;
-                } else if (retval == DMTCP_AFTER_RESTART) {
-                    info_("Resuming from checkpoint");
-                    dmtcp_timer = std::chrono::system_clock::now();
-                    t0 = std::chrono::high_resolution_clock::now();
-                } else if (retval == DMTCP_NOT_PRESENT) {
-                    error_("dmtcp not present");
-                } else {
-                    error_("unknown dmtcp result " << retval);
-                }
-            }
-        }
 #endif
 
         Acclimate::instance()->step(IterationStep::SCENARIO);
