@@ -89,13 +89,8 @@ RasteredData<T>::RasteredData(std::string filename_p, const std::string& variabl
         error("Cannot find variable '" << variable_name << "' in '" << filename << "'");
     }
     read_boundaries(file.get());
-    data = new T[y_count * x_count];
-    variable.getVar({0, 0}, {y_count, x_count}, data);
-}
-
-template<typename T>
-RasteredData<T>::~RasteredData() {
-    delete[] data;
+    data.reset(new T[y_count * x_count]);
+    variable.getVar({0, 0}, {y_count, x_count}, data.get());
 }
 
 template<typename T>
