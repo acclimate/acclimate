@@ -38,14 +38,14 @@ NetCDFOutput<ModelVariant>::NetCDFOutput(const settings::SettingsNode& settings_
                                          Scenario<ModelVariant>* scenario_p,
                                          const settings::SettingsNode& output_node_p)
     : ArrayOutput<ModelVariant>(settings_p, model_p, scenario_p, output_node_p, false) {
-    flush = 1;
+    flush_freq = 1;
     event_cnt = 0;
 }
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::initialize() {
     ArrayOutput<ModelVariant>::initialize();
-    flush = output_node["flush"].template as<TimeStep>();
+    flush_freq = output_node["flush"].template as<TimeStep>();
     std::string filename;
     if (!output_node.has("file")) {
         std::ostringstream ss;
@@ -180,9 +180,9 @@ void NetCDFOutput<ModelVariant>::internal_iterate_end() {
         meta->sizes[0] = 1;
         meta->nc_var.putVar(meta->index, meta->sizes, &var.second.data[0]);
     }
-    if (flush > 0) {
-        if ((model->timestep() % flush) == 0) {
-            file->sync();
+    if (flush_freq > 0) {
+        if ((model->timestep() % flush_freq) == 0) {
+            flush();
         }
     }
 }
@@ -201,6 +201,13 @@ bool NetCDFOutput<ModelVariant>::internal_handle_event(typename ArrayOutput<Mode
         event_cnt++;
     }
     return false;
+}
+
+template<class ModelVariant>
+void NetCDFOutput<ModelVariant>::flush() {
+    if (file) {
+        file->sync();
+    }
 }
 
 template<class ModelVariant>

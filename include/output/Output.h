@@ -120,6 +120,7 @@ class Output {
     void start();
     void iterate();
     void end();
+    virtual void flush() {};
     virtual ~Output() = default;
     virtual inline operator std::string() const { return "OUTPUT"; }
 };

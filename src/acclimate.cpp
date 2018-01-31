@@ -200,12 +200,14 @@ int Acclimate::Run<ModelVariant>::run() {
                 }
                 int original_generation = dmtcp_get_generation();
                 info_("Writing checkpoint");
+                for (const auto& output : outputs_m) {
+                    output->flush();
+                }
                 int retval = dmtcp_checkpoint();
                 if (retval == DMTCP_AFTER_CHECKPOINT) {
-                    // Wait long enough for checkpoint request to be written out.
-                    while (dmtcp_get_generation() == original_generation) {
+                    do {
                         std::this_thread::sleep_for(std::chrono::seconds(1));
-                    }
+                    } while (dmtcp_get_generation() == original_generation);
                     return 7;
                 } else if (retval == DMTCP_AFTER_RESTART) {
                     info_("Resuming from checkpoint");
@@ -262,7 +264,9 @@ int Acclimate::Run<ModelVariant>::run() {
 template<class ModelVariant>
 void Acclimate::Run<ModelVariant>::cleanup() {
     Acclimate::instance()->step(IterationStep::CLEANUP);
-    scenario_m->end();
+    if (scenario_m) {
+        scenario_m->end();
+    }
     for (auto& output : outputs_m) {
         output->end();
     }

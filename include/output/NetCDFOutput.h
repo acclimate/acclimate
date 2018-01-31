@@ -62,7 +62,7 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     std::unique_ptr<netCDF::NcFile> file;
     netCDF::NcVar var_events;
     netCDF::NcVar var_time_variable;
-    TimeStep flush;
+    TimeStep flush_freq;
     unsigned int event_cnt;
 
   protected:
@@ -84,6 +84,7 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
                  const settings::SettingsNode& output_node_p);
     ~NetCDFOutput();
     void initialize() override;
+    void flush() override;
 };
 }  // namespace acclimate
 
