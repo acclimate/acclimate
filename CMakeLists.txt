@@ -115,16 +115,12 @@ message(STATUS "NetCDF_c++4 include directory: ${NETCDF_CPP4_INCLUDE_DIR}")
 message(STATUS "NetCDF_c++4 library: ${NETCDF_CPP4_LIBRARY}")
 target_link_libraries(acclimate netcdf_c++4)
 
-include(CheckCXXSourceCompiles)
-set(NETCDF_CHECK_CODE "
-#include <ncFile.h>
-int main() { netCDF::NcFile file; file.sync(); file.close(); return 0; }
-")
-set(CMAKE_REQUIRED_LIBRARIES "${NETCDF_CPP4_LIBRARY}" "${NETCDF_LIBRARY}")
+include(CheckStructHasMember)
 set(CMAKE_REQUIRED_INCLUDES "${NETCDF_CPP4_INCLUDE_DIR}" "${NETCDF_INCLUDE_DIR}")
-check_cxx_source_compiles("${NETCDF_CHECK_CODE}" HAVE_NEW_NETCDF_CPP)
+set(CMAKE_REQUIRED_LIBRARIES "${NETCDF_CPP4_LIBRARY}" "${NETCDF_LIBRARY}" "${HDF5_LIBRARY}")
+check_struct_has_member("netCDF::NcFile" "sync()" "ncFile.h" HAVE_NEW_NETCDF_CPP LANGUAGE CXX)
 if(NOT HAVE_NEW_NETCDF_CPP)
-  message(FATAL_ERROR "Need a newer NetCDF library version")
+  message(FATAL_ERROR "NetCDF-C++ does not include sync procedure, need a newer library version")
 endif()
 
 include(lib/settingsnode/settingsnode.cmake)
