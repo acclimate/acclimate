@@ -48,10 +48,11 @@ class ProgressOutput : public Output<ModelVariant> {
     using Output<ModelVariant>::model;
     using Output<ModelVariant>::settings;
 
-  private:
+  protected:
 #ifdef USE_TQDM
     std::unique_ptr<tqdm::RangeTqdm<int>> it;
 #endif
+    int total;
 
   protected:
     void internal_iterate_end() override;
@@ -63,6 +64,8 @@ class ProgressOutput : public Output<ModelVariant> {
                    Scenario<ModelVariant>* scenario,
                    const settings::SettingsNode& output_node);
     void initialize() override;
+    void checkpoint_stop() override;
+    void checkpoint_resume() override;
 };
 }  // namespace acclimate
 

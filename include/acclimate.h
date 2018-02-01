@@ -96,6 +96,7 @@ class Acclimate {
         static void initialize();
         int run();
         void cleanup();
+        void memory_cleanup();
         Run();
 
       public:
@@ -146,6 +147,7 @@ class Acclimate {
     static void initialize(const settings::SettingsNode& settings_p);
     int run();
     void cleanup();
+    void memory_cleanup();
 };
 }
 

@@ -46,7 +46,6 @@ template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::initialize() {
     ArrayOutput<ModelVariant>::initialize();
     flush_freq = output_node["flush"].template as<TimeStep>();
-    std::string filename;
     if (!output_node.has("file")) {
         std::ostringstream ss;
         ss << time(nullptr);
@@ -189,8 +188,10 @@ void NetCDFOutput<ModelVariant>::internal_iterate_end() {
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::internal_end() {
-    file->close();
-    file.reset();
+    if (file) {
+        file->close();
+        file.reset();
+    }
 }
 
 template<class ModelVariant>
@@ -201,6 +202,22 @@ bool NetCDFOutput<ModelVariant>::internal_handle_event(typename ArrayOutput<Mode
         event_cnt++;
     }
     return false;
+}
+
+template<class ModelVariant>
+void NetCDFOutput<ModelVariant>::checkpoint_stop() {
+    if (file) {
+        file->close();
+        file.reset();
+    }
+}
+
+template<class ModelVariant>
+void NetCDFOutput<ModelVariant>::checkpoint_resume() {
+    file.reset(new netCDF::NcFile(filename, netCDF::NcFile::write, netCDF::NcFile::nc4));
+    if (!file) {
+        error("Could not open output file " << filename);
+    }
 }
 
 template<class ModelVariant>

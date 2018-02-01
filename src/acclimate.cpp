@@ -201,7 +201,7 @@ int Acclimate::Run<ModelVariant>::run() {
                 int original_generation = dmtcp_get_generation();
                 info_("Writing checkpoint");
                 for (const auto& output : outputs_m) {
-                    output->flush();
+                    output->checkpoint_stop();
                 }
                 int retval = dmtcp_checkpoint();
                 if (retval == DMTCP_AFTER_CHECKPOINT) {
@@ -213,6 +213,9 @@ int Acclimate::Run<ModelVariant>::run() {
                     info_("Resuming from checkpoint");
                     dmtcp_timer = std::chrono::system_clock::now();
                     t0 = std::chrono::high_resolution_clock::now();
+                    for (const auto& output : outputs_m) {
+                        output->checkpoint_resume();
+                    }
                 } else if (retval == DMTCP_NOT_PRESENT) {
                     error_("dmtcp not present");
                 } else {
@@ -270,6 +273,11 @@ void Acclimate::Run<ModelVariant>::cleanup() {
     for (auto& output : outputs_m) {
         output->end();
     }
+    memory_cleanup();
+}
+
+template<class ModelVariant>
+void Acclimate::Run<ModelVariant>::memory_cleanup() {
     outputs_m.clear();
     scenario_m.reset();
     model_m.reset();
@@ -407,8 +415,6 @@ int Acclimate::run() {
             return Acclimate::Run<VariantDemand>::instance()->run();
         case ModelVariantType::PRICES:
             return Acclimate::Run<VariantPrices>::instance()->run();
-        default:
-            return 254;
     }
 }
 
@@ -422,6 +428,20 @@ void Acclimate::cleanup() {
             break;
         case ModelVariantType::PRICES:
             Acclimate::Run<VariantPrices>::instance()->cleanup();
+            break;
+    }
+}
+
+void Acclimate::memory_cleanup() {
+    switch (variant_m) {
+        case ModelVariantType::BASIC:
+            Acclimate::Run<VariantBasic>::instance()->memory_cleanup();
+            break;
+        case ModelVariantType::DEMAND:
+            Acclimate::Run<VariantDemand>::instance()->memory_cleanup();
+            break;
+        case ModelVariantType::PRICES:
+            Acclimate::Run<VariantPrices>::instance()->memory_cleanup();
             break;
     }
 }

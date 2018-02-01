@@ -64,6 +64,7 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     netCDF::NcVar var_time_variable;
     TimeStep flush_freq;
     unsigned int event_cnt;
+    std::string filename;
 
   protected:
     void internal_write_header(tm* timestamp, int max_threads) override;
@@ -85,6 +86,8 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     ~NetCDFOutput();
     void initialize() override;
     void flush() override;
+    void checkpoint_stop() override;
+    void checkpoint_resume() override;
 };
 }  // namespace acclimate
 

@@ -47,10 +47,28 @@ void ProgressOutput<ModelVariant>::initialize() {
     tqdm::Params p;
     p.ascii = "";
     p.f = stdout;
-    const int total = output_node["total"].template as<int>();
+    total = output_node["total"].template as<int>();
     it.reset(new tqdm::RangeTqdm<int>(tqdm::RangeIterator<int>(total), tqdm::RangeIterator<int>(total, total), p));
 #else
     error("tqdm not enabled");
+#endif
+}
+
+template<class ModelVariant>
+void ProgressOutput<ModelVariant>::checkpoint_stop() {
+#ifdef USE_TQDM
+    total = it->size_remaining();
+    it->close();
+#endif
+}
+
+template<class ModelVariant>
+void ProgressOutput<ModelVariant>::checkpoint_resume() {
+#ifdef USE_TQDM
+    tqdm::Params p;
+    p.ascii = "";
+    p.f = stdout;
+    it.reset(new tqdm::RangeTqdm<int>(tqdm::RangeIterator<int>(total), tqdm::RangeIterator<int>(total, total), p));
 #endif
 }
 

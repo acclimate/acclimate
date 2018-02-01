@@ -100,7 +100,6 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     } else {
-        int res;
 #ifndef DEBUG
         try {
 #endif
@@ -111,15 +110,20 @@ int main(int argc, char* argv[]) {
                 std::ifstream settings_file(arg);
                 acclimate::Acclimate::initialize(settings::SettingsNode(settings_file));
             }
-            res = acclimate::Acclimate::instance()->run();
+            const int res = acclimate::Acclimate::instance()->run();
+            if (res == 0) {
+                acclimate::Acclimate::instance()->cleanup();
+            } else {
+                acclimate::Acclimate::instance()->memory_cleanup();
+            }
+            return res;
 #ifndef DEBUG
         } catch (std::runtime_error& ex) {
             std::cerr << ex.what() << std::endl;
-            res = 255;
+            acclimate::Acclimate::instance()->memory_cleanup();
+            return 255;
         }
 #endif
-        acclimate::Acclimate::instance()->cleanup();
-        return res;
     }
     return 0;
 }
