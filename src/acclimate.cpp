@@ -281,7 +281,7 @@ void Acclimate::Run<ModelVariant>::event(const EventType& type,
 
 Acclimate* Acclimate::instance() { return instance_m.get(); }
 
-unsigned int Acclimate::thread_count() {
+unsigned int Acclimate::thread_count() const {
 #ifdef _OPENMP
     return omp_get_max_threads();
 #else
@@ -289,7 +289,8 @@ unsigned int Acclimate::thread_count() {
 #endif
 }
 
-std::string Acclimate::timeinfo() {
+#ifdef DEBUG
+std::string Acclimate::timeinfo() const {
     std::string res;
     if (step_m != IterationStep::INITIALIZATION) {
         res = std::to_string(time_m) + " ";
@@ -327,6 +328,7 @@ std::string Acclimate::timeinfo() {
     }
     return res;
 }
+#endif
 
 void Acclimate::initialize(const settings::SettingsNode& settings_p) {
     const std::string& variant = settings_p["variant"].as<std::string>();

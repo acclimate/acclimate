@@ -138,11 +138,14 @@ class Acclimate {
     static Acclimate* instance();
     static const std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> event_names;
 
-    inline const ModelVariantType& variant() { return variant_m; }
-    inline IterationStep step() { return step_m; }
-    inline const std::size_t& duration() { return duration_m; }
-    unsigned int thread_count();
-    std::string timeinfo();
+    inline const ModelVariantType& variant() const { return variant_m; }
+    inline IterationStep step() const { return step_m; }
+    inline unsigned int time() const { return time_m; }
+    inline const std::size_t& duration() const { return duration_m; }
+    unsigned int thread_count() const;
+#ifdef DEBUG
+    std::string timeinfo() const;
+#endif
     static void initialize(const settings::SettingsNode& settings_p);
     void run();
     void cleanup();
