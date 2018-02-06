@@ -69,9 +69,7 @@ void Region<ModelVariant>::iterate_consumption_and_production() {
     import_flow_Z_[model->other_register()] = Flow(0.0);
     consumption_flow_Y_[model->other_register()] = Flow(0.0);
     iterate_consumption_and_production_variant();
-#ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
-#endif
     for (std::size_t i = 0; i < economic_agents.size(); i++) {
         economic_agents[i]->iterate_consumption_and_production();
     }
@@ -94,9 +92,7 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_expectation() {
     assertstep(EXPECTATION);
     iterate_expectation_variant();
-#ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
-#endif
     for (std::size_t i = 0; i < economic_agents.size(); i++) {
         economic_agents[i]->iterate_expectation();
     }
@@ -119,9 +115,7 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_purchase() {
     assertstep(PURCHASE);
     iterate_purchase_variant();
-#ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
-#endif
     for (std::size_t i = 0; i < economic_agents.size(); i++) {
         economic_agents[i]->iterate_purchase();
     }
@@ -144,9 +138,7 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_investment() {
     assertstep(INVESTMENT);
     iterate_investment_variant();
-#ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
-#endif
     for (std::size_t i = 0; i < economic_agents.size(); i++) {
         economic_agents[i]->iterate_investment();
     }
