@@ -30,7 +30,7 @@ Hurricanes<ModelVariant>::Hurricanes(const settings::SettingsNode& settings_p, c
 }
 
 template<class ModelVariant>
-void Hurricanes<ModelVariant>::set_forcing(Region<ModelVariant>* region, const FloatType& forcing_p) const {
+void Hurricanes<ModelVariant>::set_forcing(Region<ModelVariant>* region, FloatType forcing_p) const {
     for (auto& it : region->economic_agents) {
         if (it->type == EconomicAgent<ModelVariant>::Type::FIRM) {
             it->as_firm()->forcing_lambda(1.0 - forcing_p);
@@ -39,10 +39,10 @@ void Hurricanes<ModelVariant>::set_forcing(Region<ModelVariant>* region, const F
 }
 
 template<class ModelVariant>
-inline FloatType Hurricanes<ModelVariant>::get_affected_population_per_cell(const FloatType& x,
-                                                                            const FloatType& y,
-                                                                            const FloatType& population_p,
-                                                                            const FloatType& external_forcing) const {
+inline FloatType Hurricanes<ModelVariant>::get_affected_population_per_cell(FloatType x,
+                                                                            FloatType y,
+                                                                            FloatType population_p,
+                                                                            FloatType external_forcing) const {
     UNUSED(x);
     UNUSED(y);
     if (external_forcing > threshold) {

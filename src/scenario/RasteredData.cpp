@@ -106,7 +106,7 @@ bool RasteredData<T>::is_compatible(const RasteredData<T2>& other) const {
 }
 
 template<typename T>
-inline unsigned int RasteredData<T>::x_index(const FloatType& x_var) const {
+inline unsigned int RasteredData<T>::x_index(FloatType x_var) const {
     if (x_min < x_max) {
         if (x_var < x_min || x_var > x_max + x_gridsize) {
             return std::numeric_limits<unsigned int>::quiet_NaN();
@@ -120,7 +120,7 @@ inline unsigned int RasteredData<T>::x_index(const FloatType& x_var) const {
 }
 
 template<typename T>
-inline unsigned int RasteredData<T>::y_index(const FloatType& y_var) const {
+inline unsigned int RasteredData<T>::y_index(FloatType y_var) const {
     if (y_min < y_max) {
         if (y_var < y_min || y_var > y_max + y_gridsize) {
             return std::numeric_limits<unsigned int>::quiet_NaN();
@@ -134,7 +134,7 @@ inline unsigned int RasteredData<T>::y_index(const FloatType& y_var) const {
 }
 
 template<typename T>
-inline T RasteredData<T>::read(const FloatType& x_var, const FloatType& y_var) const {
+inline T RasteredData<T>::read(FloatType x_var, FloatType y_var) const {
     const unsigned int x_i = x_index(x_var);
     if (std::isnan(x_i)) {
         return std::numeric_limits<T>::quiet_NaN();

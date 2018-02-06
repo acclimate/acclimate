@@ -28,7 +28,7 @@ DirectPopulation<ModelVariant>::DirectPopulation(const settings::SettingsNode& s
     : RasteredScenario<ModelVariant>(settings_p, model_p) {}
 
 template<class ModelVariant>
-void DirectPopulation<ModelVariant>::set_forcing(Region<ModelVariant>* region, const FloatType& forcing_p) const {
+void DirectPopulation<ModelVariant>::set_forcing(Region<ModelVariant>* region, FloatType forcing_p) const {
     for (auto& it : region->economic_agents) {
         if (it->type == EconomicAgent<ModelVariant>::Type::FIRM) {
             it->as_firm()->forcing_lambda(1.0 - forcing_p);
@@ -37,10 +37,10 @@ void DirectPopulation<ModelVariant>::set_forcing(Region<ModelVariant>* region, c
 }
 
 template<class ModelVariant>
-inline FloatType DirectPopulation<ModelVariant>::get_affected_population_per_cell(const FloatType& x,
-                                                                                  const FloatType& y,
-                                                                                  const FloatType& population_p,
-                                                                                  const FloatType& external_forcing) const {
+inline FloatType DirectPopulation<ModelVariant>::get_affected_population_per_cell(FloatType x,
+                                                                                  FloatType y,
+                                                                                  FloatType population_p,
+                                                                                  FloatType external_forcing) const {
     UNUSED(x);
     UNUSED(y);
     return std::min(population_p, external_forcing);

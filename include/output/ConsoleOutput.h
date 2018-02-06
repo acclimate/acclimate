@@ -54,7 +54,7 @@ class ConsoleOutput : public Output<ModelVariant> {
     void internal_start() override;
     void internal_iterate_begin() override;
     void internal_end() override;
-    void internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) override;
+    void internal_write_value(const hstring& name, FloatType v, const hstring& suffix) override;
     void internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) override;
     void internal_start_target(const hstring& name, Sector<ModelVariant>* sector) override;
     void internal_start_target(const hstring& name, Region<ModelVariant>* region) override;

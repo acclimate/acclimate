@@ -68,11 +68,11 @@ class RasteredScenario : public Scenario<ModelVariant> {
     FloatType people_affected_ = 0;
     std::vector<RegionInfo> region_forcings;
     bool next_forcing_file();
-    virtual void set_forcing(Region<ModelVariant>* region, const FloatType& forcing_) const = 0;
-    virtual FloatType get_affected_population_per_cell(const FloatType& x,
-                                                       const FloatType& y,
-                                                       const FloatType& population,
-                                                       const FloatType& external_forcing) const = 0;
+    virtual void set_forcing(Region<ModelVariant>* region, FloatType forcing_) const = 0;
+    virtual FloatType get_affected_population_per_cell(FloatType x,
+                                                       FloatType y,
+                                                       FloatType population,
+                                                       FloatType external_forcing) const = 0;
     std::string fill_template(const std::string& in) const;
     RasteredScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
 

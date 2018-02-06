@@ -70,7 +70,7 @@ class Output {
     bool write_sector_parameter_variant(const Sector<ModelVariant>* sector, const settings::hstring& name);
     inline void internal_write_value(const hstring& name, const Stock& v);
     inline void internal_write_value(const hstring& name, const Flow& v);
-    inline void internal_write_value(const hstring& name, const FloatType& v);
+    inline void internal_write_value(const hstring& name, FloatType v);
     template<int precision_digits_p>
     inline void internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix = hstring::null());
 
@@ -88,7 +88,7 @@ class Output {
     virtual void internal_iterate_begin();
     virtual void internal_iterate_end();
     virtual void internal_end();
-    virtual void internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix);
+    virtual void internal_write_value(const hstring& name, FloatType v, const hstring& suffix);
     virtual void internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region);
     virtual void internal_start_target(const hstring& name, Sector<ModelVariant>* sector);
     virtual void internal_start_target(const hstring& name, Region<ModelVariant>* region);
@@ -103,26 +103,26 @@ class Output {
            Scenario<ModelVariant>* scenario_p,
            settings::SettingsNode output_node_p);
     virtual void initialize() = 0;
-    virtual void event(const EventType& type,
+    virtual void event(EventType type,
                        const Sector<ModelVariant>* sector_from,
                        const Region<ModelVariant>* region_from,
                        const Sector<ModelVariant>* sector_to,
                        const Region<ModelVariant>* region_to,
-                       const FloatType& value);
-    virtual void event(const EventType& type,
+                       FloatType value);
+    virtual void event(EventType type,
                        const Sector<ModelVariant>* sector_from,
                        const Region<ModelVariant>* region_from,
                        const EconomicAgent<ModelVariant>* economic_agent_to,
-                       const FloatType& value);
-    virtual void event(const EventType& type,
+                       FloatType value);
+    virtual void event(EventType type,
                        const EconomicAgent<ModelVariant>* economic_agent_from,
                        const EconomicAgent<ModelVariant>* economic_agent_to,
-                       const FloatType& value);
-    virtual void event(const EventType& type,
+                       FloatType value);
+    virtual void event(EventType type,
                        const EconomicAgent<ModelVariant>* economic_agent_from,
                        const Sector<ModelVariant>* sector_to,
                        const Region<ModelVariant>* region_to,
-                       const FloatType& value);
+                       FloatType value);
     void start();
     void iterate();
     void end();

@@ -38,8 +38,8 @@ class RasteredData {
     const std::string filename;
 
     void read_boundaries(const netCDF::NcFile* file);
-    unsigned int x_index(const FloatType& x_var) const;
-    unsigned int y_index(const FloatType& y_var) const;
+    unsigned int x_index(FloatType x_var) const;
+    unsigned int y_index(FloatType y_var) const;
     RasteredData();
     explicit RasteredData(std::string filename_p);
 
@@ -53,7 +53,7 @@ class RasteredData {
 
       public:
         using iterator_category = std::forward_iterator_tag;
-        iterator(const FloatType& l_, const std::size_t& c_, const FloatType& gridsize_, const std::size_t& count_)
+        iterator(FloatType l_, const std::size_t& c_, FloatType gridsize_, const std::size_t& count_)
             : l(l_), c(c_), gridsize(gridsize_), count(count_){};
         iterator operator++() {
             if (c < count) {
@@ -95,8 +95,8 @@ class RasteredData {
     FloatType operator/(const RasteredData<T2>& other) const;
     template<typename T2>
     bool is_compatible(const RasteredData<T2>& other) const;
-    T read(const FloatType& x_var, const FloatType& y_var) const;
-    virtual inline std::string id() const { return "RASTER " + filename; }
+    T read(FloatType x_var, FloatType y_var) const;
+    virtual inline explicit operator std::string() const { return "RASTER " + filename; }
 };
 }  // namespace acclimate
 

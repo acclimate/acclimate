@@ -88,7 +88,7 @@ void ConsoleOutput<ModelVariant>::internal_end() {
 }
 
 template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) {
+void ConsoleOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     *out << std::setprecision(15) << "\t" << name << suffix << "=" << v;
 }
 

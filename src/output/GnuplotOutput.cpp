@@ -93,7 +93,7 @@ void GnuplotOutput<ModelVariant>::internal_start() {
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) {
+void GnuplotOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     UNUSED(name);
     UNUSED(suffix);
     file << model->time() << " ";

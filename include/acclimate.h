@@ -103,26 +103,26 @@ class Acclimate {
         static Run* instance();
         inline const Model<ModelVariant>* model() { return model_m.get(); }
         inline const Output<ModelVariant>* output(const IntType i) { return outputs_m[i].get(); }
-        void event(const EventType& type,
+        void event(EventType type,
                    const Sector<ModelVariant>* sector_from,
                    const Region<ModelVariant>* region_from,
                    const Sector<ModelVariant>* sector_to,
                    const Region<ModelVariant>* region_to,
-                   const FloatType& value = std::numeric_limits<FloatType>::quiet_NaN());
-        void event(const EventType& type,
+                   FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
+        void event(EventType type,
                    const Sector<ModelVariant>* sector_from,
                    const Region<ModelVariant>* region_from,
                    const EconomicAgent<ModelVariant>* economic_agent_to,
-                   const FloatType& value = std::numeric_limits<FloatType>::quiet_NaN());
-        void event(const EventType& type,
+                   FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
+        void event(EventType type,
                    const EconomicAgent<ModelVariant>* economic_agent_from = nullptr,
                    const EconomicAgent<ModelVariant>* economic_agent_to = nullptr,
-                   const FloatType& value = std::numeric_limits<FloatType>::quiet_NaN());
-        void event(const EventType& type,
+                   FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
+        void event(EventType type,
                    const EconomicAgent<ModelVariant>* economic_agent_from,
                    const Sector<ModelVariant>* sector_to,
                    const Region<ModelVariant>* region_to,
-                   const FloatType& value = std::numeric_limits<FloatType>::quiet_NaN());
+                   FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
     };
 
   protected:

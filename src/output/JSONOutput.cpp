@@ -93,7 +93,7 @@ void JSONOutput<ModelVariant>::internal_end() {
 }
 
 template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) {
+void JSONOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     *out << "            \"" << name << suffix << "\": " << v << ",\n";
 }
 

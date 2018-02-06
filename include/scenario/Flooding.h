@@ -30,11 +30,11 @@ template<class ModelVariant>
 class Flooding : public RasteredScenario<ModelVariant> {
   protected:
     std::vector<std::size_t> sectors;
-    void set_forcing(Region<ModelVariant>* region, const FloatType& forcing_p) const override;
-    FloatType get_affected_population_per_cell(const FloatType& x,
-                                               const FloatType& y,
-                                               const FloatType& population_p,
-                                               const FloatType& external_forcing) const override;
+    void set_forcing(Region<ModelVariant>* region, FloatType forcing_p) const override;
+    FloatType get_affected_population_per_cell(FloatType x,
+                                               FloatType y,
+                                               FloatType population_p,
+                                               FloatType external_forcing) const override;
 
   public:
     Flooding(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);

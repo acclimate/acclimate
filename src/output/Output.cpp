@@ -60,7 +60,7 @@ inline void Output<ModelVariant>::parameter_not_found(const std::string& name) c
 }
 
 template<class ModelVariant>
-inline void Output<ModelVariant>::internal_write_value(const hstring& name, const FloatType& v) {
+inline void Output<ModelVariant>::internal_write_value(const hstring& name, FloatType v) {
     internal_write_value(name, v, hstring::null());
 }
 
@@ -796,7 +796,7 @@ void Output<ModelVariant>::end() {
 }
 
 template<class ModelVariant>
-void Output<ModelVariant>::internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) {
+void Output<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     UNUSED(name);
     UNUSED(suffix);
     UNUSED(v);
@@ -856,12 +856,12 @@ template<class ModelVariant>
 void Output<ModelVariant>::internal_end_target() {}
 
 template<class ModelVariant>
-void Output<ModelVariant>::event(const EventType& type,
+void Output<ModelVariant>::event(EventType type,
                                  const Sector<ModelVariant>* sector_from,
                                  const Region<ModelVariant>* region_from,
                                  const Sector<ModelVariant>* sector_to,
                                  const Region<ModelVariant>* region_to,
-                                 const FloatType& value) {
+                                 FloatType value) {
     UNUSED(type);
     UNUSED(sector_from);
     UNUSED(region_from);
@@ -871,31 +871,31 @@ void Output<ModelVariant>::event(const EventType& type,
 }
 
 template<class ModelVariant>
-void Output<ModelVariant>::event(const EventType& type,
+void Output<ModelVariant>::event(EventType type,
                                  const Sector<ModelVariant>* sector_from,
                                  const Region<ModelVariant>* region_from,
                                  const EconomicAgent<ModelVariant>* economic_agent_to,
-                                 const FloatType& value) {
+                                 FloatType value) {
     event(type, sector_from, region_from, economic_agent_to == nullptr ? nullptr : economic_agent_to->sector,
           economic_agent_to == nullptr ? nullptr : economic_agent_to->region, value);
 }
 
 template<class ModelVariant>
-void Output<ModelVariant>::event(const EventType& type,
+void Output<ModelVariant>::event(EventType type,
                                  const EconomicAgent<ModelVariant>* economic_agent_from,
                                  const EconomicAgent<ModelVariant>* economic_agent_to,
-                                 const FloatType& value) {
+                                 FloatType value) {
     event(type, economic_agent_from == nullptr ? nullptr : economic_agent_from->sector, economic_agent_from == nullptr ? nullptr : economic_agent_from->region,
           economic_agent_to == nullptr ? nullptr : economic_agent_to->as_firm()->sector, economic_agent_to == nullptr ? nullptr : economic_agent_to->region,
           value);
 }
 
 template<class ModelVariant>
-void Output<ModelVariant>::event(const EventType& type,
+void Output<ModelVariant>::event(EventType type,
                                  const EconomicAgent<ModelVariant>* economic_agent_from,
                                  const Sector<ModelVariant>* sector_to,
                                  const Region<ModelVariant>* region_to,
-                                 const FloatType& value) {
+                                 FloatType value) {
     event(type, economic_agent_from == nullptr ? nullptr : economic_agent_from->sector, economic_agent_from == nullptr ? nullptr : economic_agent_from->region,
           sector_to, region_to, value);
 }

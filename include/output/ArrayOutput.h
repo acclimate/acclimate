@@ -76,7 +76,7 @@ class ArrayOutput : public Output<ModelVariant> {
     bool over_time;
 
   protected:
-    void internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) override;
+    void internal_write_value(const hstring& name, FloatType v, const hstring& suffix) override;
     void internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) override;
     void internal_start_target(const hstring& name, Sector<ModelVariant>* sector) override;
     void internal_start_target(const hstring& name, Region<ModelVariant>* region) override;
@@ -102,12 +102,12 @@ class ArrayOutput : public Output<ModelVariant> {
                 settings::SettingsNode output_node_p,
                 const bool over_time_p = true);
     virtual ~ArrayOutput(){};
-    void event(const EventType& type,
+    void event(EventType type,
                const Sector<ModelVariant>* sector_from,
                const Region<ModelVariant>* region_from,
                const Sector<ModelVariant>* sector_to,
                const Region<ModelVariant>* region_to,
-               const FloatType& value) override;
+               FloatType value) override;
     virtual void initialize() override;
     const typename ArrayOutput<ModelVariant>::Variable& get_variable(const hstring& fullname) const;
     const std::vector<Event>& get_events() const { return events; };

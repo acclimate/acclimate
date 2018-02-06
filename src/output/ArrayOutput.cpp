@@ -69,7 +69,7 @@ inline typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::
 }
 
 template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) {
+void ArrayOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     const Target& t = stack.back();
     Variable& it = create_variable(t.name, name, suffix);
     it.data[t.index] = v;
@@ -132,12 +132,12 @@ const typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::g
 }
 
 template<class ModelVariant>
-void ArrayOutput<ModelVariant>::event(const EventType& type,
+void ArrayOutput<ModelVariant>::event(EventType type,
                                       const Sector<ModelVariant>* sector_from,
                                       const Region<ModelVariant>* region_from,
                                       const Sector<ModelVariant>* sector_to,
                                       const Region<ModelVariant>* region_to,
-                                      const FloatType& value) {
+                                      FloatType value) {
     if (include_events) {
         Event event_struct;
         event_struct.time = model->timestep();

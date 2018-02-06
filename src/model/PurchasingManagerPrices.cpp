@@ -38,7 +38,7 @@ PurchasingManagerPrices<ModelVariant>::PurchasingManagerPrices(Storage<ModelVari
 
 template<class ModelVariant>
 FloatType PurchasingManagerPrices<ModelVariant>::estimate_production_extension_penalty(const BusinessConnection<ModelVariant>* bc,
-                                                                                       const FloatType production_quantity_X) const {
+                                                                                       FloatType production_quantity_X) const {
     assert(production_quantity_X >= 0.0);
     if (production_quantity_X <= bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float()) {  // not in production extension
         return 0.0;
@@ -52,8 +52,8 @@ FloatType PurchasingManagerPrices<ModelVariant>::estimate_production_extension_p
 
 template<class ModelVariant>
 FloatType PurchasingManagerPrices<ModelVariant>::estimate_marginal_production_costs(const BusinessConnection<ModelVariant>* bc,
-                                                                                    const FloatType production_quantity_X,
-                                                                                    const FloatType unit_production_costs_n_c) const {
+                                                                                    FloatType production_quantity_X,
+                                                                                    FloatType unit_production_costs_n_c) const {
     assert(production_quantity_X >= 0.0);
     assert(!std::isnan(unit_production_costs_n_c));
     if (production_quantity_X <= bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float()) {  // not in production extension
@@ -65,7 +65,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::estimate_marginal_production_co
 
 template<class ModelVariant>
 FloatType PurchasingManagerPrices<ModelVariant>::estimate_marginal_production_extension_penalty(const BusinessConnection<ModelVariant>* bc,
-                                                                                                const FloatType production_quantity_X) const {
+                                                                                                FloatType production_quantity_X) const {
     assert(production_quantity_X >= 0.0);
     if (production_quantity_X <= bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float()) {  // not in production extension
         return 0.0;
@@ -77,12 +77,12 @@ FloatType PurchasingManagerPrices<ModelVariant>::estimate_marginal_production_ex
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_D_r(const FloatType D_r, const BusinessConnection<ModelVariant>* bc) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_D_r(FloatType D_r, const BusinessConnection<ModelVariant>* bc) const {
     return D_r / partial_D_r_scaled_D_r(bc);
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_D_r(const FloatType x, const BusinessConnection<ModelVariant>* bc) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_D_r(FloatType x, const BusinessConnection<ModelVariant>* bc) const {
     return x * partial_D_r_scaled_D_r(bc);
 }
 
@@ -92,12 +92,12 @@ inline FloatType PurchasingManagerPrices<ModelVariant>::partial_D_r_scaled_D_r(c
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_objective(const FloatType obj) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_objective(FloatType obj) const {
     return obj / partial_objective_scaled_objective();
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_objective(const FloatType x) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_objective(FloatType x) const {
     return x * partial_objective_scaled_objective();
 }
 
@@ -107,12 +107,12 @@ inline FloatType PurchasingManagerPrices<ModelVariant>::partial_objective_scaled
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_use(const FloatType use) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_use(FloatType use) const {
     return use / partial_use_scaled_use();
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_use(const FloatType x) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_use(FloatType x) const {
     return x * partial_use_scaled_use();
 }
 
@@ -220,7 +220,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::expected_average_price_E_n_r(const FloatType& D_r,
+FloatType PurchasingManagerPrices<ModelVariant>::expected_average_price_E_n_r(FloatType D_r,
                                                                               const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
@@ -262,7 +262,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::expected_average_price_E_n_r(co
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::n_r(const FloatType& D_r, const BusinessConnection<ModelVariant>* business_connection) const {
+FloatType PurchasingManagerPrices<ModelVariant>::n_r(FloatType D_r, const BusinessConnection<ModelVariant>* business_connection) const {
     assert(D_r >= 0.0);
     FloatType n_bar = to_float(business_connection->seller->communicated_parameters().offer_price_n_bar);
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
@@ -298,7 +298,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::n_r(const FloatType& D_r, const
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::grad_expected_average_price_E_n_r(const FloatType& D_r,
+FloatType PurchasingManagerPrices<ModelVariant>::grad_expected_average_price_E_n_r(FloatType D_r,
                                                                                    const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
@@ -323,8 +323,8 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_expected_average_price_E_n
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::calc_n_co(const FloatType& n_bar_min,
-                                                           const FloatType& D_r_min,
+FloatType PurchasingManagerPrices<ModelVariant>::calc_n_co(FloatType n_bar_min,
+                                                           FloatType D_r_min,
                                                            const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType n_co =
         estimate_marginal_production_costs(business_connection, to_float(business_connection->seller->communicated_parameters().production_X.get_quantity()),
@@ -337,7 +337,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::calc_n_co(const FloatType& n_ba
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::grad_n_r(const FloatType& D_r, const BusinessConnection<ModelVariant>* business_connection) const {
+FloatType PurchasingManagerPrices<ModelVariant>::grad_n_r(FloatType D_r, const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType n_bar = to_float(business_connection->seller->communicated_parameters().offer_price_n_bar);
     FloatType X =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;
@@ -372,7 +372,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_n_r(const FloatType& D_r, 
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::transport_penalty(const FloatType& D_r, const BusinessConnection<ModelVariant>* business_connection) const {
+FloatType PurchasingManagerPrices<ModelVariant>::transport_penalty(FloatType D_r, const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType target = 0.0;
     if (storage->sector->model->parameters().deviation_penalty) {
         target = to_float(business_connection->last_demand_request_D(this).get_quantity());
@@ -404,7 +404,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::transport_penalty(const FloatTy
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::partial_D_r_transport_penalty(const FloatType& D_r,
+FloatType PurchasingManagerPrices<ModelVariant>::partial_D_r_transport_penalty(FloatType D_r,
                                                                                const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType target = 0.0;
     if (storage->sector->model->parameters().deviation_penalty) {

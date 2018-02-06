@@ -283,12 +283,12 @@ void Acclimate::Run<ModelVariant>::memory_cleanup() {
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::event(const EventType& type,
+void Acclimate::Run<ModelVariant>::event(EventType type,
                                          const Sector<ModelVariant>* sector_from,
                                          const Region<ModelVariant>* region_from,
                                          const Sector<ModelVariant>* sector_to,
                                          const Region<ModelVariant>* region_to,
-                                         const FloatType& value) {
+                                         FloatType value) {
     info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
                                  << (region_from == nullptr ? "" : region_from->id()) << "->" << (sector_to == nullptr ? "" : sector_to->id())
                                  << (sector_to != nullptr && region_to != nullptr ? ":" : "") << (region_to == nullptr ? "" : region_to->id())
@@ -299,11 +299,11 @@ void Acclimate::Run<ModelVariant>::event(const EventType& type,
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::event(const EventType& type,
+void Acclimate::Run<ModelVariant>::event(EventType type,
                                          const Sector<ModelVariant>* sector_from,
                                          const Region<ModelVariant>* region_from,
                                          const EconomicAgent<ModelVariant>* economic_agent_to,
-                                         const FloatType& value) {
+                                         FloatType value) {
     info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
                                  << (region_from == nullptr ? "" : region_from->id()) << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
@@ -313,10 +313,10 @@ void Acclimate::Run<ModelVariant>::event(const EventType& type,
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::event(const EventType& type,
+void Acclimate::Run<ModelVariant>::event(EventType type,
                                          const EconomicAgent<ModelVariant>* economic_agent_from,
                                          const EconomicAgent<ModelVariant>* economic_agent_to,
-                                         const FloatType& value) {
+                                         FloatType value) {
     info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id())
                                  << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
@@ -326,11 +326,11 @@ void Acclimate::Run<ModelVariant>::event(const EventType& type,
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::event(const EventType& type,
+void Acclimate::Run<ModelVariant>::event(EventType type,
                                          const EconomicAgent<ModelVariant>* economic_agent_from,
                                          const Sector<ModelVariant>* sector_to,
                                          const Region<ModelVariant>* region_to,
-                                         const FloatType& value) {
+                                         FloatType value) {
     info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->")
                                  << (sector_to == nullptr ? "" : sector_to->id() + ":") << (region_to == nullptr ? "" : region_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
