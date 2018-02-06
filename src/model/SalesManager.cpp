@@ -36,8 +36,9 @@ template<class ModelVariant>
 void SalesManager<ModelVariant>::add_demand_request_D(const Demand& demand_request_D) {
     assertstep(PURCHASE);
     firm->sector->add_demand_request_D(demand_request_D);
-#pragma omp critical(sum_demand_requests_D_)
-    { sum_demand_requests_D_ += demand_request_D; }
+    sum_demand_requests_D_lock.call([&]() {
+                                        sum_demand_requests_D_ += demand_request_D;
+                                    });
 }
 
 template<class ModelVariant>

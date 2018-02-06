@@ -128,8 +128,9 @@ void Storage<ModelVariant>::set_desired_used_flow_U_tilde(const Flow& desired_us
 template<class ModelVariant>
 void Storage<ModelVariant>::push_flow_Z(const Flow& flow_Z) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-#pragma omp critical(input_flow_I_)
-    { input_flow_I_[sector->model->current_register()] += flow_Z; }
+    input_flow_I_lock.call([&]() {
+                               input_flow_I_[sector->model->current_register()] += flow_Z;
+                           });
 }
 
 template<class ModelVariant>

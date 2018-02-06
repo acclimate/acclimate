@@ -195,11 +195,10 @@ void NetCDFOutput<ModelVariant>::internal_end() {
 
 template<class ModelVariant>
 bool NetCDFOutput<ModelVariant>::internal_handle_event(typename ArrayOutput<ModelVariant>::Event& event) {
-#pragma omp critical(netcdf_event)
-    {
-        var_events.putVar({event_cnt}, &event);
-        event_cnt++;
-    }
+    netcdf_event_lock.call([&]() {
+                               var_events.putVar({event_cnt}, &event);
+                               event_cnt++;
+                           });
     return false;
 }
 

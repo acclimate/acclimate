@@ -25,11 +25,43 @@
 #include <iostream>
 #include <stdexcept>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 namespace acclimate {
 
 class exception : public std::runtime_error {
   public:
     explicit exception(const std::string& s) : std::runtime_error(s){};
+};
+
+class OpenMPLock {
+  protected:
+#ifdef _OPENMP
+    omp_lock_t lock;
+#endif
+  public:
+    OpenMPLock() {
+#ifdef _OPENMP
+        omp_init_lock(&lock);
+#endif
+    }
+    ~OpenMPLock() {
+#ifdef _OPENMP
+        omp_destroy_lock(&lock);
+#endif
+    }
+    template<typename Func>
+    inline void call(const Func& f) {
+#ifdef _OPENMP
+        omp_set_lock(&lock);
+#endif
+        f();
+#ifdef _OPENMP
+        omp_unset_lock(&lock);
+#endif
+    }
 };
 
 #define UNUSED(x) (void)(x)

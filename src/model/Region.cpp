@@ -36,22 +36,25 @@ Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string name_p, c
 template<class ModelVariant>
 void Region<ModelVariant>::add_export_Z(const Flow& export_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-#pragma omp critical(export_Z)
-    { export_flow_Z_[model->current_register()] += export_flow_Z_p; }
+    export_flow_Z_lock.call([&]() {
+                                export_flow_Z_[model->current_register()] += export_flow_Z_p;
+                            });
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_import_Z(const Flow& import_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-#pragma omp critical(import_Z)
-    { import_flow_Z_[model->current_register()] += import_flow_Z_p; }
+    import_flow_Z_lock.call([&]() {
+                                import_flow_Z_[model->current_register()] += import_flow_Z_p;
+                            });
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_consumption_flow_Y(const Flow& consumption_flow_Y_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-#pragma omp critical(flow_Y)
-    { consumption_flow_Y_[model->current_register()] += consumption_flow_Y_p; }
+    consumption_flow_Y_lock.call([&]() {
+                                     consumption_flow_Y_[model->current_register()] += consumption_flow_Y_p;
+                                 });
 }
 
 template<class ModelVariant>
@@ -197,12 +200,11 @@ inline const Region<ModelVariant>* Region<ModelVariant>::as_region() const {
 
 template<class ModelVariant>
 void Region<ModelVariant>::remove_economic_agent(EconomicAgent<ModelVariant>* economic_agent) {
-#pragma omp critical(economic_agents)
-    {
-        auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
-                               [economic_agent](const std::unique_ptr<EconomicAgent<ModelVariant>>& it) { return it.get() == economic_agent; });
-        economic_agents.erase(it);
-    }
+    economic_agents_lock.call([&]() {
+                                  auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
+                                                         [economic_agent](const std::unique_ptr<EconomicAgent<ModelVariant>>& it) { return it.get() == economic_agent; });
+                                  economic_agents.erase(it);
+                              });
 }
 
 INSTANTIATE_BASIC(Region);

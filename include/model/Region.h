@@ -47,13 +47,17 @@ class Region : public GeographicEntity<ModelVariant> {
 
   protected:
     Flow export_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
+    OpenMPLock export_flow_Z_lock;
     Flow import_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
+    OpenMPLock import_flow_Z_lock;
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
+    OpenMPLock consumption_flow_Y_lock;
     std::unique_ptr<GeographicPoint> centroid_;
     std::unique_ptr<Government<ModelVariant>> government_;
     const IntType index_;
     const std::string name;
     typename ModelVariant::RegionParameters parameters_;
+    OpenMPLock economic_agents_lock;
 
   public:
     Model<ModelVariant>* const model;

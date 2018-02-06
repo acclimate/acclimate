@@ -40,15 +40,17 @@ Sector<ModelVariant>::Sector(Model<ModelVariant>* model_p,
 template<class ModelVariant>
 void Sector<ModelVariant>::add_demand_request_D(const Demand& demand_request_D) {
     assertstep(PURCHASE);
-#pragma omp critical(total_demand_D)
-    { total_demand_D_ += demand_request_D; }
+    total_demand_D_lock.call([&]() {
+                                 total_demand_D_ += demand_request_D;
+                             });
 }
 
 template<class ModelVariant>
 void Sector<ModelVariant>::add_production_X(const Flow& production_X) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-#pragma omp critical(total_production_X)
-    { total_production_X_ += production_X; }
+    total_production_X_lock.call([&]() {
+                                     total_production_X_ += production_X;
+                                 });
 }
 
 template<class ModelVariant>

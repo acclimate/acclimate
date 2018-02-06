@@ -36,7 +36,9 @@ class Sector {
     const std::string name;
     const IntType index_;
     Demand total_demand_D_ = Demand(0.0);
+    OpenMPLock total_demand_D_lock;
     Flow total_production_X_ = Flow(0.0);
+    OpenMPLock total_production_X_lock;
     Flow last_total_production_X_ = Flow(0.0);
     typename ModelVariant::SectorParameters parameters_;
 
