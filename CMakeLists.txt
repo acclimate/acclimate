@@ -64,6 +64,7 @@ option(ACCLIMATE_STRICT_MIN_DERIVATIVE "" OFF)
 option(ACCLIMATE_CLEANUP_INFO "show additional information about the cleanup (only for Debug)" OFF)
 option(ACCLIMATE_OPTIMIZATION_WARNINGS "show warnings for optimization (only for Debug)" OFF)
 option(ACCLIMATE_OPTIMIZATION_PROBLEMS_FATAL "make optimization problems fatal (only for Debug)" OFF)
+option(ACCLIMATE_INTERNAL_NLOPT "include internal NLopt" OFF)
 
 set(ACCLIMATE_OPTIONS "")
 function(acclimate_include_option OPT NAME)
@@ -80,39 +81,59 @@ acclimate_include_option(ACCLIMATE_STRICT_MIN_DERIVATIVE "STRICT_MIN_DERIVATIVE"
 acclimate_include_option(ACCLIMATE_CLEANUP_INFO "CLEANUP_INFO")
 acclimate_include_option(ACCLIMATE_OPTIMIZATION_WARNINGS "OPTIMIZATION_WARNINGS")
 acclimate_include_option(ACCLIMATE_OPTIMIZATION_PROBLEMS_FATAL "OPTIMIZATION_PROBLEMS_FATAL")
+acclimate_include_option(ACCLIMATE_INTERNAL_NLOPT "INTERNAL_NLOPT")
 
 target_compile_definitions(acclimate PRIVATE ${ACCLIMATE_OPTIONS})
 string(REPLACE ";" ", " ACCLIMATE_OPTIONS "${ACCLIMATE_OPTIONS}")
 target_compile_definitions(acclimate PRIVATE ACCLIMATE_OPTIONS="${ACCLIMATE_OPTIONS}")
 
-#include nlopt
-find_package(NLOPT REQUIRED)
-message(STATUS "NLopt include directory: ${NLOPT_INCLUDE_DIR}")
-message(STATUS "NLopt library: ${NLOPT_LIBRARY}")
-target_link_libraries(acclimate nlopt)
+# include nlopt
+if(ACCLIMATE_INTERNAL_NLOPT)
+  include(ExternalProject)
+  ExternalProject_Add(nlopt
+    GIT_REPOSITORY https://github.com/stevengj/nlopt.git
+    GIT_TAG 34fd7ce
+    INSTALL_COMMAND ""
+    CMAKE_ARGS
+    -DNLOPT_CXX=OFF
+    -DBUILD_SHARED_LIBS=OFF
+    -DNLOPT_PYTHON=OFF
+    -DNLOPT_OCTAVE=OFF
+    -DNLOPT_MATLAB=OFF
+    -DNLOPT_GUILE=OFF
+    -DNLOPT_SWIG=OFF
+    -DNLOPT_LINK_PYTHON=OFF
+    )
+  ExternalProject_Get_Property(nlopt SOURCE_DIR)
+  include_directories(${SOURCE_DIR}/include)
+  add_dependencies(acclimate nlopt)
+  ExternalProject_Get_Property(nlopt BINARY_DIR)
+  target_link_libraries(acclimate ${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}nlopt${CMAKE_STATIC_LIBRARY_SUFFIX})
+else()
+  find_package(NLOPT REQUIRED)
+  message(STATUS "NLopt include directory: ${NLOPT_INCLUDE_DIR}")
+  message(STATUS "NLopt library: ${NLOPT_LIBRARY}")
+  target_link_libraries(acclimate nlopt)
+endif()
 
-#include NetCDF C library
+# include NetCDF C library
 find_package(NETCDF REQUIRED)
 message(STATUS "NetCDF include directory: ${NETCDF_INCLUDE_DIR}")
 message(STATUS "NetCDF library: ${NETCDF_LIBRARY}")
 target_link_libraries(acclimate netcdf)
 
-#include NetCDF C++ library
+# include NetCDF C++ library
 find_package(NETCDF_CPP4 REQUIRED)
 message(STATUS "NetCDF_c++4 include directory: ${NETCDF_CPP4_INCLUDE_DIR}")
 message(STATUS "NetCDF_c++4 library: ${NETCDF_CPP4_LIBRARY}")
 target_link_libraries(acclimate netcdf_c++4)
 
-include(CheckCXXSourceCompiles)
-set(NETCDF_CHECK_CODE "
-#include <ncFile.h>
-int main() { netCDF::NcFile file; file.sync(); file.close(); return 0; }
-")
-set(CMAKE_REQUIRED_LIBRARIES "${NETCDF_CPP4_LIBRARY}" "${NETCDF_LIBRARY}")
+include(CheckStructHasMember)
 set(CMAKE_REQUIRED_INCLUDES "${NETCDF_CPP4_INCLUDE_DIR}" "${NETCDF_INCLUDE_DIR}")
-check_cxx_source_compiles("${NETCDF_CHECK_CODE}" HAVE_NEW_NETCDF_CPP)
+set(CMAKE_REQUIRED_LIBRARIES "${NETCDF_CPP4_LIBRARY}" "${NETCDF_LIBRARY}" "${HDF5_LIBRARY}")
+check_struct_has_member("netCDF::NcFile" "sync()" "ncFile.h" HAVE_NEW_NETCDF_CPP LANGUAGE CXX)
 if(NOT HAVE_NEW_NETCDF_CPP)
-  message(FATAL_ERROR "Need a newer NetCDF library version")
+  message(FATAL_ERROR "NetCDF-C++ does not include sync procedure, need a newer library version")
 endif()
 
 include(lib/settingsnode/settingsnode.cmake)
