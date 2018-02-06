@@ -94,8 +94,9 @@ void HistogramOutput<ModelVariant>::internal_end() {
 }
 
 template<class ModelVariant>
-void HistogramOutput<ModelVariant>::internal_write_value(const std::string& name, const FloatType& v) {
+void HistogramOutput<ModelVariant>::internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) {
     UNUSED(name);
+    UNUSED(suffix);
     if (v >= min && (v < max || !exclude_max)) {
         ++count[iround((v - min) * (windows - 1) / (max - min))];
     }

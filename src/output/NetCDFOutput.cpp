@@ -130,7 +130,7 @@ void NetCDFOutput<ModelVariant>::internal_write_settings() {
 }
 
 template<class ModelVariant>
-void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const std::string& path, const std::string& name) {
+void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
     auto meta = new VariableMeta();
     std::vector<netCDF::NcDim> dims;
     meta->index.push_back(0);
@@ -149,7 +149,7 @@ void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<Model
         }
     }
     netCDF::NcGroup& group = create_group(path);
-    netCDF::NcVar nc_var = group.addVar(name, netCDF::NcType::nc_DOUBLE, dims);
+    netCDF::NcVar nc_var = group.addVar(std::string(name) + std::string(suffix), netCDF::NcType::nc_DOUBLE, dims);
     meta->nc_var = nc_var;
     meta->nc_var.setFill(true, std::numeric_limits<FloatType>::quiet_NaN());
     meta->nc_var.setCompression(false, true, 7);
@@ -157,7 +157,7 @@ void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<Model
 }
 
 template<class ModelVariant>
-netCDF::NcGroup& NetCDFOutput<ModelVariant>::create_group(const std::string& name) {
+netCDF::NcGroup& NetCDFOutput<ModelVariant>::create_group(const hstring& name) {
     auto group_it = groups.find(name);
     if (group_it == groups.end()) {
         group_it = groups.emplace(name, file->addGroup(name)).first;

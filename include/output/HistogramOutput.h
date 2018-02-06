@@ -53,7 +53,7 @@ class HistogramOutput : public Output<ModelVariant> {
     void internal_iterate_begin() override;
     void internal_iterate_end() override;
     void internal_end() override;
-    void internal_write_value(const std::string& name, const FloatType& v) override;
+    void internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) override;
 
   public:
     HistogramOutput(const settings::SettingsNode& settings_p,

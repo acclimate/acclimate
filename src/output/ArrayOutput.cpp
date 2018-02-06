@@ -45,9 +45,9 @@ void ArrayOutput<ModelVariant>::initialize() {
 }
 
 template<class ModelVariant>
-inline typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::create_variable(const std::string& path, const std::string& name) {
-    const std::string full = path + "/" + name;
-    auto it = variables.find(full);
+inline typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::create_variable(const hstring& path, const hstring& name, const hstring& suffix) {
+    const auto key = suffix ^ name ^ path;
+    auto it = variables.find(key);
     if (it == variables.end()) {
         std::size_t size = 1;
         std::vector<std::size_t> shape;
@@ -62,16 +62,16 @@ inline typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::
             }
         }
         Variable v{std::vector<FloatType>(size, std::numeric_limits<FloatType>::quiet_NaN()), shape, size, nullptr};
-        create_variable_meta(v, path, name);
-        return variables.emplace(full, v).first->second;
+        create_variable_meta(v, path, name, suffix);
+        return variables.emplace(key, v).first->second;
     }
     return it->second;
 }
 
 template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_write_value(const std::string& name, const FloatType& v) {
+void ArrayOutput<ModelVariant>::internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) {
     const Target& t = stack.back();
-    Variable& it = create_variable(t.name, name);
+    Variable& it = create_variable(t.name, name, suffix);
     it.data[t.index] = v;
 }
 
@@ -87,22 +87,22 @@ inline std::size_t ArrayOutput<ModelVariant>::current_index() const {
 }
 
 template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+void ArrayOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
     stack.emplace_back(Target{name, current_index() * regions_size * sectors_size + sector->index() * regions_size + region->index(), sector, region});
 }
 
 template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector) {
+void ArrayOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector) {
     stack.emplace_back(Target{name, current_index() * sectors_size + sector->index(), sector, nullptr});
 }
 
 template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_start_target(const std::string& name, Region<ModelVariant>* region) {
+void ArrayOutput<ModelVariant>::internal_start_target(const hstring& name, Region<ModelVariant>* region) {
     stack.emplace_back(Target{name, current_index() * regions_size + region->index(), nullptr, region});
 }
 
 template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_start_target(const std::string& name) {
+void ArrayOutput<ModelVariant>::internal_start_target(const hstring& name) {
     stack.emplace_back(Target{name, current_index(), nullptr, nullptr});
 }
 
@@ -123,7 +123,7 @@ void ArrayOutput<ModelVariant>::internal_iterate_begin() {
 }
 
 template<class ModelVariant>
-const typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::get_variable(const std::string& fullname) const {
+const typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::get_variable(const hstring& fullname) const {
     const auto it = variables.find(fullname);
     if (it == variables.end()) {
         error("Variable '" << fullname << "' not found");

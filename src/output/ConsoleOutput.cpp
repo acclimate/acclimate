@@ -88,30 +88,30 @@ void ConsoleOutput<ModelVariant>::internal_end() {
 }
 
 template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_write_value(const std::string& name, const FloatType& v) {
-    *out << std::setprecision(15) << "\t" << name << "=" << v;
+void ConsoleOutput<ModelVariant>::internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) {
+    *out << std::setprecision(15) << "\t" << name << suffix << "=" << v;
 }
 
 template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+void ConsoleOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << " " << sector->id() << "," << region->id() << ":";
 }
 
 template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector) {
+void ConsoleOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << " " << sector->id() << ":";
 }
 
 template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_start_target(const std::string& name, Region<ModelVariant>* region) {
+void ConsoleOutput<ModelVariant>::internal_start_target(const hstring& name, Region<ModelVariant>* region) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << " " << region->id() << ":";
 }
 
 template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_start_target(const std::string& name) {
+void ConsoleOutput<ModelVariant>::internal_start_target(const hstring& name) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << ":";
 }

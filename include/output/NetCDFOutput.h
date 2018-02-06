@@ -59,7 +59,7 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     netCDF::NcDim dim_time;
     netCDF::NcDim dim_sector;
     netCDF::NcDim dim_region;
-    std::unordered_map<std::string, netCDF::NcGroup> groups;
+    std::unordered_map<hstring::hash_type, netCDF::NcGroup> groups;
     std::unique_ptr<netCDF::NcFile> file;
     netCDF::NcVar var_events;
     netCDF::NcVar var_time_variable;
@@ -76,8 +76,8 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     void internal_iterate_end() override;
     void internal_start() override;
     void internal_end() override;
-    netCDF::NcGroup& create_group(const std::string& name);
-    void create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const std::string& path, const std::string& name) override;
+    netCDF::NcGroup& create_group(const hstring& name);
+    void create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) override;
     bool internal_handle_event(typename ArrayOutput<ModelVariant>::Event& event) override;
 
   public:

@@ -93,8 +93,9 @@ void GnuplotOutput<ModelVariant>::internal_start() {
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_write_value(const std::string& name, const FloatType& v) {
+void GnuplotOutput<ModelVariant>::internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) {
     UNUSED(name);
+    UNUSED(suffix);
     file << model->time() << " ";
     for (auto it = stack.begin(); it != stack.end(); ++it) {
         if (it->region >= 0) {
@@ -113,7 +114,7 @@ void GnuplotOutput<ModelVariant>::internal_write_value(const std::string& name, 
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
     UNUSED(name);
     Target t;
     t.sector = sector_index[sector];
@@ -122,7 +123,7 @@ void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name,
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector) {
+void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector) {
     UNUSED(name);
     Target t;
     t.sector = sector_index[sector];
@@ -131,7 +132,7 @@ void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name,
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name, Region<ModelVariant>* region) {
+void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Region<ModelVariant>* region) {
     UNUSED(name);
     Target t;
     t.sector = -1;
@@ -140,7 +141,7 @@ void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name,
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name) {
+void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name) {
     UNUSED(name);
     Target t;
     t.sector = -1;

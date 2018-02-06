@@ -27,6 +27,8 @@
 
 namespace acclimate {
 
+using hstring = settings::hstring;
+
 template<class ModelVariant>
 class Scenario;
 template<class ModelVariant>
@@ -66,10 +68,11 @@ class Output {
     bool write_region_parameter_variant(const Region<ModelVariant>* region, const settings::hstring& name);
     void write_sector_parameters(const Sector<ModelVariant>* sector, const settings::SettingsNode& parameters);
     bool write_sector_parameter_variant(const Sector<ModelVariant>* sector, const settings::hstring& name);
-    void internal_write_value(const std::string& name, const Stock& v);
-    void internal_write_value(const std::string& name, const Flow& v);
+    inline void internal_write_value(const hstring& name, const Stock& v);
+    inline void internal_write_value(const hstring& name, const Flow& v);
+    inline void internal_write_value(const hstring& name, const FloatType& v);
     template<int precision_digits_p>
-    inline void internal_write_value(const std::string& name, const Type<precision_digits_p>& v);
+    inline void internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix = hstring::null());
 
   protected:
     const settings::SettingsNode& settings;
@@ -85,11 +88,11 @@ class Output {
     virtual void internal_iterate_begin();
     virtual void internal_iterate_end();
     virtual void internal_end();
-    virtual void internal_write_value(const std::string& name, const FloatType& v);
-    virtual void internal_start_target(const std::string& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region);
-    virtual void internal_start_target(const std::string& name, Sector<ModelVariant>* sector);
-    virtual void internal_start_target(const std::string& name, Region<ModelVariant>* region);
-    virtual void internal_start_target(const std::string& name);
+    virtual void internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix);
+    virtual void internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region);
+    virtual void internal_start_target(const hstring& name, Sector<ModelVariant>* sector);
+    virtual void internal_start_target(const hstring& name, Region<ModelVariant>* region);
+    virtual void internal_start_target(const hstring& name);
     virtual void internal_end_target();
 
   public:

@@ -62,30 +62,30 @@ class ArrayOutput : public Output<ModelVariant> {
 
   protected:
     struct Target {
-        std::string name;
+        hstring name;
         std::size_t index;
         Sector<ModelVariant>* sector;
         Region<ModelVariant>* region;
     };
     std::size_t sectors_size = 0;
     std::size_t regions_size = 0;
-    std::unordered_map<std::string, Variable> variables;
+    std::unordered_map<hstring::hash_type, Variable> variables;
     std::vector<Target> stack;
     std::vector<Event> events;
     bool include_events;
     bool over_time;
 
   protected:
-    void internal_write_value(const std::string& name, const FloatType& v) override;
-    void internal_start_target(const std::string& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) override;
-    void internal_start_target(const std::string& name, Sector<ModelVariant>* sector) override;
-    void internal_start_target(const std::string& name, Region<ModelVariant>* region) override;
-    void internal_start_target(const std::string& name) override;
+    void internal_write_value(const hstring& name, const FloatType& v, const hstring& suffix) override;
+    void internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) override;
+    void internal_start_target(const hstring& name, Sector<ModelVariant>* sector) override;
+    void internal_start_target(const hstring& name, Region<ModelVariant>* region) override;
+    void internal_start_target(const hstring& name) override;
     void internal_end_target() override;
     virtual void internal_iterate_begin() override;
     inline std::size_t current_index() const;
-    inline Variable& create_variable(const std::string& path, const std::string& name);
-    virtual void create_variable_meta(Variable& v, const std::string& path, const std::string& name) {
+    inline Variable& create_variable(const hstring& path, const hstring& name, const hstring& suffix);
+    virtual void create_variable_meta(Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
         UNUSED(v);
         UNUSED(path);
         UNUSED(name);
@@ -109,7 +109,7 @@ class ArrayOutput : public Output<ModelVariant> {
                const Region<ModelVariant>* region_to,
                const FloatType& value) override;
     virtual void initialize() override;
-    const typename ArrayOutput<ModelVariant>::Variable& get_variable(const std::string& fullname) const;
+    const typename ArrayOutput<ModelVariant>::Variable& get_variable(const hstring& fullname) const;
     const std::vector<Event>& get_events() const { return events; };
 };
 }  // namespace acclimate
