@@ -21,7 +21,8 @@
 #ifndef ACCLIMATE_MODEL_H
 #define ACCLIMATE_MODEL_H
 
-#include "model/Infrastructure.h"
+#include "acclimate.h"
+#include "model/GeoLocation.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 
@@ -45,10 +46,6 @@ class Model {
         const Region<ModelVariant>* region_to;
         FloatType value;
     };
-    std::vector<std::unique_ptr<Sector<ModelVariant>>> sectors_C;
-    std::vector<std::unique_ptr<Region<ModelVariant>>> regions_R;
-    std::vector<std::unique_ptr<Infrastructure<ModelVariant>>> infrastructure_G;
-    Sector<ModelVariant>* const consumption_sector;
 
   private:
     Time time_ = Time(0.0);
@@ -59,6 +56,26 @@ class Model {
     bool no_self_supply_ = false;
 
   public:
+    std::vector<std::unique_ptr<Sector<ModelVariant>>> sectors;
+    std::vector<std::unique_ptr<Region<ModelVariant>>> regions;
+    std::vector<std::unique_ptr<GeoLocation<ModelVariant>>> other_locations;
+    Sector<ModelVariant>* const consumption_sector;
+
+    Model();
+    void start(const Time& start_time);
+    void iterate_consumption_and_production();
+    void iterate_expectation();
+    void iterate_purchase();
+    void iterate_investment();
+    Region<ModelVariant>* find_region(const std::string& name) const;
+    Sector<ModelVariant>* find_sector(const std::string& name) const;
+    Firm<ModelVariant>* find_firm(const std::string& sector_name, const std::string& region_name) const;
+    Firm<ModelVariant>* find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const;
+    Consumer<ModelVariant>* find_consumer(Region<ModelVariant>* region) const;
+    Consumer<ModelVariant>* find_consumer(const std::string& region_name) const;
+
+    Region<ModelVariant>* add_region(std::string name);
+    Sector<ModelVariant>* add_sector(std::string name, const Ratio& upper_storage_limit_omega_p, const Time& initial_storage_fill_factor_psi_p);
     inline const Time& time() const { return time_; };
     inline const TimeStep& timestep() const { return timestep_; };
     inline void switch_registers() {
@@ -87,20 +104,6 @@ class Model {
         assertstep(INITIALIZATION);
         return parameters_;
     };
-
-  public:
-    Model();
-    void start(const Time& start_time);
-    void iterate_consumption_and_production();
-    void iterate_expectation();
-    void iterate_purchase();
-    void iterate_investment();
-    Region<ModelVariant>* find_region(const std::string& name) const;
-    Sector<ModelVariant>* find_sector(const std::string& name) const;
-    Firm<ModelVariant>* find_firm(const std::string& sector_name, const std::string& region_name) const;
-    Firm<ModelVariant>* find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const;
-    Consumer<ModelVariant>* find_consumer(Region<ModelVariant>* region) const;
-    Consumer<ModelVariant>* find_consumer(const std::string& region_name) const;
     inline operator std::string() const { return "MODEL"; }
 };
 }  // namespace acclimate

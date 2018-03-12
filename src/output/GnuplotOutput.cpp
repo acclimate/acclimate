@@ -74,20 +74,20 @@ void GnuplotOutput<ModelVariant>::internal_end() {
 template<class ModelVariant>
 void GnuplotOutput<ModelVariant>::internal_start() {
     file << "# Sectors:\n# set ytics (";
-    for (std::size_t i = 0; i < model->sectors_C.size(); i++) {
-        file << "\"" << std::string(*model->sectors_C[i]) << "\" " << i;
-        if (i < model->sectors_C.size() - 1) {
+    for (std::size_t i = 0; i < model->sectors.size(); i++) {
+        file << "\"" << std::string(*model->sectors[i]) << "\" " << i;
+        if (i < model->sectors.size() - 1) {
             file << ", ";
         }
-        sector_index.emplace(model->sectors_C[i].get(), i);
+        sector_index.emplace(model->sectors[i].get(), i);
     }
     file << ")\n# Regions:\n# set ytics (";
-    for (std::size_t i = 0; i < model->regions_R.size(); i++) {
-        file << "\"" << std::string(*model->regions_R[i]) << "\" " << i;
-        if (i < model->regions_R.size() - 1) {
+    for (std::size_t i = 0; i < model->regions.size(); i++) {
+        file << "\"" << std::string(*model->regions[i]) << "\" " << i;
+        if (i < model->regions.size() - 1) {
             file << ", ";
         }
-        region_index.emplace(model->regions_R[i].get(), i);
+        region_index.emplace(model->regions[i].get(), i);
     }
     file << ")\n";
 }

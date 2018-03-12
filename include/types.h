@@ -31,7 +31,7 @@ namespace acclimate {
 using FloatType = double;
 using IntType = long;
 
-using TransportDelay = unsigned char;
+using TransportDelay = unsigned int;
 using Distance = TransportDelay;
 using TimeStep = unsigned int;
 using Ratio = FloatType;

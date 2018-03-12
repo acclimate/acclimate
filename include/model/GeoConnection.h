@@ -18,24 +18,29 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_GEOGRAPHICPOINT_H
-#define ACCLIMATE_GEOGRAPHICPOINT_H
+#ifndef ACCLIMATE_GEOCONNECTION_H
+#define ACCLIMATE_GEOCONNECTION_H
 
 #include "acclimate.h"
+#include "model/GeoEntity.h"
 
 namespace acclimate {
 
-class GeographicPoint {
-  protected:
-    const FloatType lon_, lat_;
-    const std::string name;
+template<class ModelVariant>
+class GeoLocation;
+
+template<class ModelVariant>
+class GeoConnection : public GeoEntity<ModelVariant> {
+  public:
+    enum class Type { ROAD, AVIATION, SEAROUTE, UNSPECIFIED };
 
   public:
-    GeographicPoint(std::string  name_p, const FloatType lon_p, const FloatType lat_p);
-    FloatType distance_to(const GeographicPoint& other) const;
-    inline FloatType lon() const { return lon_; };
-    inline FloatType lat() const { return lat_; };
-    explicit operator std::string() const { return name; };
+    const GeoLocation<ModelVariant>* location1;
+    const GeoLocation<ModelVariant>* location2;
+    const Type type;
+
+    GeoConnection<ModelVariant>(TransportDelay delay, Type type_p, const GeoLocation<ModelVariant>* location1_p, const GeoLocation<ModelVariant>* location2_p);
+    operator std::string() const { return std::string(*location1) + "-" + std::string(*location2); }
 };
 }  // namespace acclimate
 

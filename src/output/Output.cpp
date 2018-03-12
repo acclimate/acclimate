@@ -549,8 +549,8 @@ void Output<ModelVariant>::iterate() {
                     if (!it.has("set")) {
                         if (!it.has("sector")) {
                             if (!it.has("region")) {
-                                for (const auto& sector : model->sectors_C) {
-                                    for (const auto& p : sector->firms_N) {
+                                for (const auto& sector : model->sectors) {
+                                    for (const auto& p : sector->firms) {
                                         internal_start_target("firms", p->sector, p->region);
                                         write_firm_parameters(p, it);
                                         internal_end_target();
@@ -575,7 +575,7 @@ void Output<ModelVariant>::iterate() {
                             if (!it.has("region")) {
                                 const Sector<ModelVariant>* sector = model->find_sector(it["sector"].as<std::string>());
                                 if (sector) {
-                                    for (const auto& p : sector->firms_N) {
+                                    for (const auto& p : sector->firms) {
                                         internal_start_target("firms", p->sector, p->region);
                                         write_firm_parameters(p, it);
                                         internal_end_target();
@@ -616,7 +616,7 @@ void Output<ModelVariant>::iterate() {
 
                 case settings::hstring::hash("consumer"): {
                     if (!it.has("region")) {
-                        for (const auto& region : model->regions_R) {
+                        for (const auto& region : model->regions) {
                             for (const auto& ea : region->economic_agents) {
                                 if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
                                     Consumer<ModelVariant>* c = ea->as_consumer();
@@ -639,7 +639,7 @@ void Output<ModelVariant>::iterate() {
                 } break;
 
                 case settings::hstring::hash("agent"): {
-                    for (const auto& region : model->regions_R) {
+                    for (const auto& region : model->regions) {
                         for (const auto& ea : region->economic_agents) {
                             internal_start_target("agents", ea->sector, ea->region);
                             if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
@@ -653,7 +653,7 @@ void Output<ModelVariant>::iterate() {
                 } break;
 
                 case settings::hstring::hash("storage"): {
-                    for (const auto& region : model->regions_R) {
+                    for (const auto& region : model->regions) {
                         for (const auto& ea : region->economic_agents) {
                             internal_start_target("storages", ea->sector, ea->region);
                             for (const auto& is : ea->input_storages) {
@@ -667,8 +667,8 @@ void Output<ModelVariant>::iterate() {
                 } break;
 
                 case settings::hstring::hash("flow"): {
-                    for (const auto& sector : model->sectors_C) {
-                        for (const auto& ps : sector->firms_N) {
+                    for (const auto& sector : model->sectors) {
+                        for (const auto& ps : sector->firms) {
                             internal_start_target("flows", ps->sector, ps->region);
                             for (const auto& bc : ps->sales_manager->business_connections) {
                                 internal_start_target("flows", bc->buyer->storage->economic_agent->sector, bc->buyer->storage->economic_agent->region);
@@ -701,7 +701,7 @@ void Output<ModelVariant>::iterate() {
                             }
                         }
                     }
-                    for (const auto& region : model->regions_R) {
+                    for (const auto& region : model->regions) {
                         if ((region_name == nullptr) || std::string(*region) == region_name) {
                             internal_start_target("regions", region.get());
                             write_region_parameters(region.get(), it);
@@ -715,7 +715,7 @@ void Output<ModelVariant>::iterate() {
                     if (it.has("sector")) {
                         sector_name = it["sector"].as<std::string>().c_str();
                     }
-                    for (const auto& sector : model->sectors_C) {
+                    for (const auto& sector : model->sectors) {
                         if (std::string(*sector) == "FCON") {
                             continue;
                         }

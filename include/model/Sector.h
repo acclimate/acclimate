@@ -32,6 +32,8 @@ class Firm;
 
 template<class ModelVariant>
 class Sector {
+    friend class Model<ModelVariant>;
+
   protected:
     const std::string name;
     const IntType index_;
@@ -40,7 +42,18 @@ class Sector {
     Flow last_total_production_X_ = Flow(0.0);
     typename ModelVariant::SectorParameters parameters_;
 
+    Sector(Model<ModelVariant>* model_p,
+           std::string name_p,
+           const IntType index_p,
+           const Ratio& upper_storage_limit_omega_p,
+           const Time& initial_storage_fill_factor_psi_p);
+
   public:
+    const Ratio upper_storage_limit_omega;
+    const Time initial_storage_fill_factor_psi;
+    std::vector<Firm<ModelVariant>*> firms;
+    Model<ModelVariant>* const model;
+
     inline const Demand& total_demand_D() const {
         assertstepnot(PURCHASE);
         return total_demand_D_;
@@ -55,19 +68,6 @@ class Sector {
         assertstep(INITIALIZATION);
         return parameters_;
     };
-
-  public:
-    const Ratio upper_storage_limit_omega;
-    const Time initial_storage_fill_factor_psi;
-    std::vector<Firm<ModelVariant>*> firms_N;
-    Model<ModelVariant>* const model;
-
-  public:
-    Sector(Model<ModelVariant>* model_p,
-           std::string  name_p,
-           const IntType index_p,
-           const Ratio& upper_storage_limit_omega_p,
-           const Time& initial_storage_fill_factor_psi_p);
     void add_demand_request_D(const Demand& demand_request_D);
     void add_production_X(const Flow& production_X);
     void add_initial_production_X(const Flow& production_X);

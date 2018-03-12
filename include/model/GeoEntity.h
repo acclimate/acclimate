@@ -18,10 +18,10 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_INFRASTRUCTURE_H
-#define ACCLIMATE_INFRASTRUCTURE_H
+#ifndef ACCLIMATE_GEOENTITY_H
+#define ACCLIMATE_GEOENTITY_H
 
-#include "model/GeographicEntity.h"
+#include "acclimate.h"
 
 namespace acclimate {
 
@@ -29,21 +29,24 @@ template<class ModelVariant>
 class TransportChainLink;
 
 template<class ModelVariant>
-class Infrastructure : public GeographicEntity<ModelVariant> {
+class GeoEntity {
   public:
-    const Distance distance;
-    std::vector<TransportChainLink<ModelVariant>*> transport_chain_links;
+    enum class Type { LOCATION, CONNECTION };
 
   protected:
     Forcing forcing_nu;
+    Type type_m;
 
   public:
-    explicit Infrastructure(const Distance& distance_p);
-    Infrastructure<ModelVariant>* as_infrastructure() override;
-    const Infrastructure<ModelVariant>* as_infrastructure() const override;
-    void set_forcing_nu(const Forcing& forcing_nu_p);
+    const TransportDelay delay;
+    std::vector<TransportChainLink<ModelVariant>*> transport_chain_links;
+
+    GeoEntity(TransportDelay delay_p, Type type_p);
+    virtual ~GeoEntity() {};
+    Type type() const { return type_m; }
+    void set_forcing_nu(Forcing forcing_nu_p);
     void remove_transport_chain_link(TransportChainLink<ModelVariant>* transport_chain_link);
-    inline operator std::string() const override { return "INFRASTRUCTURE"; }
+    virtual operator std::string() const = 0;
 };
 }  // namespace acclimate
 

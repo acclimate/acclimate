@@ -21,9 +21,7 @@
 #include "model/Region.h"
 #include <algorithm>
 #include "model/EconomicAgent.h"
-#include "model/GeographicEntity.h"
 #include "model/Government.h"
-#include "model/Infrastructure.h"
 #include "model/Model.h"
 #include "variants/ModelVariants.h"
 
@@ -31,7 +29,7 @@ namespace acclimate {
 
 template<class ModelVariant>
 Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p)
-    : GeographicEntity<ModelVariant>(GeographicEntity<ModelVariant>::Type::REGION), name(std::move(name_p)), index_(index_p), model(model_p) {}
+    : GeoLocation<ModelVariant>(0, GeoLocation<ModelVariant>::Type::REGION, name_p), index_(index_p), model(model_p) {}
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_export_Z(const Flow& export_flow_Z_p) {
@@ -163,26 +161,12 @@ void Region<ModelVariant>::iterate_investment_variant() {
 }
 
 template<class ModelVariant>
-const Path<ModelVariant>& Region<ModelVariant>::find_path_to(const Region<ModelVariant>* region) const {
-#ifdef TRANSPORT
-    error("Not implemented: Find proper path (not simply assuming all regions are connected by infrastructures)");
-    path->distance = 0;
-    for (auto it = connections.begin(); it != connections.end(); it++) {
-        Infrastructure<ModelVariant>* inf = (*it)->as_infrastructure();
-        if ((inf->connections.size() > 0 && static_cast<void*>(inf->connections[0]) == static_cast<void*>(region))
-            || (inf->connections.size() > 1 && static_cast<void*>(inf->connections[1]) == static_cast<void*>(region))) {
-            path->infrastructure = inf;
-            path->distance = inf->distance;
-            break;
-        }
-    }
-#else
-    const auto& it = paths.find(region);
-    if (it == std::end(paths)) {
-        error("No transport data from " << std::string(*this) << " to " << std::string(*region));
+const GeoRoute<ModelVariant>& Region<ModelVariant>::find_path_to(const std::string& region_name) const {
+    const auto& it = routes.find(region_name);
+    if (it == std::end(routes)) {
+        error("No transport data from " << std::string(*this) << " to " << region_name);
     }
     return it->second;
-#endif
 }
 
 template<class ModelVariant>

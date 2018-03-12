@@ -20,7 +20,7 @@
 
 #include "model/BusinessConnection.h"
 #include "model/EconomicAgent.h"
-#include "model/Infrastructure.h"
+#include "model/GeoRoute.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/SalesManagerBasic.h"
@@ -37,26 +37,6 @@ template<class ModelVariant>
 BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
                                                      typename ModelVariant::SalesManagerType* seller_p,
                                                      const Flow& initial_flow_Z_star_p)
-    : initial_flow_Z_star_(initial_flow_Z_star_p),
-      last_demand_request_D_(initial_flow_Z_star_p),
-      last_delivery_Z_(initial_flow_Z_star_p),
-      last_shipment_Z_(initial_flow_Z_star_p),
-      time_(seller_p->firm->sector->model->time()),
-      buyer(buyer_p),
-      seller(seller_p) {
-#pragma omp critical
-    { seller->business_connections.emplace_back(this); }
-    const Path<ModelVariant>& path = buyer->storage->economic_agent->region->find_path_to(seller->firm->region);
-    const TransportDelay transport_delay_tau = path.distance;
-    first_transport_link.reset(new TransportChainLink<ModelVariant>(this, transport_delay_tau, initial_flow_Z_star_p));
-    path.infrastructure->transport_chain_links.push_back(first_transport_link.get());
-}
-
-template<class ModelVariant>
-BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
-                                                     typename ModelVariant::SalesManagerType* seller_p,
-                                                     const Flow& initial_flow_Z_star_p,
-                                                     const Path<ModelVariant>& path)
     : buyer(buyer_p),
       demand_fulfill_history_(1.0),
       initial_flow_Z_star_(initial_flow_Z_star_p),
@@ -68,23 +48,24 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
       time_(seller_p->firm->sector->model->time()) {
 #pragma omp critical
     { seller->business_connections.emplace_back(this); }
-    const TransportDelay transport_delay_tau = path.distance;
-    first_transport_link.reset(new TransportChainLink<ModelVariant>(this, transport_delay_tau, initial_flow_Z_star_p));
-    path.infrastructure->transport_chain_links.push_back(first_transport_link.get());
+    if (buyer->storage->economic_agent->region != seller->firm->region) {
+        const auto& route = buyer->storage->economic_agent->region->find_path_to(std::string(*seller->firm->region));
+        assert(route.path.size() > 0);
+        TransportChainLink<ModelVariant>* link;
+        for (std::size_t i = 0; i < route.path.size(); ++i) {
+            auto& p = route.path[i];
+            link = new TransportChainLink<ModelVariant>(this, p->delay, initial_flow_Z_star_p);
+            if (i == 0) {
+                link->next_transport_chain_link.reset(link);
+            } else {
+                first_transport_link.reset(link);
+            }
+            p->transport_chain_links.push_back(link);
+        }
+    } else {
+        first_transport_link.reset(new TransportChainLink<ModelVariant>(this, 0, initial_flow_Z_star_p));
+    }
 }
-
-#ifdef TRANSPORT
-template<class ModelVariant>
-void BusinessConnection<ModelVariant>::disconnect_from_geography() {
-    const Path<ModelVariant>& path = buyer->storage->economic_agent->region->find_path_to(seller->firm->region);  // TBD buyer might be nullptr!
-    path.infrastructure->remove_transport_chain_link(first_transport_link.get());
-}
-
-template<class ModelVariant>
-BusinessConnection<ModelVariant>::~BusinessConnection() {
-    disconnect_from_geography();
-}
-#endif
 
 template<>
 const Ratio& BusinessConnection<VariantDemand>::demand_fulfill_history() const {
@@ -108,20 +89,12 @@ void BusinessConnection<ModelVariant>::push_flow_Z(const Flow& flow_Z) {
 
 template<class ModelVariant>
 TransportDelay BusinessConnection<ModelVariant>::get_transport_delay_tau() const {
-#ifdef TRANSPORT
     TransportChainLink<ModelVariant>* link = first_transport_link.get();
     TransportDelay res = 0;
     while (link) {
-        res += link->current_transport_delay_tau;
-        if (link->is_last_link) {
-            break;
-        } else {
-            link = link->next_transport_chain_link;
-        }
+        res += link->transport_delay();
+        link = link->next_transport_chain_link.get();
     }
-#else
-    TransportDelay res = first_transport_link->current_transport_delay_tau;
-#endif
     return res;
 }
 
@@ -145,103 +118,62 @@ void BusinessConnection<ModelVariant>::send_demand_request_D(const Demand& deman
 template<class ModelVariant>
 const Flow BusinessConnection<ModelVariant>::get_flow_mean() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-#ifdef TRANSPORT
     TransportChainLink<ModelVariant>* link = first_transport_link.get();
     Flow res = last_delivery_Z_;
     TransportDelay delay = 0;
     while (link) {
         res += link->get_total_flow();
-        delay += link->current_transport_delay_tau;
-        if (link->is_last_link) {
-            break;
-        } else {
-            link = link->next_transport_chain_link;
-        }
+        delay += link->transport_delay();
+        link = link->next_transport_chain_link.get();
     }
-#else
-    Flow res = last_delivery_Z_ + first_transport_link->get_total_flow();
-    TransportDelay delay = first_transport_link->current_transport_delay_tau;
-#endif
     return round(res / Ratio(delay));
 }
 
 template<class ModelVariant>
 const FlowQuantity BusinessConnection<ModelVariant>::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-#ifdef TRANSPORT
     TransportChainLink<ModelVariant>* link = first_transport_link.get();
     FlowQuantity res = initial_flow_Z_star_.get_quantity() - last_delivery_Z_.get_quantity();
     while (link) {
         res += link->get_flow_deficit();
-        if (link->is_last_link) {
-            break;
-        } else {
-            link = link->next_transport_chain_link;
-        }
+        link = link->next_transport_chain_link.get();
     }
-#else
-    FlowQuantity res = round(initial_flow_Z_star_.get_quantity() - last_delivery_Z_.get_quantity()) + first_transport_link->get_flow_deficit();
-#endif
     return round(res);
 }
 
 template<class ModelVariant>
 const Flow BusinessConnection<ModelVariant>::get_total_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-#ifdef TRANSPORT
     TransportChainLink<ModelVariant>* link = first_transport_link.get();
-    Flow res(0.0, 0.0);
+    Flow res = Flow(0.0);
     while (link) {
         res += link->get_total_flow();
-        if (link->is_last_link) {
-            break;
-        } else {
-            link = link->next_transport_chain_link;
-        }
+        link = link->next_transport_chain_link.get();
     }
-#else
-    Flow res = first_transport_link->get_total_flow();
-#endif
     return round(res);
 }
 
 template<class ModelVariant>
 const Flow BusinessConnection<ModelVariant>::get_disequilibrium() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-#ifdef TRANSPORT
     TransportChainLink<ModelVariant>* link = first_transport_link.get();
-    Flow res(0.0, 0.0);
+    Flow res = Flow(0.0);
     while (link) {
         res.add_possibly_negative(link->get_disequilibrium());
-        if (link->is_last_link) {
-            break;
-        } else {
-            link = link->next_transport_chain_link;
-        }
+        link = link->next_transport_chain_link.get();
     }
-#else
-    Flow res = first_transport_link->get_disequilibrium();
-#endif
     return round(res, true);
 }
 
 template<class ModelVariant>
 FloatType BusinessConnection<ModelVariant>::get_stddeviation() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-#ifdef TRANSPORT
     TransportChainLink<ModelVariant>* link = first_transport_link.get();
     FloatType res = 0.0;
     while (link) {
         res += link->get_stddeviation();
-        if (link->is_last_link) {
-            break;
-        } else {
-            link = link->next_transport_chain_link;
-        }
+        link = link->next_transport_chain_link.get();
     }
-#else
-    FloatType res = first_transport_link->get_stddeviation();
-#endif
     return res;
 }
 
@@ -264,66 +196,6 @@ void BusinessConnection<VariantDemand>::calc_demand_fulfill_history() {
         Acclimate::Run<VariantDemand>::instance()->event(EventType::DEMAND_FULFILL_HISTORY_UNDERFLOW, seller->firm, buyer->storage->economic_agent);
     }
 }
-
-#ifdef BACKUP
-template<class ModelVariant>
-Flow BusinessConnection<ModelVariant>::calc_transport_mean() const {
-    assertstep(PURCHASE);
-    TransportChainLink<ModelVariant>* link = first_transport_link;
-    Flow res = last_delivery_Z;
-    TransportDelay delay = 0;
-    Time timesteps_to_consider = buyer->storage->sector->model->time() - time - 1;
-    while (link && timesteps_to_consider > 0) {
-        res += link->get_total_flow(timesteps_to_consider);
-        delay += link->current_transport_delay_tau;
-        if (link->is_last_link || timesteps_to_consider <= link->current_transport_delay_tau) {
-            break;
-        } else {
-            timesteps_to_consider -= link->current_transport_delay_tau;
-            link = link->next_transport_chain_link;
-        }
-    }
-    return round(res * (1 / std::min(delay, buyer->storage->sector->model->time() - time)));
-}
-
-template<class ModelVariant>
-Flow BusinessConnection<ModelVariant>::calc_transport_flow_deficit() const {
-    assertstep(PURCHASE);
-    TransportChainLink<ModelVariant>* link = first_transport_link;
-    Flow res(0.0);
-    res.add_possibly_negative(initial_flow_Z_star - last_delivery_Z);
-    Time timesteps_to_consider = buyer->storage->sector->model->time() - time - 1;
-    while (link && timesteps_to_consider > 0) {
-        res.add_possibly_negative(initial_flow_Z_star * std::min(timesteps_to_consider, link->current_transport_delay_tau - 1)
-                                  - link->get_total_flow(timesteps_to_consider));
-        if (link->is_last_link || timesteps_to_consider <= link->current_transport_delay_tau) {
-            break;
-        } else {
-            timesteps_to_consider -= link->current_transport_delay_tau;
-            link = link->next_transport_chain_link;
-        }
-    }
-    return round(res, true);
-}
-
-template<class ModelVariant>
-Flow BusinessConnection<ModelVariant>::calc_transport_flow() const {
-    assertstep(PURCHASE);
-    TransportChainLink<ModelVariant>* link = first_transport_link;
-    Flow res = last_delivery_Z;
-    Time timesteps_to_consider = buyer->storage->sector->model->time() - time - 1;
-    while (link && timesteps_to_consider > 0) {
-        res += link->get_total_flow(timesteps_to_consider);
-        if (link->is_last_link || timesteps_to_consider <= link->current_transport_delay_tau) {
-            break;
-        } else {
-            timesteps_to_consider -= link->current_transport_delay_tau;
-            link = link->next_transport_chain_link;
-        }
-    }
-    return round(res);
-}
-#endif
 
 INSTANTIATE_BASIC(BusinessConnection);
 }  // namespace acclimate

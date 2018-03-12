@@ -38,7 +38,7 @@ Time Taxes<VariantDemand>::start() {
 
 template<class ModelVariant>
 Time Taxes<ModelVariant>::start() {
-    for (auto& region : model->regions_R) {
+    for (auto& region : model->regions) {
         region->set_government(new Government<ModelVariant>(region.get()));
     }
     if (settings["scenario"].has("start")) {
@@ -77,7 +77,7 @@ bool Taxes<ModelVariant>::iterate() {
                 }
                 region->government()->define_tax(sector, tax_ratio);
             } else {
-                for (auto& region : model->regions_R) {
+                for (auto& region : model->regions) {
                     region->government()->define_tax(sector, tax_ratio);
                 }
             }

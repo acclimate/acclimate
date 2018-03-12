@@ -85,7 +85,7 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                     } else {
                         Sector<ModelVariant>* sector = model->find_sector(it["sector"].template as<std::string>());
                         if (sector) {
-                            for (auto& p : sector->firms_N) {
+                            for (auto& p : sector->firms) {
                                 set_firm_property(p, it, reset);
                             }
                         } else {
@@ -107,8 +107,8 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                             ;
                         }
                     } else {
-                        for (auto& s : model->sectors_C) {
-                            for (auto& p : s->firms_N) {
+                        for (auto& s : model->sectors) {
+                            for (auto& p : s->firms) {
                                 set_firm_property(p, it, reset);
                             }
                         }
@@ -123,7 +123,7 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                         error("Consumer " << it["region"].template as<std::string>() << " not found");
                     }
                 } else {
-                    for (auto& r : model->regions_R) {
+                    for (auto& r : model->regions) {
                         for (auto& ea : r->economic_agents) {
                             if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
                                 set_consumer_property(ea->as_consumer(), it, reset);

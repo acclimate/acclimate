@@ -30,37 +30,31 @@ class BusinessConnection;
 
 template<class ModelVariant>
 class TransportChainLink {
+    friend class BusinessConnection<ModelVariant>;
+
   protected:
     std::vector<Flow> transport_queue;
     std::vector<FlowQuantity> initial_transport_queue;
     TransportDelay pos;
+    std::unique_ptr<TransportChainLink<ModelVariant>> next_transport_chain_link;
 
-  public:
-    TransportDelay current_transport_delay_tau;
-    const TransportDelay initial_transport_delay_tau;
-#ifdef TRANSPORT
-    unique_ptr<TransportChainLink<ModelVariant>> next_transport_chain_link;
-#endif
-    BusinessConnection<ModelVariant>* const business_connection;
-
-  public:
-#ifdef TRANSPORT
     TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p,
-                       unique_ptr<TransportChainLink<ModelVariant>>& next_transport_chain_link_p,
                        const TransportDelay& initial_transport_delay_tau,
                        const Flow& initial_flow_Z_star);
-#else
-    TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p, const TransportDelay& transport_delay_tau, const Flow& initial_flow_Z_star);
-#endif
+
+  public:
+    const TransportDelay initial_transport_delay_tau;
+    BusinessConnection<ModelVariant>* const business_connection;
+
     void push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star);
     void set_forcing_nu(const Forcing& forcing_nu);
-    const Flow get_total_flow() const;
-    const Flow get_disequilibrium() const;
+    TransportDelay transport_delay() const { return transport_queue.size(); }
+    Flow get_total_flow() const;
+    Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
-    const FlowQuantity get_flow_deficit() const;
+    FlowQuantity get_flow_deficit() const;
 
     inline operator std::string() const {
-#ifdef TRANSPORT
         const TransportChainLink<ModelVariant>* link = this;
         int id = 0;
         while (link->next_transport_chain_link) {
@@ -68,9 +62,6 @@ class TransportChainLink {
             id++;
         }
         return std::string(*business_connection->seller) + "-" + std::to_string(id) + "->" + std::string(*business_connection->buyer->storage->economic_agent);
-#else
-        return std::string(*business_connection->seller) + "->" + std::string(*business_connection->buyer->storage->economic_agent);
-#endif
     }
 };
 }  // namespace acclimate

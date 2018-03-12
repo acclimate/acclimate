@@ -26,7 +26,7 @@
 namespace acclimate {
 
 template<class ModelVariant>
-class Path;
+class GeoRoute;
 template<class ModelVariant>
 class SalesManager;
 template<class ModelVariant>
@@ -92,11 +92,9 @@ class BusinessConnection {
     void establish_connection();
 
   public:
-    BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p, typename ModelVariant::SalesManagerType* seller_p, const Flow& initial_flow_Z_star_p);
     BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
                        typename ModelVariant::SalesManagerType* seller_p,
-                       const Flow& initial_flow_Z_star_p,
-                       const Path<ModelVariant>& path);
+                       const Flow& initial_flow_Z_star_p);
     const Flow get_flow_mean() const;
     const FlowQuantity get_flow_deficit() const;
     const Flow get_total_flow() const;
@@ -107,10 +105,6 @@ class BusinessConnection {
     void deliver_flow_Z(const Flow& flow_Z);
     void send_demand_request_D(const Demand& demand_request_D);
     bool get_domestic() const;
-#ifdef TRANSPORT
-    ~BusinessConnection();
-    void disconnect_from_geography();
-#endif
 
     void calc_demand_fulfill_history();  // only for VariantDemand
 

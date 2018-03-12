@@ -18,24 +18,37 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <utility>
+#ifndef ACCLIMATE_GEOROUTE_H
+#define ACCLIMATE_GEOROUTE_H
 
-#include "model/GeographicPoint.h"
-#include "model/Infrastructure.h"
-#include "model/Region.h"
-#include "variants/ModelVariants.h"
+#include "acclimate.h"
 
 namespace acclimate {
 
-GeographicPoint::GeographicPoint(std::string name_p, const FloatType lon_p, const FloatType lat_p) : name(std::move(name_p)), lon_(lon_p), lat_(lat_p) {}
+template<class ModelVariant>
+class GeoEntity;
 
-FloatType GeographicPoint::distance_to(const GeographicPoint& other) const {
-    const auto R = 6371;
-    const auto PI = 3.14159265;
-    const auto latsin = std::sin((other.lat_ - lat_) * PI / 360);
-    const auto lonsin = std::sin((other.lon_ - lon_) * PI / 360);
+template<class ModelVariant>
+class GeoRoute {
+  public:
+    enum class Type { AVIATION, ROADSEA, UNSPECIFIED };
 
-    const auto a = latsin * latsin + cos(other.lat_ * PI / 180) * cos(lat_ * PI / 180) * lonsin * lonsin;
-    return 2 * R * std::atan2(std::sqrt(a), std::sqrt(1 - a));
-}
+  public:
+    std::vector<GeoEntity<ModelVariant>*> path;
+    const Type type;
+
+    GeoRoute<ModelVariant>(Type type_p);
+    operator std::string() const {
+        std::string res;
+        for (std::size_t i = 0; i < path.size(); ++i) {
+            if (i > 0) {
+                res += "->";
+            }
+            res += std::string(*path[i]);
+        }
+        return res;
+    }
+};
 }  // namespace acclimate
+
+#endif

@@ -23,7 +23,6 @@
 #include <chrono>
 #include "model/Consumer.h"
 #include "model/Firm.h"
-#include "model/Infrastructure.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "output/Output.h"
@@ -33,7 +32,23 @@ namespace acclimate {
 
 template<class ModelVariant>
 Model<ModelVariant>::Model() : consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0))) {
-    sectors_C.emplace_back(consumption_sector);
+    sectors.emplace_back(consumption_sector);
+}
+
+template<class ModelVariant>
+Region<ModelVariant>* Model<ModelVariant>::add_region(std::string name) {
+    Region<ModelVariant>* region = new Region<ModelVariant>(this, name, regions.size());
+    regions.emplace_back(region);
+    return region;
+}
+
+template<class ModelVariant>
+Sector<ModelVariant>* Model<ModelVariant>::add_sector(std::string name,
+                                                      const Ratio& upper_storage_limit_omega_p,
+                                                      const Time& initial_storage_fill_factor_psi_p) {
+    Sector<ModelVariant>* sector = new Sector<ModelVariant>(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p);
+    sectors.emplace_back(sector);
+    return sector;
 }
 
 template<class ModelVariant>
@@ -46,13 +61,13 @@ template<class ModelVariant>
 void Model<ModelVariant>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < sectors_C.size(); ++i) {
-        sectors_C[i]->iterate_consumption_and_production();
+    for (std::size_t i = 0; i < sectors.size(); ++i) {
+        sectors[i]->iterate_consumption_and_production();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions_R.size(); ++i) {
-        regions_R[i]->iterate_consumption_and_production();
+    for (std::size_t i = 0; i < regions.size(); ++i) {
+        regions[i]->iterate_consumption_and_production();
     }
 }
 
@@ -60,8 +75,8 @@ template<class ModelVariant>
 void Model<ModelVariant>::iterate_expectation() {
     assertstep(EXPECTATION);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions_R.size(); ++i) {
-        regions_R[i]->iterate_expectation();
+    for (std::size_t i = 0; i < regions.size(); ++i) {
+        regions[i]->iterate_expectation();
     }
 }
 
@@ -69,8 +84,8 @@ template<class ModelVariant>
 void Model<ModelVariant>::iterate_purchase() {
     assertstep(PURCHASE);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions_R.size(); ++i) {
-        regions_R[i]->iterate_purchase();
+    for (std::size_t i = 0; i < regions.size(); ++i) {
+        regions[i]->iterate_purchase();
     }
 }
 
@@ -78,15 +93,15 @@ template<class ModelVariant>
 void Model<ModelVariant>::iterate_investment() {
     assertstep(INVESTMENT);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions_R.size(); ++i) {
-        regions_R[i]->iterate_investment();
+    for (std::size_t i = 0; i < regions.size(); ++i) {
+        regions[i]->iterate_investment();
     }
 }
 
 template<class ModelVariant>
 Region<ModelVariant>* Model<ModelVariant>::find_region(const std::string& name) const {
-    auto it = std::find_if(regions_R.begin(), regions_R.end(), [name](const std::unique_ptr<Region<ModelVariant>>& it) { return std::string(*it) == name; });
-    if (it == regions_R.end()) {
+    auto it = std::find_if(regions.begin(), regions.end(), [name](const std::unique_ptr<Region<ModelVariant>>& it) { return std::string(*it) == name; });
+    if (it == regions.end()) {
         return nullptr;
     }
     return it->get();
@@ -94,8 +109,8 @@ Region<ModelVariant>* Model<ModelVariant>::find_region(const std::string& name) 
 
 template<class ModelVariant>
 Sector<ModelVariant>* Model<ModelVariant>::find_sector(const std::string& name) const {
-    auto it = std::find_if(sectors_C.begin(), sectors_C.end(), [name](const std::unique_ptr<Sector<ModelVariant>>& it) { return std::string(*it) == name; });
-    if (it == sectors_C.end()) {
+    auto it = std::find_if(sectors.begin(), sectors.end(), [name](const std::unique_ptr<Sector<ModelVariant>>& it) { return std::string(*it) == name; });
+    if (it == sectors.end()) {
         return nullptr;
     }
     return it->get();
@@ -112,9 +127,9 @@ Firm<ModelVariant>* Model<ModelVariant>::find_firm(const std::string& sector_nam
 
 template<class ModelVariant>
 Firm<ModelVariant>* Model<ModelVariant>::find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const {
-    auto it = std::find_if(sector->firms_N.begin(), sector->firms_N.end(),
+    auto it = std::find_if(sector->firms.begin(), sector->firms.end(),
                            [region_name](const Firm<ModelVariant>* it) { return std::string(*it->region) == region_name; });
-    if (it == sector->firms_N.end()) {
+    if (it == sector->firms.end()) {
         return nullptr;
     }
     return *it;

@@ -23,53 +23,42 @@
 
 #include <unordered_map>
 #include "model/EconomicAgent.h"
-#include "model/GeographicEntity.h"
-#include "model/GeographicPoint.h"
+#include "model/GeoLocation.h"
+#include "model/GeoRoute.h"
 #include "model/Government.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Infrastructure;
-template<class ModelVariant>
 class Model;
 
 template<class ModelVariant>
-struct Path {
-    Distance distance;
-    Infrastructure<ModelVariant>* infrastructure;
-};
+class Region : public GeoLocation<ModelVariant> {
+    friend class Model<ModelVariant>;
 
-template<class ModelVariant>
-class Region : public GeographicEntity<ModelVariant> {
-  public:
-    using GeographicEntity<ModelVariant>::connections;
+  private:
+    void iterate_consumption_and_production_variant();
+    void iterate_expectation_variant();
+    void iterate_purchase_variant();
+    void iterate_investment_variant();
 
   protected:
     Flow export_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
     Flow import_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
-    std::unique_ptr<GeographicPoint> centroid_;
     std::unique_ptr<Government<ModelVariant>> government_;
     const IntType index_;
-    const std::string name;
     typename ModelVariant::RegionParameters parameters_;
+
+    Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p);
 
   public:
     Model<ModelVariant>* const model;
     std::vector<std::unique_ptr<EconomicAgent<ModelVariant>>> economic_agents;
-#ifndef TRANSPORT
-    std::unordered_map<const Region<ModelVariant>*, Path<ModelVariant>> paths;
-#endif
+    std::unordered_map<std::string, GeoRoute<ModelVariant>> routes;
 
-  public:
     Region<ModelVariant>* as_region() override;
     const Region<ModelVariant>* as_region() const override;
-    void set_centroid(GeographicPoint* centroid_p) {
-        assertstep(INITIALIZATION);
-        return centroid_.reset(centroid_p);
-    };
-    const GeographicPoint* centroid() const { return centroid_.get(); };
     inline const Flow& consumption_C() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
         return consumption_flow_Y_[model->current_register()];
@@ -98,15 +87,6 @@ class Region : public GeographicEntity<ModelVariant> {
         assertstep(INITIALIZATION);
         return parameters_;
     };
-
-  private:
-    void iterate_consumption_and_production_variant();
-    void iterate_expectation_variant();
-    void iterate_purchase_variant();
-    void iterate_investment_variant();
-
-  public:
-    Region(Model<ModelVariant>* model_p, std::string  name_p, const IntType index_p);
     inline IntType index() const { return index_; };
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);
@@ -116,9 +96,8 @@ class Region : public GeographicEntity<ModelVariant> {
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
-    const Path<ModelVariant>& find_path_to(const Region<ModelVariant>* region) const;
+    const GeoRoute<ModelVariant>& find_path_to(const std::string& region_name) const;
     void remove_economic_agent(EconomicAgent<ModelVariant>* economic_agent);
-    operator std::string() const override { return name; };
 };
 }  // namespace acclimate
 
