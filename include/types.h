@@ -408,6 +408,19 @@ inline Flow operator/(const Stock& stock, const Time& time) {
     assert_(time >= 0.0);
     return Flow(stock.get_quantity() / time, stock.get_value() / time, true);
 }
+
+template<typename Current, typename Initial>
+class AnnotatedType {
+  public:
+    Current current;
+    Initial initial;
+    AnnotatedType(Current current_p, Initial initial_p) : current(current_p), initial(initial_p) {}
+    explicit AnnotatedType(Initial initial_p) : current(initial_p), initial(initial_p) {}
+};
+
+using AnnotatedFlow = AnnotatedType<Flow, FlowQuantity>;
+using AnnotatedStock = AnnotatedType<Stock, Quantity>;
+
 }  // namespace acclimate
 
 #endif

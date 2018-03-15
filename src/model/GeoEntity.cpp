@@ -26,16 +26,13 @@
 namespace acclimate {
 
 template<class ModelVariant>
-GeoEntity<ModelVariant>::GeoEntity(TransportDelay delay_p, Type type_p) : delay(delay_p), type_m(type_p) {
-    forcing_nu = 1;
-}
+GeoEntity<ModelVariant>::GeoEntity(TransportDelay delay_p, Type type_p) : delay(delay_p), type_m(type_p) {}
 
 template<class ModelVariant>
 void GeoEntity<ModelVariant>::set_forcing_nu(Forcing forcing_nu_p) {
     for (std::size_t i = 0; i < transport_chain_links.size(); i++) {
         transport_chain_links[i]->set_forcing_nu(forcing_nu_p);
     }
-    forcing_nu = forcing_nu_p;
 }
 
 template<class ModelVariant>

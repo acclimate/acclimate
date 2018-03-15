@@ -34,7 +34,6 @@ class GeoEntity {
     enum class Type { LOCATION, CONNECTION };
 
   protected:
-    Forcing forcing_nu;
     Type type_m;
 
   public:

@@ -33,8 +33,10 @@ class TransportChainLink {
     friend class BusinessConnection<ModelVariant>;
 
   protected:
-    std::vector<Flow> transport_queue;
-    std::vector<FlowQuantity> initial_transport_queue;
+    Forcing forcing_nu;
+    FlowQuantity initial_flow_quantity;
+    Flow overflow;
+    std::vector<AnnotatedFlow> transport_queue;
     TransportDelay pos;
     std::unique_ptr<TransportChainLink<ModelVariant>> next_transport_chain_link;
 
@@ -47,7 +49,7 @@ class TransportChainLink {
     BusinessConnection<ModelVariant>* const business_connection;
 
     void push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star);
-    void set_forcing_nu(const Forcing& forcing_nu);
+    void set_forcing_nu(Forcing forcing_nu_p);
     TransportDelay transport_delay() const { return transport_queue.size(); }
     Flow get_total_flow() const;
     Flow get_disequilibrium() const;
