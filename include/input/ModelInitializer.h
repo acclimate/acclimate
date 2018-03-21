@@ -50,13 +50,17 @@ template<class ModelVariant>
 class ModelInitializer {
   protected:
     class TemporaryGeoEntity {
+      protected:
+        std::unique_ptr<GeoEntity<ModelVariant>> entity_m;
       public:
         bool used;
-        GeoEntity<ModelVariant>* entity;
-        TemporaryGeoEntity(GeoEntity<ModelVariant>* entity_p, bool used_p) : used(used_p), entity(entity_p) {}
+        GeoEntity<ModelVariant>* entity() {
+            return entity_m.get();
+        }
+        TemporaryGeoEntity(GeoEntity<ModelVariant>* entity_p, bool used_p) : entity_m(entity_p), used(used_p) {}
         ~TemporaryGeoEntity() {
-            if (!used) {
-                delete entity;
+            if (used) {
+                entity_m.release();
             }
         }
     };

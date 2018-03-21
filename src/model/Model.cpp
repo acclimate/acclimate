@@ -154,5 +154,15 @@ Consumer<ModelVariant>* Model<ModelVariant>::find_consumer(const std::string& re
     return nullptr;
 }
 
+
+template<class ModelVariant>
+GeoLocation<ModelVariant>* Model<ModelVariant>::find_location(const std::string& name) const {
+    auto it = std::find_if(other_locations.begin(), other_locations.end(), [name](const std::unique_ptr<GeoLocation<ModelVariant>>& it) { return std::string(*it) == name; });
+    if (it == other_locations.end()) {
+        return nullptr;
+    }
+    return it->get();
+}
+
 INSTANTIATE_BASIC(Model);
 }  // namespace acclimate

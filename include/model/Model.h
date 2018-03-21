@@ -73,6 +73,7 @@ class Model {
     Firm<ModelVariant>* find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const;
     Consumer<ModelVariant>* find_consumer(Region<ModelVariant>* region) const;
     Consumer<ModelVariant>* find_consumer(const std::string& region_name) const;
+    GeoLocation<ModelVariant>* find_location(const std::string& name) const;
 
     Region<ModelVariant>* add_region(std::string name);
     Sector<ModelVariant>* add_sector(std::string name, const Ratio& upper_storage_limit_omega_p, const Time& initial_storage_fill_factor_psi_p);

@@ -352,8 +352,8 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
     const auto road_km_costs = transport["road_km_costs"].as<FloatType>();
     const auto sea_km_costs = transport["sea_km_costs"].as<FloatType>();
 
-    std::vector<TemporaryGeoEntity> points;
-    std::vector<TemporaryGeoEntity> final_connections;
+    std::vector<std::unique_ptr<TemporaryGeoEntity>> points;
+    std::vector<std::unique_ptr<TemporaryGeoEntity>> final_connections;
     std::vector<std::size_t> input_indices;
     std::unordered_map<std::string, std::size_t> point_indices;
 
@@ -361,6 +361,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
 
     const auto types_size = file.getDim("typeindex").getSize();
     std::vector<char*> typenames(types_size);
+    file.getVar("typeindex").getVar(&typenames[0]);
     char type_port = -1;
     char type_region = -1;
     char type_sea = -1;
@@ -371,7 +372,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
         } else if (s == "sea") {
             type_sea = i;
         } else if (s == "region") {
-            type_region == i;
+            type_region = i;
         } else {
             error("Unknown transport node type '" << s << "'");
         }
@@ -413,7 +414,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
         if (location) {
             std::unique_ptr<GeoPoint> centroid(new GeoPoint(longitudes[i], latitudes[i]));
             location->set_centroid(centroid);
-            points.emplace_back(TemporaryGeoEntity(location, types[i] == type_region));
+            points.emplace_back(new TemporaryGeoEntity(location, types[i] == type_region));
             point_indices[ids[i]] = points.size() - 1;
             input_indices.emplace_back(i);
         }
@@ -423,12 +424,12 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
     const auto size = points.size();
     std::vector<Path> paths(size * size, Path());
     for (std::size_t i = 0; i < size; ++i) {
-        auto p1 = &points[i];
-        auto l1 = static_cast<GeoLocation<ModelVariant>*>(p1->entity);
+        auto& p1 = points[i];
+        auto l1 = static_cast<GeoLocation<ModelVariant>*>(p1->entity());
         for (std::size_t j = 0; j < i; ++j) {  // assume connections is symmetric
             if (connections[input_indices[i] * input_size + input_indices[j]]) {
-                auto p2 = &points[j];
-                auto l2 = static_cast<GeoLocation<ModelVariant>*>(p2->entity);
+                auto& p2 = points[j];
+                auto l2 = static_cast<GeoLocation<ModelVariant>*>(p2->entity());
                 FloatType costs;
                 TransportDelay delay;
                 typename GeoConnection<ModelVariant>::Type type;
@@ -443,9 +444,9 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
                     costs = road_km_costs * distance;
                 }
                 // connections is symmetric -> connection needs to be used twice to make sure it's the same object
-                TemporaryGeoEntity c(new GeoConnection<ModelVariant>(delay, type, l1, l2), false);
-                paths[i * size + j] = Path(costs, p1, p2, &c);
-                paths[j * size + i] = Path(costs, p2, p1, &c);
+                TemporaryGeoEntity* c = new TemporaryGeoEntity(new GeoConnection<ModelVariant>(delay, type, l1, l2), false);
+                paths[i * size + j] = Path(costs, p1.get(), p2.get(), c);
+                paths[j * size + i] = Path(costs, p2.get(), p1.get(), c);
                 final_connections.emplace_back(c);
             }
         }
@@ -454,6 +455,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
     // find cheapest connections
     bool done = false;
     while (!done) {
+        info("Find cheapest paths iteration...");
         done = true;
         for (std::size_t i = 0; i < size; ++i) {
             for (std::size_t j = 0; j < size; ++j) {
@@ -477,14 +479,18 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
 
     // mark everything used
     for (std::size_t i = 0; i < size; ++i) {
-        auto p1 = &points[i];
+        auto& p1 = points[i];
         if (p1->used) {  // regions are already marked used
             for (std::size_t j = 0; j < size; ++j) {
-                auto p2 = &points[j];
+                auto& p2 = points[j];
                 if (p2->used) {  // regions are already marked used
                     auto& path = paths[i * size + j].points();
-                    for (std::size_t k = 1; k < path.size() - 1; ++k) {
-                        path[k]->used = true;
+                    if (path.empty()) {
+                        error("No transport connection from " << ids[input_indices[i]] << " to " << ids[input_indices[j]]);
+                    } else {
+                        for (std::size_t k = 1; k < path.size() - 1; ++k) {
+                            path[k]->used = true;
+                        }
                     }
                 }
             }
@@ -493,36 +499,39 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
 
     // add connections to locations actually used and create routes between regions
     for (std::size_t i = 0; i < size; ++i) {
-        auto p1 = &points[i];
+        auto& p1 = points[i];
         if (p1->used) {
-            auto l1 = static_cast<GeoLocation<ModelVariant>*>(p1->entity);
+            auto l1 = static_cast<GeoLocation<ModelVariant>*>(p1->entity());
             if (l1->type != GeoLocation<ModelVariant>::Type::REGION) {
                 model->other_locations.emplace_back(l1);
             }
             for (std::size_t j = 0; j < size; ++j) {
-                auto p2 = &points[j];
+                auto& p2 = points[j];
                 if (p2->used) {
-                    auto l2 = static_cast<GeoLocation<ModelVariant>*>(p2->entity);
+                    auto l2 = static_cast<GeoLocation<ModelVariant>*>(p2->entity());
                     auto& path = paths[i * size + j].points();
-                    if (path.size() == 3 && i < j) {  // direct connection, only once per i/j combination
-                        auto c = std::shared_ptr<GeoConnection<ModelVariant>>(static_cast<GeoConnection<ModelVariant>*>(path[1]->entity));
-                        l1->connections.push_back(c);
-                        l2->connections.push_back(c);
-                    }
-                    if (l1->type == GeoLocation<ModelVariant>::Type::REGION && l2->type == GeoLocation<ModelVariant>::Type::REGION) {
-                        auto r1 = static_cast<Region<ModelVariant>*>(l1);
-                        auto r2 = static_cast<Region<ModelVariant>*>(l2);
-                        GeoRoute<ModelVariant> route(GeoRoute<ModelVariant>::Type::ROADSEA);
-                        route.path.resize(path.size() - 2);
-                        for (std::size_t k = 1; k < path.size() - 1; ++k) {
-                            route.path[k - 1] = path[k]->entity;
+                    if (!path.empty()) {
+                        if (path.size() == 3 && i < j) {  // direct connection, only once per i/j combination
+                            auto c = std::shared_ptr<GeoConnection<ModelVariant>>(static_cast<GeoConnection<ModelVariant>*>(path[1]->entity()));
+                            l1->connections.push_back(c);
+                            l2->connections.push_back(c);
                         }
-                        r1->routes.emplace(std::string(*r2), route);
+                        if (l1->type == GeoLocation<ModelVariant>::Type::REGION && l2->type == GeoLocation<ModelVariant>::Type::REGION) {
+                            auto r1 = static_cast<Region<ModelVariant>*>(l1);
+                            auto r2 = static_cast<Region<ModelVariant>*>(l2);
+                            GeoRoute<ModelVariant> route(GeoRoute<ModelVariant>::Type::ROADSEA);
+                            route.path.resize(path.size() - 2);
+                            for (std::size_t k = 1; k < path.size() - 1; ++k) {
+                                route.path[k - 1] = path[k]->entity();
+                            }
+                            r1->routes.emplace(std::string(*r2), route);
+                        }
                     }
                 }
             }
         }
     }
+    // HERE SHOULD BE A CHECK IF IS ONE ORE MORE DISCONNECTION BETWEEN TWO POINTS !!!!!!!!!!!!!!!!!!!!!!!!!
 }
 
 template<class ModelVariant>
@@ -720,7 +729,6 @@ template<class ModelVariant>
 void ModelInitializer<ModelVariant>::build_agent_network_from_table(const mrio::Table<FloatType, std::size_t>& table, FloatType flow_threshold) {
     std::vector<EconomicAgent<ModelVariant>*> economic_agents;
     economic_agents.reserve(table.index_set().size());
-
     for (const auto& index : table.index_set().total_indices) {
         const std::string& region_name = index.region->name;
         const std::string& sector_name = index.sector->name;
@@ -745,9 +753,7 @@ void ModelInitializer<ModelVariant>::build_agent_network_from_table(const mrio::
             economic_agents.push_back(firm);
         }
     }
-
     build_transport_network();
-
     const Ratio time_factor = model->delta_t() / Time(365.0);
     const FlowQuantity daily_flow_threshold = round(FlowQuantity(flow_threshold * time_factor));
     auto d = table.raw_data().begin();

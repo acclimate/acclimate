@@ -68,6 +68,17 @@ void Scenario<ModelVariant>::set_consumer_property(Consumer<ModelVariant>* consu
 }
 
 template<class ModelVariant>
+void Scenario<ModelVariant>::set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, const bool reset) {
+    for (const auto& it_map : node.as_map()) {
+        const std::string& name = it_map.first;
+        const settings::SettingsNode& it = it_map.second;
+        if (name == "passage") {
+            location->set_forcing_nu(reset ? -1. : it.as<Forcing>());
+        }
+    }
+}
+
+template<class ModelVariant>
 void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, const bool reset) {
     for (const auto& targets : node.as_sequence()) {
         for (const auto& target : targets.as_map()) {
@@ -129,6 +140,15 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                                 set_consumer_property(ea->as_consumer(), it, reset);
                             }
                         }
+                    }
+                }
+            } else if (type == "sea") {
+                if (it.has("sea_route")) {
+                    GeoLocation<ModelVariant>* location = model->find_location(it["sea_route"].template as<std::string>());
+                    if (location) {
+                        set_location_property(location, it, reset);
+                    } else {
+                        error("Sea route " << it["sea_route"].template as<std::string>() << " not found");
                     }
                 }
             }

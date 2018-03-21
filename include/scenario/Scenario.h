@@ -35,6 +35,7 @@ class Scenario {
     const Model<ModelVariant>* model;
     void set_firm_property(Firm<ModelVariant>* firm, const settings::SettingsNode& node, const bool reset);
     void set_consumer_property(Consumer<ModelVariant>* consumer, const settings::SettingsNode& node, const bool reset);
+    void set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, const bool reset);
     void apply_target(const settings::SettingsNode& node, const bool reset);
     Time start_time = Time(0.0);
     Time stop_time = Time(0.0);

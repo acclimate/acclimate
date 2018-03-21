@@ -32,7 +32,7 @@ TransportChainLink<ModelVariant>::TransportChainLink(BusinessConnection<ModelVar
       business_connection(business_connection_p),
       overflow(0.0),
       initial_flow_quantity(initial_flow_Z_star.get_quantity()),
-      transport_queue(initial_transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
+      transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
       pos(0),
       forcing_nu(-1) {}
 

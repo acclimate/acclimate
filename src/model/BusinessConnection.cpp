@@ -54,13 +54,14 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
         TransportChainLink<ModelVariant>* link;
         for (std::size_t i = 0; i < route.path.size(); ++i) {
             auto& p = route.path[i];
-            link = new TransportChainLink<ModelVariant>(this, p->delay, initial_flow_Z_star_p);
+            auto new_link = new TransportChainLink<ModelVariant>(this, p->delay, initial_flow_Z_star_p);
             if (i == 0) {
-                link->next_transport_chain_link.reset(link);
+                first_transport_link.reset(new_link);
             } else {
-                first_transport_link.reset(link);
+                link->next_transport_chain_link.reset(new_link);
             }
             p->transport_chain_links.push_back(link);
+            link = new_link;
         }
     } else {
         first_transport_link.reset(new TransportChainLink<ModelVariant>(this, 0, initial_flow_Z_star_p));
