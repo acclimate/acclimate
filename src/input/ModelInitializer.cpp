@@ -284,7 +284,7 @@ void ModelInitializer<ModelVariant>::clean_network() {
                     if (consumer->input_storages.empty()) {
 #ifdef CLEANUP_INFO
                         warning(std::string(*consumer) << ": removed (no incoming connection)");
-#endif
+#endif                  
                         // Also cleans up memory of consumer
                         economic_agent = (*region)->economic_agents.erase(economic_agent);
                     } else {
@@ -525,6 +525,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
                                 route.path[k - 1] = path[k]->entity();
                             }
                             r1->routes.emplace(std::string(*r2), route);
+                            //~ r2->routes.emplace(std::string(*r1), route);
                         }
                     }
                 }

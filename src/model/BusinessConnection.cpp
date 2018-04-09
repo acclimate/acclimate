@@ -49,7 +49,7 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
 #pragma omp critical
     { seller->business_connections.emplace_back(this); }
     if (buyer->storage->economic_agent->region != seller->firm->region) {
-        const auto& route = buyer->storage->economic_agent->region->find_path_to(std::string(*seller->firm->region));
+        const auto& route = seller->firm->region->find_path_to(std::string(*buyer->storage->economic_agent->region));
         assert(route.path.size() > 0);
         TransportChainLink<ModelVariant>* link;
         for (std::size_t i = 0; i < route.path.size(); ++i) {
