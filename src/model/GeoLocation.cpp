@@ -35,6 +35,12 @@ void GeoLocation<ModelVariant>::remove_connection(const GeoConnection<ModelVaria
                            [connection](const std::shared_ptr<GeoConnection<ModelVariant>>& it) { return it.get() == connection; });
     connections.erase(it);
 }
+template<class ModelVariant>
+GeoLocation<ModelVariant>::~GeoLocation() {
+    std::cout << "Reseting GL: " << this << std::endl;
+    std::cout << "Reseting GL: " << std::string(*this) << std::endl;
+    //~ std::cout << "Loc: " << std::string(*this) << std::endl;
+}
 
 INSTANTIATE_BASIC(GeoLocation);
 }  // namespace acclimate

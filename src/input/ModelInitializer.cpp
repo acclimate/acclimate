@@ -271,7 +271,6 @@ void ModelInitializer<ModelVariant>::clean_network() {
                                 business_connection->seller->remove_business_connection(business_connection);
                             }
                         }
-
                         // Also cleans up memory of firm
                         economic_agent = (*region)->economic_agents.erase(economic_agent);
                     } else {
@@ -401,7 +400,6 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
     file.getVar("connections").getVar(&connections.data()[0]);
 
     file.close();
-
     for (std::size_t i = 0; i < input_size; ++i) {
         GeoLocation<ModelVariant>* location = nullptr;
         if (types[i] == type_region) {
@@ -419,7 +417,6 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
             input_indices.emplace_back(i);
         }
     }
-
     // create direct connections
     const auto size = points.size();
     std::vector<Path> paths(size * size, Path());
@@ -451,7 +448,6 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
             }
         }
     }
-
     // find cheapest connections
     bool done = false;
     while (!done) {
@@ -476,7 +472,6 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
             }
         }
     }
-
     // mark everything used
     for (std::size_t i = 0; i < size; ++i) {
         auto& p1 = points[i];
@@ -496,12 +491,12 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
             }
         }
     }
-
     // add connections to locations actually used and create routes between regions
     for (std::size_t i = 0; i < size; ++i) {
         auto& p1 = points[i];
         if (p1->used) {
             auto l1 = static_cast<GeoLocation<ModelVariant>*>(p1->entity());
+            //~ model->other_locations.emplace_back(l1);
             if (l1->type != GeoLocation<ModelVariant>::Type::REGION) {
                 model->other_locations.emplace_back(l1);
             }
@@ -532,6 +527,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
             }
         }
     }
+
     // HERE SHOULD BE A CHECK IF IS ONE ORE MORE DISCONNECTION BETWEEN TWO POINTS !!!!!!!!!!!!!!!!!!!!!!!!!
 }
 
@@ -860,6 +856,22 @@ void ModelInitializer<ModelVariant>::initialize() {
     pre_initialize_variant();
     build_agent_network();
     clean_network();
+    //~ for (auto region = model->regions.begin(); region != model->regions.end(); region++) {
+        //~ for (auto economic_agent = (*region)->economic_agents.begin(); economic_agent != (*region)->economic_agents.end(); economic_agent++) {
+            //~ if ((*economic_agent)->type == EconomicAgent<ModelVariant>::Type::FIRM) {
+                //~ Firm<ModelVariant>* firm = (*economic_agent)->as_firm();
+                //~ for (auto& storage : firm->input_storages) {
+                    //~ for (auto& business_connection : storage->purchasing_manager->business_connections) {
+                        //~ if ( std::string(*business_connection) == "MACH:EUR->MACH:CHN") {
+                            //~ std::cout << "hier " << std::string(*business_connection) << std::endl; 
+                            //~ business_connection->seller->remove_business_connection(business_connection);
+                            //~ std::cout << "hier 2 " << std::endl;
+                        //~ }
+                    //~ }
+                //~ }
+            //~ }
+        //~ }
+    //~ }
     post_initialize_variant();
 }
 

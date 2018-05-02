@@ -95,6 +95,7 @@ class BusinessConnection {
     BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
                        typename ModelVariant::SalesManagerType* seller_p,
                        const Flow& initial_flow_Z_star_p);
+    ~BusinessConnection();
     const Flow get_flow_mean() const;
     const FlowQuantity get_flow_deficit() const;
     const Flow get_total_flow() const;

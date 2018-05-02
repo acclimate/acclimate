@@ -20,6 +20,7 @@
 
 #include "model/TransportChainLink.h"
 #include "model/BusinessConnection.h"
+#include "model/GeoEntity.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
@@ -27,14 +28,35 @@ namespace acclimate {
 template<class ModelVariant>
 TransportChainLink<ModelVariant>::TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p,
                                                      const TransportDelay& transport_delay_tau,
-                                                     const Flow& initial_flow_Z_star)
+                                                     const Flow& initial_flow_Z_star,
+                                                     GeoEntity<ModelVariant>* geo_entity_p)
     : initial_transport_delay_tau(transport_delay_tau),
       business_connection(business_connection_p),
+      geo_entity(geo_entity_p),
       overflow(0.0),
       initial_flow_quantity(initial_flow_Z_star.get_quantity()),
       transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
       pos(0),
-      forcing_nu(-1) {}
+      forcing_nu(-1) {}//if (std::string(*geo_entity) == "EUPRT-EUR") {std::cout << "1 " << std::string(*this) << std::endl; std::cout << "2 " << this << std::endl; std::cout << "A " << std::string(*geo_entity) << std::endl; std::cout << "a " << geo_entity << std::endl; }}
+
+
+template<class ModelVariant>
+TransportChainLink<ModelVariant>::~TransportChainLink() {
+    std::cout << "Reseting TCL" << std::endl;
+    if (geo_entity) {
+        std::cout << "1 " << std::string(*this) << std::endl;
+        //~ std::cout << "11 " << std::string(*this) << std::endl;
+        //~ std::cout << "22 " << this << std::endl;
+        //~ std::cout << "bb " << geo_entity << std::endl;
+        //~ std::cout << "BB " << std::string(*geo_entity) << std::endl;
+        //~ std::cout << "2 " << std::string(*this) << std::endl;
+        geo_entity->remove_transport_chain_link(this);
+        //~ std::cout << "3 " << std::string(*this) << std::endl;
+
+    } else {
+        std::cout << "0" << std::endl;
+    }
+}
 
 template<class ModelVariant>
 void TransportChainLink<ModelVariant>::push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star) {

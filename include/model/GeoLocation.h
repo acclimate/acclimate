@@ -46,7 +46,7 @@ class GeoLocation : public GeoEntity<ModelVariant> {
     const Type type;
 
     GeoLocation(TransportDelay delay_p, Type type_p, std::string name_p);
-    virtual ~GeoLocation() {}
+    virtual ~GeoLocation();
     virtual inline Region<ModelVariant>* as_region() {
         assert(type == Type::REGION);
         return nullptr;

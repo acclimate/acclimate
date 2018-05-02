@@ -29,6 +29,12 @@ GeoConnection<ModelVariant>::GeoConnection(TransportDelay delay,
                                            const GeoLocation<ModelVariant>* location1_p,
                                            const GeoLocation<ModelVariant>* location2_p)
     : GeoEntity<ModelVariant>(delay, GeoEntity<ModelVariant>::Type::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
-
+    
+template<class ModelVariant>
+GeoConnection<ModelVariant>::~GeoConnection() {
+    std::cout << "Reseting GC: " << this<< std::endl;
+    std::cout << "Reseting GC: " << std::string(*this)<< std::endl;
+    //~ std::cout << "Con: " << std::string(*this) << std::endl;
+}
 INSTANTIATE_BASIC(GeoConnection);
 }  // namespace acclimate

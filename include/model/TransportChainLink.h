@@ -22,7 +22,7 @@
 #define ACCLIMATE_TRANSPORTCHAINLINK_H
 
 #include "model/Storage.h"
-
+#include "model/GeoEntity.h"
 namespace acclimate {
 
 template<class ModelVariant>
@@ -42,12 +42,14 @@ class TransportChainLink {
 
     TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p,
                        const TransportDelay& initial_transport_delay_tau,
-                       const Flow& initial_flow_Z_star);
-
+                       const Flow& initial_flow_Z_star,
+                       GeoEntity<ModelVariant>* geo_entity_p);
+    
   public:
     const TransportDelay initial_transport_delay_tau;
     BusinessConnection<ModelVariant>* const business_connection;
-
+    GeoEntity<ModelVariant>* const geo_entity;
+    ~TransportChainLink();
     void push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star);
     void set_forcing_nu(Forcing forcing_nu_p);
     TransportDelay transport_delay() const { return transport_queue.size(); }

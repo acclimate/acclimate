@@ -38,7 +38,7 @@ class GeoConnection : public GeoEntity<ModelVariant> {
     const GeoLocation<ModelVariant>* location1;
     const GeoLocation<ModelVariant>* location2;
     const Type type;
-
+	~GeoConnection();
     GeoConnection<ModelVariant>(TransportDelay delay, Type type_p, const GeoLocation<ModelVariant>* location1_p, const GeoLocation<ModelVariant>* location2_p);
     operator std::string() const { return std::string(*location1) + "-" + std::string(*location2); }
 };

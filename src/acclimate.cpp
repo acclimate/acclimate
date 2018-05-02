@@ -212,12 +212,17 @@ template<class ModelVariant>
 void Acclimate::Run<ModelVariant>::cleanup() {
     Acclimate::instance()->step(IterationStep::CLEANUP);
     scenario_m->end();
+    std::cout << "good scenario end" << std::endl;
     for (auto& output : outputs_m) {
         output->end();
     }
+    std::cout << "good output end" << std::endl;
     outputs_m.clear();
+    std::cout << "good ouput clean" << std::endl;
     scenario_m.reset();
+    std::cout << "good scenario reset" << std::endl;
     model_m.reset();
+    std::cout << "good model reset" << std::endl;
 }
 
 template<class ModelVariant>
