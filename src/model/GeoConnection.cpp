@@ -32,9 +32,6 @@ GeoConnection<ModelVariant>::GeoConnection(TransportDelay delay,
     
 template<class ModelVariant>
 GeoConnection<ModelVariant>::~GeoConnection() {
-    std::cout << "Reseting GC: " << this<< std::endl;
-    std::cout << "Reseting GC: " << std::string(*this)<< std::endl;
-    //~ std::cout << "Con: " << std::string(*this) << std::endl;
 }
 INSTANTIATE_BASIC(GeoConnection);
 }  // namespace acclimate

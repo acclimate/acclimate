@@ -856,22 +856,6 @@ void ModelInitializer<ModelVariant>::initialize() {
     pre_initialize_variant();
     build_agent_network();
     clean_network();
-    //~ for (auto region = model->regions.begin(); region != model->regions.end(); region++) {
-        //~ for (auto economic_agent = (*region)->economic_agents.begin(); economic_agent != (*region)->economic_agents.end(); economic_agent++) {
-            //~ if ((*economic_agent)->type == EconomicAgent<ModelVariant>::Type::FIRM) {
-                //~ Firm<ModelVariant>* firm = (*economic_agent)->as_firm();
-                //~ for (auto& storage : firm->input_storages) {
-                    //~ for (auto& business_connection : storage->purchasing_manager->business_connections) {
-                        //~ if ( std::string(*business_connection) == "MACH:EUR->MACH:CHN") {
-                            //~ std::cout << "hier " << std::string(*business_connection) << std::endl; 
-                            //~ business_connection->seller->remove_business_connection(business_connection);
-                            //~ std::cout << "hier 2 " << std::endl;
-                        //~ }
-                    //~ }
-                //~ }
-            //~ }
-        //~ }
-    //~ }
     post_initialize_variant();
 }
 

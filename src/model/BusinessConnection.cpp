@@ -53,13 +53,10 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
         assert(route.path.size() > 0);
         TransportChainLink<ModelVariant>* link;
         for (int i = 0; i < route.path.size(); ++i) {
-            //~ auto p = route.path[i];
             GeoEntity<ModelVariant>* p = route.path[i];
-            //~ std::cout << std::string(*p) << std::endl;
-            //~ auto* geo_entity = route.path[i];
-            //~ std::cout << "AA " <<  std::string(*p) << std::endl;
-            //~ std::cout << "aa " <<  p << std::endl;
-            //~ std::cout << "BC " <<  std::string(*this) << std::endl;
+            if ( std::string(*this) == "METL:CHN->MACH:BRA") {
+                std::cout << std::string(*p) << std::endl;
+            }
             auto new_link = new TransportChainLink<ModelVariant>(this, p->delay, initial_flow_Z_star_p,p);
             
             if (i == 0) {
@@ -67,26 +64,16 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
             } else {
                 link->next_transport_chain_link.reset(new_link);
             }
-            //~ p->transport_chain_links.push_back(link);
-
             link = new_link;
-            p->transport_chain_links.push_back(link);
-            //~ if (std::string(*p) == "EUPRT-EUR") {
-                //~ std::cout << "BC: " << std::string(*this) <<  " GE: " << p << " init: " << link << std::endl;
-            //~ }
+
         }
     } else {
-        //~ std::cout << "------------------" << std::endl;
-        //~ std::cout << "BC " <<  std::string(*this) << std::endl;
-        //~ std::cout << "------------------" << std::endl;
         first_transport_link.reset(new TransportChainLink<ModelVariant>(this, 0, initial_flow_Z_star_p,nullptr));
     }
 }
 
 template<class ModelVariant>
 BusinessConnection<ModelVariant>::~BusinessConnection() {
-    std::cout << "Reseting BC" << std::endl;
-    //~ std::cout << "NelsoN" << std::endl;
 }
 
 template<>

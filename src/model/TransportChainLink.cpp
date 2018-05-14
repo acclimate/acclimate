@@ -37,24 +37,12 @@ TransportChainLink<ModelVariant>::TransportChainLink(BusinessConnection<ModelVar
       initial_flow_quantity(initial_flow_Z_star.get_quantity()),
       transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
       pos(0),
-      forcing_nu(-1) {}//if (std::string(*geo_entity) == "EUPRT-EUR") {std::cout << "1 " << std::string(*this) << std::endl; std::cout << "2 " << this << std::endl; std::cout << "A " << std::string(*geo_entity) << std::endl; std::cout << "a " << geo_entity << std::endl; }}
-
-
+      forcing_nu(-1) { if (geo_entity) { geo_entity->transport_chain_links.push_back(this);} } 
+      
 template<class ModelVariant>
 TransportChainLink<ModelVariant>::~TransportChainLink() {
-    std::cout << "Reseting TCL" << std::endl;
     if (geo_entity) {
-        std::cout << "1 " << std::string(*this) << std::endl;
-        //~ std::cout << "11 " << std::string(*this) << std::endl;
-        //~ std::cout << "22 " << this << std::endl;
-        //~ std::cout << "bb " << geo_entity << std::endl;
-        //~ std::cout << "BB " << std::string(*geo_entity) << std::endl;
-        //~ std::cout << "2 " << std::string(*this) << std::endl;
         geo_entity->remove_transport_chain_link(this);
-        //~ std::cout << "3 " << std::string(*this) << std::endl;
-
-    } else {
-        std::cout << "0" << std::endl;
     }
 }
 

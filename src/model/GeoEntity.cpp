@@ -37,42 +37,19 @@ void GeoEntity<ModelVariant>::set_forcing_nu(Forcing forcing_nu_p) {
 }
 template<class ModelVariant>
 GeoEntity<ModelVariant>::~GeoEntity() {
-    //~ if (transport_chain_links.size() == 0) {
-        //~ std::cout << "Nothin inside the GeoEntity: " << std::endl;
-    //~ } else {
-        //~ std::cout << "There is something in the GeoEntity: " << transport_chain_links.size() << std::endl;
-    //~ }
-    //~ for ( auto it : transport_chain_links) {
-        //~ transport_chain_links.erase(it);
-    //~ }
-    std::cout << "Reseting GE: " << transport_chain_links.size() << std::endl;
 }
+
 
 template<class ModelVariant>
 void GeoEntity<ModelVariant>::remove_transport_chain_link(TransportChainLink<ModelVariant>* transport_chain_link) {
-    std::cout<< "remove_transport_chain_link: " << std::string(*transport_chain_link) << " at " << this << "  " << transport_chain_links.size() << std::endl;
     auto it = std::find_if(transport_chain_links.begin(), transport_chain_links.end(),
                            [transport_chain_link](const TransportChainLink<ModelVariant>* it) { return it == transport_chain_link; });
-    //~ std::cout << "second geo: "  << std::string(*this) << "  " << transport_chain_links.size() << std::endl;
+
     if (it == std::end(transport_chain_links)) {
-        //~ std::cout << "it: "  << std::string(it) << std::endl;
-        std::cout << "ERROR:" << std::endl;
+        std::cout << "ERROR: " << this  << std::endl;
+    } else {
+        transport_chain_links.erase(it);
     }
-    //~ std::cout << "wanted real: " << std::endl;
-    transport_chain_links.erase(it);
-    //~ std::cout << "wanted second " << std::endl;
-    //~ if (it == std::end(transport_chain_links)) {
-        //~ for (size_t i = 0; i < transport_chain_links.size(); ++i) {
-            //~ if ( std::string(*transport_chain_links[i]) == std::string(*transport_chain_link)) {
-                //~ std::cout << i << "/" << transport_chain_links.size() << std::endl;
-            //~ } 
-        //~ }
-        //~ std::cout << "wanted1: " << std::string(*transport_chain_link) << std::endl;
-        //~ error(transport_chain_links.size());
-    //~ } else {
-        //~ std::cout << "wanted real: " << std::endl;
-        //~ transport_chain_links.erase(it);
-    //~ }
 }
 
 INSTANTIATE_BASIC(GeoEntity);
