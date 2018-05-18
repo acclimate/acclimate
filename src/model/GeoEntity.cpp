@@ -32,9 +32,9 @@ template<class ModelVariant>
 void GeoEntity<ModelVariant>::set_forcing_nu(Forcing forcing_nu_p) {
     for (std::size_t i = 0; i < transport_chain_links.size(); i++) {
         transport_chain_links[i]->set_forcing_nu(forcing_nu_p);
-        //~ debug(std::string(*transport_chain_links[i]));
     }
 }
+
 template<class ModelVariant>
 GeoEntity<ModelVariant>::~GeoEntity() {
     for (auto& link : transport_chain_links) {
@@ -42,17 +42,14 @@ GeoEntity<ModelVariant>::~GeoEntity() {
     }
 }
 
-
 template<class ModelVariant>
 void GeoEntity<ModelVariant>::remove_transport_chain_link(TransportChainLink<ModelVariant>* transport_chain_link) {
     auto it = std::find_if(transport_chain_links.begin(), transport_chain_links.end(),
                            [transport_chain_link](const TransportChainLink<ModelVariant>* it) { return it == transport_chain_link; });
-
     if (it == std::end(transport_chain_links)) {
-        std::cout << "ERROR: " << this  << std::endl;
-    } else {
-        transport_chain_links.erase(it);
+        error("Transport chain link " << std::string(*transport_chain_link) << " not found");
     }
+    transport_chain_links.erase(it);
 }
 
 INSTANTIATE_BASIC(GeoEntity);

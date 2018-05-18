@@ -34,7 +34,7 @@ class PurchasingManager;
 
 template<class ModelVariant>
 class BusinessConnection {
-  private:
+  protected:
     Demand last_demand_request_D_;
     Flow initial_flow_Z_star_;
     Flow last_delivery_Z_;
@@ -45,10 +45,14 @@ class BusinessConnection {
     std::unique_ptr<TransportChainLink<ModelVariant>> first_transport_link;
 
   public:
-    inline const Time& time() const { return time_; };
-    inline void time(const Time& time_p) { time_ = time_p; };
     typename ModelVariant::PurchasingManagerType* buyer;  // TODO encapsulate
     typename ModelVariant::SalesManagerType* seller;      // TODO encapsulate
+
+    BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
+                       typename ModelVariant::SalesManagerType* seller_p,
+                       const Flow& initial_flow_Z_star_p);
+    inline const Time& time() const { return time_; }
+    inline void time(const Time& time_p) { time_ = time_p; }
     inline const Flow& last_shipment_Z(const SalesManager<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != seller) {
@@ -58,7 +62,7 @@ class BusinessConnection {
         UNUSED(caller);
 #endif
         return last_shipment_Z_;
-    };
+    }
     inline const Flow& last_delivery_Z(const SalesManager<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != seller) {
@@ -68,7 +72,7 @@ class BusinessConnection {
         UNUSED(caller);
 #endif
         return last_delivery_Z_;
-    };
+    }
     inline const Demand& last_demand_request_D(const PurchasingManager<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != buyer) {
@@ -78,25 +82,15 @@ class BusinessConnection {
         UNUSED(caller);
 #endif
         return last_demand_request_D_;
-    };
-    inline const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; };
+    }
+    inline const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; }
     inline void initial_flow_Z_star(const Flow& new_initial_flow_Z_star) {
         assertstep(INVESTMENT);
         initial_flow_Z_star_ = new_initial_flow_Z_star;
-    };
+    }
     inline void invalidate_buyer() { buyer = nullptr; }
     inline void invalidate_seller() { seller = nullptr; }
     const Ratio& demand_fulfill_history() const;  // only for VariantDemand
-
-
-  private:
-    void establish_connection();
-
-  public:
-    BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
-                       typename ModelVariant::SalesManagerType* seller_p,
-                       const Flow& initial_flow_Z_star_p);
-    ~BusinessConnection();
     std::size_t get_id(const TransportChainLink<ModelVariant>* transport_chain_link) const;
     const Flow get_flow_mean() const;
     const FlowQuantity get_flow_deficit() const;

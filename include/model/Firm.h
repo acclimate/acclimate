@@ -33,23 +33,30 @@ class BusinessConnection;
 template<class ModelVariant>
 class Firm : public EconomicAgent<ModelVariant> {
   protected:
-    std::shared_ptr<BusinessConnection<ModelVariant>> self_supply_connection_ = nullptr;
-  public:
-    using EconomicAgent<ModelVariant>::input_storages;
-    using EconomicAgent<ModelVariant>::region;
-    using EconomicAgent<ModelVariant>::sector;
-
-  public:
-    std::unique_ptr<typename ModelVariant::CapacityManagerType> const capacity_manager;
-    std::unique_ptr<typename ModelVariant::SalesManagerType> const sales_manager;
-
-  private:
     Flow initial_production_X_star_ = Flow(0.0);
     Forcing forcing_lambda_ = Forcing(1.0);
     Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
     Flow initial_total_use_U_star_ = Flow(0.0);
+    std::shared_ptr<BusinessConnection<ModelVariant>> self_supply_connection_ = nullptr;
+
+    void produce_X();
 
   public:
+    using EconomicAgent<ModelVariant>::input_storages;
+    using EconomicAgent<ModelVariant>::region;
+    using EconomicAgent<ModelVariant>::sector;
+    std::unique_ptr<typename ModelVariant::CapacityManagerType> const capacity_manager;
+    std::unique_ptr<typename ModelVariant::SalesManagerType> const sales_manager;
+
+    Firm(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
+    void iterate_consumption_and_production() override;
+    void iterate_expectation() override;
+    void iterate_purchase() override;
+    void iterate_investment() override;
+    void add_initial_production_X_star(const Flow& initial_production_flow_X_star);
+    void subtract_initial_production_X_star(const Flow& initial_production_flow_X_star);
+    void add_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
+    void subtract_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
     Firm<ModelVariant>* as_firm() override;
     const Firm<ModelVariant>* as_firm() const override;
     inline const BusinessConnection<ModelVariant>* self_supply_connection() const {
@@ -105,20 +112,6 @@ class Firm : public EconomicAgent<ModelVariant> {
         assert(forcing_lambda_p >= 0.0);
         forcing_lambda_ = forcing_lambda_p;
     };
-
-  protected:
-    void produce_X();
-
-  public:
-    Firm(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
-    void iterate_consumption_and_production() override;
-    void iterate_expectation() override;
-    void iterate_purchase() override;
-    void iterate_investment() override;
-    void add_initial_production_X_star(const Flow& initial_production_flow_X_star);
-    void subtract_initial_production_X_star(const Flow& initial_production_flow_X_star);
-    void add_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
-    void subtract_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
 #ifdef DEBUG
     void print_details() const override;
 #endif

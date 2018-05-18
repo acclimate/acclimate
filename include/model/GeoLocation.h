@@ -60,7 +60,7 @@ class GeoLocation : public GeoEntity<ModelVariant> {
         return centroid_m.reset(centroid_p.release());
     }
     const GeoPoint* centroid() const { return centroid_m.get(); };
-    void remove_connection( const GeoConnection<ModelVariant>* connection);
+    void remove_connection(const GeoConnection<ModelVariant>* connection);
     operator std::string() const { return name_m; }
 };
 }  // namespace acclimate

@@ -291,12 +291,12 @@ void ModelInitializer<ModelVariant>::clean_network() {
                     if (consumer->input_storages.empty()) {
 #ifdef CLEANUP_INFO
                         warning(std::string(*consumer) << ": removed (no incoming connection)");
-#endif                  
-                        // Also cleans up memory of consumer
+#endif
+                        // Clean up memory of consumer
                         economic_agent = (*region)->economic_agents.erase(economic_agent);
                     } else {
-                        economic_agent++;
-                        consumer_count++;
+                        ++economic_agent;
+                        ++consumer_count;
                     }
                 } else {
                     error("Unknown economic agent type");
@@ -509,7 +509,6 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
         auto& p1 = points[i];
         if (p1->used) {
             auto l1 = static_cast<GeoLocation<ModelVariant>*>(p1->entity());
-            //~ model->other_locations.emplace_back(l1);
             if (l1->type != GeoLocation<ModelVariant>::Type::REGION) {
                 model->other_locations.emplace_back(l1);
             }
@@ -533,7 +532,6 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
                                 route.path[k - 1] = path[k]->entity();
                             }
                             r1->routes.emplace(std::string(*r2), route);
-                            //~ r2->routes.emplace(std::string(*r1), route);
                         }
                     }
                 }
@@ -541,7 +539,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
         }
     }
 
-    // HERE SHOULD BE A CHECK IF IS ONE ORE MORE DISCONNECTION BETWEEN TWO POINTS !!!!!!!!!!!!!!!!!!!!!!!!!
+    // TODO check if there is at least one connection between every pair of regions
 }
 
 template<class ModelVariant>

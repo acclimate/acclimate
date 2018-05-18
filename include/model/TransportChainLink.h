@@ -21,8 +21,8 @@
 #ifndef ACCLIMATE_TRANSPORTCHAINLINK_H
 #define ACCLIMATE_TRANSPORTCHAINLINK_H
 
-#include "model/Storage.h"
 #include "model/GeoEntity.h"
+#include "model/Storage.h"
 namespace acclimate {
 
 template<class ModelVariant>

@@ -37,8 +37,12 @@ TransportChainLink<ModelVariant>::TransportChainLink(BusinessConnection<ModelVar
       initial_flow_quantity(initial_flow_Z_star.get_quantity()),
       transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
       pos(0),
-      forcing_nu(-1) { if (geo_entity) { geo_entity->transport_chain_links.push_back(this);} } 
-      
+      forcing_nu(-1) {
+    if (geo_entity) {
+        geo_entity->transport_chain_links.push_back(this);
+    }
+}
+
 template<class ModelVariant>
 TransportChainLink<ModelVariant>::~TransportChainLink() {
     if (geo_entity) {
@@ -122,16 +126,16 @@ FloatType TransportChainLink<ModelVariant>::get_stddeviation() const {
 template<class ModelVariant>
 FlowQuantity TransportChainLink<ModelVariant>::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    FlowQuantity res = FlowQuantity(0.0) ;
+    FlowQuantity res = FlowQuantity(0.0);
     for (const auto& f : transport_queue) {
         res += round(f.initial - f.current.get_quantity());
     }
     //~ if (transport_queue.size() == 0) {
-        //~ res  = round(-1.*overflow.get_quantity());
+    //~ res  = round(-1.*overflow.get_quantity());
     //~ } else  {
-        //~ for (const auto& f : transport_queue) {
-            //~ res += round(f.initial - f.current.get_quantity());
-        //~ }
+    //~ for (const auto& f : transport_queue) {
+    //~ res += round(f.initial - f.current.get_quantity());
+    //~ }
     //~ }
     //~ return round(res - overflow.get_quantity());
     return round(res - overflow.get_quantity());

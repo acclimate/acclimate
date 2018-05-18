@@ -52,26 +52,17 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
         TransportChainLink<ModelVariant>* link;
         for (int i = 0; i < route.path.size(); ++i) {
             GeoEntity<ModelVariant>* p = route.path[i];
-            if ( std::string(*this) == "METL:CHN->MACH:BRA") {
-                std::cout << std::string(*p) << std::endl;
-            }
-            auto new_link = new TransportChainLink<ModelVariant>(this, p->delay, initial_flow_Z_star_p,p);
-            
+            auto new_link = new TransportChainLink<ModelVariant>(this, p->delay, initial_flow_Z_star_p, p);
             if (i == 0) {
                 first_transport_link.reset(new_link);
             } else {
                 link->next_transport_chain_link.reset(new_link);
             }
             link = new_link;
-
         }
     } else {
-        first_transport_link.reset(new TransportChainLink<ModelVariant>(this, 0, initial_flow_Z_star_p,nullptr));
+        first_transport_link.reset(new TransportChainLink<ModelVariant>(this, 0, initial_flow_Z_star_p, nullptr));
     }
-}
-
-template<class ModelVariant>
-BusinessConnection<ModelVariant>::~BusinessConnection() {
 }
 
 template<>
