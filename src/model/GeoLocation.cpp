@@ -37,6 +37,9 @@ void GeoLocation<ModelVariant>::remove_connection(const GeoConnection<ModelVaria
 }
 template<class ModelVariant>
 GeoLocation<ModelVariant>::~GeoLocation() {
+    for (auto& connection : connections) {
+        connection->invalidate_location(this);
+    }
 }
 
 INSTANTIATE_BASIC(GeoLocation);

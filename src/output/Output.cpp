@@ -426,7 +426,7 @@ void Output<ModelVariant>::write_ingoing_connections(const Storage<ModelVariant>
             if ((sector_from_name == nullptr) || std::string(*firm_from->sector) == sector_from_name) {
                 if ((region_from_name == nullptr) || std::string(*firm_from->region) == region_from_name) {
                     internal_start_target("ingoing_connections", firm_from->sector, firm_from->region);
-                    write_connection_parameters(bc, ingoing_connection_node["parameters"]);
+                    write_connection_parameters(bc.get(), ingoing_connection_node["parameters"]);
                     internal_end_target();
                 }
             }

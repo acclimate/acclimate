@@ -114,6 +114,13 @@ void PurchasingManager<ModelVariant>::subtract_initial_demand_D_star(const Deman
     demand_D_ -= demand_D_p;
 }
 
+template<class ModelVariant>
+PurchasingManager<ModelVariant>::~PurchasingManager() {
+    for (auto& business_connection : business_connections) {
+        business_connection->invalidate_buyer();
+    }
+}
+
 #ifdef DEBUG
 template<class ModelVariant>
 void PurchasingManager<ModelVariant>::print_details() const {

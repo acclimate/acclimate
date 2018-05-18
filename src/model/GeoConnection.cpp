@@ -29,9 +29,17 @@ GeoConnection<ModelVariant>::GeoConnection(TransportDelay delay,
                                            const GeoLocation<ModelVariant>* location1_p,
                                            const GeoLocation<ModelVariant>* location2_p)
     : GeoEntity<ModelVariant>(delay, GeoEntity<ModelVariant>::Type::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
-    
+
 template<class ModelVariant>
-GeoConnection<ModelVariant>::~GeoConnection() {
+void GeoConnection<ModelVariant>::invalidate_location(const GeoLocation<ModelVariant>* location) {
+    if (location1 == location) {
+        location1 = nullptr;
+    } else if (location2 == location) {
+        location2 = nullptr;
+    } else {
+        error("Location not part of this connection or already invalidated");
+    }
 }
+
 INSTANTIATE_BASIC(GeoConnection);
 }  // namespace acclimate

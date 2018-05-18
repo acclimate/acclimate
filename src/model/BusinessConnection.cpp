@@ -46,8 +46,6 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
       transport_costs(0.0),
       last_shipment_Z_(initial_flow_Z_star_p),
       time_(seller_p->firm->sector->model->time()) {
-#pragma omp critical
-    { seller->business_connections.emplace_back(this); }
     if (buyer->storage->economic_agent->region != seller->firm->region) {
         const auto& route = seller->firm->region->find_path_to(std::string(*buyer->storage->economic_agent->region));
         assert(route.path.size() > 0);
@@ -115,6 +113,19 @@ void BusinessConnection<ModelVariant>::deliver_flow_Z(const Flow& flow_Z) {
     if (!get_domestic()) {
         buyer->storage->economic_agent->region->add_import_Z(flow_Z);
     }
+}
+
+template<class ModelVariant>
+std::size_t BusinessConnection<ModelVariant>::get_id(const TransportChainLink<ModelVariant>* transport_chain_link) const {
+    std::size_t id = 0;
+    if (first_transport_link) {
+        const TransportChainLink<ModelVariant>* link = first_transport_link.get();
+        while (link->next_transport_chain_link && transport_chain_link != link->next_transport_chain_link.get()) {
+            link = link->next_transport_chain_link.get();
+            id++;
+        }
+    }
+    return id;
 }
 
 template<class ModelVariant>

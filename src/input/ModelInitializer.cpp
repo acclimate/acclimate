@@ -210,9 +210,10 @@ void ModelInitializer<ModelVariant>::initialize_connection(Firm<ModelVariant>* f
     input_storage->add_initial_flow_Z_star(flow);
     firm_from->add_initial_production_X_star(flow);
 
-    auto business_connection = new BusinessConnection<ModelVariant>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
-    input_storage->purchasing_manager->business_connections.push_back(business_connection);
-
+    auto business_connection =
+        std::make_shared<BusinessConnection<ModelVariant>>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
+    firm_from->sales_manager->business_connections.emplace_back(business_connection);
+    input_storage->purchasing_manager->business_connections.emplace_back(business_connection);
     if (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to)) {
         firm_from->self_supply_connection(business_connection);
     }
@@ -256,9 +257,11 @@ void ModelInitializer<ModelVariant>::clean_network() {
                             warning(std::string(*firm) << ": removed (no incoming connection)");
                         }
 #endif
-                        firm->sector->remove_firm(firm);
                         // Alter initial_input_flow of buying economic agents
                         for (auto& business_connection : firm->sales_manager->business_connections) {
+                            if (!business_connection->buyer) {
+                                error("Buyer invalid");
+                            }
                             if (!business_connection->buyer->storage->subtract_initial_flow_Z_star(business_connection->initial_flow_Z_star())) {
                                 business_connection->buyer->remove_business_connection(business_connection.get());
                             }
@@ -267,15 +270,20 @@ void ModelInitializer<ModelVariant>::clean_network() {
                         // Alter initial_production of supplying firms
                         for (auto& storage : firm->input_storages) {
                             for (auto& business_connection : storage->purchasing_manager->business_connections) {
+                                if (!business_connection->seller) {
+                                    error("Seller invalid");
+                                }
                                 business_connection->seller->firm->subtract_initial_production_X_star(business_connection->initial_flow_Z_star());
-                                business_connection->seller->remove_business_connection(business_connection);
+                                business_connection->seller->remove_business_connection(business_connection.get());
                             }
                         }
-                        // Also cleans up memory of firm
+
+                        firm->sector->remove_firm(firm);
+                        // Clean up memory of firm
                         economic_agent = (*region)->economic_agents.erase(economic_agent);
                     } else {
-                        economic_agent++;
-                        firm_count++;
+                        ++economic_agent;
+                        ++firm_count;
                     }
                 } else if ((*economic_agent)->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
                     Consumer<ModelVariant>* consumer = (*economic_agent)->as_consumer();
@@ -473,18 +481,23 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
         }
     }
     // mark everything used
-    for (std::size_t i = 0; i < size; ++i) {
-        auto& p1 = points[i];
-        if (p1->used) {  // regions are already marked used
-            for (std::size_t j = 0; j < size; ++j) {
-                auto& p2 = points[j];
-                if (p2->used) {  // regions are already marked used
-                    auto& path = paths[i * size + j].points();
-                    if (path.empty()) {
-                        error("No transport connection from " << ids[input_indices[i]] << " to " << ids[input_indices[j]]);
-                    } else {
-                        for (std::size_t k = 1; k < path.size() - 1; ++k) {
-                            path[k]->used = true;
+    bool found = true;
+    while (found) {
+        found = false;
+        for (std::size_t i = 0; i < size; ++i) {
+            auto& p1 = points[i];
+            if (p1->used) {  // regions are already marked used
+                for (std::size_t j = 0; j < size; ++j) {
+                    auto& p2 = points[j];
+                    if (p2->used) {  // regions are already marked used
+                        auto& path = paths[i * size + j].points();
+                        if (path.empty()) {
+                            error("No transport connection from " << ids[input_indices[i]] << " to " << ids[input_indices[j]]);
+                        } else {
+                            for (std::size_t k = 1; k < path.size() - 1; ++k) {
+                                found = found || !path[k]->used;
+                                path[k]->used = true;
+                            }
                         }
                     }
                 }
@@ -592,10 +605,14 @@ void ModelInitializer<ModelVariant>::create_simple_transport_connection(Region<M
     auto inf = std::make_shared<GeoConnection<ModelVariant>>(transport_delay, GeoConnection<ModelVariant>::Type::UNSPECIFIED, region_from, region_to);
     region_from->connections.push_back(inf);
     region_to->connections.push_back(inf);
-    GeoRoute<ModelVariant> route(GeoRoute<ModelVariant>::Type::UNSPECIFIED);
-    route.path.emplace_back(inf.get());
-    region_from->routes.emplace(std::string(*region_to), route);
-    region_to->routes.emplace(std::string(*region_from), route);
+
+    GeoRoute<ModelVariant> route1(GeoRoute<ModelVariant>::Type::UNSPECIFIED);
+    route1.path.emplace_back(inf.get());
+    region_from->routes.emplace(std::string(*region_to), route1);
+
+    GeoRoute<ModelVariant> route2(GeoRoute<ModelVariant>::Type::UNSPECIFIED);
+    route2.path.emplace_back(inf.get());
+    region_to->routes.emplace(std::string(*region_from), route2);
 }
 
 template<class ModelVariant>

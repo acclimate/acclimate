@@ -32,6 +32,8 @@ class BusinessConnection;
 
 template<class ModelVariant>
 class Firm : public EconomicAgent<ModelVariant> {
+  protected:
+    std::shared_ptr<BusinessConnection<ModelVariant>> self_supply_connection_ = nullptr;
   public:
     using EconomicAgent<ModelVariant>::input_storages;
     using EconomicAgent<ModelVariant>::region;
@@ -46,16 +48,15 @@ class Firm : public EconomicAgent<ModelVariant> {
     Forcing forcing_lambda_ = Forcing(1.0);
     Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
     Flow initial_total_use_U_star_ = Flow(0.0);
-    BusinessConnection<ModelVariant>* self_supply_connection_ = nullptr;
 
   public:
     Firm<ModelVariant>* as_firm() override;
     const Firm<ModelVariant>* as_firm() const override;
     inline const BusinessConnection<ModelVariant>* self_supply_connection() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return self_supply_connection_;
+        return self_supply_connection_.get();
     };
-    inline void self_supply_connection(BusinessConnection<ModelVariant>* self_supply_connection_p) {
+    inline void self_supply_connection(std::shared_ptr<BusinessConnection<ModelVariant>> self_supply_connection_p) {
         assertstep(INITIALIZATION);
         self_supply_connection_ = self_supply_connection_p;
     };

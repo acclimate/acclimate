@@ -34,7 +34,7 @@ template<class ModelVariant>
 class PurchasingManager {
   public:
     Storage<ModelVariant>* const storage;
-    std::vector<BusinessConnection<ModelVariant>*> business_connections;
+    std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>> business_connections;
 
   protected:
     Demand demand_D_ = Demand(0.0);
@@ -54,7 +54,7 @@ class PurchasingManager {
   protected:
   public:
     explicit PurchasingManager(Storage<ModelVariant>* storage_p);
-    virtual ~PurchasingManager(){};
+    virtual ~PurchasingManager();
     virtual const FlowQuantity get_flow_deficit() const;
     virtual const Flow get_total_flow() const;
     const Flow get_disequilibrium() const;

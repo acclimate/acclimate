@@ -39,33 +39,29 @@ class TransportChainLink {
     std::vector<AnnotatedFlow> transport_queue;
     TransportDelay pos;
     std::unique_ptr<TransportChainLink<ModelVariant>> next_transport_chain_link;
+    GeoEntity<ModelVariant>* geo_entity;
 
     TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p,
                        const TransportDelay& initial_transport_delay_tau,
                        const Flow& initial_flow_Z_star,
                        GeoEntity<ModelVariant>* geo_entity_p);
-    
+
   public:
     const TransportDelay initial_transport_delay_tau;
     BusinessConnection<ModelVariant>* const business_connection;
-    GeoEntity<ModelVariant>* const geo_entity;
     ~TransportChainLink();
     void push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star);
     void set_forcing_nu(Forcing forcing_nu_p);
-    TransportDelay transport_delay() const { return transport_queue.size(); }
+    inline TransportDelay transport_delay() const { return transport_queue.size(); }
     Flow get_total_flow() const;
     Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
     FlowQuantity get_flow_deficit() const;
-
+    inline void unregister_geoentity() { geo_entity = nullptr; }
     inline operator std::string() const {
-        const TransportChainLink<ModelVariant>* link = this;
-        int id = 0;
-        while (link->next_transport_chain_link) {
-            link = link->next_transport_chain_link.get();
-            id++;
-        }
-        return std::string(*business_connection->seller) + "-" + std::to_string(id) + "->" + std::string(*business_connection->buyer->storage->economic_agent);
+        return (business_connection->seller ? std::string(*business_connection->seller) : std::string("INVALID")) + "-"
+               + std::to_string(business_connection->get_id(this)) + "->"
+               + (business_connection->buyer ? std::string(*business_connection->buyer->storage->economic_agent) : std::string("INVALID"));
     }
 };
 }  // namespace acclimate

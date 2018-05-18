@@ -30,7 +30,7 @@ template<class ModelVariant>
 class SalesManager {
   public:
     Firm<ModelVariant>* const firm;
-    std::vector<std::unique_ptr<BusinessConnection<ModelVariant>>> business_connections;
+    std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>> business_connections;
 
   protected:
     Demand sum_demand_requests_D_ = Demand(0.0);
@@ -43,14 +43,14 @@ class SalesManager {
 
   public:
     explicit SalesManager(Firm<ModelVariant>* firm_p);
-    virtual ~SalesManager(){};
+    virtual ~SalesManager();
     virtual void distribute(const Flow& production_X) = 0;
     virtual void iterate_expectation();
     void add_demand_request_D(const Demand& demand_request_D);
     void add_initial_demand_request_D_star(const Demand& initial_demand_request_D_star);
     void subtract_initial_demand_request_D_star(const Demand& initial_demand_request_D_star);
     const Flow get_transport_flow() const;
-    std::unique_ptr<BusinessConnection<ModelVariant>> remove_business_connection(BusinessConnection<ModelVariant>* business_connection);
+    bool remove_business_connection(BusinessConnection<ModelVariant>* business_connection);
     inline explicit operator std::string() const { return std::string(*firm); }
 #ifdef DEBUG
     void print_details() const;

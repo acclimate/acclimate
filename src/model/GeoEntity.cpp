@@ -37,6 +37,9 @@ void GeoEntity<ModelVariant>::set_forcing_nu(Forcing forcing_nu_p) {
 }
 template<class ModelVariant>
 GeoEntity<ModelVariant>::~GeoEntity() {
+    for (auto& link : transport_chain_links) {
+        link->unregister_geoentity();
+    }
 }
 
 

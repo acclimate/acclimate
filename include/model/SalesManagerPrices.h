@@ -55,7 +55,7 @@ class SalesManagerPrices : public SalesManager<ModelVariant> {
     Flow estimated_possible_production_X_hat_ = Flow(0.0);
     Ratio tax_ = Ratio(0.0);
     struct {
-        typename std::vector<std::unique_ptr<BusinessConnection<ModelVariant>>>::iterator connection_not_served_completely;
+        typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::iterator connection_not_served_completely;
         Price price_cheapest_buyer_accepted_in_optimization = Price(0.0);  // Price of cheapest connection, that has been considered in the profit optimization
         Flow flow_not_served_completely = Flow(0.0);
     } supply_distribution_scenario;  // to distribute production among demand requests
@@ -117,8 +117,8 @@ class SalesManagerPrices : public SalesManager<ModelVariant> {
                                              const Price& precision_p) const;
 #ifdef DEBUG
     void print_parameters() const;
-    void print_connections(typename std::vector<std::unique_ptr<BusinessConnection<ModelVariant>>>::const_iterator begin_equally_distributed,
-                           typename std::vector<std::unique_ptr<BusinessConnection<ModelVariant>>>::const_iterator end_equally_distributed) const;
+    void print_connections(typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator begin_equally_distributed,
+                           typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator end_equally_distributed) const;
 #endif
 };
 }  // namespace acclimate

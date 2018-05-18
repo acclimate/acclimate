@@ -47,6 +47,8 @@ class BusinessConnection {
   public:
     inline const Time& time() const { return time_; };
     inline void time(const Time& time_p) { time_ = time_p; };
+    typename ModelVariant::PurchasingManagerType* buyer;  // TODO encapsulate
+    typename ModelVariant::SalesManagerType* seller;      // TODO encapsulate
     inline const Flow& last_shipment_Z(const SalesManager<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != seller) {
@@ -82,11 +84,10 @@ class BusinessConnection {
         assertstep(INVESTMENT);
         initial_flow_Z_star_ = new_initial_flow_Z_star;
     };
+    inline void invalidate_buyer() { buyer = nullptr; }
+    inline void invalidate_seller() { seller = nullptr; }
     const Ratio& demand_fulfill_history() const;  // only for VariantDemand
 
-  public:
-    typename ModelVariant::PurchasingManagerType* const buyer;
-    typename ModelVariant::SalesManagerType* const seller;
 
   private:
     void establish_connection();
@@ -96,6 +97,7 @@ class BusinessConnection {
                        typename ModelVariant::SalesManagerType* seller_p,
                        const Flow& initial_flow_Z_star_p);
     ~BusinessConnection();
+    std::size_t get_id(const TransportChainLink<ModelVariant>* transport_chain_link) const;
     const Flow get_flow_mean() const;
     const FlowQuantity get_flow_deficit() const;
     const Flow get_total_flow() const;
@@ -109,7 +111,10 @@ class BusinessConnection {
 
     void calc_demand_fulfill_history();  // only for VariantDemand
 
-    inline operator std::string() const { return std::string(*seller) + "->" + std::string(*buyer->storage->economic_agent); };
+    inline operator std::string() const {
+        return (seller ? std::string(*seller) : std::string("INVALID")) + "->"
+               + (buyer ? std::string(*buyer->storage->economic_agent) : std::string("INVALID"));
+    }
 };
 }  // namespace acclimate
 
