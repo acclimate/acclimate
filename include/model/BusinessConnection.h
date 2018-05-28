@@ -97,6 +97,7 @@ class BusinessConnection {
     const Flow get_total_flow() const;
     const Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
+	FloatType get_minimum_passage() const;
     TransportDelay get_transport_delay_tau() const;
     void push_flow_Z(const Flow& flow_Z);
     void deliver_flow_Z(const Flow& flow_Z);

@@ -71,6 +71,24 @@ const Ratio& BusinessConnection<VariantDemand>::demand_fulfill_history() const {
 }
 
 template<class ModelVariant>
+FloatType BusinessConnection<ModelVariant>::get_minimum_passage() const {
+    TransportChainLink<ModelVariant>* link = first_transport_link.get();
+    FloatType minimum_passage = 1.0;
+    FloatType link_passage;
+    while (link) {
+        link_passage = link->get_passage();
+        if ( link_passage >= 0. && link_passage < minimum_passage) {
+            minimum_passage = link_passage;
+        }
+        link = link->next_transport_chain_link.get();
+    }
+    if (minimum_passage > 1.0 || minimum_passage < 0.) {
+        minimum_passage = 1. ;
+    } 
+    return minimum_passage;
+}
+
+template<class ModelVariant>
 bool BusinessConnection<ModelVariant>::get_domestic() const {
     return (buyer->storage->economic_agent->region == seller->firm->region);
 }

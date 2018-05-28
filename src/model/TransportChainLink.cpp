@@ -50,6 +50,12 @@ TransportChainLink<ModelVariant>::~TransportChainLink() {
     }
 }
 
+
+template<class ModelVariant>
+FloatType TransportChainLink<ModelVariant>::get_passage() const {
+    return forcing_nu;
+}
+
 template<class ModelVariant>
 void TransportChainLink<ModelVariant>::push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star) {
     assertstep(CONSUMPTION_AND_PRODUCTION);

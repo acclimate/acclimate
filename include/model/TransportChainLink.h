@@ -56,6 +56,7 @@ class TransportChainLink {
     Flow get_total_flow() const;
     Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
+	FloatType get_passage() const;
     FlowQuantity get_flow_deficit() const;
     inline void unregister_geoentity() { geo_entity = nullptr; }
     inline operator std::string() const {
