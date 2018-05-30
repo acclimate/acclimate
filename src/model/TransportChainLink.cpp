@@ -50,7 +50,6 @@ TransportChainLink<ModelVariant>::~TransportChainLink() {
     }
 }
 
-
 template<class ModelVariant>
 FloatType TransportChainLink<ModelVariant>::get_passage() const {
     return forcing_nu;
@@ -136,16 +135,7 @@ FlowQuantity TransportChainLink<ModelVariant>::get_flow_deficit() const {
     for (const auto& f : transport_queue) {
         res += round(f.initial - f.current.get_quantity());
     }
-    //~ if (transport_queue.size() == 0) {
-    //~ res  = round(-1.*overflow.get_quantity());
-    //~ } else  {
-    //~ for (const auto& f : transport_queue) {
-    //~ res += round(f.initial - f.current.get_quantity());
-    //~ }
-    //~ }
-    //~ return round(res - overflow.get_quantity());
     return round(res - overflow.get_quantity());
-    //~ return round(res - (transport_queue->initial - overflow.get_quantity()));
 }
 
 INSTANTIATE_BASIC(TransportChainLink);

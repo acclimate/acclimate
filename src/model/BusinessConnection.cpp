@@ -78,14 +78,14 @@ FloatType BusinessConnection<ModelVariant>::get_minimum_passage() const {
     FloatType link_passage;
     while (link) {
         link_passage = link->get_passage();
-        if ( link_passage >= 0. && link_passage < minimum_passage) {
+        if (link_passage >= 0.0 && link_passage < minimum_passage) {
             minimum_passage = link_passage;
         }
         link = link->next_transport_chain_link.get();
     }
-    if (minimum_passage > 1.0 || minimum_passage < 0.) {
-        minimum_passage = 1. ;
-    } 
+    if (minimum_passage > 1.0 || minimum_passage < 0.0) {
+        minimum_passage = 1.0;
+    }
     return minimum_passage;
 }
 

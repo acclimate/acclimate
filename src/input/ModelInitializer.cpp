@@ -94,7 +94,7 @@ Consumer<ModelVariant>* ModelInitializer<ModelVariant>::add_consumer(Region<Mode
 template<class ModelVariant>
 Region<ModelVariant>* ModelInitializer<ModelVariant>::add_region(const std::string& name) {
     Region<ModelVariant>* region = model->find_region(name);
-    if (!region) {
+    if (region == nullptr) {
         region = model->add_region(name);
     }
     return region;
@@ -387,8 +387,8 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
     file.getVar("latitude").getVar(&latitudes[0]);
     file.getVar("longitude").getVar(&longitudes[0]);
     file.getVar("connections").getVar(&connections.data()[0]);
-
     file.close();
+
     for (std::size_t i = 0; i < input_size; ++i) {
         GeoLocation<ModelVariant>* location = nullptr;
         if (types[i] == type_region) {
@@ -406,6 +406,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
             input_indices.emplace_back(i);
         }
     }
+
     // create direct connections
     const auto size = points.size();
     std::vector<Path> paths(size * size, Path());
@@ -437,6 +438,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
             }
         }
     }
+
     // find cheapest connections
     bool done = false;
     while (!done) {
@@ -461,6 +463,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
             }
         }
     }
+
     // mark everything used
     bool found = true;
     while (found) {
@@ -485,6 +488,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
             }
         }
     }
+
     // add connections to locations actually used and create routes between regions
     for (std::size_t i = 0; i < size; ++i) {
         auto& p1 = points[i];
