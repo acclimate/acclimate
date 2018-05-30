@@ -46,8 +46,11 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
       transport_costs(0.0),
       last_shipment_Z_(initial_flow_Z_star_p),
       time_(seller_p->firm->sector->model->time()) {
-    if (buyer->storage->economic_agent->region != seller->firm->region) {
-        const auto& route = seller->firm->region->find_path_to(std::string(*buyer->storage->economic_agent->region));
+    if (seller->firm->sector->transport_type == Sector<ModelVariant>::TransportType::IMMEDIATE
+        || buyer->storage->economic_agent->region == seller->firm->region) {
+        first_transport_link.reset(new TransportChainLink<ModelVariant>(this, 0, initial_flow_Z_star_p, nullptr));
+    } else {
+        const auto& route = seller->firm->region->find_path_to(buyer->storage->economic_agent->region, seller->firm->sector->transport_type);
         assert(route.path.size() > 0);
         TransportChainLink<ModelVariant>* link;
         for (int i = 0; i < route.path.size(); ++i) {
@@ -60,8 +63,6 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
             }
             link = new_link;
         }
-    } else {
-        first_transport_link.reset(new TransportChainLink<ModelVariant>(this, 0, initial_flow_Z_star_p, nullptr));
     }
 }
 

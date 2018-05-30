@@ -51,51 +51,28 @@ template<class ModelVariant>
 settings::SettingsNode ModelInitializer<ModelVariant>::get_named_property(const std::string& tag_name,
                                                                           const std::string& node_name,
                                                                           const std::string& property_name) const {
-    for (const auto& parameters : settings[tag_name].as_sequence()) {
-        if (parameters.has("name")) {
-            if (parameters["name"].template as<std::string>() == node_name && parameters.has(property_name)) {
-                return parameters[property_name];
-            }
-        } else {
-            return parameters[property_name];
-        }
+    const settings::SettingsNode& node_settings = settings[tag_name];
+    if (node_settings.has(node_name) && node_settings[node_name].has(property_name)) {
+        return node_settings[node_name][property_name];
     }
-    error("Error in settings: " << property_name << " not found for name=='" << node_name << "' in \n" << settings[tag_name]);
+    return node_settings["ALL"][property_name];
 }
 
 template<class ModelVariant>
 settings::SettingsNode ModelInitializer<ModelVariant>::get_firm_property(const std::string& sector_name,
                                                                          const std::string& region_name,
                                                                          const std::string& property_name) const {
-    settings::SettingsNode result;
-    unsigned char found_prio = 0;
-    for (const auto& parameters : settings["firm"].as_sequence()) {
-        if (parameters.has("sector")) {
-            if (parameters.has("region")) {
-                if (parameters["sector"].template as<std::string>() == sector_name && parameters["region"].template as<std::string>() == region_name
-                    && parameters.has(property_name)) {
-                    return parameters[property_name];
-                }
-            } else {
-                if (parameters["sector"].template as<std::string>() == sector_name) {
-                    result = parameters[property_name];
-                    found_prio = 2;
-                }
-            }
-        } else if (parameters.has("region")) {
-            if (found_prio <= 1 && parameters["region"].template as<std::string>() == region_name) {
-                result = parameters[property_name];
-                found_prio = 1;
-            }
-        } else if (found_prio == 0) {
-            result = parameters[property_name];
-        }
+    const settings::SettingsNode& firm_settings = settings["firm"];
+    if (firm_settings.has(sector_name + ":" + region_name) && firm_settings[sector_name + ":" + region_name].has(property_name)) {
+        return firm_settings[sector_name + ":" + region_name][property_name];
     }
-    if (result.empty()) {
-        error("Error in settings: " << property_name << " not found for sector=='" << sector_name << "', region=='" << region_name << "' in \n"
-                                    << settings["firm"]);
+    if (firm_settings.has(sector_name) && firm_settings[sector_name].has(property_name)) {
+        return firm_settings[sector_name][property_name];
     }
-    return result;
+    if (firm_settings.has(region_name) && firm_settings[region_name].has(property_name)) {
+        return firm_settings[region_name][property_name];
+    }
+    return firm_settings["ALL"][property_name];
 }
 
 template<class ModelVariant>
@@ -128,7 +105,8 @@ Sector<VariantBasic>* ModelInitializer<VariantBasic>::add_sector(const std::stri
     Sector<VariantBasic>* sector = model->find_sector(name);
     if (sector == nullptr) {
         sector = model->add_sector(name, get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
-                                   get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t());
+                                   get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
+                                   Sector<VariantBasic>::map_transport_type(get_named_property("sector", name, "transport").template as<settings::hstring>()));
     }
     return sector;
 }
@@ -138,7 +116,8 @@ Sector<VariantDemand>* ModelInitializer<VariantDemand>::add_sector(const std::st
     Sector<VariantDemand>* sector = model->find_sector(name);
     if (sector == nullptr) {
         sector = model->add_sector(name, get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
-                                   get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t());
+                                   get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
+                                   Sector<VariantDemand>::map_transport_type(get_named_property("sector", name, "transport").template as<settings::hstring>()));
         sector->parameters_writable().storage_refill_enforcement_gamma =
             get_named_property("sector", name, "storage_refill_enforcement").template as<FloatType>() * model->delta_t();
     }
@@ -150,7 +129,8 @@ Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::st
     Sector<VariantPrices>* sector = model->find_sector(name);
     if (sector == nullptr) {
         sector = model->add_sector(name, get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
-                                   get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t());
+                                   get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
+                                   Sector<VariantPrices>::map_transport_type(get_named_property("sector", name, "transport").template as<settings::hstring>()));
         sector->parameters_writable().supply_elasticity = get_named_property("sector", name, "supply_elasticity").template as<Ratio>();
         sector->parameters_writable().price_increase_production_extension =
             get_named_property("sector", name, "price_increase_production_extension").template as<Price>();
@@ -353,6 +333,7 @@ void ModelInitializer<ModelVariant>::print_network_characteristics() const {
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::string& filename) {
     const settings::SettingsNode& transport = settings["transport"];
+    const auto aviation_speed = transport["aviation_speed"].as<FloatType>();
     const auto road_speed = transport["road_speed"].as<FloatType>();
     const auto sea_speed = transport["sea_speed"].as<FloatType>();
     const auto port_delay = transport["port_delay"].as<TransportDelay>();
@@ -492,7 +473,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
                     if (p2->used) {  // regions are already marked used
                         auto& path = paths[i * size + j].points();
                         if (path.empty()) {
-                            error("No transport connection from " << ids[input_indices[i]] << " to " << ids[input_indices[j]]);
+                            error("No roadsea transport connection from " << ids[input_indices[i]] << " to " << ids[input_indices[j]]);
                         } else {
                             for (std::size_t k = 1; k < path.size() - 1; ++k) {
                                 found = found || !path[k]->used;
@@ -524,22 +505,34 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
                             l2->connections.push_back(c);
                         }
                         if (l1->type == GeoLocation<ModelVariant>::Type::REGION && l2->type == GeoLocation<ModelVariant>::Type::REGION) {
+                            // create roadsea route
                             auto r1 = static_cast<Region<ModelVariant>*>(l1);
                             auto r2 = static_cast<Region<ModelVariant>*>(l2);
-                            GeoRoute<ModelVariant> route(GeoRoute<ModelVariant>::Type::ROADSEA);
+                            GeoRoute<ModelVariant> route;
                             route.path.resize(path.size() - 2);
                             for (std::size_t k = 1; k < path.size() - 1; ++k) {
                                 route.path[k - 1] = path[k]->entity();
                             }
-                            r1->routes.emplace(std::string(*r2), route);
+                            r1->routes.emplace(std::make_pair(r2->index(), Sector<ModelVariant>::TransportType::ROADSEA), route);
                         }
+                    }
+                    if (l1->type == GeoLocation<ModelVariant>::Type::REGION && l2->type == GeoLocation<ModelVariant>::Type::REGION) {
+                        // create aviation route
+                        const auto distance = l1->centroid()->distance_to(*l2->centroid());
+                        const auto delay = iround(distance / aviation_speed / 24. / to_float(model->delta_t()));
+                        auto c = std::make_shared<GeoConnection<ModelVariant>>(delay, GeoConnection<ModelVariant>::Type::AVIATION, l1, l2);
+                        l1->connections.push_back(c);
+                        l2->connections.push_back(c);
+                        auto r1 = static_cast<Region<ModelVariant>*>(l1);
+                        auto r2 = static_cast<Region<ModelVariant>*>(l2);
+                        GeoRoute<ModelVariant> route;
+                        route.path.emplace_back(c.get());
+                        r1->routes.emplace(std::make_pair(r2->index(), Sector<ModelVariant>::TransportType::AVIATION), route);
                     }
                 }
             }
         }
     }
-
-    // TODO check if there is at least one connection between every pair of regions
 }
 
 template<class ModelVariant>
@@ -604,13 +597,12 @@ void ModelInitializer<ModelVariant>::create_simple_transport_connection(Region<M
     region_from->connections.push_back(inf);
     region_to->connections.push_back(inf);
 
-    GeoRoute<ModelVariant> route1(GeoRoute<ModelVariant>::Type::UNSPECIFIED);
-    route1.path.emplace_back(inf.get());
-    region_from->routes.emplace(std::string(*region_to), route1);
-
-    GeoRoute<ModelVariant> route2(GeoRoute<ModelVariant>::Type::UNSPECIFIED);
-    route2.path.emplace_back(inf.get());
-    region_to->routes.emplace(std::string(*region_from), route2);
+    GeoRoute<ModelVariant> route;
+    route.path.emplace_back(inf.get());
+    region_from->routes.emplace(std::make_pair(region_to->index(), Sector<ModelVariant>::TransportType::AVIATION), route);
+    region_from->routes.emplace(std::make_pair(region_to->index(), Sector<ModelVariant>::TransportType::ROADSEA), route);
+    region_to->routes.emplace(std::make_pair(region_from->index(), Sector<ModelVariant>::TransportType::AVIATION), route);
+    region_to->routes.emplace(std::make_pair(region_from->index(), Sector<ModelVariant>::TransportType::ROADSEA), route);
 }
 
 template<class ModelVariant>

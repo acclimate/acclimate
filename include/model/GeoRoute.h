@@ -31,23 +31,8 @@ class GeoEntity;
 template<class ModelVariant>
 class GeoRoute {
   public:
-    enum class Type { AVIATION, ROADSEA, UNSPECIFIED };
-
-  public:
     std::vector<GeoEntity<ModelVariant>*> path;
-    const Type type;
-
-    GeoRoute<ModelVariant>(Type type_p);
-    operator std::string() const {
-        std::string res;
-        for (std::size_t i = 0; i < path.size(); ++i) {
-            if (i > 0) {
-                res += "->";
-            }
-            res += std::string(*path[i]);
-        }
-        return res;
-    }
+    operator std::string() const;
 };
 }  // namespace acclimate
 

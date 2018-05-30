@@ -31,6 +31,8 @@ namespace acclimate {
 
 template<class ModelVariant>
 class Model;
+template<class ModelVariant>
+class Sector;
 
 template<class ModelVariant>
 class Region : public GeoLocation<ModelVariant> {
@@ -50,12 +52,20 @@ class Region : public GeoLocation<ModelVariant> {
     const IntType index_;
     typename ModelVariant::RegionParameters parameters_;
 
+    struct route_hash {
+        template<class T1, class T2>
+        std::size_t operator()(const std::pair<T1, T2>& p) const {
+            auto h1 = std::hash<T1>{}(p.first);
+            auto h2 = std::hash<T2>{}(p.second);
+            return h1 << 3 | h2;
+        }
+    };
     Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p);
 
   public:
     Model<ModelVariant>* const model;
     std::vector<std::unique_ptr<EconomicAgent<ModelVariant>>> economic_agents;
-    std::unordered_map<std::string, GeoRoute<ModelVariant>> routes;
+    std::unordered_map<std::pair<IntType, typename Sector<ModelVariant>::TransportType>, GeoRoute<ModelVariant>, route_hash> routes;
 
     Region<ModelVariant>* as_region() override;
     const Region<ModelVariant>* as_region() const override;
@@ -96,7 +106,7 @@ class Region : public GeoLocation<ModelVariant> {
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
-    const GeoRoute<ModelVariant>& find_path_to(const std::string& region_name) const;
+    const GeoRoute<ModelVariant>& find_path_to(Region<ModelVariant>* region, typename Sector<ModelVariant>::TransportType transport_type) const;
     void remove_economic_agent(EconomicAgent<ModelVariant>* economic_agent);
 };
 }  // namespace acclimate

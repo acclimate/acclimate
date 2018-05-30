@@ -24,7 +24,16 @@
 namespace acclimate {
 
 template<class ModelVariant>
-GeoRoute<ModelVariant>::GeoRoute(GeoRoute<ModelVariant>::Type type_p) : type(type_p) {}
+GeoRoute<ModelVariant>::operator std::string() const {
+    std::string res;
+    for (std::size_t i = 0; i < path.size(); ++i) {
+        if (i > 0) {
+            res += "->";
+        }
+        res += std::string(*path[i]);
+    }
+    return res;
+}
 
 INSTANTIATE_BASIC(GeoRoute);
 }  // namespace acclimate

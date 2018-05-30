@@ -31,7 +31,8 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Model<ModelVariant>::Model() : consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0))) {
+Model<ModelVariant>::Model()
+    : consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector<ModelVariant>::TransportType::IMMEDIATE)) {
     sectors.emplace_back(consumption_sector);
 }
 
@@ -45,8 +46,10 @@ Region<ModelVariant>* Model<ModelVariant>::add_region(std::string name) {
 template<class ModelVariant>
 Sector<ModelVariant>* Model<ModelVariant>::add_sector(std::string name,
                                                       const Ratio& upper_storage_limit_omega_p,
-                                                      const Time& initial_storage_fill_factor_psi_p) {
-    Sector<ModelVariant>* sector = new Sector<ModelVariant>(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p);
+                                                      const Time& initial_storage_fill_factor_psi_p,
+                                                      typename Sector<ModelVariant>::TransportType transport_type_p) {
+    Sector<ModelVariant>* sector =
+        new Sector<ModelVariant>(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
     sectors.emplace_back(sector);
     return sector;
 }

@@ -30,12 +30,14 @@ Sector<ModelVariant>::Sector(Model<ModelVariant>* model_p,
                              std::string name_p,
                              const IntType index_p,
                              const Ratio& upper_storage_limit_omega_p,
-                             const Time& initial_storage_fill_factor_psi_p)
+                             const Time& initial_storage_fill_factor_psi_p,
+                             TransportType transport_type_p)
     : name(std::move(name_p)),
       index_(index_p),
       model(model_p),
       upper_storage_limit_omega(upper_storage_limit_omega_p),
-      initial_storage_fill_factor_psi(initial_storage_fill_factor_psi_p) {}
+      initial_storage_fill_factor_psi(initial_storage_fill_factor_psi_p),
+      transport_type(transport_type_p) {}
 
 template<class ModelVariant>
 void Sector<ModelVariant>::add_demand_request_D(const Demand& demand_request_D) {

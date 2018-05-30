@@ -161,10 +161,12 @@ void Region<ModelVariant>::iterate_investment_variant() {
 }
 
 template<class ModelVariant>
-const GeoRoute<ModelVariant>& Region<ModelVariant>::find_path_to(const std::string& region_name) const {
-    const auto& it = routes.find(region_name);
+const GeoRoute<ModelVariant>& Region<ModelVariant>::find_path_to(Region<ModelVariant>* region,
+                                                                 typename Sector<ModelVariant>::TransportType transport_type) const {
+    const auto& it = routes.find(std::make_pair(region->index(), transport_type));
     if (it == std::end(routes)) {
-        error("No transport data from " << std::string(*this) << " to " << region_name);
+        error("No transport data from " << std::string(*this) << " to " << std::string(*region) << " via "
+                                        << Sector<ModelVariant>::unmap_transport_type(transport_type));
     }
     return it->second;
 }

@@ -76,7 +76,10 @@ class Model {
     GeoLocation<ModelVariant>* find_location(const std::string& name) const;
 
     Region<ModelVariant>* add_region(std::string name);
-    Sector<ModelVariant>* add_sector(std::string name, const Ratio& upper_storage_limit_omega_p, const Time& initial_storage_fill_factor_psi_p);
+    Sector<ModelVariant>* add_sector(std::string name,
+                                     const Ratio& upper_storage_limit_omega_p,
+                                     const Time& initial_storage_fill_factor_psi_p,
+                                     typename Sector<ModelVariant>::TransportType transport_type_p);
     inline const Time& time() const { return time_; };
     inline const TimeStep& timestep() const { return timestep_; };
     inline void switch_registers() {
