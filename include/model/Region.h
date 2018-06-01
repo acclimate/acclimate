@@ -53,11 +53,8 @@ class Region : public GeoLocation<ModelVariant> {
     typename ModelVariant::RegionParameters parameters_;
 
     struct route_hash {
-        template<class T1, class T2>
-        std::size_t operator()(const std::pair<T1, T2>& p) const {
-            auto h1 = std::hash<T1>{}(p.first);
-            auto h2 = std::hash<T2>{}(p.second);
-            return h1 << 3 | h2;
+        std::size_t operator()(const std::pair<IntType, typename Sector<ModelVariant>::TransportType>& p) const {
+            return (p.first << 3) | (static_cast<IntType>(p.second));
         }
     };
     Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p);
