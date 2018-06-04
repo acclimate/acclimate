@@ -70,7 +70,7 @@ static void handle_fpe_error(int sig) {
         warning_("FE_UNDERFLOW");
     }
 #ifdef FATAL_FLOATING_POINT_EXCEPTIONS
-    error("Floating point exception");
+    error_("Floating point exception");
 #endif
 }
 #endif
