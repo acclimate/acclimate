@@ -34,7 +34,7 @@ void SalesManagerBasic<ModelVariant>::distribute(const Flow& production_X) {
     Flow initial_production_X = firm->initial_production_X_star();
 
     // Calculates output distribution key zeta without prioritizing any buyer
-    for (auto it = business_connections.begin(); it != business_connections.end(); it++) {
+    for (auto it = business_connections.begin(); it != business_connections.end(); ++it) {
         (*it)->push_flow_Z(round(production_X * ((*it)->initial_flow_Z_star() / initial_production_X)));
     }
 }

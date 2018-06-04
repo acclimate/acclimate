@@ -33,7 +33,7 @@ Infrastructure<ModelVariant>::Infrastructure(const Distance& distance_p)
 
 template<class ModelVariant>
 void Infrastructure<ModelVariant>::set_forcing_nu(const Forcing& forcing_nu_p) {
-    for (std::size_t i = 0; i < transport_chain_links.size(); i++) {
+    for (std::size_t i = 0; i < transport_chain_links.size(); ++i) {
         transport_chain_links[i]->set_forcing_nu(forcing_nu_p);
     }
     forcing_nu = forcing_nu_p;

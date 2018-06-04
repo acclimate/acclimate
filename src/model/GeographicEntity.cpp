@@ -31,7 +31,7 @@ GeographicEntity<ModelVariant>::GeographicEntity(const GeographicEntity<ModelVar
 
 template<class ModelVariant>
 GeographicEntity<ModelVariant>::~GeographicEntity() {
-    for (auto it = connections.begin(); it != connections.end(); it++) {
+    for (auto it = connections.begin(); it != connections.end(); ++it) {
         (*it)->remove_connection(this);
     }
 }

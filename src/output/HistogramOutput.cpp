@@ -82,7 +82,7 @@ void HistogramOutput<ModelVariant>::internal_iterate_begin() {
 
 template<class ModelVariant>
 void HistogramOutput<ModelVariant>::internal_iterate_end() {
-    for (std::size_t i = 0; i < windows; i++) {
+    for (std::size_t i = 0; i < windows; ++i) {
         file << model->time() << " " << (min + i * (max - min) / (windows - 1)) << " " << count[i] << "\n";
     }
     file << "\n";
@@ -97,7 +97,7 @@ template<class ModelVariant>
 void HistogramOutput<ModelVariant>::internal_write_value(const std::string& name, const FloatType& v) {
     UNUSED(name);
     if (v >= min && (v < max || !exclude_max)) {
-        count[iround((v - min) * (windows - 1) / (max - min))]++;
+        ++count[iround((v - min) * (windows - 1) / (max - min))];
     }
 }
 

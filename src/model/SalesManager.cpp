@@ -71,7 +71,7 @@ const Flow SalesManager<ModelVariant>::get_transport_flow() const {
 template<class ModelVariant>
 std::unique_ptr<BusinessConnection<ModelVariant>> SalesManager<ModelVariant>::remove_business_connection(
     BusinessConnection<ModelVariant>* business_connection) {
-    for (auto it = business_connections.begin(); it != business_connections.end(); it++) {
+    for (auto it = business_connections.begin(); it != business_connections.end(); ++it) {
         if (it->get() == business_connection) {
             std::unique_ptr<BusinessConnection<ModelVariant>> res = std::move(*it);
             business_connections.erase(it);

@@ -69,7 +69,7 @@ void Region<ModelVariant>::iterate_consumption_and_production() {
 #ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
 #endif
-    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
         economic_agents[i]->iterate_consumption_and_production();
     }
 }
@@ -94,7 +94,7 @@ void Region<ModelVariant>::iterate_expectation() {
 #ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
 #endif
-    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
         economic_agents[i]->iterate_expectation();
     }
 }
@@ -119,7 +119,7 @@ void Region<ModelVariant>::iterate_purchase() {
 #ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
 #endif
-    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
         economic_agents[i]->iterate_purchase();
     }
 }
@@ -144,7 +144,7 @@ void Region<ModelVariant>::iterate_investment() {
 #ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
 #endif
-    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
         economic_agents[i]->iterate_investment();
     }
 }
@@ -167,7 +167,7 @@ const Path<ModelVariant>& Region<ModelVariant>::find_path_to(const Region<ModelV
 #ifdef TRANSPORT
     error("Not implemented: Find proper path (not simply assuming all regions are connected by infrastructures)");
     path->distance = 0;
-    for (auto it = connections.begin(); it != connections.end(); it++) {
+    for (auto it = connections.begin(); it != connections.end(); ++it) {
         Infrastructure<ModelVariant>* inf = (*it)->as_infrastructure();
         if ((inf->connections.size() > 0 && static_cast<void*>(inf->connections[0]) == static_cast<void*>(region))
             || (inf->connections.size() > 1 && static_cast<void*>(inf->connections[1]) == static_cast<void*>(region))) {

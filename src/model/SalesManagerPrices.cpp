@@ -113,7 +113,7 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
                     (*served_bc)->push_flow_Z(round((*served_bc)->last_demand_request_D()));
                     production_without_cheapest_price_range += round((*served_bc)->last_demand_request_D());
 #ifdef DEBUG
-                    pushed_flows++;
+                    ++pushed_flows;
 #endif
                     begin_cheapest_price_range = served_bc + 1;
                 } else if (abs(round((*served_bc)->last_demand_request_D().get_price()
@@ -126,13 +126,13 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
                 } else {  // price lower than in cheapest price range
                     (*served_bc)->push_flow_Z(Flow(0.0));
 #ifdef DEBUG
-                    pushed_flows++;
+                    ++pushed_flows;
 #endif
                 }
             } else {  // demand request is zero
                 (*served_bc)->push_flow_Z(Flow(0.0));
 #ifdef DEBUG
-                pushed_flows++;
+                ++pushed_flows;
 #endif
             }
         }
@@ -168,7 +168,7 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
                     (*served_bc)->push_flow_Z(flow_Z);
                     total_revenue_R_ += flow_Z.get_value();
 #ifdef DEBUG
-                    pushed_flows++;
+                    ++pushed_flows;
 #endif
                 }
             } else {  // all demands in cheapest price range can be fulfilled
@@ -177,7 +177,7 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
                     assert((*served_bc)->last_demand_request_D().get_quantity() <= communicated_parameters_.production_X.get_quantity());
                     (*served_bc)->push_flow_Z(round((*served_bc)->last_demand_request_D()));
 #ifdef DEBUG
-                    pushed_flows++;
+                    ++pushed_flows;
 #endif
                 }
             }
@@ -418,7 +418,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
     Flow expected_production_X = Flow(0.0);
 
     // cycle over non-zero connections
-    for (auto business_connection = business_connections.begin(); business_connection != first_zero_connection; business_connection++) {
+    for (auto business_connection = business_connections.begin(); business_connection != first_zero_connection; ++business_connection) {
         // check that connection can be served under quantitative aspects
         if (round((expected_production_X + (*business_connection)->last_demand_request_D())).get_quantity() > possible_production_X_hat_p.get_quantity()) {
             supply_distribution_scenario.connection_not_served_completely = business_connection;

@@ -75,7 +75,7 @@ void Sector<ModelVariant>::iterate_consumption_and_production() {
 
 template<class ModelVariant>
 void Sector<ModelVariant>::remove_firm(Firm<ModelVariant>* firm) {
-    for (auto it = firms_N.begin(); it != firms_N.end(); it++) {
+    for (auto it = firms_N.begin(); it != firms_N.end(); ++it) {
         if (*it == firm) {
             firms_N.erase(it);
             break;

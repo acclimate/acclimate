@@ -126,7 +126,7 @@ void PurchasingManagerPrices<ModelVariant>::calc_desired_purchase(const Optimize
     Quantity S_shortage = data->transport_flow_deficit * storage->sector->model->delta_t()
                           + (storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity());
     FlowQuantity maximal_possible_purchase = FlowQuantity(0.0);
-    for (std::size_t r = 0; r < data->business_connections.size(); r++) {
+    for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
         FlowQuantity D_r_max = FlowQuantity(unscaled_D_r(data->upper_bounds[r], data->business_connections[r]));
         assert(!isnan(D_r_max));
         maximal_possible_purchase += D_r_max;
@@ -149,13 +149,13 @@ FloatType PurchasingManagerPrices<ModelVariant>::purchase_constraint(const Float
 #endif
         // has to be in the form g(D_r) <= 0
         FloatType use = 0.0;
-        for (unsigned int r = 0; r < data->business_connections.size(); r++) {
+        for (unsigned int r = 0; r < data->business_connections.size(); ++r) {
             FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
             assert(!std::isnan(D_r));
             use += D_r;
         }
         if (grad != nullptr) {
-            for (unsigned int r = 0; r < data->business_connections.size(); r++) {
+            for (unsigned int r = 0; r < data->business_connections.size(); ++r) {
                 grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r]) * 1.0 / partial_use_scaled_use();
 #ifdef OPTIMIZATION_WARNINGS
                 if (grad[r] > MAX_GRADIENT) {
@@ -180,7 +180,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
 #endif
         FloatType costs = 0.0;
         FloatType purchase = 0.0;
-        for (std::size_t r = 0; r < data->business_connections.size(); r++) {
+        for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
             FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
             assert(!std::isnan(D_r));
             costs += n_r(D_r, data->business_connections[r]) * D_r + transport_penalty(D_r, data->business_connections[r]);
@@ -197,7 +197,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
             costs -= std::abs(partial_correction * correction);
         }
         if (grad != nullptr) {
-            for (std::size_t r = 0; r < data->business_connections.size(); r++) {
+            for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
                 FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
                 grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r])
                           * (grad_n_r(D_r, data->business_connections[r]) * D_r + n_r(D_r, data->business_connections[r]) - partial_correction
@@ -496,7 +496,7 @@ void PurchasingManagerPrices<ModelVariant>::iterate_purchase() {
         FloatType costs = 0.0;
         FloatType use = 0.0;
         // distribute demand requests
-        for (std::size_t r = 0; r < data.business_connections.size(); r++) {
+        for (std::size_t r = 0; r < data.business_connections.size(); ++r) {
             FloatType D_r;
             D_r = unscaled_D_r(demand_requests_D[r], data.business_connections[r]);
             Demand demand_request_D = Demand(FlowQuantity(D_r), FlowValue(D_r));
@@ -576,7 +576,7 @@ void PurchasingManagerPrices<ModelVariant>::optimize_purchase(std::vector<FloatT
         nlopt::opt opt(static_cast<nlopt::algorithm>(storage->sector->model->parameters().optimization_algorithm), dimensions_optimization_problem);
 
         std::vector<FloatType> xtol_abs(data_p.business_connections.size());
-        for (unsigned int i = 0; i < data_p.business_connections.size(); i++) {
+        for (unsigned int i = 0; i < data_p.business_connections.size(); ++i) {
             xtol_abs[i] = scaled_D_r(FlowQuantity::precision, data_p.business_connections[i]);
         }
 
@@ -730,7 +730,7 @@ void PurchasingManagerPrices<ModelVariant>::print_distribution(const FloatType d
         obj = objective_costs(&demand_requests_D[0], &grad[0], data);
         FloatType total_upper_bound = 0.0;
         FloatType T_penalty = 0.0;
-        for (std::size_t r = 0; r < data->business_connections.size(); r++) {
+        for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
             FloatType D_r = unscaled_D_r(demand_requests_D[r], data->business_connections[r]);
             FloatType lower_bound_D_r = unscaled_D_r(data->lower_bounds[r], data->business_connections[r]);
             FloatType upper_bound_D_r = unscaled_D_r(data->upper_bounds[r], data->business_connections[r]);

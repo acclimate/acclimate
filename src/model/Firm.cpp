@@ -196,7 +196,7 @@ void Firm<ModelVariant>::iterate_investment() {
 template<class ModelVariant>
 void Firm<ModelVariant>::print_details() const {
     info(id() << ": X_star= " << initial_production_X_star_.get_quantity() << ":");
-    for (auto it = input_storages.begin(); it != input_storages.end(); it++) {
+    for (auto it = input_storages.begin(); it != input_storages.end(); ++it) {
         (*it)->purchasing_manager->print_details();
     }
     sales_manager->print_details();

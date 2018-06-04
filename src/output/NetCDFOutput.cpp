@@ -82,19 +82,19 @@ void NetCDFOutput<ModelVariant>::initialize() {
     include_events = true;
     const auto& event_type_var = file->addVar("event_types", netCDF::NcType::nc_STRING, {dim_event_type});
     event_type_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < Acclimate::event_names.size(); i++) {
+    for (std::size_t i = 0; i < Acclimate::event_names.size(); ++i) {
         event_type_var.putVar({i}, std::string(Acclimate::event_names[i]));
     }
 
     const auto& sector_var = file->addVar("sector", netCDF::NcType::nc_STRING, {dim_sector});
     sector_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < model->sectors_C.size(); i++) {
+    for (std::size_t i = 0; i < model->sectors_C.size(); ++i) {
         sector_var.putVar({i}, model->sectors_C[i]->id());
     }
 
     const auto& region_var = file->addVar("region", netCDF::NcType::nc_STRING, {dim_region});
     region_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < model->regions_R.size(); i++) {
+    for (std::size_t i = 0; i < model->regions_R.size(); ++i) {
         region_var.putVar({i}, model->regions_R[i]->id());
     }
 }
@@ -198,7 +198,7 @@ bool NetCDFOutput<ModelVariant>::internal_handle_event(typename ArrayOutput<Mode
 #pragma omp critical(netcdf_event)
     {
         var_events.putVar({event_cnt}, &event);
-        event_cnt++;
+        ++event_cnt;
     }
     return false;
 }

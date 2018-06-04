@@ -90,7 +90,7 @@ const Flow TransportChainLink<ModelVariant>::get_total_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     if (current_transport_delay_tau > 1) {
         Flow res = Flow(0.0);
-        for (int i = 0; i < current_transport_delay_tau - 1; i++) {
+        for (int i = 0; i < current_transport_delay_tau - 1; ++i) {
             res += transport_queue[i];
         }
         return res;
@@ -103,7 +103,7 @@ const Flow TransportChainLink<ModelVariant>::get_disequilibrium() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     if (current_transport_delay_tau > 1) {
         Flow res = Flow(0.0);
-        for (int i = 0; i < current_transport_delay_tau - 1; i++) {
+        for (int i = 0; i < current_transport_delay_tau - 1; ++i) {
             res.add_possibly_negative(absdiff(transport_queue[i], initial_transport_queue[i]));
         }
         return res;
@@ -117,7 +117,7 @@ FloatType TransportChainLink<ModelVariant>::get_stddeviation() const {
     if (current_transport_delay_tau > 1) {
         FloatType res = 0;
 #define SQR(a) ((a) * (a))
-        for (int i = 0; i < current_transport_delay_tau - 1; i++) {
+        for (int i = 0; i < current_transport_delay_tau - 1; ++i) {
             res += SQR(to_float((absdiff(transport_queue[i], initial_transport_queue[i])).get_quantity()));
         }
         return res;
@@ -130,7 +130,7 @@ const FlowQuantity TransportChainLink<ModelVariant>::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     if (current_transport_delay_tau > 1) {
         FlowQuantity res = FlowQuantity(0.0);
-        for (int i = 0; i < current_transport_delay_tau - 1; i++) {
+        for (int i = 0; i < current_transport_delay_tau - 1; ++i) {
             res += round(initial_transport_queue[i] - transport_queue[i].get_quantity());
         }
         return round(res);

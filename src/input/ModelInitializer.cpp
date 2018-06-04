@@ -280,7 +280,7 @@ void ModelInitializer<ModelVariant>::clean_network() {
 #ifdef CLEANUP_INFO
         info("Cleaning up...");
 #endif
-        for (auto region = model->regions_R.begin(); region != model->regions_R.end(); region++) {
+        for (auto region = model->regions_R.begin(); region != model->regions_R.end(); ++region) {
             for (auto economic_agent = (*region)->economic_agents.begin(); economic_agent != (*region)->economic_agents.end();) {
                 if ((*economic_agent)->type == EconomicAgent<ModelVariant>::Type::FIRM) {
                     Firm<ModelVariant>* firm = (*economic_agent)->as_firm();
@@ -325,8 +325,8 @@ void ModelInitializer<ModelVariant>::clean_network() {
                         // Also cleans up memory of firm
                         economic_agent = (*region)->economic_agents.erase(economic_agent);
                     } else {
-                        economic_agent++;
-                        firm_count++;
+                        ++economic_agent;
+                        ++firm_count;
                     }
                 } else if ((*economic_agent)->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
                     Consumer<ModelVariant>* consumer = (*economic_agent)->as_consumer();
@@ -338,8 +338,8 @@ void ModelInitializer<ModelVariant>::clean_network() {
                         // Also cleans up memory of consumer
                         economic_agent = (*region)->economic_agents.erase(economic_agent);
                     } else {
-                        economic_agent++;
-                        consumer_count++;
+                        ++economic_agent;
+                        ++consumer_count;
                     }
                 } else {
                     error("Unknown economic agent type");
@@ -371,7 +371,7 @@ void ModelInitializer<ModelVariant>::print_network_characteristics() const {
                 }
                 assert(!economic_agent->as_firm()->sales_manager->business_connections.empty());
                 average_tranport_delay_economic_agent /= FloatType(firm->sales_manager->business_connections.size());
-                firm_count++;
+                ++firm_count;
                 average_transport_delay_region += average_tranport_delay_economic_agent;
             }
         }
@@ -382,7 +382,7 @@ void ModelInitializer<ModelVariant>::print_network_characteristics() const {
 #endif
             average_transport_delay += average_transport_delay_region;
         } else {
-            region_wo_firm_count++;
+            ++region_wo_firm_count;
             warning(region->id() << ": no firm");
         }
     }
@@ -412,7 +412,7 @@ void ModelInitializer<ModelVariant>::read_centroids_netcdf(const std::string& fi
         std::vector<float> lats_val(regions_count);
         lats_var.getVar(&lats_val[0]);
 
-        for (std::size_t i = 0; i < regions_count; i++) {
+        for (std::size_t i = 0; i < regions_count; ++i) {
             region_centroids.emplace(regions_val[i], GeographicPoint("centroid", lons_val[i], lats_val[i]));
         }
         file.close();
@@ -457,7 +457,7 @@ void ModelInitializer<ModelVariant>::read_transport_times_csv(const std::string&
         }
 
         regions.push_back(region);
-        index++;
+        ++index;
     }
 
     std::ifstream transport_delays_file(filename.c_str());
@@ -468,7 +468,7 @@ void ModelInitializer<ModelVariant>::read_transport_times_csv(const std::string&
     TransportDelay transport_delay_tau = 1;
     std::string transport_line;
 
-    for (std::size_t row = 0; row < regions.size(); row++) {
+    for (std::size_t row = 0; row < regions.size(); ++row) {
         if (!getline(transport_delays_file, transport_line)) {
             error("Index and transport_delays are not consistent: Not enough rows");
         }
@@ -480,7 +480,7 @@ void ModelInitializer<ModelVariant>::read_transport_times_csv(const std::string&
         std::istringstream transport_string_stream(transport_line);
         std::string transport_str;
 
-        for (std::size_t col = 0; col < regions.size(); col++) {
+        for (std::size_t col = 0; col < regions.size(); ++col) {
             if (!getline(transport_string_stream, transport_str, ',')) {
                 error("Index and transport_delays are not consistent: Not enough columns in row " << row);
             }
@@ -518,20 +518,20 @@ void ModelInitializer<ModelVariant>::build_artificial_network() {
     }
     const auto regions_cnt = network["regions"].as<unsigned int>();
     const auto sectors_cnt = network["sectors"].as<unsigned int>();
-    for (std::size_t i = 0; i < sectors_cnt; i++) {
+    for (std::size_t i = 0; i < sectors_cnt; ++i) {
         add_sector("SEC" + std::to_string(i + 1));
     }
-    for (std::size_t i = 0; i < regions_cnt; i++) {
+    for (std::size_t i = 0; i < regions_cnt; ++i) {
         Region<ModelVariant>* region = add_region("RG" + std::to_string(i));
         add_consumer(region);
-        for (std::size_t i = 0; i < sectors_cnt; i++) {
+        for (std::size_t i = 0; i < sectors_cnt; ++i) {
             add_firm(model->sectors_C[i + 1].get(), region);
         }
     }
     const Flow flow = Flow(FlowQuantity(1.0), Price(1.0));
     const Flow double_flow = Flow(FlowQuantity(2.0), Price(1.0));
-    for (std::size_t r = 0; r < regions_cnt; r++) {
-        for (std::size_t i = 0; i < sectors_cnt; i++) {
+    for (std::size_t r = 0; r < regions_cnt; ++r) {
+        for (std::size_t i = 0; i < sectors_cnt; ++i) {
             info(model->sectors_C[i + 1]->firms_N[r]->id()
                  << "->" << model->sectors_C[(i + 1) % sectors_cnt + 1]->firms_N[r]->id() << " = " << flow.get_quantity());
             initialize_connection(model->sectors_C[i + 1]->firms_N[r], model->sectors_C[(i + 1) % sectors_cnt + 1]->firms_N[r], flow);
@@ -631,7 +631,7 @@ void ModelInitializer<ModelVariant>::read_flows() {
                 if (flow_quantity > daily_flow_threshold) {
                     initialize_connection(firm_from, target, flow_quantity);
                 }
-                d++;
+                ++d;
             }
         } else {
             d += table.index_set().size();

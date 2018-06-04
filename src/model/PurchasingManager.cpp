@@ -39,7 +39,7 @@ void PurchasingManager<ModelVariant>::iterate_consumption_and_production() {
 
 template<class ModelVariant>
 bool PurchasingManager<ModelVariant>::remove_business_connection(const BusinessConnection<ModelVariant>* business_connection) {
-    for (auto it = business_connections.begin(); it != business_connections.end(); it++) {
+    for (auto it = business_connections.begin(); it != business_connections.end(); ++it) {
         if (*it == business_connection) {
             business_connections.erase(it);
             break;

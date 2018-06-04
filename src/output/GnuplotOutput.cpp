@@ -74,7 +74,7 @@ void GnuplotOutput<ModelVariant>::internal_end() {
 template<class ModelVariant>
 void GnuplotOutput<ModelVariant>::internal_start() {
     file << "# Sectors:\n# set ytics (";
-    for (std::size_t i = 0; i < model->sectors_C.size(); i++) {
+    for (std::size_t i = 0; i < model->sectors_C.size(); ++i) {
         file << "\"" << model->sectors_C[i]->id() << "\" " << i;
         if (i < model->sectors_C.size() - 1) {
             file << ", ";
@@ -82,7 +82,7 @@ void GnuplotOutput<ModelVariant>::internal_start() {
         sector_index.emplace(model->sectors_C[i].get(), i);
     }
     file << ")\n# Regions:\n# set ytics (";
-    for (std::size_t i = 0; i < model->regions_R.size(); i++) {
+    for (std::size_t i = 0; i < model->regions_R.size(); ++i) {
         file << "\"" << model->regions_R[i]->id() << "\" " << i;
         if (i < model->regions_R.size() - 1) {
             file << ", ";
@@ -96,7 +96,7 @@ template<class ModelVariant>
 void GnuplotOutput<ModelVariant>::internal_write_value(const std::string& name, const FloatType& v) {
     UNUSED(name);
     file << model->time() << " ";
-    for (auto it = stack.begin(); it != stack.end(); it++) {
+    for (auto it = stack.begin(); it != stack.end(); ++it) {
         if (it->region >= 0) {
             if (it->sector >= 0) {
                 file << it->sector << " " << it->region << " ";

@@ -112,8 +112,8 @@ Firm<ModelVariant>* Model<ModelVariant>::find_firm(const std::string& sector_nam
 
 template<class ModelVariant>
 Firm<ModelVariant>* Model<ModelVariant>::find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const {
-    auto it = std::find_if(sector->firms_N.begin(), sector->firms_N.end(),
-                           [region_name](const Firm<ModelVariant>* it) { return it->region->id() == region_name; });
+    auto it =
+        std::find_if(sector->firms_N.begin(), sector->firms_N.end(), [region_name](const Firm<ModelVariant>* it) { return it->region->id() == region_name; });
     if (it == sector->firms_N.end()) {
         return nullptr;
     }

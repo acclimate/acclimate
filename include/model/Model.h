@@ -68,7 +68,7 @@ class Model {
     inline void tick() {
         assertstep(SCENARIO);
         time_ += delta_t_;
-        timestep_++;
+        ++timestep_;
     }
     inline const Time& delta_t() const { return delta_t_; };
     inline void delta_t(const Time& delta_t_p) {
