@@ -94,7 +94,11 @@ int main(int argc, char* argv[]) {
 
                           << "\nPrecision Price:        " << acclimate::Price::precision_digits
 
-                          << "\nEnabled options:        " ACCLIMATE_OPTIONS << std::endl;
+                          << "\nEnabled variants:       " ACCLIMATE_VARIANTS
+
+                             "\nEnabled options:        " ACCLIMATE_OPTIONS
+
+                          << std::endl;
 #ifdef ACCLIMATE_HAS_DIFF
             } else if (arg == "--diff" || arg == "-d") {
                 std::cout << acclimate_git_diff << std::flush;

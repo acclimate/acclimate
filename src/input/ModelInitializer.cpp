@@ -164,6 +164,7 @@ Region<ModelVariant>* ModelInitializer<ModelVariant>::add_region(const std::stri
     return region;
 }
 
+#ifdef VARIANT_BASIC
 template<>
 Sector<VariantBasic>* ModelInitializer<VariantBasic>::add_sector(const std::string& name) {
     Sector<VariantBasic>* sector = model->find_sector(name);
@@ -174,7 +175,9 @@ Sector<VariantBasic>* ModelInitializer<VariantBasic>::add_sector(const std::stri
     }
     return sector;
 }
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 Sector<VariantDemand>* ModelInitializer<VariantDemand>::add_sector(const std::string& name) {
     Sector<VariantDemand>* sector = model->find_sector(name);
@@ -187,7 +190,9 @@ Sector<VariantDemand>* ModelInitializer<VariantDemand>::add_sector(const std::st
     }
     return sector;
 }
+#endif
 
+#ifdef VARIANT_PRICES
 template<>
 Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::string& name) {
     Sector<VariantPrices>* sector = model->find_sector(name);
@@ -210,6 +215,7 @@ Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::st
     }
     return sector;
 }
+#endif
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::initialize_connection(

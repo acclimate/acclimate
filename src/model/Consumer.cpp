@@ -38,6 +38,7 @@ inline Consumer<ModelVariant>* Consumer<ModelVariant>::as_consumer() {
     return this;
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Consumer<VariantBasic>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -51,7 +52,9 @@ void Consumer<VariantBasic>::iterate_consumption_and_production() {
         is->iterate_consumption_and_production();
     }
 }
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Consumer<VariantDemand>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -65,6 +68,7 @@ void Consumer<VariantDemand>::iterate_consumption_and_production() {
         is->iterate_consumption_and_production();
     }
 }
+#endif
 
 template<class ModelVariant>
 void Consumer<ModelVariant>::iterate_consumption_and_production() {
@@ -100,6 +104,7 @@ void Consumer<ModelVariant>::iterate_expectation() {
     assertstep(EXPECTATION);
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Consumer<VariantBasic>::iterate_purchase() {
     assertstep(PURCHASE);
@@ -107,7 +112,9 @@ void Consumer<VariantBasic>::iterate_purchase() {
         is->purchasing_manager->iterate_purchase();
     }
 }
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Consumer<VariantDemand>::iterate_purchase() {
     assertstep(PURCHASE);
@@ -115,6 +122,7 @@ void Consumer<VariantDemand>::iterate_purchase() {
         is->purchasing_manager->iterate_purchase();
     }
 }
+#endif
 
 template<class ModelVariant>
 void Consumer<ModelVariant>::iterate_purchase() {

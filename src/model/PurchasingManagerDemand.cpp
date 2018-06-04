@@ -71,5 +71,7 @@ void PurchasingManagerDemand<ModelVariant>::send_demand_requests_D() {
     }
 }
 
+#ifdef VARIANT_DEMAND
 template class PurchasingManagerDemand<VariantDemand>;
+#endif
 }  // namespace acclimate

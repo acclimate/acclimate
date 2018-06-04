@@ -63,6 +63,7 @@ void Firm<ModelVariant>::iterate_consumption_and_production() {
     sales_manager->distribute(production_X_);
 }
 
+#ifdef VARIANT_PRICES
 template<>
 void Firm<VariantPrices>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -77,7 +78,9 @@ void Firm<VariantPrices>::iterate_consumption_and_production() {
     }
     sales_manager->distribute(production_X_);
 }
+#endif
 
+#ifdef VARIANT_BASIC
 template<>
 void Firm<VariantBasic>::iterate_expectation() {
     assertstep(EXPECTATION);
@@ -88,7 +91,9 @@ void Firm<VariantBasic>::iterate_expectation() {
                                                 ));
     }
 }
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Firm<VariantDemand>::iterate_expectation() {
     assertstep(EXPECTATION);
@@ -99,6 +104,7 @@ void Firm<VariantDemand>::iterate_expectation() {
                                                 ));
     }
 }
+#endif
 
 template<class ModelVariant>
 void Firm<ModelVariant>::iterate_expectation() {

@@ -39,5 +39,7 @@ void SalesManagerBasic<ModelVariant>::distribute(const Flow& production_X) {
     }
 }
 
+#ifdef VARIANT_BASIC
 template class SalesManagerBasic<VariantBasic>;
+#endif
 }  // namespace acclimate

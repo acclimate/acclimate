@@ -331,14 +331,26 @@ std::string Acclimate::timeinfo() {
 void Acclimate::initialize(const settings::SettingsNode& settings_p) {
     const std::string& variant = settings_p["variant"].as<std::string>();
     if (variant == "basic") {
+#ifdef VARIANT_BASIC
         instance_m.reset(new Acclimate(settings_p, ModelVariantType::BASIC));
         Acclimate::Run<VariantBasic>::initialize();
+#else
+        error_("Model variant '" << variant << "' not available in this binary");
+#endif
     } else if (variant == "demand") {
+#ifdef VARIANT_DEMAND
         instance_m.reset(new Acclimate(settings_p, ModelVariantType::DEMAND));
         Acclimate::Run<VariantDemand>::initialize();
+#else
+        error_("Model variant '" << variant << "' not available in this binary");
+#endif
     } else if (variant == "prices") {
+#ifdef VARIANT_PRICES
         instance_m.reset(new Acclimate(settings_p, ModelVariantType::PRICES));
         Acclimate::Run<VariantPrices>::initialize();
+#else
+        error_("Model variant '" << variant << "' not available in this binary");
+#endif
     } else {
         error_("Unknown model variant '" << variant << "'");
     }
@@ -347,13 +359,19 @@ void Acclimate::initialize(const settings::SettingsNode& settings_p) {
 void Acclimate::run() {
     switch (variant_m) {
         case ModelVariantType::BASIC:
+#ifdef VARIANT_BASIC
             Acclimate::Run<VariantBasic>::instance()->run();
+#endif
             break;
         case ModelVariantType::DEMAND:
+#ifdef VARIANT_DEMAND
             Acclimate::Run<VariantDemand>::instance()->run();
+#endif
             break;
         case ModelVariantType::PRICES:
+#ifdef VARIANT_PRICES
             Acclimate::Run<VariantPrices>::instance()->run();
+#endif
             break;
     }
 }
@@ -361,13 +379,19 @@ void Acclimate::run() {
 void Acclimate::cleanup() {
     switch (variant_m) {
         case ModelVariantType::BASIC:
+#ifdef VARIANT_BASIC
             Acclimate::Run<VariantBasic>::instance()->cleanup();
+#endif
             break;
         case ModelVariantType::DEMAND:
+#ifdef VARIANT_DEMAND
             Acclimate::Run<VariantDemand>::instance()->cleanup();
+#endif
             break;
         case ModelVariantType::PRICES:
+#ifdef VARIANT_PRICES
             Acclimate::Run<VariantPrices>::instance()->cleanup();
+#endif
             break;
     }
 }

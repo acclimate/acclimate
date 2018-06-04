@@ -34,5 +34,7 @@ void PurchasingManagerBasic<ModelVariant>::iterate_purchase() {
     }
 }
 
+#ifdef VARIANT_BASIC
 template class PurchasingManagerBasic<VariantBasic>;
+#endif
 }  // namespace acclimate

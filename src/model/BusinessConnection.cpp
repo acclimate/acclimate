@@ -245,6 +245,7 @@ FloatType BusinessConnection<ModelVariant>::get_stddeviation() const {
     return res;
 }
 
+#ifdef VARIANT_DEMAND
 template<>
 void BusinessConnection<VariantDemand>::calc_demand_fulfill_history() {
     assertstep(PURCHASE);
@@ -263,65 +264,6 @@ void BusinessConnection<VariantDemand>::calc_demand_fulfill_history() {
         demand_fulfill_history_ = 1e-2;
         Acclimate::Run<VariantDemand>::instance()->event(EventType::DEMAND_FULFILL_HISTORY_UNDERFLOW, seller->firm, buyer->storage->economic_agent);
     }
-}
-
-#ifdef BACKUP
-template<class ModelVariant>
-Flow BusinessConnection<ModelVariant>::calc_transport_mean() const {
-    assertstep(PURCHASE);
-    TransportChainLink<ModelVariant>* link = first_transport_link;
-    Flow res = last_delivery_Z;
-    TransportDelay delay = 0;
-    Time timesteps_to_consider = buyer->storage->sector->model->time() - time - 1;
-    while (link && timesteps_to_consider > 0) {
-        res += link->get_total_flow(timesteps_to_consider);
-        delay += link->current_transport_delay_tau;
-        if (link->is_last_link || timesteps_to_consider <= link->current_transport_delay_tau) {
-            break;
-        } else {
-            timesteps_to_consider -= link->current_transport_delay_tau;
-            link = link->next_transport_chain_link;
-        }
-    }
-    return round(res * (1 / std::min(delay, buyer->storage->sector->model->time() - time)));
-}
-
-template<class ModelVariant>
-Flow BusinessConnection<ModelVariant>::calc_transport_flow_deficit() const {
-    assertstep(PURCHASE);
-    TransportChainLink<ModelVariant>* link = first_transport_link;
-    Flow res(0.0);
-    res.add_possibly_negative(initial_flow_Z_star - last_delivery_Z);
-    Time timesteps_to_consider = buyer->storage->sector->model->time() - time - 1;
-    while (link && timesteps_to_consider > 0) {
-        res.add_possibly_negative(initial_flow_Z_star * std::min(timesteps_to_consider, link->current_transport_delay_tau - 1)
-                                  - link->get_total_flow(timesteps_to_consider));
-        if (link->is_last_link || timesteps_to_consider <= link->current_transport_delay_tau) {
-            break;
-        } else {
-            timesteps_to_consider -= link->current_transport_delay_tau;
-            link = link->next_transport_chain_link;
-        }
-    }
-    return round(res, true);
-}
-
-template<class ModelVariant>
-Flow BusinessConnection<ModelVariant>::calc_transport_flow() const {
-    assertstep(PURCHASE);
-    TransportChainLink<ModelVariant>* link = first_transport_link;
-    Flow res = last_delivery_Z;
-    Time timesteps_to_consider = buyer->storage->sector->model->time() - time - 1;
-    while (link && timesteps_to_consider > 0) {
-        res += link->get_total_flow(timesteps_to_consider);
-        if (link->is_last_link || timesteps_to_consider <= link->current_transport_delay_tau) {
-            break;
-        } else {
-            timesteps_to_consider -= link->current_transport_delay_tau;
-            link = link->next_transport_chain_link;
-        }
-    }
-    return round(res);
 }
 #endif
 
