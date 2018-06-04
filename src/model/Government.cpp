@@ -47,7 +47,7 @@ template<class ModelVariant>
 void Government<ModelVariant>::impose_tax() {
     assertstep(EXPECTATION);
     for (const auto& ps : taxed_firms) {
-        info("Imposing tax on " << std::string(*ps.first) << " (" << ps.second << ")");
+        info("Imposing tax on " << ps.first->id() << " (" << ps.second << ")");
         ps.first->sales_manager->impose_tax(ps.second);
     }
 }
@@ -55,8 +55,8 @@ void Government<ModelVariant>::impose_tax() {
 template<class ModelVariant>
 void Government<ModelVariant>::define_tax(const std::string& sector, const Ratio& tax_ratio_p) {
     assertstep(SCENARIO);
-    info("Defining tax on " << sector << ":" << std::string(*region) << " (" << tax_ratio_p << ")");
-    Firm<ModelVariant>* ps = region->model->find_firm(sector, *region);
+    info("Defining tax on " << sector << ":" << region->id() << " (" << tax_ratio_p << ")");
+    Firm<ModelVariant>* ps = region->model->find_firm(sector, region->id());
     if (ps != nullptr) {
         taxed_firms[ps] = tax_ratio_p;
     }

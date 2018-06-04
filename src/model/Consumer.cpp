@@ -152,7 +152,7 @@ void Consumer<ModelVariant>::iterate_investment() {
 #ifdef DEBUG
 template<class ModelVariant>
 void Consumer<ModelVariant>::print_details() const {
-    info(std::string(*this) << ":");
+    info(id() << ":");
     for (const auto& is : input_storages) {
         is->purchasing_manager->print_details();
     }

@@ -33,6 +33,7 @@ class BusinessConnection;
 template<class ModelVariant>
 class Firm : public EconomicAgent<ModelVariant> {
   public:
+    using EconomicAgent<ModelVariant>::id;
     using EconomicAgent<ModelVariant>::input_storages;
     using EconomicAgent<ModelVariant>::region;
     using EconomicAgent<ModelVariant>::sector;

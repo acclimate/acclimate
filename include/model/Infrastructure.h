@@ -43,7 +43,7 @@ class Infrastructure : public GeographicEntity<ModelVariant> {
     const Infrastructure<ModelVariant>* as_infrastructure() const override;
     void set_forcing_nu(const Forcing& forcing_nu_p);
     void remove_transport_chain_link(TransportChainLink<ModelVariant>* transport_chain_link);
-    inline operator std::string() const override { return "INFRASTRUCTURE"; }
+    inline std::string id() const override { return "INFRASTRUCTURE"; }
 };
 }  // namespace acclimate
 

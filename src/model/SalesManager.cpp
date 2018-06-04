@@ -92,7 +92,7 @@ template<class ModelVariant>
 void SalesManager<ModelVariant>::print_details() const {
     info(business_connections.size() << " outputs:");
     for (const auto& bc : business_connections) {
-        info("    " << std::string(*bc) << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
+        info("    " << bc->id() << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
     }
 }
 #endif

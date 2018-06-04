@@ -66,7 +66,7 @@ void JSONNetworkOutput<ModelVariant>::internal_iterate_end() {
                 Flow used_flow = Flow(0.0);
                 if (ea->type == EconomicAgent<ModelVariant>::Type::FIRM) {
                     Firm<ModelVariant>* ps = ea->as_firm();
-                    sector = std::string(*ps->sector);
+                    sector = ps->sector->id();
                     out_flow = ps->production_X();
                     if (advanced) {
                         out << "\n    \"production_capacity\": " << (ps->production_X() / ps->initial_production_X_star()) << ",";
@@ -82,7 +82,7 @@ void JSONNetworkOutput<ModelVariant>::internal_iterate_end() {
                     }
                 }
                 out << "\n    \"sector\": \"" << sector << "\",";
-                out << "\n    \"region\": \"" << std::string(*ea->region) << "\"";
+                out << "\n    \"region\": \"" << ea->region->id() << "\"";
                 if (advanced) {
                     out << ",\n    \"in_flow\": " << in_flow.get_quantity() << ",";
                     out << "\n    \"used_flow\": " << used_flow.get_quantity() << ",";
@@ -100,8 +100,8 @@ void JSONNetworkOutput<ModelVariant>::internal_iterate_end() {
                 for (const auto& is : ea->input_storages) {
                     for (const auto& bc : is->purchasing_manager->business_connections) {
                         out << "\n  {";
-                        out << "\n    \"source\": \"" << std::string(*bc->seller->firm) << "\",";
-                        out << "\n    \"target\": \"" << std::string(*ea) << "\",";
+                        out << "\n    \"source\": \"" << bc->seller->firm->id() << "\",";
+                        out << "\n    \"target\": \"" << ea->id() << "\",";
                         out << "\n    \"distance\": " << static_cast<int>(bc->get_transport_delay_tau()) << ",";
                         out << "\n    \"flow\": " << bc->last_shipment_Z().get_quantity();
                         out << "\n  },";

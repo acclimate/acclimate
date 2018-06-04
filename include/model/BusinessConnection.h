@@ -92,7 +92,9 @@ class BusinessConnection {
     void establish_connection();
 
   public:
-    BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p, typename ModelVariant::SalesManagerType* seller_p, const Flow& initial_flow_Z_star_p);
+    BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
+                       typename ModelVariant::SalesManagerType* seller_p,
+                       const Flow& initial_flow_Z_star_p);
     BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
                        typename ModelVariant::SalesManagerType* seller_p,
                        const Flow& initial_flow_Z_star_p,
@@ -114,7 +116,7 @@ class BusinessConnection {
 
     void calc_demand_fulfill_history();  // only for VariantDemand
 
-    inline operator std::string() const { return std::string(*seller) + "->" + std::string(*buyer->storage->economic_agent); };
+    inline std::string id() const { return seller->id() + "->" + buyer->storage->economic_agent->id(); };
 };
 }  // namespace acclimate
 

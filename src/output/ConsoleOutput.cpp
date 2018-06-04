@@ -95,19 +95,19 @@ void ConsoleOutput<ModelVariant>::internal_write_value(const std::string& name, 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
     stack++;
-    *out << '\n' << std::string(2 * stack, ' ') << name << " " << std::string(*sector) << "," << std::string(*region) << ":";
+    *out << '\n' << std::string(2 * stack, ' ') << name << " " << sector->id() << "," << region->id() << ":";
 }
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector) {
     stack++;
-    *out << '\n' << std::string(2 * stack, ' ') << name << " " << std::string(*sector) << ":";
+    *out << '\n' << std::string(2 * stack, ' ') << name << " " << sector->id() << ":";
 }
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_start_target(const std::string& name, Region<ModelVariant>* region) {
     stack++;
-    *out << '\n' << std::string(2 * stack, ' ') << name << " " << std::string(*region) << ":";
+    *out << '\n' << std::string(2 * stack, ' ') << name << " " << region->id() << ":";
 }
 
 template<class ModelVariant>

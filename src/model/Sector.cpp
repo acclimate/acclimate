@@ -27,11 +27,11 @@ namespace acclimate {
 
 template<class ModelVariant>
 Sector<ModelVariant>::Sector(Model<ModelVariant>* model_p,
-                             std::string name_p,
+                             std::string id_p,
                              const IntType index_p,
                              const Ratio& upper_storage_limit_omega_p,
                              const Time& initial_storage_fill_factor_psi_p)
-    : name(std::move(name_p)),
+    : id_(std::move(id_p)),
       index_(index_p),
       model(model_p),
       upper_storage_limit_omega(upper_storage_limit_omega_p),

@@ -53,7 +53,8 @@ class RasteredData {
 
       public:
         using iterator_category = std::forward_iterator_tag;
-        iterator(const FloatType& l_, const std::size_t& c_, const FloatType& gridsize_, const std::size_t& count_) : l(l_), c(c_), gridsize(gridsize_), count(count_){};
+        iterator(const FloatType& l_, const std::size_t& c_, const FloatType& gridsize_, const std::size_t& count_)
+            : l(l_), c(c_), gridsize(gridsize_), count(count_){};
         iterator operator++() {
             if (c < count) {
                 c++;
@@ -95,9 +96,7 @@ class RasteredData {
     template<typename T2>
     bool is_compatible(const RasteredData<T2>& other) const;
     T read(const FloatType& x_var, const FloatType& y_var) const;
-#ifdef DEBUG
-    virtual inline explicit operator std::string() const { return "RASTER " + filename; }
-#endif
+    virtual inline std::string id() const { return "RASTER " + filename; }
 };
 }  // namespace acclimate
 

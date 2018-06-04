@@ -70,7 +70,7 @@ class EconomicAgent {
     virtual void iterate_investment() = 0;
     Storage<ModelVariant>* find_input_storage(const std::string& sector_name) const;
     void remove_storage(Storage<ModelVariant>* storage);
-    virtual inline operator std::string() const { return std::string(*sector) + ":" + std::string(*region); }
+    virtual inline std::string id() const { return sector->id() + ":" + region->id(); }
 #ifdef DEBUG
     virtual void print_details() const = 0;
 #endif

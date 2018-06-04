@@ -28,14 +28,14 @@ namespace acclimate {
 class GeographicPoint {
   protected:
     const FloatType lon_, lat_;
-    const std::string name;
+    const std::string id_;
 
   public:
-    GeographicPoint(std::string  name_p, const FloatType lon_p, const FloatType lat_p);
+    GeographicPoint(std::string id_p, const FloatType lon_p, const FloatType lat_p);
     FloatType distance_to(const GeographicPoint& other) const;
-    inline FloatType lon() const { return lon_; };
-    inline FloatType lat() const { return lat_; };
-    explicit operator std::string() const { return name; };
+    inline FloatType lon() const { return lon_; }
+    inline FloatType lat() const { return lat_; }
+    inline const std::string& id() const { return id_; }
 };
 }  // namespace acclimate
 

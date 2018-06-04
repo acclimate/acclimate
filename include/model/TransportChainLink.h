@@ -59,17 +59,17 @@ class TransportChainLink {
     FloatType get_stddeviation() const;
     const FlowQuantity get_flow_deficit() const;
 
-    inline operator std::string() const {
+    inline std::string id() const {
 #ifdef TRANSPORT
         const TransportChainLink<ModelVariant>* link = this;
-        int id = 0;
+        int index = 0;
         while (link->next_transport_chain_link) {
             link = link->next_transport_chain_link.get();
-            id++;
+            ++index;
         }
-        return std::string(*business_connection->seller) + "-" + std::to_string(id) + "->" + std::string(*business_connection->buyer->storage->economic_agent);
+        return business_connection->seller->id() + "-" + std::to_string(index) + "->" + business_connection->buyer->storage->economic_agent->id();
 #else
-        return std::string(*business_connection->seller) + "->" + std::string(*business_connection->buyer->storage->economic_agent);
+        return business_connection->seller->id() + "->" + business_connection->buyer->storage->economic_agent->id();
 #endif
     }
 };

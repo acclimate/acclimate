@@ -38,10 +38,12 @@ class Scenario;
 template<class ModelVariant>
 class ArrayOutput : public Output<ModelVariant> {
   public:
-    using Output<ModelVariant>::output_node;
+    using Output<ModelVariant>::id;
     using Output<ModelVariant>::model;
-    using Output<ModelVariant>::settings;
+    using Output<ModelVariant>::output_node;
     using Output<ModelVariant>::scenario;
+    using Output<ModelVariant>::settings;
+
     struct Variable {
         std::vector<FloatType> data;
         std::vector<std::size_t> shape;  // without time

@@ -47,7 +47,7 @@ class GeographicEntity {
     explicit GeographicEntity(const GeographicEntity<ModelVariant>::Type& type_p);
     virtual ~GeographicEntity();
     void remove_connection(const GeographicEntity<ModelVariant>* geographic_entity);
-    virtual operator std::string() const = 0;
+    virtual std::string id() const = 0;
 };
 }  // namespace acclimate
 

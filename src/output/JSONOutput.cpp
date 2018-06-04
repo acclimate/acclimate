@@ -105,20 +105,20 @@ void JSONOutput<ModelVariant>::internal_end_target() {
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
     *out << "        \"" << name << "\": {\n";
-    *out << "            \"sector\": \"" << std::string(*sector) << "\",\n";
-    *out << "            \"region\": \"" << std::string(*region) << "\",\n";
+    *out << "            \"sector\": \"" << sector->id() << "\",\n";
+    *out << "            \"region\": \"" << region->id() << "\",\n";
 }
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector) {
     *out << "        \"" << name << "\": {\n";
-    *out << "            \"sector\": \"" << std::string(*sector) << "\",\n";
+    *out << "            \"sector\": \"" << sector->id() << "\",\n";
 }
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_start_target(const std::string& name, Region<ModelVariant>* region) {
     *out << "        \"" << name << "\": {\n";
-    *out << "            \"region\": \"" << std::string(*region) << "\",\n";
+    *out << "            \"region\": \"" << region->id() << "\",\n";
 }
 
 template<class ModelVariant>

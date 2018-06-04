@@ -75,7 +75,7 @@ template<class ModelVariant>
 void GnuplotOutput<ModelVariant>::internal_start() {
     file << "# Sectors:\n# set ytics (";
     for (std::size_t i = 0; i < model->sectors_C.size(); i++) {
-        file << "\"" << std::string(*model->sectors_C[i]) << "\" " << i;
+        file << "\"" << model->sectors_C[i]->id() << "\" " << i;
         if (i < model->sectors_C.size() - 1) {
             file << ", ";
         }
@@ -83,7 +83,7 @@ void GnuplotOutput<ModelVariant>::internal_start() {
     }
     file << ")\n# Regions:\n# set ytics (";
     for (std::size_t i = 0; i < model->regions_R.size(); i++) {
-        file << "\"" << std::string(*model->regions_R[i]) << "\" " << i;
+        file << "\"" << model->regions_R[i]->id() << "\" " << i;
         if (i < model->regions_R.size() - 1) {
             file << ", ";
         }

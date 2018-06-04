@@ -30,8 +30,8 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p)
-    : GeographicEntity<ModelVariant>(GeographicEntity<ModelVariant>::Type::REGION), name(std::move(name_p)), index_(index_p), model(model_p) {}
+Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string id_p, const IntType index_p)
+    : GeographicEntity<ModelVariant>(GeographicEntity<ModelVariant>::Type::REGION), id_(std::move(id_p)), index_(index_p), model(model_p) {}
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_export_Z(const Flow& export_flow_Z_p) {
@@ -55,7 +55,7 @@ void Region<ModelVariant>::add_consumption_flow_Y(const Flow& consumption_flow_Y
 }
 
 template<class ModelVariant>
-const Flow Region<ModelVariant>::get_gdp() const {
+Flow Region<ModelVariant>::get_gdp() const {
     return consumption_flow_Y_[model->current_register()] + export_flow_Z_[model->current_register()] - import_flow_Z_[model->current_register()];
 }
 
@@ -179,7 +179,7 @@ const Path<ModelVariant>& Region<ModelVariant>::find_path_to(const Region<ModelV
 #else
     const auto& it = paths.find(region);
     if (it == std::end(paths)) {
-        error("No transport data from " << std::string(*this) << " to " << std::string(*region));
+        error("No transport data from " << id() << " to " << region->id());
     }
     return it->second;
 #endif

@@ -33,10 +33,10 @@ CapacityManagerPrices<ModelVariant>::CapacityManagerPrices(Firm<ModelVariant>* f
 #ifdef DEBUG
 template<class ModelVariant>
 void CapacityManagerPrices<ModelVariant>::print_inputs() const {
-    info(std::string(*this) << ": " << firm->input_storages.size() << " inputs:");
+    info(id() << ": " << firm->input_storages.size() << " inputs:");
     for (const auto& is : firm->input_storages) {
         Flow possible_use_U_hat = is->get_possible_use_U_hat();
-        info("    " << std::string(*is) << ":"
+        info("    " << is->id() << ":"
 
                     << "  U_hat= " << std::setw(11) << possible_use_U_hat.get_quantity()
 

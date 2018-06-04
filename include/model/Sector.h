@@ -33,8 +33,8 @@ class Firm;
 template<class ModelVariant>
 class Sector {
   protected:
-    const std::string name;
     const IntType index_;
+    const std::string id_;
     Demand total_demand_D_ = Demand(0.0);
     Flow total_production_X_ = Flow(0.0);
     Flow last_total_production_X_ = Flow(0.0);
@@ -64,7 +64,7 @@ class Sector {
 
   public:
     Sector(Model<ModelVariant>* model_p,
-           std::string  name_p,
+           std::string id_p,
            const IntType index_p,
            const Ratio& upper_storage_limit_omega_p,
            const Time& initial_storage_fill_factor_psi_p);
@@ -75,7 +75,7 @@ class Sector {
     void iterate_consumption_and_production();
     void remove_firm(Firm<ModelVariant>* firm);
     inline IntType index() const { return index_; };
-    inline operator std::string() const { return name; };
+    inline const std::string& id() const { return id_; };
 };
 }  // namespace acclimate
 #endif

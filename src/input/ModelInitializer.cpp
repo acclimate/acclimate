@@ -98,8 +98,8 @@ settings::SettingsNode ModelInitializer<ModelVariant>::get_firm_property(const s
 
 template<class ModelVariant>
 Firm<ModelVariant>* ModelInitializer<ModelVariant>::add_firm(Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
-    auto firm =
-        new Firm<ModelVariant>(sector, region, static_cast<Ratio>(get_firm_property(*sector, *region, "possible_overcapacity_ratio").template as<double>()));
+    auto firm = new Firm<ModelVariant>(sector, region,
+                                       static_cast<Ratio>(get_firm_property(sector->id(), region->id(), "possible_overcapacity_ratio").template as<double>()));
     region->economic_agents.emplace_back(firm);
     sector->firms_N.push_back(firm);
     return firm;
@@ -220,14 +220,14 @@ Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::st
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::initialize_connection(
     Sector<ModelVariant>* sector_from, Region<ModelVariant>* region_from, Sector<ModelVariant>* sector_to, Region<ModelVariant>* region_to, const Flow& flow) {
-    Firm<ModelVariant>* firm_from = model->find_firm(sector_from, *region_from);
+    Firm<ModelVariant>* firm_from = model->find_firm(sector_from, region_from->id());
     if (!firm_from) {
         firm_from = add_firm(sector_from, region_from);
         if (!firm_from) {
             return;
         }
     }
-    Firm<ModelVariant>* firm_to = model->find_firm(sector_to, *region_to);
+    Firm<ModelVariant>* firm_to = model->find_firm(sector_to, region_to->id());
     if (!firm_to) {
         firm_to = add_firm(sector_to, region_to);
         if (!firm_to) {
@@ -243,15 +243,15 @@ void ModelInitializer<ModelVariant>::initialize_connection(Firm<ModelVariant>* f
         return;
     }
 #ifdef DEBUG
-#define SKIP(a)                                                                    \
-    if (std::string(*firm_from) + "->" + std::string(*economic_agent_to) == (a)) { \
-        warning("skipping " << (a));                                               \
-        return;                                                                    \
+#define SKIP(a)                                                    \
+    if (firm_from->id() + "->" + economic_agent_to->id() == (a)) { \
+        warning("skipping " << (a));                               \
+        return;                                                    \
     }
 // use SKIP("...:...->...:..."); to skip connections
 #endif
     Sector<ModelVariant>* sector_from = firm_from->sector;
-    Storage<ModelVariant>* input_storage = economic_agent_to->find_input_storage(*sector_from);
+    Storage<ModelVariant>* input_storage = economic_agent_to->find_input_storage(sector_from->id());
     if (!input_storage) {
         input_storage = new Storage<ModelVariant>(sector_from, economic_agent_to);
         economic_agent_to->input_storages.emplace_back(input_storage);
@@ -298,12 +298,12 @@ void ModelInitializer<ModelVariant>::clean_network() {
 
 #ifdef CLEANUP_INFO
                         if (value_added <= 0.0) {
-                            warning(std::string(*firm) << ": removed (value added only " << value_added << ")");
+                            warning(firm->id() << ": removed (value added only " << value_added << ")");
                         } else if (firm->sales_manager->business_connections.size() == 0
                                    || (firm->sales_manager->business_connections.size() == 1 && firm->self_supply_connection())) {
-                            warning(std::string(*firm) << ": removed (no outgoing connection)");
+                            warning(firm->id() << ": removed (no outgoing connection)");
                         } else {
-                            warning(std::string(*firm) << ": removed (no incoming connection)");
+                            warning(firm->id() << ": removed (no incoming connection)");
                         }
 #endif
                         firm->sector->remove_firm(firm);
@@ -333,7 +333,7 @@ void ModelInitializer<ModelVariant>::clean_network() {
 
                     if (consumer->input_storages.empty()) {
 #ifdef CLEANUP_INFO
-                        warning(std::string(*consumer) << ": removed (no incoming connection)");
+                        warning(consumer->id() << ": removed (no incoming connection)");
 #endif
                         // Also cleans up memory of consumer
                         economic_agent = (*region)->economic_agents.erase(economic_agent);
@@ -378,12 +378,12 @@ void ModelInitializer<ModelVariant>::print_network_characteristics() const {
         if (firm_count > 0) {
             average_transport_delay_region /= FloatType(firm_count);
 #ifdef CLEANUP_INFO
-            info(std::string(*region) << ": number of firms: " << firm_count << " average transport delay: " << average_transport_delay_region);
+            info(region->id() << ": number of firms: " << firm_count << " average transport delay: " << average_transport_delay_region);
 #endif
             average_transport_delay += average_transport_delay_region;
         } else {
             region_wo_firm_count++;
-            warning(std::string(*region) << ": no firm");
+            warning(region->id() << ": no firm");
         }
     }
     average_transport_delay /= FloatType(model->regions_R.size() - region_wo_firm_count);
@@ -532,22 +532,21 @@ void ModelInitializer<ModelVariant>::build_artificial_network() {
     const Flow double_flow = Flow(FlowQuantity(2.0), Price(1.0));
     for (std::size_t r = 0; r < regions_cnt; r++) {
         for (std::size_t i = 0; i < sectors_cnt; i++) {
-            info(std::string(*model->sectors_C[i + 1]->firms_N[r])
-                 << "->" << std::string(*model->sectors_C[(i + 1) % sectors_cnt + 1]->firms_N[r]) << " = " << flow.get_quantity());
+            info(model->sectors_C[i + 1]->firms_N[r]->id()
+                 << "->" << model->sectors_C[(i + 1) % sectors_cnt + 1]->firms_N[r]->id() << " = " << flow.get_quantity());
             initialize_connection(model->sectors_C[i + 1]->firms_N[r], model->sectors_C[(i + 1) % sectors_cnt + 1]->firms_N[r], flow);
             if (!closed && r == regions_cnt - 1) {
-                info(std::string(*model->sectors_C[i + 1]->firms_N[r])
-                     << "->" << std::string(*model->find_consumer(model->regions_R[r].get())) << " = " << double_flow.get_quantity());
+                info(model->sectors_C[i + 1]->firms_N[r]->id()
+                     << "->" << model->find_consumer(model->regions_R[r].get())->id() << " = " << double_flow.get_quantity());
                 initialize_connection(model->sectors_C[i + 1]->firms_N[r], model->find_consumer(model->regions_R[r].get()), double_flow);
             } else {
-                info(std::string(*model->sectors_C[i + 1]->firms_N[r])
-                     << "->" << std::string(*model->find_consumer(model->regions_R[r].get())) << " = " << flow.get_quantity());
+                info(model->sectors_C[i + 1]->firms_N[r]->id()
+                     << "->" << model->find_consumer(model->regions_R[r].get())->id() << " = " << flow.get_quantity());
                 initialize_connection(model->sectors_C[i + 1]->firms_N[r], model->find_consumer(model->regions_R[r].get()), flow);
             }
             if (closed || r < regions_cnt - 1) {
-                info(std::string(*model->sectors_C[i + 1]->firms_N[r])
-                     << "->" << std::string(*model->sectors_C[(i + skewness) % sectors_cnt + 1]->firms_N[(r + 1) % regions_cnt]) << " = "
-                     << flow.get_quantity());
+                info(model->sectors_C[i + 1]->firms_N[r]->id()
+                     << "->" << model->sectors_C[(i + skewness) % sectors_cnt + 1]->firms_N[(r + 1) % regions_cnt]->id() << " = " << flow.get_quantity());
                 initialize_connection(model->sectors_C[i + 1]->firms_N[r], model->sectors_C[(i + skewness) % sectors_cnt + 1]->firms_N[(r + 1) % regions_cnt],
                                       flow);
             }
@@ -610,7 +609,7 @@ void ModelInitializer<ModelVariant>::read_flows() {
             }
         } else {
             Sector<ModelVariant>* sector = add_sector(sector_name);
-            Firm<ModelVariant>* firm = model->find_firm(sector, *region);
+            Firm<ModelVariant>* firm = model->find_firm(sector, region->id());
             if (!firm) {
                 firm = add_firm(sector, region);
                 if (!firm) {

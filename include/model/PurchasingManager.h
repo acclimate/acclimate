@@ -63,7 +63,7 @@ class PurchasingManager {
     virtual void iterate_consumption_and_production();
     virtual void iterate_purchase() = 0;
     virtual bool remove_business_connection(const BusinessConnection<ModelVariant>* business_connection);
-    inline operator std::string() const { return std::string(*storage->sector) + "->" + std::string(*storage->economic_agent); }
+    inline std::string id() const { return storage->sector->id() + "->" + storage->economic_agent->id(); }
     inline const Demand& initial_demand_D_star() const { return storage->initial_input_flow_I_star(); }
     virtual void add_initial_demand_D_star(const Demand& demand_D_p);
     virtual void subtract_initial_demand_D_star(const Demand& demand_D_p);

@@ -321,7 +321,7 @@ void Output<ModelVariant>::write_input_storages(const EconomicAgent<ModelVariant
             storage_sector_name = input_storage_node["sector"].as<std::string>().c_str();
         }
         for (const auto& is : ea->input_storages) {
-            if ((storage_sector_name == nullptr) || std::string(*is->sector) == storage_sector_name) {
+            if ((storage_sector_name == nullptr) || is->sector->id() == storage_sector_name) {
                 if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
                     internal_start_target("consumers/input_storages", is->sector);
                 } else {
@@ -398,8 +398,8 @@ void Output<ModelVariant>::write_outgoing_connections(const Firm<ModelVariant>* 
         for (const auto& bc : p->sales_manager->business_connections) {
             if (bc->buyer->storage->economic_agent->type == EconomicAgent<ModelVariant>::Type::FIRM) {
                 Firm<ModelVariant>* firm_to = bc->buyer->storage->economic_agent->as_firm();
-                if ((sector_to_name == nullptr) || std::string(*firm_to->sector) == sector_to_name) {
-                    if ((region_to_name == nullptr) || std::string(*firm_to->region) == region_to_name) {
+                if ((sector_to_name == nullptr) || firm_to->sector->id() == sector_to_name) {
+                    if ((region_to_name == nullptr) || firm_to->region->id() == region_to_name) {
                         internal_start_target("outgoing_connections", firm_to->sector, firm_to->region);
                         write_connection_parameters(bc.get(), outgoing_connection_node["parameters"]);
                         internal_end_target();
@@ -423,8 +423,8 @@ void Output<ModelVariant>::write_ingoing_connections(const Storage<ModelVariant>
         }
         for (const auto& bc : s->purchasing_manager->business_connections) {
             Firm<ModelVariant>* firm_from = bc->seller->firm;
-            if ((sector_from_name == nullptr) || std::string(*firm_from->sector) == sector_from_name) {
-                if ((region_from_name == nullptr) || std::string(*firm_from->region) == region_from_name) {
+            if ((sector_from_name == nullptr) || firm_from->sector->id() == sector_from_name) {
+                if ((region_from_name == nullptr) || firm_from->region->id() == region_from_name) {
                     internal_start_target("ingoing_connections", firm_from->sector, firm_from->region);
                     write_connection_parameters(bc, ingoing_connection_node["parameters"]);
                     internal_end_target();
@@ -444,7 +444,7 @@ void Output<ModelVariant>::write_consumption_connections(const Firm<ModelVariant
         for (const auto& bc : p->sales_manager->business_connections) {
             if (bc->buyer->storage->economic_agent->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
                 Consumer<ModelVariant>* consumer_to = bc->buyer->storage->economic_agent->as_consumer();
-                if ((region_to_name == nullptr) || std::string(*consumer_to->region) == region_to_name) {
+                if ((region_to_name == nullptr) || consumer_to->region->id() == region_to_name) {
                     internal_start_target("consumption_connections", consumer_to->region);
                     write_connection_parameters(bc.get(), outgoing_connection_node["parameters"]);
                     internal_end_target();
@@ -691,7 +691,7 @@ void Output<ModelVariant>::iterate() {
                             switch (name) {
                                 case settings::hstring::hash("people_affected"):
                                     for (const auto& forcing : static_cast<RasteredScenario<ModelVariant>*>(scenario)->forcings()) {
-                                        if (forcing.region && ((region_name == nullptr) || std::string(*forcing.region) == region_name)) {
+                                        if (forcing.region && ((region_name == nullptr) || forcing.region->id() == region_name)) {
                                             internal_start_target("regions", forcing.region);
                                             internal_write_value(name, forcing.people_affected);
                                             internal_end_target();
@@ -702,7 +702,7 @@ void Output<ModelVariant>::iterate() {
                         }
                     }
                     for (const auto& region : model->regions_R) {
-                        if ((region_name == nullptr) || std::string(*region) == region_name) {
+                        if ((region_name == nullptr) || region->id() == region_name) {
                             internal_start_target("regions", region.get());
                             write_region_parameters(region.get(), it);
                             internal_end_target();
@@ -716,10 +716,10 @@ void Output<ModelVariant>::iterate() {
                         sector_name = it["sector"].as<std::string>().c_str();
                     }
                     for (const auto& sector : model->sectors_C) {
-                        if (std::string(*sector) == "FCON") {
+                        if (sector->id() == "FCON") {
                             continue;
                         }
-                        if ((sector_name == nullptr) || std::string(*sector) == sector_name) {
+                        if ((sector_name == nullptr) || sector->id() == sector_name) {
                             internal_start_target("sectors", sector.get());
                             write_sector_parameters(sector.get(), it);
                             internal_end_target();

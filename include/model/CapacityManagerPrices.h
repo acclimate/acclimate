@@ -31,9 +31,10 @@ class Firm;
 template<class ModelVariant>
 class CapacityManagerPrices : public CapacityManager<ModelVariant> {
   public:
-    using CapacityManager<ModelVariant>::firm;
-    using CapacityManager<ModelVariant>::possible_overcapacity_ratio_beta;
     using CapacityManager<ModelVariant>::calc_possible_and_desired_production;
+    using CapacityManager<ModelVariant>::firm;
+    using CapacityManager<ModelVariant>::id;
+    using CapacityManager<ModelVariant>::possible_overcapacity_ratio_beta;
 
   private:
     const Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs) const;

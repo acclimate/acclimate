@@ -85,7 +85,7 @@ void Model<ModelVariant>::iterate_investment() {
 
 template<class ModelVariant>
 Region<ModelVariant>* Model<ModelVariant>::find_region(const std::string& name) const {
-    auto it = std::find_if(regions_R.begin(), regions_R.end(), [name](const std::unique_ptr<Region<ModelVariant>>& it) { return std::string(*it) == name; });
+    auto it = std::find_if(regions_R.begin(), regions_R.end(), [name](const std::unique_ptr<Region<ModelVariant>>& it) { return it->id() == name; });
     if (it == regions_R.end()) {
         return nullptr;
     }
@@ -94,7 +94,7 @@ Region<ModelVariant>* Model<ModelVariant>::find_region(const std::string& name) 
 
 template<class ModelVariant>
 Sector<ModelVariant>* Model<ModelVariant>::find_sector(const std::string& name) const {
-    auto it = std::find_if(sectors_C.begin(), sectors_C.end(), [name](const std::unique_ptr<Sector<ModelVariant>>& it) { return std::string(*it) == name; });
+    auto it = std::find_if(sectors_C.begin(), sectors_C.end(), [name](const std::unique_ptr<Sector<ModelVariant>>& it) { return it->id() == name; });
     if (it == sectors_C.end()) {
         return nullptr;
     }
@@ -113,7 +113,7 @@ Firm<ModelVariant>* Model<ModelVariant>::find_firm(const std::string& sector_nam
 template<class ModelVariant>
 Firm<ModelVariant>* Model<ModelVariant>::find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const {
     auto it = std::find_if(sector->firms_N.begin(), sector->firms_N.end(),
-                           [region_name](const Firm<ModelVariant>* it) { return std::string(*it->region) == region_name; });
+                           [region_name](const Firm<ModelVariant>* it) { return it->region->id() == region_name; });
     if (it == sector->firms_N.end()) {
         return nullptr;
     }

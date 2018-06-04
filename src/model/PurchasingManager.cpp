@@ -119,7 +119,7 @@ template<class ModelVariant>
 void PurchasingManager<ModelVariant>::print_details() const {
     info(business_connections.size() << " inputs:  I_star= " << storage->initial_input_flow_I_star().get_quantity());
     for (const auto& bc : business_connections) {
-        info("    " << std::string(*bc) << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity() << "  X_star= " << std::setw(11)
+        info("    " << bc->id() << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity() << "  X_star= " << std::setw(11)
                     << bc->seller->firm->initial_production_X_star().get_quantity());
     }
 }

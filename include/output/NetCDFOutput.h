@@ -39,8 +39,9 @@ class Scenario;
 template<class ModelVariant>
 class NetCDFOutput : public ArrayOutput<ModelVariant> {
   public:
-    using Output<ModelVariant>::output_node;
+    using Output<ModelVariant>::id;
     using Output<ModelVariant>::model;
+    using Output<ModelVariant>::output_node;
     using Output<ModelVariant>::settings;
     using Output<ModelVariant>::scenario;
 

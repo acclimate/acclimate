@@ -83,8 +83,8 @@ class ModelInitializer {
     void initialize();
 #ifdef DEBUG
     void print_network_characteristics() const;
-    inline operator std::string() const { return "MODELINITIALIZER"; }
 #endif
+    inline std::string id() const { return "MODELINITIALIZER"; }
 };
 }  // namespace acclimate
 

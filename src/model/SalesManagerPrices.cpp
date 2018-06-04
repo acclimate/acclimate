@@ -769,12 +769,11 @@ void SalesManagerPrices<ModelVariant>::print_connections(
     typename std::vector<std::unique_ptr<BusinessConnection<ModelVariant>>>::const_iterator end_equally_distributed) const {
 #pragma omp critical(output)
     {
-        std::cout << Acclimate::instance()->timeinfo() << ", " << std::string(*this) << ": supply distribution for " << business_connections.size()
-                  << " outputs :\n";
+        std::cout << Acclimate::instance()->timeinfo() << ", " << id() << ": supply distribution for " << business_connections.size() << " outputs :\n";
         FlowQuantity sum = FlowQuantity(0.0);
         FlowQuantity initial_sum = FlowQuantity(0.0);
         for (const auto& bc : business_connections) {
-            std::cout << "      " << std::string(*bc) << " :\n"
+            std::cout << "      " << bc->id() << " :\n"
                       << PRINT_ROW1("n", bc->last_demand_request_D().get_price()) << PRINT_ROW1("D_r", bc->last_demand_request_D().get_quantity())
                       << PRINT_ROW1("D_star", bc->initial_flow_Z_star().get_quantity()) << PRINT_ROW1("Z_last", bc->last_shipment_Z(this).get_quantity())
                       << PRINT_ROW1("in_share", (bc->initial_flow_Z_star() / bc->buyer->storage->initial_input_flow_I_star())) << '\n';
@@ -782,15 +781,15 @@ void SalesManagerPrices<ModelVariant>::print_connections(
             initial_sum += bc->initial_flow_Z_star().get_quantity();
         }
         if (supply_distribution_scenario.connection_not_served_completely != business_connections.end()) {
-            std::cout << "      not completely served: " << std::string(**supply_distribution_scenario.connection_not_served_completely) << '\n';
+            std::cout << "      not completely served: " << (*supply_distribution_scenario.connection_not_served_completely)->id() << '\n';
         } else {
             std::cout << "      all connections served completely\n";
         }
         if (begin_equally_distributed != business_connections.end()) {
-            std::cout << "      first_equal_distribution: " << std::string(**begin_equally_distributed) << '\n';
+            std::cout << "      first_equal_distribution: " << (*begin_equally_distributed)->id() << '\n';
         }
         if (end_equally_distributed != business_connections.end()) {
-            std::cout << "      last_equal_distribution:  " << std::string(**end_equally_distributed) << '\n';
+            std::cout << "      last_equal_distribution:  " << (*end_equally_distributed)->id() << '\n';
         }
         std::cout << "      Sums:\n" << PRINT_ROW1("sum D_r", sum) << PRINT_ROW1("sum_star D_r", initial_sum);
     }

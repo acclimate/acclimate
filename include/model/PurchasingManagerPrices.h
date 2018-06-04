@@ -44,6 +44,7 @@ class PurchasingManagerPrices : public PurchasingManager<ModelVariant> {
     using PurchasingManager<ModelVariant>::business_connections;
     using PurchasingManager<ModelVariant>::storage;
     using PurchasingManager<ModelVariant>::get_flow_deficit;
+    using PurchasingManager<ModelVariant>::id;
 
   protected:
     using PurchasingManager<ModelVariant>::demand_D_;

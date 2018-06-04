@@ -159,7 +159,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::purchase_constraint(const Float
                 grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r]) * 1.0 / partial_use_scaled_use();
 #ifdef OPTIMIZATION_WARNINGS
                 if (grad[r] > MAX_GRADIENT) {
-                    warning(string(*data->business_connections[r]) << ": large gradient of " << grad[r]);
+                    warning(data->business_connections[r]->id() << ": large gradient of " << grad[r]);
                 }
 #endif
             }
@@ -205,7 +205,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
                           / partial_objective_scaled_objective();
 #ifdef OPTIMIZATION_WARNINGS
                 if (grad[r] > MAX_GRADIENT) {
-                    warning(string(*data->business_connections[r]) << ": large gradient of " << grad[r]);
+                    warning(data->business_connections[r]->id() << ": large gradient of " << grad[r]);
                 }
 #endif
             }
@@ -505,12 +505,12 @@ void PurchasingManagerPrices<ModelVariant>::iterate_purchase() {
 
 #ifdef OPTIMIZATION_WARNINGS
             if (round(demand_request_D.get_quantity()) > round(FlowQuantity(unscaled_D_r(data.upper_bounds[r], data.business_connections[r])))) {
-                warning(string(*data.business_connections[r])
+                warning(data.business_connections[r]->id()
                         << ": upper limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_max: " << data.upper_bounds[r]
                         << " D_star: " << data.business_connections[r]->initial_flow_Z_star().get_quantity());
             }
             if (round(demand_request_D.get_quantity()) < round(FlowQuantity(unscaled_D_r(data.lower_bounds[r], data.business_connections[r])))) {
-                warning(string(*data.business_connections[r])
+                warning(data.business_connections[r]->id()
                         << ": lower limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_min: " << data.lower_bounds[r]
                         << " D_star: " << data.business_connections[r]->initial_flow_Z_star().get_quantity());
             }
@@ -719,8 +719,7 @@ void PurchasingManagerPrices<ModelVariant>::print_distribution(const FloatType d
     {
         std::vector<FloatType> demand_requests_D(data->business_connections.size());
         std::copy(demand_requests_D_p, demand_requests_D_p + data->business_connections.size(), std::begin(demand_requests_D));
-        std::cout << Acclimate::instance()->timeinfo() << ", " << std::string(*this) << ": demand distribution for " << data->business_connections.size()
-                  << " inputs :\n";
+        std::cout << Acclimate::instance()->timeinfo() << ", " << id() << ": demand distribution for " << data->business_connections.size() << " inputs :\n";
         FloatType purchasing_quantity = 0.0;
         FloatType purchasing_value = 0.0;
         FloatType initial_sum = 0.0;
@@ -751,7 +750,7 @@ void PurchasingManagerPrices<ModelVariant>::print_distribution(const FloatType d
 #else
             if (connection_details) {
 #endif
-                std::cout << "      " << std::string(*data->business_connections[r]) << " :\n"
+                std::cout << "      " << data->business_connections[r]->id() << " :\n"
                           << PRINT_ROW1("X", FlowQuantity(X)) << PRINT_ROW1("X_star", FlowQuantity(X_star)) << PRINT_ROW1("X_hat", FlowQuantity(X_hat))
                           << PRINT_ROW1("n_bar", FlowQuantity(n_bar)) << PRINT_ROW1("n_r(D_r)", FlowQuantity(n_r_l))
                           << PRINT_ROW2("penalty_t", FlowQuantity(n_r_tc_l), scaled_objective(n_r_tc_l))

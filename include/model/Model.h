@@ -101,7 +101,7 @@ class Model {
     Firm<ModelVariant>* find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const;
     Consumer<ModelVariant>* find_consumer(Region<ModelVariant>* region) const;
     Consumer<ModelVariant>* find_consumer(const std::string& region_name) const;
-    inline operator std::string() const { return "MODEL"; }
+    inline std::string id() const { return "MODEL"; }
 };
 }  // namespace acclimate
 

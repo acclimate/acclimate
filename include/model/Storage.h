@@ -92,7 +92,7 @@ class Storage {
     void add_initial_flow_Z_star(const Flow& flow_Z_star);
     bool subtract_initial_flow_Z_star(const Flow& flow_Z_star);
     void iterate_consumption_and_production();
-    inline operator std::string() const { return std::string(*sector) + ":_S_->" + std::string(*economic_agent); }
+    inline std::string id() const { return sector->id() + ":_S_->" + economic_agent->id(); }
 };
 }  // namespace acclimate
 

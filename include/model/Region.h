@@ -52,7 +52,7 @@ class Region : public GeographicEntity<ModelVariant> {
     std::unique_ptr<GeographicPoint> centroid_;
     std::unique_ptr<Government<ModelVariant>> government_;
     const IntType index_;
-    const std::string name;
+    const std::string id_;
     typename ModelVariant::RegionParameters parameters_;
 
   public:
@@ -106,19 +106,19 @@ class Region : public GeographicEntity<ModelVariant> {
     void iterate_investment_variant();
 
   public:
-    Region(Model<ModelVariant>* model_p, std::string  name_p, const IntType index_p);
+    Region(Model<ModelVariant>* model_p, std::string id_p, const IntType index_p);
     inline IntType index() const { return index_; };
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);
     void add_consumption_flow_Y(const Flow& consumption_flow_Y_p);
-    const Flow get_gdp() const;
+    Flow get_gdp() const;
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
     const Path<ModelVariant>& find_path_to(const Region<ModelVariant>* region) const;
     void remove_economic_agent(EconomicAgent<ModelVariant>* economic_agent);
-    operator std::string() const override { return name; };
+    inline std::string id() const override { return id_; };
 };
 }  // namespace acclimate
 

@@ -195,7 +195,7 @@ void Firm<ModelVariant>::iterate_investment() {
 #ifdef DEBUG
 template<class ModelVariant>
 void Firm<ModelVariant>::print_details() const {
-    info(std::string(*this) << ": X_star= " << initial_production_X_star_.get_quantity() << ":");
+    info(id() << ": X_star= " << initial_production_X_star_.get_quantity() << ":");
     for (auto it = input_storages.begin(); it != input_storages.end(); it++) {
         (*it)->purchasing_manager->print_details();
     }

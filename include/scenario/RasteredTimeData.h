@@ -28,11 +28,12 @@ namespace acclimate {
 template<typename T>
 class RasteredTimeData : public RasteredData<T> {
   protected:
-    using RasteredData<T>::read_boundaries;
     using RasteredData<T>::data;
+    using RasteredData<T>::filename;
+    using RasteredData<T>::id;
+    using RasteredData<T>::read_boundaries;
     using RasteredData<T>::x_count;
     using RasteredData<T>::y_count;
-    using RasteredData<T>::filename;
     TimeStep time_index;
     TimeStep time_index_count;
     std::unique_ptr<netCDF::NcFile> file;

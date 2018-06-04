@@ -33,6 +33,7 @@ class Scenario;
 template<class ModelVariant>
 class Consumer : public EconomicAgent<ModelVariant> {
   public:
+    using EconomicAgent<ModelVariant>::id;
     using EconomicAgent<ModelVariant>::input_storages;
     using EconomicAgent<ModelVariant>::region;
 

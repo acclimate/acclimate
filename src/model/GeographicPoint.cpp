@@ -27,7 +27,7 @@
 
 namespace acclimate {
 
-GeographicPoint::GeographicPoint(std::string name_p, const FloatType lon_p, const FloatType lat_p) : name(std::move(name_p)), lon_(lon_p), lat_(lat_p) {}
+GeographicPoint::GeographicPoint(std::string id_p, const FloatType lon_p, const FloatType lat_p) : id_(std::move(id_p)), lon_(lon_p), lat_(lat_p) {}
 
 FloatType GeographicPoint::distance_to(const GeographicPoint& other) const {
     const auto R = 6371;

@@ -71,7 +71,9 @@ int main(int argc, char* argv[]) {
                              "                        agent-based model acclimate. J. Econ. Dyn. Control. 83, 232-269.\n"
                              "\n"
                              "Source:                 https://github.com/acclimate/acclimate\n"
-                             "License:                AGPL, (c) 2014-2017 S. Willner, C. Otto (see LICENSE file)\n\n"
+                             "License:                AGPL, (c) 2014-2017 S. Willner, C. Otto (see LICENSE file)\n"
+                             "\n"
+                             "Build time:             " __DATE__ " " __TIME__
                              "\n"
                              "Debug:                  "
 #ifdef DEBUG
@@ -86,18 +88,22 @@ int main(int argc, char* argv[]) {
 #else
                          "no"
 #endif
-                          << "\nPrecision Time:         " << acclimate::Time::precision_digits
-
-                          << "\nPrecision Quantity:     " << acclimate::Quantity::precision_digits
-
-                          << "\nPrecision FlowQuantity: " << acclimate::FlowQuantity::precision_digits
-
-                          << "\nPrecision Price:        " << acclimate::Price::precision_digits
-
-                          << "\nEnabled variants:       " ACCLIMATE_VARIANTS
-
-                             "\nEnabled options:        " ACCLIMATE_OPTIONS
-
+                          << "\n"
+                             "Precision Time:         "
+                          << acclimate::Time::precision_digits
+                          << "\n"
+                             "Precision Quantity:     "
+                          << acclimate::Quantity::precision_digits
+                          << "\n"
+                             "Precision FlowQuantity: "
+                          << acclimate::FlowQuantity::precision_digits
+                          << "\n"
+                             "Precision Price:        "
+                          << acclimate::Price::precision_digits
+                          << "\n"
+                             "Enabled variants:       " ACCLIMATE_VARIANTS
+                             "\n"
+                             "Enabled options:        " ACCLIMATE_OPTIONS
                           << std::endl;
 #ifdef ACCLIMATE_HAS_DIFF
             } else if (arg == "--diff" || arg == "-d") {

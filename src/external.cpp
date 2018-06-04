@@ -47,11 +47,10 @@ static void acclimate_get_event(const std::size_t index, std::size_t* timestep, 
     } else {
         const typename ArrayOutput<ModelVariant>::Event& e = output->get_events()[index];
         *timestep = e.time;
-        std::string desc = std::string(Acclimate::event_names[e.type]) + " " + (e.sector_from < 0 ? "" : std::string(*output->model->sectors_C[e.sector_from]))
-                           + (e.sector_from >= 0 && e.region_from >= 0 ? ":" : "")
-                           + (e.region_from < 0 ? "" : std::string(*output->model->regions_R[e.region_from]))
-                           + (e.sector_to < 0 ? "" : std::string(*output->model->sectors_C[e.sector_to])) + (e.sector_to >= 0 && e.region_to >= 0 ? ":" : "")
-                           + (e.region_to < 0 ? "" : std::string(*output->model->regions_R[e.region_to]));
+        std::string desc = std::string(Acclimate::event_names[e.type]) + " " + (e.sector_from < 0 ? "" : output->model->sectors_C[e.sector_from]->id())
+                           + (e.sector_from >= 0 && e.region_from >= 0 ? ":" : "") + (e.region_from < 0 ? "" : output->model->regions_R[e.region_from]->id())
+                           + (e.sector_to < 0 ? "" : output->model->sectors_C[e.sector_to]->id()) + (e.sector_to >= 0 && e.region_to >= 0 ? ":" : "")
+                           + (e.region_to < 0 ? "" : output->model->regions_R[e.region_to]->id());
         std::memcpy(event, desc.c_str(), desc.length() + 1);
         *value = std::numeric_limits<FloatType>::quiet_NaN();
     }

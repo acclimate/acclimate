@@ -236,7 +236,7 @@ bool RasteredScenario<ModelVariant>::iterate() {
 #ifdef DEBUG
         for (auto& r : region_forcings) {
             if (r.region) {
-                info(std::string(*r.region) << ": population: " << r.population);
+                info(r.region->id() << ": population: " << r.population);
             }
         }
         info("Total population: " << total_population << " (" << total_population_all << ")");

@@ -51,7 +51,7 @@ class SalesManager {
     void subtract_initial_demand_request_D_star(const Demand& initial_demand_request_D_star);
     const Flow get_transport_flow() const;
     std::unique_ptr<BusinessConnection<ModelVariant>> remove_business_connection(BusinessConnection<ModelVariant>* business_connection);
-    inline explicit operator std::string() const { return std::string(*firm); }
+    inline std::string id() const { return firm->id(); }
 #ifdef DEBUG
     void print_details() const;
 #endif

@@ -41,6 +41,7 @@ class RasteredScenario : public Scenario<ModelVariant> {
     };
 
   protected:
+    using Scenario<ModelVariant>::id;
     using Scenario<ModelVariant>::settings;
     using Scenario<ModelVariant>::set_firm_property;
     using Scenario<ModelVariant>::set_consumer_property;
