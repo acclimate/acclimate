@@ -34,6 +34,7 @@ class SalesManager {
 
   protected:
     Demand sum_demand_requests_D_ = Demand(0.0);
+    OpenMPLock sum_demand_requests_D_lock;
 
   public:
     const Demand& sum_demand_requests_D() const {

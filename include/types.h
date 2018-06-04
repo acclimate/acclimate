@@ -72,7 +72,7 @@ class Type {
     static constexpr FloatType precision = precision_from_digits(precision_digits_p);
     virtual FloatType get_float() const = 0;
     friend std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
-        return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float() << std::defaultfloat;
+        return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float();
     }
     virtual ~Type(){};
 };

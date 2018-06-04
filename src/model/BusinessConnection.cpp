@@ -44,8 +44,9 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
       time_(seller_p->firm->sector->model->time()),
       buyer(buyer_p),
       seller(seller_p) {
-#pragma omp critical
-    { seller->business_connections.emplace_back(this); }
+    seller_business_connections_lock.call([&]() {
+                                             seller->business_connections.emplace_back(this);
+                                         });
     const Path<ModelVariant>& path = buyer->storage->economic_agent->region->find_path_to(seller->firm->region);
     const TransportDelay transport_delay_tau = path.distance;
     first_transport_link.reset(new TransportChainLink<ModelVariant>(this, transport_delay_tau, initial_flow_Z_star_p));
@@ -66,8 +67,9 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
       transport_costs(0.0),
       last_shipment_Z_(initial_flow_Z_star_p),
       time_(seller_p->firm->sector->model->time()) {
-#pragma omp critical
-    { seller->business_connections.emplace_back(this); }
+    seller_business_connections_lock.call([&]() {
+                                              seller->business_connections.emplace_back(this);
+                                          });
     const TransportDelay transport_delay_tau = path.distance;
     first_transport_link.reset(new TransportChainLink<ModelVariant>(this, transport_delay_tau, initial_flow_Z_star_p));
     path.infrastructure->transport_chain_links.push_back(first_transport_link.get());

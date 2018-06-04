@@ -45,6 +45,7 @@ class Storage {
     Flow initial_input_flow_I_star_ = Flow(0.0);  // == initial_used_flow_U_star_
     Flow used_flow_U_ = Flow(0.0);
     Flow desired_used_flow_U_tilde_ = Flow(0.0);
+    OpenMPLock input_flow_I_lock;
 
   public:
     const Stock& content_S() const {

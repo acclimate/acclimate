@@ -65,6 +65,7 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     netCDF::NcVar var_time_variable;
     TimeStep flush;
     unsigned int event_cnt;
+    OpenMPLock netcdf_event_lock;
 
   protected:
     void internal_write_header(tm* timestamp, int max_threads) override;
