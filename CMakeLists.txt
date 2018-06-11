@@ -20,6 +20,7 @@ cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 include(cmake/helpers.cmake)
+include(cmake/libraries.cmake)
 
 set_default_build_type(Release)
 
@@ -52,8 +53,6 @@ if(ACCLIMATE_PARALLELIZATION)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
-
-option(ACCLIMATE_INTERNAL_NLOPT "include internal NLopt" OFF)
 
 set(ACCLIMATE_OPTIONS "")
 set(ACCLIMATE_VARIANTS "")
@@ -88,33 +87,7 @@ string(REPLACE ";" ", " ACCLIMATE_VARIANTS "${ACCLIMATE_VARIANTS}")
 target_compile_definitions(acclimate PRIVATE ACCLIMATE_VARIANTS="${ACCLIMATE_VARIANTS}")
 
 # include nlopt
-if(ACCLIMATE_INTERNAL_NLOPT)
-  include(ExternalProject)
-  ExternalProject_Add(nlopt
-    GIT_REPOSITORY https://github.com/stevengj/nlopt.git
-    GIT_TAG 34fd7ce
-    INSTALL_COMMAND ""
-    CMAKE_ARGS
-    -DNLOPT_CXX=OFF
-    -DBUILD_SHARED_LIBS=OFF
-    -DNLOPT_PYTHON=OFF
-    -DNLOPT_OCTAVE=OFF
-    -DNLOPT_MATLAB=OFF
-    -DNLOPT_GUILE=OFF
-    -DNLOPT_SWIG=OFF
-    -DNLOPT_LINK_PYTHON=OFF
-    )
-  ExternalProject_Get_Property(nlopt SOURCE_DIR)
-  include_directories(${SOURCE_DIR}/include)
-  add_dependencies(acclimate nlopt)
-  ExternalProject_Get_Property(nlopt BINARY_DIR)
-  target_link_libraries(acclimate ${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}nlopt${CMAKE_STATIC_LIBRARY_SUFFIX})
-else()
-  find_package(NLOPT REQUIRED)
-  message(STATUS "NLopt include directory: ${NLOPT_INCLUDE_DIR}")
-  message(STATUS "NLopt library: ${NLOPT_LIBRARY}")
-  target_link_libraries(acclimate nlopt)
-endif()
+include_nlopt(acclimate OFF "34fd7ce")
 
 # include NetCDF C library
 find_package(NETCDF REQUIRED)
@@ -138,6 +111,7 @@ endif()
 
 include(lib/settingsnode/settingsnode.cmake)
 target_link_libraries(acclimate settingsnode)
+include_yaml_cpp(acclimate ON "yaml-cpp-0.6.1")
 
 include(lib/libmrio/libmrio.cmake)
 target_link_libraries(acclimate libmrio)

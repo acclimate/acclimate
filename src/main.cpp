@@ -20,8 +20,10 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include "acclimate.h"
 #include "settingsnode.h"
+#include "settingsnode/yaml.h"
 #include "version.h"
 
 #ifdef ACCLIMATE_HAS_DIFF
@@ -118,10 +120,10 @@ int main(int argc, char* argv[]) {
         } else {
             if (arg == "-") {
                 std::cin >> std::noskipws;
-                acclimate::Acclimate::initialize(settings::SettingsNode(std::cin));
+                acclimate::Acclimate::initialize(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(std::cin))));
             } else {
                 std::ifstream settings_file(arg);
-                acclimate::Acclimate::initialize(settings::SettingsNode(settings_file));
+                acclimate::Acclimate::initialize(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(settings_file))));
             }
             acclimate::Acclimate::instance()->run();
             acclimate::Acclimate::instance()->cleanup();
