@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 execute_process(
-  COMMAND git describe --tags --dirty --always
+  COMMAND git describe --dirty --always
   WORKING_DIRECTORY ${ARGS_SOURCE_DIR}
   OUTPUT_VARIABLE GIT_OUTPUT
   OUTPUT_STRIP_TRAILING_WHITESPACE)

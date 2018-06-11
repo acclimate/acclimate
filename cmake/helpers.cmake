@@ -14,6 +14,19 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 set(HELPER_MODULES_PATH ${CMAKE_CURRENT_LIST_DIR})
+include(CMakeParseArguments)
+
+
+function(add_doxygen_documentation PATH TARGET)
+  find_package(Doxygen)
+  if(DOXYGEN_FOUND)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${PATH}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/${PATH}/Doxyfile @ONLY)
+    add_custom_target(${TARGET}
+      ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/${PATH}/Doxyfile
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Generating documentation..." VERBATIM)
+  endif(DOXYGEN_FOUND)
+endfunction()
 
 
 function(set_advanced_cpp_warnings TARGET)
@@ -35,6 +48,8 @@ function(set_default_build_type BUILD_TYPE)
   if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE ${BUILD_TYPE} CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
   endif()
+  set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS} -pg")
+  set(CMAKE_EXE_LINKER_FLAGS_PROFILE "${CMAKE_EXE_LINKER_FLAGS} -pg")
 endfunction()
 
 
@@ -47,6 +62,18 @@ function(set_build_type_specifics TARGET)
     target_compile_definitions(${TARGET} PUBLIC NDEBUG)
   else()
     target_compile_definitions(${TARGET} PRIVATE DEBUG)
+  endif()
+endfunction()
+
+
+function(set_ccache_use)
+  find_program(CCACHE_FOUND ccache)
+  if(CCACHE_FOUND)
+    option(USE_CCACHE "Use ccache if available" ON)
+    if(USE_CCACHE)
+      set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+      set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+    endif()
   endif()
 endfunction()
 
@@ -201,12 +228,12 @@ function(add_cpp_tools TARGET)
     ARGUMENTS -quiet SOURCEFILE -- -std=c++11 INCLUDES DEFINITIONS)
   if(TARGET ${TARGET}_clang_tidy)
     set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_clang_tidy)
-  endif()
 
-  add_on_source(${TARGET}
-    NAME ${TARGET}_clang_tidy_fix
-    COMMAND clang-tidy
-    ARGUMENTS -quiet -fix -format-style=file SOURCEFILE -- -std=c++11 INCLUDES DEFINITIONS)
+    add_on_source(${TARGET}
+      NAME ${TARGET}_clang_tidy_fix
+      COMMAND clang-tidy
+      ARGUMENTS -quiet -fix -format-style=file SOURCEFILE -- -std=c++11 INCLUDES DEFINITIONS)
+  endif()
 
   add_on_source(${TARGET}
     NAME ${TARGET}_cppcheck
@@ -219,17 +246,26 @@ function(add_cpp_tools TARGET)
   add_on_source(${TARGET}
     NAME ${TARGET}_cppclean
     COMMAND cppclean
-    ARGUMENTS INCLUDES ALL_SOURCEFILES)
-  if(TARGET ${TARGET}_cppclean)
-    set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_cppclean)
-  endif()
+    ARGUMENTS INCLUDES SOURCEFILE)
+  #if(TARGET ${TARGET}_cppclean)
+  #  set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_cppclean)
+  #endif()
 
   add_on_source(${TARGET}
-    NAME ${TARGET}_iwyu
-    COMMAND iwyu
-    ARGUMENTS -std=c++11 -I/usr/include/clang/3.8/include INCLUDES DEFINITIONS SOURCEFILE)
-  if(TARGET ${TARGET}_iwyu)
-    set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_iwyu)
+    NAME ${TARGET}_vera
+    COMMAND vera++
+    ARGUMENTS --warning --no-duplicate --show-rule ALL_SOURCEFILES)
+  if(TARGET ${TARGET}_vera)
+    set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_vera)
+  endif()
+
+  get_target_property(INCLUDE_DIRECTORIES ${TARGET} INCLUDE_DIRECTORIES)
+  add_on_source(${TARGET}
+    NAME ${TARGET}_flint
+    COMMAND flint++
+    ARGUMENTS -v -r ALL_SOURCEFILES ${INCLUDE_DIRECTORIES})
+  if(TARGET ${TARGET}_flint)
+    set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_flint)
   endif()
 
   if(CPP_TARGETS)
@@ -253,6 +289,7 @@ function(add_git_version TARGET)
     "#define ${ARGS_DPREFIX}_VERSION_H\n"
     "#define ${ARGS_DPREFIX}_VERSION \"${ARGS_FALLBACK_VERSION}\"\n"
     "#endif")
+  target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/git_version)
   if(NOT ARGS_DIFF_VAR)
     string(TOLOWER ${ARGS_DPREFIX}_git_diff ARGS_DIFF_VAR)
   endif()
@@ -260,19 +297,6 @@ function(add_git_version TARGET)
     find_program(HAVE_GIT git)
     mark_as_advanced(HAVE_GIT)
     if(HAVE_GIT)
-
-      #add_custom_target(${TARGET}_version ALL
-      #  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/git_version/version.h)
-
-      #add_custom_command(
-      #  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/git_version/version.h
-      #  COMMAND ${CMAKE_COMMAND}
-      #  -DARGS_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-      #  -DARGS_DIFF_VAR=${ARGS_DIFF_VAR}
-      #  -DARGS_DPREFIX=${ARGS_DPREFIX}
-      #  -DARGS_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-      #  -DARGS_WITH_DIFF=${ARGS_WITH_DIFF}
-      #  -P ${HELPER_MODULES_PATH}/git_version.cmake)
 
       add_custom_target(${TARGET}_version ALL
         COMMAND ${CMAKE_COMMAND}
@@ -286,8 +310,6 @@ function(add_git_version TARGET)
       set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/git_version/version.h
         PROPERTIES GENERATED TRUE
         HEADER_FILE_ONLY TRUE)
-
-      target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/git_version)
 
       add_dependencies(${TARGET} ${TARGET}_version)
 

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 include(cmake/helpers.cmake)
+include(cmake/libraries.cmake)
 
 set_default_build_type(Release)
 
@@ -22,7 +23,9 @@ set_advanced_cpp_warnings(libmrio)
 target_link_libraries(mrio_disaggregate libmrio)
 
 include(lib/settingsnode/settingsnode.cmake)
-target_link_libraries(mrio_disaggregate settingsnode)
+include_settingsnode(mrio_disaggregate)
+
+include_yaml_cpp(mrio_disaggregate ON "yaml-cpp-0.6.1")
 
 add_cpp_tools(mrio_disaggregate)
 add_cpp_tools(libmrio)
