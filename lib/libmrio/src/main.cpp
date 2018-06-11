@@ -25,6 +25,7 @@
 #include "Disaggregation.h"
 #include "MRIOTable.h"
 #include "settingsnode.h"
+#include "settingsnode/yaml.h"
 #include "version.h"
 
 // Define types used in templates
@@ -74,10 +75,10 @@ int main(int argc, char* argv[]) {
             settings::SettingsNode settings;
             if (arg == "-") {
                 std::cin >> std::noskipws;
-                settings = settings::SettingsNode(std::cin);
+                settings = settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(std::cin)));
             } else {
                 std::ifstream settings_file(arg);
-                settings = settings::SettingsNode(settings_file);
+                settings = settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(settings_file)));
             }
 
             std::cout << "Loading basetable... " << std::flush;
