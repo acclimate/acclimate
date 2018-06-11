@@ -27,43 +27,33 @@ template<class ModelVariant>
 Taxes<ModelVariant>::Taxes(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p) : Scenario<ModelVariant>(settings_p, model_p) {}
 
 template<>
-Time Taxes<VariantBasic>::start() {
+void Taxes<VariantBasic>::start() {
     error("Taxes scenario not supported in basic model variant");
 }
 
 template<>
-Time Taxes<VariantDemand>::start() {
+void Taxes<VariantDemand>::start() {
     error("Taxes scenario not supported in demand model variant");
 }
 
 template<class ModelVariant>
-Time Taxes<ModelVariant>::start() {
+void Taxes<ModelVariant>::start() {
     for (auto& region : model->regions) {
         region->set_government(new Government<ModelVariant>(region.get()));
     }
-    if (settings["scenario"].has("start")) {
-        start_time = settings["scenario"]["start"].template as<Time>();
-    }
-    stop_time = settings["scenario"]["stop"].template as<Time>();
-    return start_time;
 }
 
 template<>
-bool Taxes<VariantBasic>::iterate() {
-    return false;
+void Taxes<VariantBasic>::iterate() {
 }
 template<>
-bool Taxes<VariantDemand>::iterate() {
-    return false;
+void Taxes<VariantDemand>::iterate() {
 }
 
 template<class ModelVariant>
-bool Taxes<ModelVariant>::iterate() {
-    if (model->time() > stop_time) {
-        return false;
-    }
+void Taxes<ModelVariant>::iterate() {
 
-    for (const settings::SettingsNode& tax : settings["scenario"]["taxes"].as_sequence()) {
+    for (const settings::SettingsNode& tax : settings["scenarios"]["taxes"].as_sequence()) {
         const Time start_tax = tax["start_tax"].as<Time>();
         const Time full_tax = tax["full_tax"].as<Time>();
         if (model->time() >= start_tax - model->delta_t() && model->time() <= full_tax - model->delta_t()) {
@@ -83,8 +73,6 @@ bool Taxes<ModelVariant>::iterate() {
             }
         }
     }
-
-    return true;
 }
 
 INSTANTIATE_BASIC(Taxes);

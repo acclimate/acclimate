@@ -49,7 +49,7 @@ std::string RasteredScenario<ModelVariant>::fill_template(const std::string& in)
         start += strlen(beg_mark);
         std::string key = in.substr(start, stop - start);
         if (key != "index") {
-            ss << settings["scenario"]["parameters"][key.c_str()].template as<std::string>();
+            ss << settings["scenarios"]["parameters"][key.c_str()].template as<std::string>();
         } else {
             ss << file_index;
         }
@@ -128,26 +128,15 @@ bool RasteredScenario<ModelVariant>::next_forcing_file() {
 }
 
 template<class ModelVariant>
-Time RasteredScenario<ModelVariant>::start() {
-    const settings::SettingsNode& scenario_node = settings["scenario"];
-
-    if (scenario_node.has("start")) {
-        start_time = scenario_node["start"].as<Time>();
-    }
-    if (scenario_node.has("stop")) {
-        stop_time = scenario_node["stop"].as<Time>();
-        stop_time_known = true;
-    } else {
-        stop_time_known = false;
-    }
-
+void RasteredScenario<ModelVariant>::start() {
+    const settings::SettingsNode& iso_node = settings["isoraster"];
     // open iso raster
     {
-        const std::string& variable = scenario_node["isoraster"]["variable"].as<std::string>("iso");
-        const std::string& filename = scenario_node["isoraster"]["file"].as<std::string>();
+        const std::string& variable = iso_node["variable"].as<std::string>("iso");
+        const std::string& filename = iso_node["file"].as<std::string>();
         iso_raster.reset(new RasteredData<int>(filename, variable));
         std::unique_ptr<netCDF::NcFile> file(new netCDF::NcFile(filename, netCDF::NcFile::read));
-        const std::string& index_name = scenario_node["isoraster"]["index"].as<std::string>("index");
+        const std::string& index_name = iso_node["index"].as<std::string>("index");
         netCDF::NcVar index_var = file->getVar(index_name);
         if (index_var.isNull()) {
             error("Cannot find variable '" << index_name << "' in '" << filename << "'");
@@ -166,17 +155,18 @@ Time RasteredScenario<ModelVariant>::start() {
             region_forcings.emplace_back(tmp);
         }
     }
-
+    
+    const settings::SettingsNode& population_node = settings["population"];
     // open population data
     {
-        const std::string& variable = scenario_node["population"]["variable"].as<std::string>("population");
-        const std::string& filename = scenario_node["population"]["file"].as<std::string>();
+        const std::string& variable = population_node["variable"].as<std::string>("population");
+        const std::string& filename = population_node["file"].as<std::string>();
         population.reset(new RasteredData<FloatType>(filename, variable));
     }
 
     info("Population size is " << (*population / *iso_raster) << " of ISO raster");
 
-    const settings::SettingsNode& forcing_node = scenario_node["forcing"];
+    const settings::SettingsNode& forcing_node = settings["forcing"];
     variable_name = forcing_node["variable"].as<std::string>();
     forcing_file = forcing_node["file"].as<std::string>();
 
@@ -197,8 +187,6 @@ Time RasteredScenario<ModelVariant>::start() {
     if (!next_forcing_file()) {
         error("Empty forcing");
     }
-
-    return start_time;
 }
 
 template<class ModelVariant>
@@ -210,11 +198,8 @@ void RasteredScenario<ModelVariant>::end() {
 }
 
 template<class ModelVariant>
-bool RasteredScenario<ModelVariant>::iterate() {
-    if (stop_time_known && model->time() > stop_time) {
-        return false;
-    }
-
+void RasteredScenario<ModelVariant>::iterate() {
+    
     if (is_first_timestep()) {
         FloatType total_population = 0.0;
         FloatType total_population_all = 0.0;
@@ -279,7 +264,7 @@ bool RasteredScenario<ModelVariant>::iterate() {
         }
     }
     info("People affected: " << people_affected_);
-    return true;
+
 }
 
 INSTANTIATE_BASIC(RasteredScenario);

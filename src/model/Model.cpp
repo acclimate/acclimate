@@ -30,6 +30,21 @@
 
 namespace acclimate {
 
+
+
+template<class ModelVariant>
+Time Model<ModelVariant>::start(const settings::SettingsNode& settings) {
+    if (settings["run"].has("start")) {
+        start_time_ = settings["run"]["start"].template as<Time>();
+    }
+    stop_time_ = settings["run"]["stop"].template as<Time>();
+    if (settings["run"].has("seed")) {
+        srand(settings["run"]["seed"].template as<unsigned int>());
+    }
+    return start_time_;
+}
+
+
 template<class ModelVariant>
 Model<ModelVariant>::Model()
     : consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector<ModelVariant>::TransportType::IMMEDIATE)) {
