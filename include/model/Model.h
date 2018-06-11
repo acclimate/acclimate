@@ -54,7 +54,9 @@ class Model {
     Time delta_t_ = Time(1.0);
     typename ModelVariant::ModelParameters parameters_;
     bool no_self_supply_ = false;
-
+  protected:
+    Time start_time_ = Time(0.0);
+    Time stop_time_ = Time(0.0);
   public:
     std::vector<std::unique_ptr<Sector<ModelVariant>>> sectors;
     std::vector<std::unique_ptr<Region<ModelVariant>>> regions;
@@ -63,6 +65,7 @@ class Model {
 
     Model();
     void start(const Time& start_time);
+    virtual Time start(const settings::SettingsNode& settings);
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();
@@ -81,7 +84,10 @@ class Model {
                                      const Time& initial_storage_fill_factor_psi_p,
                                      typename Sector<ModelVariant>::TransportType transport_type_p);
     inline const Time& time() const { return time_; };
+    inline const Time& start_time() const {return start_time_; };
+    inline const Time& stop_time() const {return stop_time_; };
     inline const TimeStep& timestep() const { return timestep_; };
+	virtual bool time_is_not_over() const { return time() <= stop_time(); };
     inline void switch_registers() {
         assertstep(SCENARIO);
         current_register_ = 1 - current_register_;

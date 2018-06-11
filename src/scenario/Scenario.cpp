@@ -27,21 +27,12 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Scenario<ModelVariant>::Scenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p) : model(model_p), settings(settings_p) {
+Scenario<ModelVariant>::Scenario(settings::SettingsNode settings_p, const Model<ModelVariant>* model_p) : settings(settings_p), model(model_p)  {
     srand(0);
 }
 
 template<class ModelVariant>
-Time Scenario<ModelVariant>::start() {
-    if (settings["scenario"].has("start")) {
-        start_time = settings["scenario"]["start"].template as<Time>();
-    }
-    stop_time = settings["scenario"]["stop"].template as<Time>();
-    if (settings["scenario"].has("seed")) {
-        srand(settings["scenario"]["seed"].template as<unsigned int>());
-    }
-    return start_time;
-}
+void Scenario<ModelVariant>::start() {}
 
 template<class ModelVariant>
 void Scenario<ModelVariant>::set_firm_property(Firm<ModelVariant>* firm, const settings::SettingsNode& node, const bool reset) {
@@ -157,12 +148,8 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
 }
 
 template<class ModelVariant>
-bool Scenario<ModelVariant>::iterate() {
-    if (model->time() > stop_time) {
-        return false;
-    }
-
-    for (const auto& event : settings["scenario"]["events"].as_sequence()) {
+void Scenario<ModelVariant>::iterate() {
+    for (const auto& event : settings["events"].as_sequence()) {
         const std::string& type = event["type"].template as<std::string>();
         if (type == "shock") {
             const Time from = event["from"].template as<Time>();
@@ -174,13 +161,12 @@ bool Scenario<ModelVariant>::iterate() {
             }
         }
     }
-    return true;
 }
 
 template<class ModelVariant>
 std::string Scenario<ModelVariant>::time_units_str() const {
-    if (settings["scenario"].has("baseyear")) {
-        return std::string("days since ") + std::to_string(settings["scenario"]["baseyear"].template as<unsigned int>()) + "-1-1";
+    if (settings.has("baseyear")) {
+        return std::string("days since ") + std::to_string(settings["baseyear"].template as<unsigned int>()) + "-1-1";
     }
     return "days since 0-1-1";
 }

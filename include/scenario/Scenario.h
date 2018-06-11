@@ -31,23 +31,22 @@ namespace acclimate {
 template<class ModelVariant>
 class Scenario {
   protected:
-    const settings::SettingsNode& settings;
+    settings::SettingsNode settings;
     const Model<ModelVariant>* model;
     void set_firm_property(Firm<ModelVariant>* firm, const settings::SettingsNode& node, const bool reset);
     void set_consumer_property(Consumer<ModelVariant>* consumer, const settings::SettingsNode& node, const bool reset);
     void set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, const bool reset);
     void apply_target(const settings::SettingsNode& node, const bool reset);
-    Time start_time = Time(0.0);
-    Time stop_time = Time(0.0);
+
 
   public:
-    Scenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    Scenario(settings::SettingsNode settings_p, const Model<ModelVariant>* model_p);
     virtual ~Scenario(){};
-    virtual Time start();
+    virtual void start();
     virtual void end(){};
     virtual bool is_first_timestep() const { return model->timestep() == 0; };
-    virtual bool is_last_timestep() const { return model->time() >= stop_time; };
-    virtual bool iterate();
+    virtual bool is_last_timestep() const { return model->time() >= model->stop_time(); };
+    virtual void iterate();
     virtual std::string calendar_str() const { return "standard"; };
     virtual std::string time_units_str() const;
 #ifdef DEBUG

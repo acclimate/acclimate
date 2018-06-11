@@ -44,8 +44,8 @@ class RasteredScenario : public Scenario<ModelVariant> {
     using Scenario<ModelVariant>::settings;
     using Scenario<ModelVariant>::set_firm_property;
     using Scenario<ModelVariant>::set_consumer_property;
-    using Scenario<ModelVariant>::start_time;
-    using Scenario<ModelVariant>::stop_time;
+    //using Scenario<ModelVariant>::start_time;
+    //using Scenario<ModelVariant>::stop_time;
 
     std::string forcing_file;
     std::string expression;
@@ -58,6 +58,8 @@ class RasteredScenario : public Scenario<ModelVariant> {
     std::string time_units_str_;
     Time next_time = Time(0.0);
     Time time_offset = Time(0.0);
+	Time start_time = model->start_time();
+	Time stop_time = model->stop_time();
     int time_step_width = 1;
     bool stop_time_known = false;
 
@@ -79,8 +81,8 @@ class RasteredScenario : public Scenario<ModelVariant> {
     using Scenario<ModelVariant>::model;
     using Scenario<ModelVariant>::is_first_timestep;
     virtual ~RasteredScenario(){};
-    bool iterate() override;
-    Time start() override;
+    void iterate() override;
+    void start() override;
     void end() override;
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
     std::string calendar_str() const override { return calendar_str_; };

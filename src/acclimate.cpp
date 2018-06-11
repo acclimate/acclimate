@@ -103,25 +103,25 @@ Acclimate::Run<ModelVariant>::Run() {
     }
 
     Scenario<ModelVariant>* scenario;
-    {
-        const std::string& type = settings["scenario"]["type"].as<std::string>();
+    for (auto node : settings["scenarios"].as_sequence()) {
+        const std::string& type = node["type"].as<std::string>();
         if (type == "events") {
-            scenario = new Scenario<ModelVariant>(settings, model);
+            scenario = new Scenario<ModelVariant>(node, model);
         } else if (type == "taxes") {
-            scenario = new Taxes<ModelVariant>(settings, model);
+            scenario = new Taxes<ModelVariant>(node, model);
         } else if (type == "flooding") {
-            scenario = new Flooding<ModelVariant>(settings, model);
+            scenario = new Flooding<ModelVariant>(node, model);
         } else if (type == "hurricanes") {
-            scenario = new Hurricanes<ModelVariant>(settings, model);
+            scenario = new Hurricanes<ModelVariant>(node, model);
         } else if (type == "direct_population") {
-            scenario = new DirectPopulation<ModelVariant>(settings, model);
+            scenario = new DirectPopulation<ModelVariant>(node, model);
         } else {
             error_("Unknown scenario type '" << type << "'");
         }
-        scenario_m.reset(scenario);
+        scenarios_m.emplace_back(scenario);
     }
 
-    for (const auto& node : settings["outputs"].as_sequence()) {
+    for (auto node : settings["outputs"].as_sequence()) {
         Output<ModelVariant>* output;
         const std::string& type = node["format"].as<std::string>();
         if (type == "console") {
@@ -158,20 +158,26 @@ void Acclimate::Run<ModelVariant>::run() {
     info_("Starting model run on max. " << Acclimate::instance()->thread_count() << " threads");
 
     Acclimate::instance()->step(IterationStep::INITIALIZATION);
+    const settings::SettingsNode& settings = Acclimate::instance()->settings;
+    const Time start_time = model_m->start(settings);
 
-    const Time start_time = scenario_m->start();
     model_m->start(start_time);
     for (const auto& output : outputs_m) {
         output->start();
+    }
+    for (const auto& scenario : scenarios_m) {
+        scenario->start();
     }
     Acclimate::instance()->time_m = 0;
 
     Acclimate::instance()->step(IterationStep::SCENARIO);
     auto t0 = std::chrono::high_resolution_clock::now();
 
-    while (scenario_m->iterate()) {
+    while ( model_m->time_is_not_over() ) {
         info_("Iteration started");
-
+        for (const auto& scenario : scenarios_m) {
+            scenario->iterate();
+        }
         model_m->switch_registers();
 
         Acclimate::instance()->step(IterationStep::CONSUMPTION_AND_PRODUCTION);
@@ -211,12 +217,17 @@ void Acclimate::Run<ModelVariant>::run() {
 template<class ModelVariant>
 void Acclimate::Run<ModelVariant>::cleanup() {
     Acclimate::instance()->step(IterationStep::CLEANUP);
-    scenario_m->end();
+    for (auto& scenario : scenarios_m) {
+        scenario->end();
+    }
     for (auto& output : outputs_m) {
         output->end();
     }
     outputs_m.clear();
-    scenario_m.reset();
+    for (auto& scenario : scenarios_m) {
+        scenario.reset();
+    }
+    
     model_m.reset();
 }
 
@@ -329,7 +340,7 @@ std::string Acclimate::timeinfo() {
 }
 
 void Acclimate::initialize(const settings::SettingsNode& settings_p) {
-    const std::string& variant = settings_p["variant"].as<std::string>();
+    const std::string& variant = settings_p["model"]["variant"].as<std::string>();
     if (variant == "basic") {
         instance_m.reset(new Acclimate(settings_p, ModelVariantType::BASIC));
         Acclimate::Run<VariantBasic>::initialize();

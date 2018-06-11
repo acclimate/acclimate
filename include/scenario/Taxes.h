@@ -30,13 +30,15 @@ class Taxes : public Scenario<ModelVariant> {
   protected:
     using Scenario<ModelVariant>::model;
     using Scenario<ModelVariant>::settings;
-    using Scenario<ModelVariant>::stop_time;
-    using Scenario<ModelVariant>::start_time;
+    //using Scenario<ModelVariant>::stop_time;
+    //using Scenario<ModelVariant>::start_time;
+	Time start_time = model->start_time();
+	Time stop_time = model->stop_time();
 
   public:
     Taxes(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
-    Time start() override;
-    bool iterate() override;
+    void start() override;
+    void iterate() override;
 };
 }  // namespace acclimate
 
