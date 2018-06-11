@@ -99,7 +99,7 @@ class ArrayOutput : public Output<ModelVariant> {
     ArrayOutput(const settings::SettingsNode& settings_p,
                 Model<ModelVariant>* model_p,
                 Scenario<ModelVariant>* scenario_p,
-                const settings::SettingsNode& output_node_p,
+                settings::SettingsNode output_node_p,
                 const bool over_time_p = true);
     virtual ~ArrayOutput(){};
     void event(const EventType& type,

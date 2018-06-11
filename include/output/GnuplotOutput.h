@@ -71,7 +71,7 @@ class GnuplotOutput : public Output<ModelVariant> {
     GnuplotOutput(const settings::SettingsNode& settings_p,
                   Model<ModelVariant>* model_p,
                   Scenario<ModelVariant>* scenario_p,
-                  const settings::SettingsNode& output_node_p);
+                  settings::SettingsNode output_node_p);
     void initialize() override;
 };
 }  // namespace acclimate

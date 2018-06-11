@@ -36,7 +36,7 @@ template<class ModelVariant>
 NetCDFOutput<ModelVariant>::NetCDFOutput(const settings::SettingsNode& settings_p,
                                          Model<ModelVariant>* model_p,
                                          Scenario<ModelVariant>* scenario_p,
-                                         const settings::SettingsNode& output_node_p)
+                                         settings::SettingsNode output_node_p)
     : ArrayOutput<ModelVariant>(settings_p, model_p, scenario_p, output_node_p, false) {
     flush = 1;
     event_cnt = 0;

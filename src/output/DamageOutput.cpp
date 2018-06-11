@@ -31,8 +31,8 @@ template<class ModelVariant>
 DamageOutput<ModelVariant>::DamageOutput(const settings::SettingsNode& settings_p,
                                          Model<ModelVariant>* model_p,
                                          Scenario<ModelVariant>* scenario_p,
-                                         const settings::SettingsNode& output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, output_node_p), damage(0.0) {
+                                         settings::SettingsNode output_node_p)
+    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)), damage(0.0) {
     out = nullptr;
 }
 

@@ -98,7 +98,7 @@ class Output {
     Output(const settings::SettingsNode& settings_p,
            Model<ModelVariant>* model_p,
            Scenario<ModelVariant>* scenario_p,
-           const settings::SettingsNode& output_node_p);
+           settings::SettingsNode output_node_p);
     virtual void initialize() = 0;
     virtual void event(const EventType& type,
                        const Sector<ModelVariant>* sector_from,

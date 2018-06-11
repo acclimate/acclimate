@@ -31,8 +31,8 @@ template<class ModelVariant>
 HistogramOutput<ModelVariant>::HistogramOutput(const settings::SettingsNode& settings_p,
                                                Model<ModelVariant>* model_p,
                                                Scenario<ModelVariant>* scenario_p,
-                                               const settings::SettingsNode& output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, output_node_p) {
+                                               settings::SettingsNode output_node_p)
+    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)) {
     windows = 0;
     min = 0;
     max = 1;

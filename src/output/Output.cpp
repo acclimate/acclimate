@@ -38,8 +38,8 @@ template<class ModelVariant>
 Output<ModelVariant>::Output(const settings::SettingsNode& settings_p,
                              Model<ModelVariant>* model_p,
                              Scenario<ModelVariant>* scenario_p,
-                             const settings::SettingsNode& output_node_p)
-    : settings(settings_p), model(model_p), scenario(scenario_p), output_node(output_node_p) {
+                             settings::SettingsNode output_node_p)
+    : settings(settings_p), model(model_p), scenario(scenario_p), output_node(std::move(output_node_p)) {
     start_time = 0;
 }
 
