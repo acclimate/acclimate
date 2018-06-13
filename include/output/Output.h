@@ -123,6 +123,9 @@ class Output {
     void start();
     void iterate();
     void end();
+    virtual void flush() {};
+    virtual void checkpoint_stop() {};
+    virtual void checkpoint_resume() {};
     virtual ~Output() = default;
     virtual inline std::string id() const { return "OUTPUT"; }
 };

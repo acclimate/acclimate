@@ -36,12 +36,18 @@
 #include "output/JSONOutput.h"
 #include "output/NetCDFOutput.h"
 #include "output/Output.h"
+#include "output/ProgressOutput.h"
 #include "scenario/DirectPopulation.h"
 #include "scenario/Flooding.h"
 #include "scenario/Hurricanes.h"
 #include "scenario/Scenario.h"
 #include "scenario/Taxes.h"
 #include "variants/ModelVariants.h"
+
+#ifdef ENABLE_DMTCP
+#include <dmtcp.h>
+#include <thread>
+#endif
 
 namespace acclimate {
 
@@ -140,6 +146,8 @@ Acclimate::Run<ModelVariant>::Run() {
             output = new DamageOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "array") {
             output = new ArrayOutput<ModelVariant>(settings, model, scenario, node);
+        } else if (type == "progress") {
+            output = new ProgressOutput<ModelVariant>(settings, model, scenario, node);
         } else {
             error_("Unknown output format '" << type << "'");
         }
@@ -154,7 +162,7 @@ Acclimate::Run<ModelVariant>::Run() {
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::run() {
+int Acclimate::Run<ModelVariant>::run() {
     info_("Starting model run on max. " << Acclimate::instance()->thread_count() << " threads");
 
     Acclimate::instance()->step(IterationStep::INITIALIZATION);
@@ -167,9 +175,55 @@ void Acclimate::Run<ModelVariant>::run() {
     Acclimate::instance()->time_m = 0;
 
     Acclimate::instance()->step(IterationStep::SCENARIO);
+#ifdef ENABLE_DMTCP
+    auto dmtcp_timer = std::chrono::system_clock::now();
+    if (Acclimate::instance()->settings.has("checkpoint")) {
+        if (!dmtcp_is_enabled()) {
+            error_("dmtcp is not enabled");
+        }
+    }
+#else
+    if (Acclimate::instance()->settings.has("checkpoint")) {
+        error_("dmtcp is not available in this binary");
+    }
+#endif
     auto t0 = std::chrono::high_resolution_clock::now();
 
     while (scenario_m->iterate()) {
+#ifdef ENABLE_DMTCP
+        if (Acclimate::instance()->settings.has("checkpoint")) {
+            if (Acclimate::instance()->settings["checkpoint"].as<std::size_t>()
+                < std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - dmtcp_timer).count()) {
+                if (!dmtcp_is_enabled()) {
+                    error_("dmtcp is not enabled");
+                }
+                int original_generation = dmtcp_get_generation();
+                info_("Writing checkpoint");
+                for (const auto& output : outputs_m) {
+                    output->checkpoint_stop();
+                }
+                int retval = dmtcp_checkpoint();
+                if (retval == DMTCP_AFTER_CHECKPOINT) {
+                    do {
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                    } while (dmtcp_get_generation() == original_generation);
+                    return 7;
+                } else if (retval == DMTCP_AFTER_RESTART) {
+                    info_("Resuming from checkpoint");
+                    dmtcp_timer = std::chrono::system_clock::now();
+                    t0 = std::chrono::high_resolution_clock::now();
+                    for (const auto& output : outputs_m) {
+                        output->checkpoint_resume();
+                    }
+                } else if (retval == DMTCP_NOT_PRESENT) {
+                    error_("dmtcp not present");
+                } else {
+                    error_("unknown dmtcp result " << retval);
+                }
+            }
+        }
+#endif
+
         info_("Iteration started");
 
         model_m->switch_registers();
@@ -206,15 +260,23 @@ void Acclimate::Run<ModelVariant>::run() {
         model_m->tick();
         ++Acclimate::instance()->time_m;
     }
+    return 0;
 }
 
 template<class ModelVariant>
 void Acclimate::Run<ModelVariant>::cleanup() {
     Acclimate::instance()->step(IterationStep::CLEANUP);
-    scenario_m->end();
+    if (scenario_m) {
+        scenario_m->end();
+    }
     for (auto& output : outputs_m) {
         output->end();
     }
+    memory_cleanup();
+}
+
+template<class ModelVariant>
+void Acclimate::Run<ModelVariant>::memory_cleanup() {
     outputs_m.clear();
     scenario_m.reset();
     model_m.reset();
@@ -288,7 +350,7 @@ unsigned int Acclimate::thread_count() const {
 }
 
 #ifdef DEBUG
-std::string Acclimate::timeinfo() const {
+std::string Acclimate::timeinfo() {
     std::string res;
     if (step_m != IterationStep::INITIALIZATION) {
         res = std::to_string(time_m) + " ";
@@ -356,23 +418,20 @@ void Acclimate::initialize(const settings::SettingsNode& settings_p) {
     }
 }
 
-void Acclimate::run() {
+int Acclimate::run() {
     switch (variant_m) {
         case ModelVariantType::BASIC:
 #ifdef VARIANT_BASIC
-            Acclimate::Run<VariantBasic>::instance()->run();
+            return Acclimate::Run<VariantBasic>::instance()->run();
 #endif
-            break;
         case ModelVariantType::DEMAND:
 #ifdef VARIANT_DEMAND
-            Acclimate::Run<VariantDemand>::instance()->run();
+            return Acclimate::Run<VariantDemand>::instance()->run();
 #endif
-            break;
         case ModelVariantType::PRICES:
 #ifdef VARIANT_PRICES
-            Acclimate::Run<VariantPrices>::instance()->run();
+            return Acclimate::Run<VariantPrices>::instance()->run();
 #endif
-            break;
     }
 }
 
@@ -391,6 +450,26 @@ void Acclimate::cleanup() {
         case ModelVariantType::PRICES:
 #ifdef VARIANT_PRICES
             Acclimate::Run<VariantPrices>::instance()->cleanup();
+#endif
+            break;
+    }
+}
+
+void Acclimate::memory_cleanup() {
+    switch (variant_m) {
+        case ModelVariantType::BASIC:
+#ifdef VARIANT_BASIC
+            Acclimate::Run<VariantBasic>::instance()->memory_cleanup();
+#endif
+            break;
+        case ModelVariantType::DEMAND:
+#ifdef VARIANT_DEMAND
+            Acclimate::Run<VariantDemand>::instance()->memory_cleanup();
+#endif
+            break;
+        case ModelVariantType::PRICES:
+#ifdef VARIANT_PRICES
+            Acclimate::Run<VariantPrices>::instance()->memory_cleanup();
 #endif
             break;
     }

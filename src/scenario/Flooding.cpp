@@ -19,19 +19,33 @@
 */
 
 #include "scenario/Flooding.h"
+#include <algorithm>
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : RasteredScenario<ModelVariant>(settings_p, model_p) {}
+    : RasteredScenario<ModelVariant>(settings_p, model_p) {
+    const auto& scenario_node = settings_p["scenario"];
+    if (scenario_node.has("sectors")) {
+        for (const auto& sector_node : scenario_node["sectors"].as_sequence()) {
+            const auto& sector_name = sector_node.as<std::string>();
+            const auto& sector = model_p->find_sector(sector_name);
+            if (!sector) {
+                error("could not find sector " << sector_name);
+            }
+            sectors.push_back(sector->index());
+        }
+    }
+}
 
 template<class ModelVariant>
 void Flooding<ModelVariant>::set_forcing(Region<ModelVariant>* region, const FloatType& forcing_p) const {
     for (auto& it : region->economic_agents) {
-        if (it->type == EconomicAgent<ModelVariant>::Type::FIRM) {
-            it->as_firm()->forcing_lambda(1.0 - forcing_p);
+        if (it->is_firm()) {
+            if (sectors.empty() || std::find(sectors.begin(), sectors.end(), it->as_firm()->sector->index()) != sectors.end())
+                it->as_firm()->forcing_lambda(1.0 - forcing_p);
         }
     }
 }

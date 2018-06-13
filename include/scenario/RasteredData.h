@@ -29,7 +29,7 @@ namespace acclimate {
 template<typename T>
 class RasteredData {
   protected:
-    T* data;
+    std::unique_ptr<T[]> data;
     unsigned int time_step = 0;
     FloatType x_min = 0, x_max = 0, x_gridsize = 0, t_x_gridsize = 0, t_x_min = 0, t_x_max = 0;
     std::size_t x_count = 0;
@@ -90,7 +90,7 @@ class RasteredData {
     inline FloatType abs_y_gridsize() const { return t_y_gridsize; };
 
     RasteredData(std::string filename_p, const std::string& variable_name);
-    virtual ~RasteredData();
+    virtual ~RasteredData() {}
     template<typename T2>
     FloatType operator/(const RasteredData<T2>& other) const;
     template<typename T2>

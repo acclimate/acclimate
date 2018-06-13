@@ -38,15 +38,14 @@ NetCDFOutput<ModelVariant>::NetCDFOutput(const settings::SettingsNode& settings_
                                          Scenario<ModelVariant>* scenario_p,
                                          settings::SettingsNode output_node_p)
     : ArrayOutput<ModelVariant>(settings_p, model_p, scenario_p, output_node_p, false) {
-    flush = 1;
+    flush_freq = 1;
     event_cnt = 0;
 }
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::initialize() {
     ArrayOutput<ModelVariant>::initialize();
-    flush = output_node["flush"].template as<TimeStep>();
-    std::string filename;
+    flush_freq = output_node["flush"].template as<TimeStep>();
     if (!output_node.has("file")) {
         std::ostringstream ss;
         ss << time(nullptr);
@@ -180,17 +179,19 @@ void NetCDFOutput<ModelVariant>::internal_iterate_end() {
         meta->sizes[0] = 1;
         meta->nc_var.putVar(meta->index, meta->sizes, &var.second.data[0]);
     }
-    if (flush > 0) {
-        if ((model->timestep() % flush) == 0) {
-            file->sync();
+    if (flush_freq > 0) {
+        if ((model->timestep() % flush_freq) == 0) {
+            flush();
         }
     }
 }
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::internal_end() {
-    file->close();
-    file.reset();
+    if (file) {
+        file->close();
+        file.reset();
+    }
 }
 
 template<class ModelVariant>
@@ -200,6 +201,29 @@ bool NetCDFOutput<ModelVariant>::internal_handle_event(typename ArrayOutput<Mode
                                ++event_cnt;
                            });
     return false;
+}
+
+template<class ModelVariant>
+void NetCDFOutput<ModelVariant>::checkpoint_stop() {
+    if (file) {
+        file->close();
+        file.reset();
+    }
+}
+
+template<class ModelVariant>
+void NetCDFOutput<ModelVariant>::checkpoint_resume() {
+    file.reset(new netCDF::NcFile(filename, netCDF::NcFile::write, netCDF::NcFile::nc4));
+    if (!file) {
+        error("Could not open output file " << filename);
+    }
+}
+
+template<class ModelVariant>
+void NetCDFOutput<ModelVariant>::flush() {
+    if (file) {
+        file->sync();
+    }
 }
 
 template<class ModelVariant>

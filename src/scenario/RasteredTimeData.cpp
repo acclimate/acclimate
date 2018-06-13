@@ -31,7 +31,7 @@ RasteredTimeData<T>::RasteredTimeData(const std::string& filename_p, const std::
     }
     variable = file->getVar(variable_name);
     read_boundaries(file.get());
-    data = new T[y_count * x_count];
+    data.reset(new T[y_count * x_count]);
     time_variable = file->getVar("time");
     time_index_count = time_variable.getDim(0).getSize();
     time_index = 0;
@@ -42,7 +42,7 @@ int RasteredTimeData<T>::next() {
     if (time_index >= time_index_count) {
         return -1;
     }
-    variable.getVar({time_index, 0, 0}, {1, y_count, x_count}, data);
+    variable.getVar({time_index, 0, 0}, {1, y_count, x_count}, data.get());
     unsigned int day;
     time_variable.getVar({time_index}, {1}, &day);
     time_index++;

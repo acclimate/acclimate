@@ -60,7 +60,7 @@ function(acclimate_include_option OPTIONS_NAME NAME DESC STATE)
   option(ACCLIMATE_${NAME} ${DESC} ${STATE})
   if(ACCLIMATE_${NAME})
     set(ACCLIMATE_${OPTIONS_NAME} ${ACCLIMATE_${OPTIONS_NAME}} ${NAME} PARENT_SCOPE)
-    target_compile_definitions(acclimate PRIVATE ${NAME}) # TODO Rename in acclimate
+    target_compile_definitions(acclimate PRIVATE ${NAME})
   endif()
 endfunction()
 
@@ -75,6 +75,17 @@ acclimate_include_option(OPTIONS STRICT_MIN_DERIVATIVE "" OFF)
 acclimate_include_option(OPTIONS CLEANUP_INFO "show additional information about the cleanup (only for Debug)" OFF)
 acclimate_include_option(OPTIONS OPTIMIZATION_WARNINGS "show warnings for optimization (only for Debug)" OFF)
 acclimate_include_option(OPTIONS OPTIMIZATION_PROBLEMS_FATAL "make optimization problems fatal (only for Debug)" OFF)
+acclimate_include_option(OPTIONS ENABLE_DMTCP "enable dmtcp checkpointing" OFF)
+acclimate_include_option(OPTIONS USE_TQDM "enable progress output using tqdm.cpp" OFF)
+
+if(ACCLIMATE_USE_TQDM)
+  target_include_directories(acclimate PRIVATE lib/tqdm.cpp/include)
+endif()
+
+if(ACCLIMATE_ENABLE_DMTCP)
+  set_property(TARGET acclimate PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
+
 
 string(REPLACE ";" ", " ACCLIMATE_OPTIONS "${ACCLIMATE_OPTIONS}")
 target_compile_definitions(acclimate PRIVATE ACCLIMATE_OPTIONS="${ACCLIMATE_OPTIONS}")

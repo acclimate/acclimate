@@ -94,8 +94,9 @@ class Acclimate {
         std::unique_ptr<Model<ModelVariant>> model_m;
         std::vector<std::unique_ptr<Output<ModelVariant>>> outputs_m;
         static void initialize();
-        void run();
+        int run();
         void cleanup();
+        void memory_cleanup();
         Run();
 
       public:
@@ -147,8 +148,9 @@ class Acclimate {
     std::string timeinfo() const;
 #endif
     static void initialize(const settings::SettingsNode& settings_p);
-    void run();
+    int run();
     void cleanup();
+    void memory_cleanup();
 };
 }  // namespace acclimate
 

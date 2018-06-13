@@ -21,6 +21,7 @@
 #ifndef ACCLIMATE_FLOODING_H
 #define ACCLIMATE_FLOODING_H
 
+#include <vector>
 #include "scenario/RasteredScenario.h"
 
 namespace acclimate {
@@ -28,6 +29,7 @@ namespace acclimate {
 template<class ModelVariant>
 class Flooding : public RasteredScenario<ModelVariant> {
   protected:
+    std::vector<std::size_t> sectors;
     void set_forcing(Region<ModelVariant>* region, const FloatType& forcing_p) const override;
     FloatType get_affected_population_per_cell(const FloatType& x,
                                                const FloatType& y,
