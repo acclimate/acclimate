@@ -28,31 +28,34 @@ Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, const
     : RasteredScenario<ModelVariant, FloatType>(settings_p, model_p) {}
 
 template<class ModelVariant>
-inline FloatType Flooding<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
+FloatType Flooding<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
     return 0.0;
 }
 
 template<class ModelVariant>
-inline void Flooding<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, FloatType& forcing, const FloatType& proxy_sum) const {
+void Flooding<ModelVariant>::reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const {
+    forcing = 0.0;
+}
+
+template<class ModelVariant>
+void Flooding<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, const FloatType& proxy_sum) const {
     for (auto& it : region->economic_agents) {
         if (it->type == EconomicAgent<ModelVariant>::Type::FIRM) {
             it->forcing(1.0 - forcing / proxy_sum);
-            forcing = 0.0;
         }
     }
 }
 
 template<class ModelVariant>
-inline FloatType Flooding<ModelVariant>::add_cell_forcing(const FloatType& x,
-                                                          const FloatType& y,
-                                                          const FloatType& proxy_value,
-                                                          const FloatType& cell_forcing,
-                                                          const Region<ModelVariant>* region,
-                                                          FloatType& region_forcing) const {
+void Flooding<ModelVariant>::add_cell_forcing(const FloatType& x,
+                                              const FloatType& y,
+                                              const FloatType& proxy_value,
+                                              const FloatType& cell_forcing,
+                                              const Region<ModelVariant>* region,
+                                              FloatType& region_forcing) const {
     UNUSED(x);
     UNUSED(y);
     region_forcing += cell_forcing * proxy_value;
-    return region_forcing;
 }
 
 INSTANTIATE_BASIC(Flooding);

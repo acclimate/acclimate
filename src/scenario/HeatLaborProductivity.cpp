@@ -30,30 +30,41 @@ HeatLaborProductivity<ModelVariant>::HeatLaborProductivity(const settings::Setti
     : RasteredScenario<ModelVariant, HeatLaborProductivity<ModelVariant>::RegionForcingType>(settings_p, model_p) {}
 
 template<class ModelVariant>
-inline typename HeatLaborProductivity<ModelVariant>::RegionForcingType HeatLaborProductivity<ModelVariant>::new_region_forcing(
-    Region<ModelVariant>* region) const {
-    return std::vector<FloatType>(region->economic_agents.size(), 0.0);
+typename HeatLaborProductivity<ModelVariant>::RegionForcingType HeatLaborProductivity<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
+    if (region) {
+        return std::vector<FloatType>(region->economic_agents.size(), 0.0);
+    } else {
+        return std::vector<FloatType>();
+    }
 }
 
 template<class ModelVariant>
-inline void HeatLaborProductivity<ModelVariant>::set_region_forcing(Region<ModelVariant>* region,
-                                                                    HeatLaborProductivity<ModelVariant>::RegionForcingType& forcing,
-                                                                    const FloatType& proxy_sum) const {
+void HeatLaborProductivity<ModelVariant>::reset_forcing(Region<ModelVariant>* region,
+                                                        typename HeatLaborProductivity<ModelVariant>::RegionForcingType& forcing) const {
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
-        if (proxy_sum > 0.0) {
-            region->economic_agents[i]->forcing(1 - forcing[i] / proxy_sum);
-        }
         forcing[i] = 0.0;
     }
 }
 
 template<class ModelVariant>
-inline FloatType HeatLaborProductivity<ModelVariant>::add_cell_forcing(const FloatType& x,
-                                                                       const FloatType& y,
-                                                                       const FloatType& proxy_value,
-                                                                       const FloatType& cell_forcing,
-                                                                       const Region<ModelVariant>* region,
-                                                                       typename HeatLaborProductivity<ModelVariant>::RegionForcingType& region_forcing) const {
+void HeatLaborProductivity<ModelVariant>::set_region_forcing(Region<ModelVariant>* region,
+                                                             const HeatLaborProductivity<ModelVariant>::RegionForcingType& forcing,
+                                                             const FloatType& proxy_sum) const {
+    for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
+        auto& it = region->economic_agents[i];
+        if (it->type == EconomicAgent<ModelVariant>::Type::FIRM) {
+            it->forcing(1 - forcing[i] / proxy_sum);
+        }
+    }
+}
+
+template<class ModelVariant>
+void HeatLaborProductivity<ModelVariant>::add_cell_forcing(const FloatType& x,
+                                                           const FloatType& y,
+                                                           const FloatType& proxy_value,
+                                                           const FloatType& cell_forcing,
+                                                           const Region<ModelVariant>* region,
+                                                           typename HeatLaborProductivity<ModelVariant>::RegionForcingType& region_forcing) const {
     UNUSED(x);
     UNUSED(y);
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
@@ -84,11 +95,8 @@ inline FloatType HeatLaborProductivity<ModelVariant>::add_cell_forcing(const Flo
                     break;
             }
             region_forcing[i] += std::min(1.0, alpha * (cell_forcing - 300.15)) * proxy_value;
-        } else {
-            region_forcing[i] += 0.0;
         }
     }
-    return cell_forcing > 300.14 ? 1.0 : 0.0;
 }
 
 INSTANTIATE_BASIC(HeatLaborProductivity);

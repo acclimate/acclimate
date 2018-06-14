@@ -106,7 +106,7 @@ class Region : public GeographicEntity<ModelVariant> {
     void iterate_investment_variant();
 
   public:
-    Region(Model<ModelVariant>* model_p, std::string  name_p, const IntType index_p);
+    Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p);
     inline IntType index() const { return index_; };
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);

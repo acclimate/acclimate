@@ -71,12 +71,8 @@ class Firm : public EconomicAgent<ModelVariant> {
         return round(initial_production_X_star_ * forcing_ * capacity_manager->possible_overcapacity_ratio_beta);
     };
     inline const FlowQuantity& initial_production_quantity_X_star() const { return initial_production_X_star_.get_quantity(); };
-    inline const FlowQuantity forced_initial_production_quantity_lambda_X_star() const {
-        return round(initial_production_X_star_.get_quantity() * forcing_);
-    };
-    inline FloatType forced_initial_production_quantity_lambda_X_star_float() const {
-        return to_float(initial_production_X_star_.get_quantity() * forcing_);
-    };
+    inline const FlowQuantity forced_initial_production_quantity_lambda_X_star() const { return round(initial_production_X_star_.get_quantity() * forcing_); };
+    inline FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_); };
     inline const FlowQuantity maximal_production_quantity_beta_X_star() const {
         return round(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
     };

@@ -178,10 +178,11 @@ bool ExternalScenario<ModelVariant>::iterate() {
     if (stop_time_known && model->time() > stop_time) {
         return false;
     }
-
     if (is_first_timestep()) {
         iterate_first_timestep();
     }
+
+    internal_iterate_start();
     if (model->time() == next_time) {
         read_forcings();
         next_time = Time(forcing->next_timestep() / time_step_width);
@@ -194,7 +195,7 @@ bool ExternalScenario<ModelVariant>::iterate() {
             next_time += time_offset;
         }
     }
-    return internal_iterate();
+    return internal_iterate_end();
 }
 
 INSTANTIATE_BASIC(ExternalScenario);

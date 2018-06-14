@@ -147,6 +147,6 @@ class Acclimate {
     void run();
     void cleanup();
 };
-}
+}  // namespace acclimate
 
 #endif

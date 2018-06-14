@@ -32,13 +32,14 @@ class HeatLaborProductivity : public RasteredScenario<ModelVariant, HeatLaborPro
   protected:
     using RegionForcingType = HeatLaborProductivityRegionForcingType;
     RegionForcingType new_region_forcing(Region<ModelVariant>* region) const override;
-    void set_region_forcing(Region<ModelVariant>* region, RegionForcingType& forcing, const FloatType& proxy_sum) const override;
-    FloatType add_cell_forcing(const FloatType& x,
-                               const FloatType& y,
-                               const FloatType& proxy_value,
-                               const FloatType& cell_forcing,
-                               const Region<ModelVariant>* region,
-                               RegionForcingType& region_forcing) const override;
+    void set_region_forcing(Region<ModelVariant>* region, const RegionForcingType& forcing, const FloatType& proxy_sum) const override;
+    void reset_forcing(Region<ModelVariant>* region, RegionForcingType& forcing) const override;
+    void add_cell_forcing(const FloatType& x,
+                          const FloatType& y,
+                          const FloatType& proxy_value,
+                          const FloatType& cell_forcing,
+                          const Region<ModelVariant>* region,
+                          RegionForcingType& region_forcing) const override;
 
   public:
     HeatLaborProductivity(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);

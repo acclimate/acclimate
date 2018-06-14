@@ -64,7 +64,7 @@ class Sector {
 
   public:
     Sector(Model<ModelVariant>* model_p,
-           std::string  name_p,
+           std::string name_p,
            const IntType index_p,
            const Ratio& upper_storage_limit_omega_p,
            const Time& initial_storage_fill_factor_psi_p);

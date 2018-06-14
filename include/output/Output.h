@@ -95,7 +95,10 @@ class Output {
   public:
     Model<ModelVariant>* const model;
     Scenario<ModelVariant>* const scenario;
-    Output(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p, Scenario<ModelVariant>* scenario_p, const settings::SettingsNode& output_node_p);
+    Output(const settings::SettingsNode& settings_p,
+           Model<ModelVariant>* model_p,
+           Scenario<ModelVariant>* scenario_p,
+           const settings::SettingsNode& output_node_p);
     virtual void initialize() = 0;
     virtual void event(const EventType& type,
                        const Sector<ModelVariant>* sector_from,

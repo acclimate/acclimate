@@ -31,7 +31,7 @@ class GeographicPoint {
     const std::string name;
 
   public:
-    GeographicPoint(std::string  name_p, const FloatType lon_p, const FloatType lat_p);
+    GeographicPoint(std::string name_p, const FloatType lon_p, const FloatType lat_p);
     FloatType distance_to(const GeographicPoint& other) const;
     inline FloatType lon() const { return lon_; };
     inline FloatType lat() const { return lat_; };

@@ -59,7 +59,10 @@ class JSONOutput : public Output<ModelVariant> {
     void internal_end_target() override;
 
   public:
-    JSONOutput(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p, Scenario<ModelVariant>* scenario_p, const settings::SettingsNode& output_node_p);
+    JSONOutput(const settings::SettingsNode& settings_p,
+               Model<ModelVariant>* model_p,
+               Scenario<ModelVariant>* scenario_p,
+               const settings::SettingsNode& output_node_p);
     void initialize() override;
 };
 }  // namespace acclimate

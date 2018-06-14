@@ -21,9 +21,9 @@
 #ifndef ACCLIMATE_RASTEREDTIMEDATA_H
 #define ACCLIMATE_RASTEREDTIMEDATA_H
 
+#include "netcdf_headers.h"
 #include "scenario/ExternalForcing.h"
 #include "scenario/RasteredData.h"
-#include "netcdf_headers.h"
 
 namespace acclimate {
 

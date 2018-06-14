@@ -92,7 +92,9 @@ class BusinessConnection {
     void establish_connection();
 
   public:
-    BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p, typename ModelVariant::SalesManagerType* seller_p, const Flow& initial_flow_Z_star_p);
+    BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
+                       typename ModelVariant::SalesManagerType* seller_p,
+                       const Flow& initial_flow_Z_star_p);
     BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
                        typename ModelVariant::SalesManagerType* seller_p,
                        const Flow& initial_flow_Z_star_p,

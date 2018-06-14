@@ -59,7 +59,8 @@ class ExternalScenario : public Scenario<ModelVariant> {
     ExternalScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
 
     virtual void internal_start(){};
-    virtual bool internal_iterate() { return true; };
+    virtual void internal_iterate_start(){};
+    virtual bool internal_iterate_end() { return true; };
     virtual void iterate_first_timestep(){};
     virtual ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) = 0;
     virtual void read_forcings() = 0;

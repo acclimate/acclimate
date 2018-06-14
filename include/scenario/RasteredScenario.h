@@ -41,6 +41,7 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
   protected:
     using ExternalScenario<ModelVariant>::forcing;
     using ExternalScenario<ModelVariant>::model;
+    using ExternalScenario<ModelVariant>::next_time;
     using ExternalScenario<ModelVariant>::settings;
 
     std::unique_ptr<RasteredData<int>> iso_raster;
@@ -49,16 +50,17 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     FloatType total_current_proxy_sum_;
 
     virtual RegionForcingType new_region_forcing(Region<ModelVariant>* region) const = 0;
-    virtual void set_region_forcing(Region<ModelVariant>* region, RegionForcingType& forcing,
-                                    const FloatType& proxy_sum) const = 0;  // must reset forcing
-    virtual FloatType add_cell_forcing(const FloatType& x,
-                                       const FloatType& y,
-                                       const FloatType& proxy_value,
-                                       const FloatType& cell_forcing,
-                                       const Region<ModelVariant>* region,
-                                       RegionForcingType& region_forcing) const = 0;  // must return current net proxy for cell
+    virtual void set_region_forcing(Region<ModelVariant>* region, const RegionForcingType& forcing, const FloatType& proxy_sum) const = 0;
+    virtual void reset_forcing(Region<ModelVariant>* region, RegionForcingType& forcing) const = 0;
+    virtual void add_cell_forcing(const FloatType& x,
+                                  const FloatType& y,
+                                  const FloatType& proxy_value,
+                                  const FloatType& cell_forcing,
+                                  const Region<ModelVariant>* region,
+                                  RegionForcingType& region_forcing) const = 0;
     void internal_start() override;
-    bool internal_iterate() override;
+    void internal_iterate_start() override;
+    bool internal_iterate_end() override;
     void iterate_first_timestep() override;
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
