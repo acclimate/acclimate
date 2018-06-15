@@ -63,7 +63,7 @@ const Flow SalesManager<ModelVariant>::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
-        res += bc->get_total_flow();
+        res += bc->get_transport_flow();
     }
     return res;
 }

@@ -55,8 +55,8 @@ const Flow CapacityManagerPrices<ModelVariant>::get_possible_production_X_hat_in
     for (auto& input_storage : firm->input_storages) {
         Flow possible_use_U_hat = input_storage->get_possible_use_U_hat();
         if (consider_transport_in_production_costs) {
-            Flow total_flow = input_storage->purchasing_manager->get_total_flow();
-            unit_commodity_costs += (possible_use_U_hat + total_flow).get_price() * input_storage->get_technology_coefficient_a();
+            Flow transport_flow = input_storage->purchasing_manager->get_transport_flow();
+            unit_commodity_costs += (possible_use_U_hat + transport_flow).get_price() * input_storage->get_technology_coefficient_a();
         } else {
             unit_commodity_costs += possible_use_U_hat.get_price() * input_storage->get_technology_coefficient_a();
         }
