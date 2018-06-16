@@ -80,7 +80,15 @@ acclimate_include_option(OPTIONS ENABLE_DMTCP "enable dmtcp checkpointing" OFF)
 acclimate_include_option(OPTIONS USE_TQDM "enable progress output using tqdm.cpp" OFF)
 
 if(ACCLIMATE_USE_TQDM)
-  target_include_directories(acclimate PRIVATE lib/tqdm.cpp/include)
+  include(ExternalProject)
+  ExternalProject_Add(tqdm.cpp
+    GIT_REPOSITORY https://github.com/swillner/tqdm.cpp
+    GIT_TAG "bd7707e"
+    INSTALL_COMMAND ""
+    )
+  ExternalProject_Get_Property(tqdm.cpp SOURCE_DIR)
+  target_include_directories(acclimate PRIVATE ${SOURCE_DIR}/include)
+  message(STATUS "Including tqdm.cpp from git")
 endif()
 
 if(ACCLIMATE_ENABLE_DMTCP)
