@@ -153,10 +153,16 @@ bool RasteredScenario<ModelVariant, RegionForcingType>::internal_iterate_end() {
     return true;
 }
 
+#ifdef VARIANT_BASIC
 template class RasteredScenario<VariantBasic, FloatType>;
-template class RasteredScenario<VariantDemand, FloatType>;
-template class RasteredScenario<VariantPrices, FloatType>;
 template class RasteredScenario<VariantBasic, std::vector<FloatType>>;
+#endif
+#ifdef VARIANT_DEMAND
+template class RasteredScenario<VariantDemand, FloatType>;
 template class RasteredScenario<VariantDemand, std::vector<FloatType>>;
+#endif
+#ifdef VARIANT_PRICES
+template class RasteredScenario<VariantPrices, FloatType>;
 template class RasteredScenario<VariantPrices, std::vector<FloatType>>;
+#endif
 }  // namespace acclimate

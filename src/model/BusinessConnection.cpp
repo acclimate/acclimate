@@ -161,7 +161,7 @@ const Flow BusinessConnection<ModelVariant>::get_flow_mean() const {
         }
     }
 #else
-    Flow res = last_delivery_Z_ + first_transport_link->get_total_flow();
+    Flow res = get_total_flow();
     TransportDelay delay = first_transport_link->current_transport_delay_tau;
 #endif
     return round(res / Ratio(delay));
@@ -189,6 +189,12 @@ const FlowQuantity BusinessConnection<ModelVariant>::get_flow_deficit() const {
 
 template<class ModelVariant>
 const Flow BusinessConnection<ModelVariant>::get_total_flow() const {
+    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    return round(get_transport_flow() + last_delivery_Z_);
+}
+
+template<class ModelVariant>
+const Flow BusinessConnection<ModelVariant>::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
 #ifdef TRANSPORT
     TransportChainLink<ModelVariant>* link = first_transport_link.get();

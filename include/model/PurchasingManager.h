@@ -56,7 +56,7 @@ class PurchasingManager {
     explicit PurchasingManager(Storage<ModelVariant>* storage_p);
     virtual ~PurchasingManager(){};
     virtual const FlowQuantity get_flow_deficit() const;
-    virtual const Flow get_total_flow() const;
+    virtual const Flow get_transport_flow() const;
     const Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
     const Flow get_sum_of_last_shipments() const;

@@ -487,6 +487,21 @@ void Output<ModelVariant>::write_region_parameters(const Region<ModelVariant>* r
             case hstring::hash("people_affected"):
                 // handled in iterate
                 break;
+            case hstring::hash("total_flow"): {
+                std::vector<Flow> flows(model->regions_R.size(), Flow(0.0));
+                for (const auto& ea : region->economic_agents) {
+                    if (ea->is_firm()) {
+                        for (const auto& bc : ea->as_firm()->sales_manager->business_connections) {
+                            flows[bc->buyer->storage->economic_agent->region->index()] += bc->get_total_flow();
+                        }
+                    }
+                }
+                for (const auto& region_to : model->regions_R) {
+                    internal_start_target(hstring("regions"), region_to.get());
+                    internal_write_value(hstring("total_flow"), flows[region_to->index()]);
+                    internal_end_target();
+                }
+            } break;
             case hstring::hash("sent_flow"): {
                 std::vector<Flow> flows(model->regions_R.size(), Flow(0.0));
                 for (const auto& ea : region->economic_agents) {

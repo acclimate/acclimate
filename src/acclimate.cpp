@@ -50,7 +50,6 @@
 #include <dmtcp.h>
 #include <thread>
 #endif
-
 namespace acclimate {
 
 #ifdef FLOATING_POINT_EXCEPTIONS
@@ -229,7 +228,6 @@ int Acclimate::Run<ModelVariant>::run() {
             }
         }
 #endif
-
         info_("Iteration started");
 
         model_m->switch_registers();
