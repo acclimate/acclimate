@@ -63,8 +63,7 @@ class RasteredData {
 
       public:
         using iterator_category = std::forward_iterator_tag;
-        iterator(FloatType l_, const std::size_t& c_, FloatType gridsize_, const std::size_t& count_)
-            : l(l_), c(c_), gridsize(gridsize_), count(count_){};
+        iterator(FloatType l_, const std::size_t& c_, FloatType gridsize_, const std::size_t& count_) : l(l_), c(c_), gridsize(gridsize_), count(count_){};
         iterator operator++() {
             if (c < count) {
                 c++;

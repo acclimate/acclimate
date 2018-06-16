@@ -424,16 +424,16 @@ void Acclimate::initialize(const settings::SettingsNode& settings_p) {
 
 int Acclimate::run() {
     switch (variant_m) {
-        case ModelVariantType::BASIC:
 #ifdef VARIANT_BASIC
+        case ModelVariantType::BASIC:
             return Acclimate::Run<VariantBasic>::instance()->run();
 #endif
-        case ModelVariantType::DEMAND:
 #ifdef VARIANT_DEMAND
+        case ModelVariantType::DEMAND:
             return Acclimate::Run<VariantDemand>::instance()->run();
 #endif
-        case ModelVariantType::PRICES:
 #ifdef VARIANT_PRICES
+        case ModelVariantType::PRICES:
             return Acclimate::Run<VariantPrices>::instance()->run();
 #endif
     }
@@ -441,41 +441,41 @@ int Acclimate::run() {
 
 void Acclimate::cleanup() {
     switch (variant_m) {
-        case ModelVariantType::BASIC:
 #ifdef VARIANT_BASIC
+        case ModelVariantType::BASIC:
             Acclimate::Run<VariantBasic>::instance()->cleanup();
-#endif
             break;
-        case ModelVariantType::DEMAND:
+#endif
 #ifdef VARIANT_DEMAND
+        case ModelVariantType::DEMAND:
             Acclimate::Run<VariantDemand>::instance()->cleanup();
-#endif
             break;
-        case ModelVariantType::PRICES:
+#endif
 #ifdef VARIANT_PRICES
+        case ModelVariantType::PRICES:
             Acclimate::Run<VariantPrices>::instance()->cleanup();
-#endif
             break;
+#endif
     }
 }
 
 void Acclimate::memory_cleanup() {
     switch (variant_m) {
-        case ModelVariantType::BASIC:
 #ifdef VARIANT_BASIC
+        case ModelVariantType::BASIC:
             Acclimate::Run<VariantBasic>::instance()->memory_cleanup();
-#endif
             break;
-        case ModelVariantType::DEMAND:
+#endif
 #ifdef VARIANT_DEMAND
+        case ModelVariantType::DEMAND:
             Acclimate::Run<VariantDemand>::instance()->memory_cleanup();
-#endif
             break;
-        case ModelVariantType::PRICES:
+#endif
 #ifdef VARIANT_PRICES
+        case ModelVariantType::PRICES:
             Acclimate::Run<VariantPrices>::instance()->memory_cleanup();
-#endif
             break;
+#endif
     }
 }
 

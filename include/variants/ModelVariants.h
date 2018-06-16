@@ -27,7 +27,17 @@
 
 namespace acclimate {
 
-enum class ModelVariantType { BASIC, DEMAND, PRICES };
+enum class ModelVariantType {
+#ifdef VARIANT_BASIC
+    BASIC,
+#endif
+#ifdef VARIANT_DEMAND
+    DEMAND,
+#endif
+#ifdef VARIANT_PRICES
+    PRICES,
+#endif
+};
 
 #ifdef VARIANT_PRICES
 #define INSTANTIATE_PRICES(classname) template class classname<VariantPrices>;

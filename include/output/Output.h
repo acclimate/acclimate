@@ -97,10 +97,7 @@ class Output {
   public:
     Model<ModelVariant>* const model;
     Scenario<ModelVariant>* const scenario;
-    Output(const settings::SettingsNode& settings_p,
-           Model<ModelVariant>* model_p,
-           Scenario<ModelVariant>* scenario_p,
-           settings::SettingsNode output_node_p);
+    Output(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p, Scenario<ModelVariant>* scenario_p, settings::SettingsNode output_node_p);
     virtual void initialize() = 0;
     virtual void event(EventType type,
                        const Sector<ModelVariant>* sector_from,
@@ -125,9 +122,9 @@ class Output {
     void start();
     void iterate();
     void end();
-    virtual void flush() {};
-    virtual void checkpoint_stop() {};
-    virtual void checkpoint_resume() {};
+    virtual void flush(){};
+    virtual void checkpoint_stop(){};
+    virtual void checkpoint_resume(){};
     virtual ~Output() = default;
     virtual inline std::string id() const { return "OUTPUT"; }
 };
