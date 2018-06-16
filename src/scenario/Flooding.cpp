@@ -26,7 +26,7 @@ namespace acclimate {
 
 template<class ModelVariant>
 Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : RasteredScenario<ModelVariant>(settings_p, model_p) {
+    : RasteredScenario<ModelVariant, FloatType>(settings_p, model_p) {
     const auto& scenario_node = settings_p["scenario"];
     if (scenario_node.has("sectors")) {
         for (const auto& sector_node : scenario_node["sectors"].as_sequence()) {
@@ -41,23 +41,35 @@ Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, const
 }
 
 template<class ModelVariant>
-void Flooding<ModelVariant>::set_forcing(Region<ModelVariant>* region, FloatType forcing_p) const {
+FloatType Flooding<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
+    return 0.0;
+}
+
+template<class ModelVariant>
+void Flooding<ModelVariant>::reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const {
+    forcing = 0.0;
+}
+
+template<class ModelVariant>
+void Flooding<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, const FloatType& proxy_sum) const {
     for (auto& it : region->economic_agents) {
         if (it->is_firm()) {
             if (sectors.empty() || std::find(sectors.begin(), sectors.end(), it->as_firm()->sector->index()) != sectors.end())
-                it->as_firm()->forcing_lambda(1.0 - forcing_p);
+                it->forcing(1.0 - forcing / proxy_sum);
         }
     }
 }
 
 template<class ModelVariant>
-inline FloatType Flooding<ModelVariant>::get_affected_population_per_cell(FloatType x,
-                                                                          FloatType y,
-                                                                          FloatType population_p,
-                                                                          FloatType external_forcing) const {
+void Flooding<ModelVariant>::add_cell_forcing(const FloatType& x,
+                                              const FloatType& y,
+                                              const FloatType& proxy_value,
+                                              const FloatType& cell_forcing,
+                                              const Region<ModelVariant>* region,
+                                              FloatType& region_forcing) const {
     UNUSED(x);
     UNUSED(y);
-    return external_forcing * population_p;
+    region_forcing += cell_forcing * proxy_value;
 }
 
 INSTANTIATE_BASIC(Flooding);

@@ -1,5 +1,5 @@
-# Copyright(C) 2014 - 2017 Sven Willner <sven.willner@pik-potsdam.de>
-#                          Christian Otto <christian.otto@pik-potsdam.de>
+# Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+#                         Christian Otto <christian.otto@pik-potsdam.de>
 #
 # This file is part of Acclimate.
 #
@@ -54,6 +54,7 @@ if(ACCLIMATE_PARALLELIZATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
+
 set(ACCLIMATE_OPTIONS "")
 set(ACCLIMATE_VARIANTS "")
 function(acclimate_include_option OPTIONS_NAME NAME DESC STATE)
@@ -85,8 +86,6 @@ endif()
 if(ACCLIMATE_ENABLE_DMTCP)
   set_property(TARGET acclimate PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
-
-
 string(REPLACE ";" ", " ACCLIMATE_OPTIONS "${ACCLIMATE_OPTIONS}")
 target_compile_definitions(acclimate PRIVATE ACCLIMATE_OPTIONS="${ACCLIMATE_OPTIONS}")
 

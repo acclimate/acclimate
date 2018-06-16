@@ -28,7 +28,6 @@
 namespace acclimate {
 
 using hstring = settings::hstring;
-
 template<class ModelVariant>
 class Scenario;
 template<class ModelVariant>

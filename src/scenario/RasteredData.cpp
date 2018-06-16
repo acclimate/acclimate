@@ -18,9 +18,9 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <utility>
-
 #include "scenario/RasteredData.h"
+
+#include <utility>
 
 namespace acclimate {
 

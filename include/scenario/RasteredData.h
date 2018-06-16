@@ -31,9 +31,19 @@ class RasteredData {
   protected:
     std::unique_ptr<T[]> data;
     unsigned int time_step = 0;
-    FloatType x_min = 0, x_max = 0, x_gridsize = 0, t_x_gridsize = 0, t_x_min = 0, t_x_max = 0;
+    FloatType x_min = 0;
+    FloatType x_max = 0;
+    FloatType x_gridsize = 0;
+    FloatType t_x_gridsize = 0;
+    FloatType t_x_min = 0;
+    FloatType t_x_max = 0;
     std::size_t x_count = 0;
-    FloatType y_min = 0, y_max = 0, y_gridsize = 0, t_y_gridsize = 0, t_y_min = 0, t_y_max = 0;
+    FloatType y_min = 0;
+    FloatType y_max = 0;
+    FloatType y_gridsize = 0;
+    FloatType t_y_gridsize = 0;
+    FloatType t_y_min = 0;
+    FloatType t_y_max = 0;
     std::size_t y_count = 0;
     const std::string filename;
 

@@ -49,7 +49,7 @@ void CapacityManagerPrices<ModelVariant>::print_inputs() const {
 
 template<class ModelVariant>
 const Flow CapacityManagerPrices<ModelVariant>::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs) const {
-    Ratio possible_production_capacity_p_hat = firm->forcing_lambda() * possible_overcapacity_ratio_beta;
+    Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     Price unit_commodity_costs = Price(0.0);
 
     for (auto& input_storage : firm->input_storages) {

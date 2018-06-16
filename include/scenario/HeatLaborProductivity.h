@@ -18,29 +18,31 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_HURRICANES_H
-#define ACCLIMATE_HURRICANES_H
+#ifndef ACCLIMATE_HEATLABORPRODUCTIVITY_H
+#define ACCLIMATE_HEATLABORPRODUCTIVITY_H
 
 #include "scenario/RasteredScenario.h"
 
 namespace acclimate {
 
+using HeatLaborProductivityRegionForcingType = std::vector<FloatType>;
+
 template<class ModelVariant>
-class Hurricanes : public RasteredScenario<ModelVariant, FloatType> {
+class HeatLaborProductivity : public RasteredScenario<ModelVariant, HeatLaborProductivityRegionForcingType> {
   protected:
-    FloatType threshold;
-    FloatType new_region_forcing(Region<ModelVariant>* region) const override;
-    void set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, const FloatType& proxy_sum) const override;
-    void reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const override;
+    using RegionForcingType = HeatLaborProductivityRegionForcingType;
+    RegionForcingType new_region_forcing(Region<ModelVariant>* region) const override;
+    void set_region_forcing(Region<ModelVariant>* region, const RegionForcingType& forcing, const FloatType& proxy_sum) const override;
+    void reset_forcing(Region<ModelVariant>* region, RegionForcingType& forcing) const override;
     void add_cell_forcing(const FloatType& x,
                           const FloatType& y,
                           const FloatType& proxy_value,
                           const FloatType& cell_forcing,
                           const Region<ModelVariant>* region,
-                          FloatType& region_forcing) const override;
+                          RegionForcingType& region_forcing) const override;
 
   public:
-    Hurricanes(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    HeatLaborProductivity(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
 };
 }  // namespace acclimate
 

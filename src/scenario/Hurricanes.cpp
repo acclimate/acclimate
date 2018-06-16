@@ -25,30 +25,39 @@ namespace acclimate {
 
 template<class ModelVariant>
 Hurricanes<ModelVariant>::Hurricanes(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : RasteredScenario<ModelVariant>(settings_p, model_p) {
+    : RasteredScenario<ModelVariant, FloatType>(settings_p, model_p) {
     threshold = settings_p["scenario"]["forcing"]["threshold"].as<double>();
 }
 
 template<class ModelVariant>
-void Hurricanes<ModelVariant>::set_forcing(Region<ModelVariant>* region, FloatType forcing_p) const {
+FloatType Hurricanes<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
+    return 0.0;
+}
+
+template<class ModelVariant>
+void Hurricanes<ModelVariant>::reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const {
+    forcing = 0.0;
+}
+
+template<class ModelVariant>
+void Hurricanes<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, const FloatType& proxy_sum) const {
     for (auto& it : region->economic_agents) {
         if (it->type == EconomicAgent<ModelVariant>::Type::FIRM) {
-            it->as_firm()->forcing_lambda(1.0 - forcing_p);
+            it->forcing(1.0 - forcing / proxy_sum);
         }
     }
 }
 
 template<class ModelVariant>
-inline FloatType Hurricanes<ModelVariant>::get_affected_population_per_cell(FloatType x,
-                                                                            FloatType y,
-                                                                            FloatType population_p,
-                                                                            FloatType external_forcing) const {
+void Hurricanes<ModelVariant>::add_cell_forcing(const FloatType& x,
+                                                const FloatType& y,
+                                                const FloatType& proxy_value,
+                                                const FloatType& cell_forcing,
+                                                const Region<ModelVariant>* region,
+                                                FloatType& region_forcing) const {
     UNUSED(x);
     UNUSED(y);
-    if (external_forcing > threshold) {
-        return population_p;
-    }
-    return 0.0;
+    region_forcing += cell_forcing > threshold ? proxy_value : 0.0;
 }
 
 INSTANTIATE_BASIC(Hurricanes);

@@ -102,7 +102,7 @@ void Output<ModelVariant>::write_firm_parameters(const Firm<ModelVariant>* p, co
                 internal_write_value(name, p->production_X());
                 break;
             case hstring::hash("forcing"):
-                internal_write_value(name, p->forcing_lambda());
+                internal_write_value(name, p->forcing());
                 break;
             case hstring::hash("incoming_demand"):
                 internal_write_value(name, p->sales_manager->sum_demand_requests_D());
@@ -225,7 +225,7 @@ void Output<ModelVariant>::write_consumer_parameters(const Consumer<ModelVariant
         const hstring& name = observable.as<hstring>();
         switch (name) {
             case hstring::hash("forcing"):
-                internal_write_value(name, c->forcing_kappa());
+                internal_write_value(name, c->forcing());
                 break;
             default:
                 if (!write_consumer_parameter_variant(c, name)) {
@@ -720,15 +720,15 @@ void Output<ModelVariant>::iterate() {
                     if (it.has("name")) {
                         region_name = it["name"].as<std::string>().c_str();
                     }
-                    if (dynamic_cast<RasteredScenario<ModelVariant>*>(scenario)) {
+                    if (dynamic_cast<RasteredScenario<ModelVariant, FloatType>*>(scenario)) {
                         for (const auto& observable : it["parameters"].as_sequence()) {
                             const hstring& name = observable.as<hstring>();
                             switch (name) {
-                                case hstring::hash("people_affected"):
-                                    for (const auto& forcing : static_cast<RasteredScenario<ModelVariant>*>(scenario)->forcings()) {
+                                case hstring::hash("total_current_proxy_sum"):
+                                    for (const auto& forcing : static_cast<RasteredScenario<ModelVariant, FloatType>*>(scenario)->forcings()) {
                                         if (forcing.region && ((region_name == nullptr) || forcing.region->id() == region_name)) {
                                             internal_start_target(hstring("regions"), forcing.region);
-                                            internal_write_value(name, forcing.people_affected);
+                                            internal_write_value(name, forcing.forcing);
                                             internal_end_target();
                                         }
                                     }

@@ -212,7 +212,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_supply_distributi
     if (possible_production_X_hat_p.get_quantity() <= 0.0) {
         // no production due to supply shortage or forcing == 0
 
-        if (firm->forcing_lambda() <= 0.0) {
+        if (firm->forcing() <= 0.0) {
             warning("no production due to total forcing");
         } else {
             Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_PRODUCTION_SUPPLY_SHORTAGE, firm);
@@ -384,7 +384,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
     if (possible_production_X_hat_p.get_quantity() <= 0.0) {
         // no production due to supply shortage or forcing <= 0
 
-        if (firm->forcing_lambda() <= 0.0) {
+        if (firm->forcing() <= 0.0) {
             warning("no expected production due to total forcing");
         } else {
             Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_EXP_PRODUCTION_SUPPLY_SHORTAGE, firm);
@@ -748,7 +748,7 @@ template<class ModelVariant>
 void SalesManagerPrices<ModelVariant>::print_parameters() const {
     info(PRINT_ROW1("X", communicated_parameters_.production_X.get_quantity())
          << PRINT_ROW1("X_exp", communicated_parameters_.expected_production_X.get_quantity())
-         << PRINT_ROW1("X_hat", communicated_parameters_.possible_production_X_hat) << PRINT_ROW1("  lambda", firm->forcing_lambda())
+         << PRINT_ROW1("X_hat", communicated_parameters_.possible_production_X_hat) << PRINT_ROW1("  lambda", firm->forcing())
          << PRINT_ROW1("X_star", firm->initial_production_X_star().get_quantity())
          << PRINT_ROW1("lambda X_star", firm->forced_initial_production_quantity_lambda_X_star())
          << PRINT_ROW1("p", communicated_parameters_.production_X.get_quantity() / firm->initial_production_X_star().get_quantity())
