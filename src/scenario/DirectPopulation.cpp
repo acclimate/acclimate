@@ -38,7 +38,7 @@ void DirectPopulation<ModelVariant>::reset_forcing(Region<ModelVariant>* region,
 }
 
 template<class ModelVariant>
-void DirectPopulation<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, const FloatType& proxy_sum) const {
+void DirectPopulation<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, FloatType proxy_sum) const {
     for (auto& it : region->economic_agents) {
         if (it->is_firm()) {
             it->as_firm()->forcing(1.0 - forcing / proxy_sum);
@@ -47,10 +47,10 @@ void DirectPopulation<ModelVariant>::set_region_forcing(Region<ModelVariant>* re
 }
 
 template<class ModelVariant>
-void DirectPopulation<ModelVariant>::add_cell_forcing(const FloatType& x,
-                                                      const FloatType& y,
-                                                      const FloatType& proxy_value,
-                                                      const FloatType& cell_forcing,
+void DirectPopulation<ModelVariant>::add_cell_forcing(FloatType x,
+                                                      FloatType y,
+                                                      FloatType proxy_value,
+                                                      FloatType cell_forcing,
                                                       const Region<ModelVariant>* region,
                                                       FloatType& region_forcing) const {
     UNUSED(x);

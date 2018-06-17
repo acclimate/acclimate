@@ -49,7 +49,7 @@ void HeatLaborProductivity<ModelVariant>::reset_forcing(Region<ModelVariant>* re
 template<class ModelVariant>
 void HeatLaborProductivity<ModelVariant>::set_region_forcing(Region<ModelVariant>* region,
                                                              const HeatLaborProductivity<ModelVariant>::RegionForcingType& forcing,
-                                                             const FloatType& proxy_sum) const {
+                                                             FloatType proxy_sum) const {
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
         auto& it = region->economic_agents[i];
         if (it->type == EconomicAgent<ModelVariant>::Type::FIRM) {
@@ -59,10 +59,10 @@ void HeatLaborProductivity<ModelVariant>::set_region_forcing(Region<ModelVariant
 }
 
 template<class ModelVariant>
-void HeatLaborProductivity<ModelVariant>::add_cell_forcing(const FloatType& x,
-                                                           const FloatType& y,
-                                                           const FloatType& proxy_value,
-                                                           const FloatType& cell_forcing,
+void HeatLaborProductivity<ModelVariant>::add_cell_forcing(FloatType x,
+                                                           FloatType y,
+                                                           FloatType proxy_value,
+                                                           FloatType cell_forcing,
                                                            const Region<ModelVariant>* region,
                                                            typename HeatLaborProductivity<ModelVariant>::RegionForcingType& region_forcing) const {
     UNUSED(x);

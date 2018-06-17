@@ -68,7 +68,18 @@ template<class ModelVariant>
 class Sector;
 template<class ModelVariant>
 class EconomicAgent;
-enum class ModelVariantType;
+
+enum class ModelVariantType {
+#ifdef VARIANT_BASIC
+    BASIC,
+#endif
+#ifdef VARIANT_DEMAND
+    DEMAND,
+#endif
+#ifdef VARIANT_PRICES
+    PRICES,
+#endif
+};
 
 enum class IterationStep {
     INITIALIZATION,

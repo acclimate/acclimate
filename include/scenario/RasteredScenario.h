@@ -51,12 +51,12 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     FloatType total_current_proxy_sum_;
 
     virtual RegionForcingType new_region_forcing(Region<ModelVariant>* region) const = 0;
-    virtual void set_region_forcing(Region<ModelVariant>* region, const RegionForcingType& forcing, const FloatType& proxy_sum) const = 0;
+    virtual void set_region_forcing(Region<ModelVariant>* region, const RegionForcingType& forcing, FloatType proxy_sum) const = 0;
     virtual void reset_forcing(Region<ModelVariant>* region, RegionForcingType& forcing) const = 0;
-    virtual void add_cell_forcing(const FloatType& x,
-                                  const FloatType& y,
-                                  const FloatType& proxy_value,
-                                  const FloatType& cell_forcing,
+    virtual void add_cell_forcing(FloatType x,
+                                  FloatType y,
+                                  FloatType proxy_value,
+                                  FloatType cell_forcing,
                                   const Region<ModelVariant>* region,
                                   RegionForcingType& region_forcing) const = 0;
     void internal_start() override;

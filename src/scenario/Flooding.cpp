@@ -51,7 +51,7 @@ void Flooding<ModelVariant>::reset_forcing(Region<ModelVariant>* region, FloatTy
 }
 
 template<class ModelVariant>
-void Flooding<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, const FloatType& proxy_sum) const {
+void Flooding<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, FloatType proxy_sum) const {
     for (auto& it : region->economic_agents) {
         if (it->is_firm()) {
             if (sectors.empty() || std::find(sectors.begin(), sectors.end(), it->as_firm()->sector->index()) != sectors.end())
@@ -61,10 +61,10 @@ void Flooding<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, co
 }
 
 template<class ModelVariant>
-void Flooding<ModelVariant>::add_cell_forcing(const FloatType& x,
-                                              const FloatType& y,
-                                              const FloatType& proxy_value,
-                                              const FloatType& cell_forcing,
+void Flooding<ModelVariant>::add_cell_forcing(FloatType x,
+                                              FloatType y,
+                                              FloatType proxy_value,
+                                              FloatType cell_forcing,
                                               const Region<ModelVariant>* region,
                                               FloatType& region_forcing) const {
     UNUSED(x);
