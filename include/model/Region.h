@@ -44,7 +44,6 @@ class Region : public GeoLocation<ModelVariant> {
     void iterate_expectation_variant();
     void iterate_purchase_variant();
     void iterate_investment_variant();
-
   public:
     using GeoLocation<ModelVariant>::connections;
 
@@ -66,7 +65,6 @@ class Region : public GeoLocation<ModelVariant> {
         }
     };
     Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p);
-
   public:
     Model<ModelVariant>* const model;
     std::vector<std::unique_ptr<EconomicAgent<ModelVariant>>> economic_agents;
@@ -79,15 +77,15 @@ class Region : public GeoLocation<ModelVariant> {
     inline const Flow& consumption_C() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
         return consumption_flow_Y_[model->current_register()];
-    };
+    }
     inline const Flow& import_flow_Z() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
         return import_flow_Z_[model->current_register()];
-    };
+    }
     inline const Flow& export_flow_Z() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
         return export_flow_Z_[model->current_register()];
-    };
+    }
     inline void set_government(Government<ModelVariant>* government_p) {
         assertstep(INITIALIZATION);
 #ifdef DEBUG
@@ -96,14 +94,14 @@ class Region : public GeoLocation<ModelVariant> {
         }
 #endif
         government_.reset(government_p);
-    };
-    inline Government<ModelVariant>* government() { return government_.get(); };
-    inline Government<ModelVariant> const* government() const { return government_.get(); };
-    inline const typename ModelVariant::RegionParameters& parameters() const { return parameters_; };
+    }
+    inline Government<ModelVariant>* government() { return government_.get(); }
+    inline Government<ModelVariant> const* government() const { return government_.get(); }
+    inline const typename ModelVariant::RegionParameters& parameters() const { return parameters_; }
     inline const typename ModelVariant::RegionParameters& parameters_writable() const {
         assertstep(INITIALIZATION);
         return parameters_;
-    };
+    }
 
     inline IntType index() const { return index_; };
     void add_export_Z(const Flow& export_flow_Z_p);

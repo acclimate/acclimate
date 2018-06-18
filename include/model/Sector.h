@@ -105,8 +105,8 @@ class Sector {
     void subtract_initial_production_X(const Flow& production_X);
     void iterate_consumption_and_production();
     void remove_firm(Firm<ModelVariant>* firm);
-    inline IntType index() const { return index_; };
-    inline const std::string& id() const { return id_; };
+    inline IntType index() const { return index_; }
+    inline const std::string& id() const { return id_; }
 };
 }  // namespace acclimate
 #endif

@@ -43,7 +43,7 @@ class Government {
     std::unordered_map<Firm<ModelVariant>*, Ratio> taxed_firms;
 
   public:
-    inline const Value& budget() const { return budget_; };
+    inline const Value& budget() const { return budget_; }
 
   protected:
     void collect_tax();

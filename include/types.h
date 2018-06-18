@@ -74,7 +74,7 @@ class Type {
     friend std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
         return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float();
     }
-    virtual ~Type(){};
+    virtual ~Type(){}
 };
 
 #define INCLUDE_STANDARD_OPS(T)                                                                                          \
@@ -253,10 +253,10 @@ class PricedQuantity {
             assert_(value >= 0.0);
         }
     }
-    PricedQuantity(const Q& quantity_p, const bool maybe_negative = false) : PricedQuantity(quantity_p, quantity_p * Price(1.0), maybe_negative){};
-    explicit PricedQuantity(FloatType quantity_p) : PricedQuantity(Q(quantity_p), Q(quantity_p) * Price(1.0)){};
+    PricedQuantity(const Q& quantity_p, const bool maybe_negative = false) : PricedQuantity(quantity_p, quantity_p * Price(1.0), maybe_negative){}
+    explicit PricedQuantity(FloatType quantity_p) : PricedQuantity(Q(quantity_p), Q(quantity_p) * Price(1.0)){}
     PricedQuantity(const Q& quantity_p, const Price& price_p, const bool maybe_negative = false)
-        : PricedQuantity(quantity_p, quantity_p * price_p, maybe_negative){};
+        : PricedQuantity(quantity_p, quantity_p * price_p, maybe_negative){}
     PricedQuantity(const PricedQuantity& other) : quantity(other.quantity), value(other.value) {
         if (quantity <= 0.0) {
             value = V(0.0);

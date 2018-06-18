@@ -22,9 +22,9 @@
 #define ACCLIMATE_MODELINITIALIZER_H
 
 #include <unordered_map>
+#include "acclimate.h"
 #include "model/GeoEntity.h"
 #include "settingsnode.h"
-#include "variants/VariantPrices.h"
 
 namespace mrio {
 template<typename ValueType, typename IndexType>
@@ -45,7 +45,6 @@ template<class ModelVariant>
 class Region;
 template<class ModelVariant>
 class Sector;
-class GeographicPoint;
 
 template<class ModelVariant>
 class ModelInitializer {

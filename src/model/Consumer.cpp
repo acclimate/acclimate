@@ -130,14 +130,20 @@ void Consumer<ModelVariant>::iterate_purchase() {
     }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Consumer<VariantBasic>::iterate_investment() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Consumer<VariantDemand>::iterate_investment() {}
+#endif
 
+#ifdef VARIANT_PRICES
 template<>
 void Consumer<VariantPrices>::iterate_investment() {}
+#endif
 
 template<class ModelVariant>
 void Consumer<ModelVariant>::iterate_investment() {

@@ -873,14 +873,18 @@ void ModelInitializer<ModelVariant>::initialize() {
     post_initialize_variant();
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void ModelInitializer<VariantBasic>::pre_initialize_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void ModelInitializer<VariantDemand>::pre_initialize_variant() {
     const settings::SettingsNode& parameters = settings["parameters"];
     model->parameters_writable().history_weight = parameters["history_weight"].as<Ratio>();
 }
+#endif
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::pre_initialize_variant() {
@@ -940,11 +944,15 @@ void ModelInitializer<ModelVariant>::pre_initialize_variant() {
     }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void ModelInitializer<VariantBasic>::post_initialize_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void ModelInitializer<VariantDemand>::post_initialize_variant() {}
+#endif
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::post_initialize_variant() {

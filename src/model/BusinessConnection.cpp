@@ -66,10 +66,12 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
     }
 }
 
+#ifdef VARIANT_DEMAND
 template<>
 const Ratio& BusinessConnection<VariantDemand>::demand_fulfill_history() const {
     return demand_fulfill_history_;
 }
+#endif
 
 template<class ModelVariant>
 FloatType BusinessConnection<ModelVariant>::get_minimum_passage() const {

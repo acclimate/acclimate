@@ -49,7 +49,7 @@ class PurchasingManager {
         UNUSED(caller);
 #endif
         return demand_D_;
-    };
+    }
 
   protected:
   public:

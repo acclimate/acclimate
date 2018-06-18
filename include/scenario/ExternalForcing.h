@@ -43,9 +43,7 @@ class ExternalForcing {
     int next_timestep();
     const std::string calendar_str() const;
     const std::string time_units_str() const;
-#ifdef DEBUG
-    virtual std::string id() const { return "FORCING"; }
-#endif
+    virtual inline std::string id() const { return "FORCING"; }
 };
 }  // namespace acclimate
 

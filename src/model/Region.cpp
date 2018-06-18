@@ -73,11 +73,15 @@ void Region<ModelVariant>::iterate_consumption_and_production() {
     }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Region<VariantBasic>::iterate_consumption_and_production_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Region<VariantDemand>::iterate_consumption_and_production_variant() {}
+#endif
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_consumption_and_production_variant() {
@@ -96,11 +100,15 @@ void Region<ModelVariant>::iterate_expectation() {
     }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Region<VariantBasic>::iterate_expectation_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Region<VariantDemand>::iterate_expectation_variant() {}
+#endif
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_expectation_variant() {
@@ -119,11 +127,15 @@ void Region<ModelVariant>::iterate_purchase() {
     }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Region<VariantBasic>::iterate_purchase_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Region<VariantDemand>::iterate_purchase_variant() {}
+#endif
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_purchase_variant() {
@@ -142,11 +154,15 @@ void Region<ModelVariant>::iterate_investment() {
     }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Region<VariantBasic>::iterate_investment_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Region<VariantDemand>::iterate_investment_variant() {}
+#endif
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_investment_variant() {

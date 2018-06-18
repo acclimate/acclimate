@@ -68,9 +68,9 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
 
   public:
     using ExternalScenario<ModelVariant>::id;
-    virtual ~RasteredScenario(){};
+    virtual ~RasteredScenario(){}
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
-    inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; };
+    inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; }
 };
 }  // namespace acclimate
 

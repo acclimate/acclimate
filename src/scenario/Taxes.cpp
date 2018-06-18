@@ -26,15 +26,19 @@ namespace acclimate {
 template<class ModelVariant>
 Taxes<ModelVariant>::Taxes(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p) : Scenario<ModelVariant>(settings_p, model_p) {}
 
+#ifdef VARIANT_BASIC
 template<>
 Time Taxes<VariantBasic>::start() {
     error("Taxes scenario not supported in basic model variant");
 }
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 Time Taxes<VariantDemand>::start() {
     error("Taxes scenario not supported in demand model variant");
 }
+#endif
 
 template<class ModelVariant>
 Time Taxes<ModelVariant>::start() {
@@ -48,14 +52,19 @@ Time Taxes<ModelVariant>::start() {
     return start_time;
 }
 
+#ifdef VARIANT_BASIC
 template<>
 bool Taxes<VariantBasic>::iterate() {
     return false;
 }
+#endif
+
+#ifdef VARIANT_DEMAND
 template<>
 bool Taxes<VariantDemand>::iterate() {
     return false;
 }
+#endif
 
 template<class ModelVariant>
 bool Taxes<ModelVariant>::iterate() {

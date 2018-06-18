@@ -60,8 +60,8 @@ class Model {
     bool no_self_supply_ = false;
 
   public:
-    inline const Time& time() const { return time_; };
-    inline const TimeStep& timestep() const { return timestep_; };
+    inline const Time& time() const { return time_; }
+    inline const TimeStep& timestep() const { return timestep_; }
     inline void switch_registers() {
         assertstep(SCENARIO);
         current_register_ = 1 - current_register_;
@@ -81,9 +81,9 @@ class Model {
         assertstep(INITIALIZATION);
         no_self_supply_ = no_self_supply_p;
     }
-    inline const unsigned char& current_register() const { return current_register_; };
-    inline unsigned char other_register() const { return 1 - current_register_; };
-    inline const typename ModelVariant::ModelParameters& parameters() const { return parameters_; };
+    inline const unsigned char& current_register() const { return current_register_; }
+    inline unsigned char other_register() const { return 1 - current_register_; }
+    inline const typename ModelVariant::ModelParameters& parameters() const { return parameters_; }
     inline typename ModelVariant::ModelParameters& parameters_writable() {
         assertstep(INITIALIZATION);
         return parameters_;
