@@ -47,29 +47,31 @@ void PurchasingManagerDemand<ModelVariant>::calc_demand_D() {
 template<class ModelVariant>
 void PurchasingManagerDemand<ModelVariant>::send_demand_requests_D() {
     if (demand_D_.get_quantity() <= 0.0) {
-        for (auto it = business_connections.begin(); it != business_connections.end(); it++) {
+        for (auto it = business_connections.begin(); it != business_connections.end(); ++it) {
             (*it)->calc_demand_fulfill_history();
             (*it)->send_demand_request_D(Demand(0.0));
         }
     } else {
         Demand denominator = Demand(0.0);
-        for (auto it = business_connections.begin(); it != business_connections.end(); it++) {
+        for (auto it = business_connections.begin(); it != business_connections.end(); ++it) {
             (*it)->calc_demand_fulfill_history();
             denominator += (*it)->initial_flow_Z_star() * (*it)->demand_fulfill_history();
         }
 
         if (denominator.get_quantity() > 0.0) {
-            for (auto it = business_connections.begin(); it != business_connections.end(); it++) {
+            for (auto it = business_connections.begin(); it != business_connections.end(); ++it) {
                 Ratio eta = ((*it)->initial_flow_Z_star() * ((*it)->demand_fulfill_history()) / denominator);
                 (*it)->send_demand_request_D(round(demand_D_ * eta));
             }
         } else {
-            for (auto it = business_connections.begin(); it != business_connections.end(); it++) {
+            for (auto it = business_connections.begin(); it != business_connections.end(); ++it) {
                 (*it)->send_demand_request_D(Demand(0.0));
             }
         }
     }
 }
 
+#ifdef VARIANT_DEMAND
 template class PurchasingManagerDemand<VariantDemand>;
+#endif
 }  // namespace acclimate

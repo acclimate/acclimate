@@ -28,32 +28,35 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p)
-    : GeoLocation<ModelVariant>(0, GeoLocation<ModelVariant>::Type::REGION, name_p), index_(index_p), model(model_p) {}
+Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string id_p, const IntType index_p)
+    : GeoLocation<ModelVariant>(0, GeoLocation<ModelVariant>::Type::REGION, std::move(id_p)), index_(index_p), model(model_p) {}
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_export_Z(const Flow& export_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-#pragma omp critical(export_Z)
-    { export_flow_Z_[model->current_register()] += export_flow_Z_p; }
+    export_flow_Z_lock.call([&]() {
+                                export_flow_Z_[model->current_register()] += export_flow_Z_p;
+                            });
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_import_Z(const Flow& import_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-#pragma omp critical(import_Z)
-    { import_flow_Z_[model->current_register()] += import_flow_Z_p; }
+    import_flow_Z_lock.call([&]() {
+                                import_flow_Z_[model->current_register()] += import_flow_Z_p;
+                            });
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_consumption_flow_Y(const Flow& consumption_flow_Y_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-#pragma omp critical(flow_Y)
-    { consumption_flow_Y_[model->current_register()] += consumption_flow_Y_p; }
+    consumption_flow_Y_lock.call([&]() {
+                                     consumption_flow_Y_[model->current_register()] += consumption_flow_Y_p;
+                                 });
 }
 
 template<class ModelVariant>
-const Flow Region<ModelVariant>::get_gdp() const {
+Flow Region<ModelVariant>::get_gdp() const {
     return consumption_flow_Y_[model->current_register()] + export_flow_Z_[model->current_register()] - import_flow_Z_[model->current_register()];
 }
 
@@ -64,10 +67,8 @@ void Region<ModelVariant>::iterate_consumption_and_production() {
     import_flow_Z_[model->other_register()] = Flow(0.0);
     consumption_flow_Y_[model->other_register()] = Flow(0.0);
     iterate_consumption_and_production_variant();
-#ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
-#endif
-    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
         economic_agents[i]->iterate_consumption_and_production();
     }
 }
@@ -89,10 +90,8 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_expectation() {
     assertstep(EXPECTATION);
     iterate_expectation_variant();
-#ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
-#endif
-    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
         economic_agents[i]->iterate_expectation();
     }
 }
@@ -114,10 +113,8 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_purchase() {
     assertstep(PURCHASE);
     iterate_purchase_variant();
-#ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
-#endif
-    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
         economic_agents[i]->iterate_purchase();
     }
 }
@@ -139,10 +136,8 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_investment() {
     assertstep(INVESTMENT);
     iterate_investment_variant();
-#ifdef SUB_PARALLELIZATION
 #pragma omp parallel for default(shared) schedule(guided)
-#endif
-    for (std::size_t i = 0; i < economic_agents.size(); i++) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
         economic_agents[i]->iterate_investment();
     }
 }
@@ -165,7 +160,7 @@ const GeoRoute<ModelVariant>& Region<ModelVariant>::find_path_to(Region<ModelVar
                                                                  typename Sector<ModelVariant>::TransportType transport_type) const {
     const auto& it = routes.find(std::make_pair(region->index(), transport_type));
     if (it == std::end(routes)) {
-        error("No transport data from " << std::string(*this) << " to " << std::string(*region) << " via "
+        error("No transport data from " << id() << " to " << region->id() << " via "
                                         << Sector<ModelVariant>::unmap_transport_type(transport_type));
     }
     return it->second;
@@ -183,12 +178,11 @@ inline const Region<ModelVariant>* Region<ModelVariant>::as_region() const {
 
 template<class ModelVariant>
 void Region<ModelVariant>::remove_economic_agent(EconomicAgent<ModelVariant>* economic_agent) {
-#pragma omp critical(economic_agents)
-    {
-        auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
-                               [economic_agent](const std::unique_ptr<EconomicAgent<ModelVariant>>& it) { return it.get() == economic_agent; });
-        economic_agents.erase(it);
-    }
+    economic_agents_lock.call([&]() {
+                                  auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
+                                                         [economic_agent](const std::unique_ptr<EconomicAgent<ModelVariant>>& it) { return it.get() == economic_agent; });
+                                  economic_agents.erase(it);
+                              });
 }
 
 INSTANTIATE_BASIC(Region);

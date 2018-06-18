@@ -36,17 +36,16 @@ template<class ModelVariant>
 NetCDFOutput<ModelVariant>::NetCDFOutput(const settings::SettingsNode& settings_p,
                                          Model<ModelVariant>* model_p,
                                          Scenario<ModelVariant>* scenario_p,
-                                         const settings::SettingsNode& output_node_p)
+                                         settings::SettingsNode output_node_p)
     : ArrayOutput<ModelVariant>(settings_p, model_p, scenario_p, output_node_p, false) {
-    flush = 1;
+    flush_freq = 1;
     event_cnt = 0;
 }
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::initialize() {
     ArrayOutput<ModelVariant>::initialize();
-    flush = output_node["flush"].template as<TimeStep>();
-    std::string filename;
+    flush_freq = output_node["flush"].template as<TimeStep>();
     if (!output_node.has("file")) {
         std::ostringstream ss;
         ss << time(nullptr);
@@ -82,20 +81,20 @@ void NetCDFOutput<ModelVariant>::initialize() {
     include_events = true;
     const auto& event_type_var = file->addVar("event_types", netCDF::NcType::nc_STRING, {dim_event_type});
     event_type_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < Acclimate::event_names.size(); i++) {
+    for (std::size_t i = 0; i < Acclimate::event_names.size(); ++i) {
         event_type_var.putVar({i}, std::string(Acclimate::event_names[i]));
     }
 
     const auto& sector_var = file->addVar("sector", netCDF::NcType::nc_STRING, {dim_sector});
     sector_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < model->sectors.size(); i++) {
-        sector_var.putVar({i}, *model->sectors[i]);
+    for (std::size_t i = 0; i < model->sectors.size(); ++i) {
+        sector_var.putVar({i}, model->sectors[i]->id());
     }
 
     const auto& region_var = file->addVar("region", netCDF::NcType::nc_STRING, {dim_region});
     region_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < model->regions.size(); i++) {
-        region_var.putVar({i}, *model->regions[i]);
+    for (std::size_t i = 0; i < model->regions.size(); ++i) {
+        region_var.putVar({i}, model->regions[i]->id());
     }
 }
 
@@ -131,7 +130,7 @@ void NetCDFOutput<ModelVariant>::internal_write_settings() {
 }
 
 template<class ModelVariant>
-void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const std::string& path, const std::string& name) {
+void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
     auto meta = new VariableMeta();
     std::vector<netCDF::NcDim> dims;
     meta->index.push_back(0);
@@ -150,7 +149,7 @@ void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<Model
         }
     }
     netCDF::NcGroup& group = create_group(path);
-    netCDF::NcVar nc_var = group.addVar(name, netCDF::NcType::nc_DOUBLE, dims);
+    netCDF::NcVar nc_var = group.addVar(std::string(name) + std::string(suffix), netCDF::NcType::nc_DOUBLE, dims);
     meta->nc_var = nc_var;
     meta->nc_var.setFill(true, std::numeric_limits<FloatType>::quiet_NaN());
     meta->nc_var.setCompression(false, true, 7);
@@ -158,7 +157,7 @@ void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<Model
 }
 
 template<class ModelVariant>
-netCDF::NcGroup& NetCDFOutput<ModelVariant>::create_group(const std::string& name) {
+netCDF::NcGroup& NetCDFOutput<ModelVariant>::create_group(const hstring& name) {
     auto group_it = groups.find(name);
     if (group_it == groups.end()) {
         group_it = groups.emplace(name, file->addGroup(name)).first;
@@ -180,27 +179,51 @@ void NetCDFOutput<ModelVariant>::internal_iterate_end() {
         meta->sizes[0] = 1;
         meta->nc_var.putVar(meta->index, meta->sizes, &var.second.data[0]);
     }
-    if (flush > 0) {
-        if ((model->timestep() % flush) == 0) {
-            file->sync();
+    if (flush_freq > 0) {
+        if ((model->timestep() % flush_freq) == 0) {
+            flush();
         }
     }
 }
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::internal_end() {
-    file->close();
-    file.reset();
+    if (file) {
+        file->close();
+        file.reset();
+    }
 }
 
 template<class ModelVariant>
 bool NetCDFOutput<ModelVariant>::internal_handle_event(typename ArrayOutput<ModelVariant>::Event& event) {
-#pragma omp critical(netcdf_event)
-    {
-        var_events.putVar({event_cnt}, &event);
-        event_cnt++;
-    }
+    netcdf_event_lock.call([&]() {
+                               var_events.putVar({event_cnt}, &event);
+                               ++event_cnt;
+                           });
     return false;
+}
+
+template<class ModelVariant>
+void NetCDFOutput<ModelVariant>::checkpoint_stop() {
+    if (file) {
+        file->close();
+        file.reset();
+    }
+}
+
+template<class ModelVariant>
+void NetCDFOutput<ModelVariant>::checkpoint_resume() {
+    file.reset(new netCDF::NcFile(filename, netCDF::NcFile::write, netCDF::NcFile::nc4));
+    if (!file) {
+        error("Could not open output file " << filename);
+    }
+}
+
+template<class ModelVariant>
+void NetCDFOutput<ModelVariant>::flush() {
+    if (file) {
+        file->sync();
+    }
 }
 
 template<class ModelVariant>

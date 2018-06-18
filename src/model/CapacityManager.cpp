@@ -34,7 +34,7 @@ CapacityManager<ModelVariant>::CapacityManager(Firm<ModelVariant>* firm_p, const
 template<class ModelVariant>
 const Flow CapacityManager<ModelVariant>::get_possible_production_X_hat() const {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    Ratio possible_production_capacity_p_hat = firm->forcing_lambda() * possible_overcapacity_ratio_beta;
+    Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
 
     for (const auto& is : firm->input_storages) {
         Ratio tmp = is->get_possible_use_U_hat() / is->initial_used_flow_U_star();

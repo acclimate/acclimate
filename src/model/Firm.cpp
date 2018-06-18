@@ -63,6 +63,7 @@ void Firm<ModelVariant>::iterate_consumption_and_production() {
     sales_manager->distribute(production_X_);
 }
 
+#ifdef VARIANT_PRICES
 template<>
 void Firm<VariantPrices>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -77,28 +78,33 @@ void Firm<VariantPrices>::iterate_consumption_and_production() {
     }
     sales_manager->distribute(production_X_);
 }
+#endif
 
+#ifdef VARIANT_BASIC
 template<>
 void Firm<VariantBasic>::iterate_expectation() {
     assertstep(EXPECTATION);
     sales_manager->iterate_expectation();
     for (const auto& is : input_storages) {
         is->set_desired_used_flow_U_tilde(round(capacity_manager->desired_production_X_tilde() * is->get_technology_coefficient_a()
-                                                * forcing_lambda_  // Consider forcing to avoid buying goods that cannot be used when production is limited
+                                                * forcing_  // Consider forcing to avoid buying goods that cannot be used when production is limited
                                                 ));
     }
 }
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Firm<VariantDemand>::iterate_expectation() {
     assertstep(EXPECTATION);
     sales_manager->iterate_expectation();
     for (const auto& is : input_storages) {
         is->set_desired_used_flow_U_tilde(round(capacity_manager->desired_production_X_tilde() * is->get_technology_coefficient_a()
-                                                * forcing_lambda_  // Consider forcing to avoid buying goods that cannot be used when production is limited
+                                                * forcing_  // Consider forcing to avoid buying goods that cannot be used when production is limited
                                                 ));
     }
 }
+#endif
 
 template<class ModelVariant>
 void Firm<ModelVariant>::iterate_expectation() {
@@ -189,8 +195,8 @@ void Firm<ModelVariant>::iterate_investment() {
 #ifdef DEBUG
 template<class ModelVariant>
 void Firm<ModelVariant>::print_details() const {
-    info(std::string(*this) << ": X_star= " << initial_production_X_star_.get_quantity() << ":");
-    for (auto it = input_storages.begin(); it != input_storages.end(); it++) {
+    info(id() << ": X_star= " << initial_production_X_star_.get_quantity() << ":");
+    for (auto it = input_storages.begin(); it != input_storages.end(); ++it) {
         (*it)->purchasing_manager->print_details();
     }
     sales_manager->print_details();

@@ -39,8 +39,9 @@ class Scenario;
 template<class ModelVariant>
 class NetCDFOutput : public ArrayOutput<ModelVariant> {
   public:
-    using Output<ModelVariant>::output_node;
+    using Output<ModelVariant>::id;
     using Output<ModelVariant>::model;
+    using Output<ModelVariant>::output_node;
     using Output<ModelVariant>::settings;
     using Output<ModelVariant>::scenario;
 
@@ -58,12 +59,14 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     netCDF::NcDim dim_time;
     netCDF::NcDim dim_sector;
     netCDF::NcDim dim_region;
-    std::unordered_map<std::string, netCDF::NcGroup> groups;
+    std::unordered_map<hstring::hash_type, netCDF::NcGroup> groups;
     std::unique_ptr<netCDF::NcFile> file;
     netCDF::NcVar var_events;
     netCDF::NcVar var_time_variable;
-    TimeStep flush;
+    TimeStep flush_freq;
     unsigned int event_cnt;
+    std::string filename;
+    OpenMPLock netcdf_event_lock;
 
   protected:
     void internal_write_header(tm* timestamp, int max_threads) override;
@@ -73,17 +76,20 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     void internal_iterate_end() override;
     void internal_start() override;
     void internal_end() override;
-    netCDF::NcGroup& create_group(const std::string& name);
-    void create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const std::string& path, const std::string& name) override;
+    netCDF::NcGroup& create_group(const hstring& name);
+    void create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) override;
     bool internal_handle_event(typename ArrayOutput<ModelVariant>::Event& event) override;
 
   public:
     NetCDFOutput(const settings::SettingsNode& settings_p,
                  Model<ModelVariant>* model_p,
                  Scenario<ModelVariant>* scenario_p,
-                 const settings::SettingsNode& output_node_p);
+                 settings::SettingsNode output_node_p);
     ~NetCDFOutput();
     void initialize() override;
+    void flush() override;
+    void checkpoint_stop() override;
+    void checkpoint_resume() override;
 };
 }  // namespace acclimate
 

@@ -36,13 +36,20 @@
 #include "output/JSONOutput.h"
 #include "output/NetCDFOutput.h"
 #include "output/Output.h"
+#include "output/ProgressOutput.h"
 #include "scenario/DirectPopulation.h"
+#include "scenario/EventSeriesScenario.h"
 #include "scenario/Flooding.h"
+#include "scenario/HeatLaborProductivity.h"
 #include "scenario/Hurricanes.h"
 #include "scenario/Scenario.h"
 #include "scenario/Taxes.h"
 #include "variants/ModelVariants.h"
 
+#ifdef ENABLE_DMTCP
+#include <dmtcp.h>
+#include <thread>
+#endif
 namespace acclimate {
 
 #ifdef FLOATING_POINT_EXCEPTIONS
@@ -70,7 +77,7 @@ static void handle_fpe_error(int sig) {
         warning_("FE_UNDERFLOW");
     }
 #ifdef FATAL_FLOATING_POINT_EXCEPTIONS
-    error("Floating point exception");
+    error_("Floating point exception");
 #endif
 }
 #endif
@@ -115,6 +122,10 @@ Acclimate::Run<ModelVariant>::Run() {
             scenario = new Hurricanes<ModelVariant>(settings, model);
         } else if (type == "direct_population") {
             scenario = new DirectPopulation<ModelVariant>(settings, model);
+        } else if (type == "heat_labor_productivity") {
+            scenario = new HeatLaborProductivity<ModelVariant>(settings, model);
+        } else if (type == "event_series") {
+            scenario = new EventSeriesScenario<ModelVariant>(settings, model);
         } else {
             error_("Unknown scenario type '" << type << "'");
         }
@@ -140,6 +151,8 @@ Acclimate::Run<ModelVariant>::Run() {
             output = new DamageOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "array") {
             output = new ArrayOutput<ModelVariant>(settings, model, scenario, node);
+        } else if (type == "progress") {
+            output = new ProgressOutput<ModelVariant>(settings, model, scenario, node);
         } else {
             error_("Unknown output format '" << type << "'");
         }
@@ -154,7 +167,7 @@ Acclimate::Run<ModelVariant>::Run() {
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::run() {
+int Acclimate::Run<ModelVariant>::run() {
     info_("Starting model run on max. " << Acclimate::instance()->thread_count() << " threads");
 
     Acclimate::instance()->step(IterationStep::INITIALIZATION);
@@ -167,9 +180,54 @@ void Acclimate::Run<ModelVariant>::run() {
     Acclimate::instance()->time_m = 0;
 
     Acclimate::instance()->step(IterationStep::SCENARIO);
+#ifdef ENABLE_DMTCP
+    auto dmtcp_timer = std::chrono::system_clock::now();
+    if (Acclimate::instance()->settings.has("checkpoint")) {
+        if (!dmtcp_is_enabled()) {
+            error_("dmtcp is not enabled");
+        }
+    }
+#else
+    if (Acclimate::instance()->settings.has("checkpoint")) {
+        error_("dmtcp is not available in this binary");
+    }
+#endif
     auto t0 = std::chrono::high_resolution_clock::now();
 
     while (scenario_m->iterate()) {
+#ifdef ENABLE_DMTCP
+        if (Acclimate::instance()->settings.has("checkpoint")) {
+            if (Acclimate::instance()->settings["checkpoint"].as<std::size_t>()
+                < std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - dmtcp_timer).count()) {
+                if (!dmtcp_is_enabled()) {
+                    error_("dmtcp is not enabled");
+                }
+                int original_generation = dmtcp_get_generation();
+                info_("Writing checkpoint");
+                for (const auto& output : outputs_m) {
+                    output->checkpoint_stop();
+                }
+                int retval = dmtcp_checkpoint();
+                if (retval == DMTCP_AFTER_CHECKPOINT) {
+                    do {
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                    } while (dmtcp_get_generation() == original_generation);
+                    return 7;
+                } else if (retval == DMTCP_AFTER_RESTART) {
+                    info_("Resuming from checkpoint");
+                    dmtcp_timer = std::chrono::system_clock::now();
+                    t0 = std::chrono::high_resolution_clock::now();
+                    for (const auto& output : outputs_m) {
+                        output->checkpoint_resume();
+                    }
+                } else if (retval == DMTCP_NOT_PRESENT) {
+                    error_("dmtcp not present");
+                } else {
+                    error_("unknown dmtcp result " << retval);
+                }
+            }
+        }
+#endif
         info_("Iteration started");
 
         model_m->switch_registers();
@@ -206,74 +264,80 @@ void Acclimate::Run<ModelVariant>::run() {
         model_m->tick();
         ++Acclimate::instance()->time_m;
     }
+    return 0;
 }
 
 template<class ModelVariant>
 void Acclimate::Run<ModelVariant>::cleanup() {
     Acclimate::instance()->step(IterationStep::CLEANUP);
-    scenario_m->end();
+    if (scenario_m) {
+        scenario_m->end();
+    }
     for (auto& output : outputs_m) {
         output->end();
     }
+    memory_cleanup();
+}
+
+template<class ModelVariant>
+void Acclimate::Run<ModelVariant>::memory_cleanup() {
     outputs_m.clear();
     scenario_m.reset();
     model_m.reset();
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::event(const EventType& type,
+void Acclimate::Run<ModelVariant>::event(EventType type,
                                          const Sector<ModelVariant>* sector_from,
                                          const Region<ModelVariant>* region_from,
                                          const Sector<ModelVariant>* sector_to,
                                          const Region<ModelVariant>* region_to,
-                                         const FloatType& value) {
-    info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : std::string(*sector_from))
-                                 << (sector_from != nullptr && region_from != nullptr ? ":" : "") << (region_from == nullptr ? "" : std::string(*region_from))
-                                 << "->" << (sector_to == nullptr ? "" : std::string(*sector_to)) << (sector_to != nullptr && region_to != nullptr ? ":" : "")
-                                 << (region_to == nullptr ? "" : std::string(*region_to))
-                                 << (std::isnan(value) ? "" : std::string(" = ") + std::to_string(value)));
+                                         FloatType value) {
+    info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
+                                 << (region_from == nullptr ? "" : region_from->id()) << "->" << (sector_to == nullptr ? "" : sector_to->id())
+                                 << (sector_to != nullptr && region_to != nullptr ? ":" : "") << (region_to == nullptr ? "" : region_to->id())
+                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, sector_from, region_from, sector_to, region_to, value);
     }
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::event(const EventType& type,
+void Acclimate::Run<ModelVariant>::event(EventType type,
                                          const Sector<ModelVariant>* sector_from,
                                          const Region<ModelVariant>* region_from,
                                          const EconomicAgent<ModelVariant>* economic_agent_to,
-                                         const FloatType& value) {
-    info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : std::string(*sector_from))
-                                 << (sector_from != nullptr && region_from != nullptr ? ":" : "") << (region_from == nullptr ? "" : std::string(*region_from))
-                                 << (economic_agent_to == nullptr ? "" : "->" + std::string(*economic_agent_to))
-                                 << (std::isnan(value) ? "" : std::string(" = ") + std::to_string(value)));
+                                         FloatType value) {
+    info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
+                                 << (region_from == nullptr ? "" : region_from->id()) << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
+                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, sector_from, region_from, economic_agent_to, value);
     }
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::event(const EventType& type,
+void Acclimate::Run<ModelVariant>::event(EventType type,
                                          const EconomicAgent<ModelVariant>* economic_agent_from,
                                          const EconomicAgent<ModelVariant>* economic_agent_to,
-                                         const FloatType& value) {
-    info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : std::string(*economic_agent_from))
-                                 << (economic_agent_to == nullptr ? "" : "->" + std::string(*economic_agent_to))
-                                 << (std::isnan(value) ? "" : std::string(" = ") + std::to_string(value)));
+                                         FloatType value) {
+    info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id())
+                                 << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
+                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, economic_agent_from, economic_agent_to, value);
     }
 }
 
 template<class ModelVariant>
-void Acclimate::Run<ModelVariant>::event(const EventType& type,
+void Acclimate::Run<ModelVariant>::event(EventType type,
                                          const EconomicAgent<ModelVariant>* economic_agent_from,
                                          const Sector<ModelVariant>* sector_to,
                                          const Region<ModelVariant>* region_to,
-                                         const FloatType& value) {
-    info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : std::string(*economic_agent_from) + "->")
-                                 << (sector_to == nullptr ? "" : std::string(*sector_to) + ":") << (region_to == nullptr ? "" : std::string(*region_to))
-                                 << (std::isnan(value) ? "" : std::string(" = ") + std::to_string(value)));
+                                         FloatType value) {
+    info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->")
+                                 << (sector_to == nullptr ? "" : sector_to->id() + ":") << (region_to == nullptr ? "" : region_to->id())
+                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, economic_agent_from, sector_to, region_to, value);
     }
@@ -281,7 +345,7 @@ void Acclimate::Run<ModelVariant>::event(const EventType& type,
 
 Acclimate* Acclimate::instance() { return instance_m.get(); }
 
-unsigned int Acclimate::thread_count() {
+unsigned int Acclimate::thread_count() const {
 #ifdef _OPENMP
     return omp_get_max_threads();
 #else
@@ -289,7 +353,8 @@ unsigned int Acclimate::thread_count() {
 #endif
 }
 
-std::string Acclimate::timeinfo() {
+#ifdef DEBUG
+std::string Acclimate::timeinfo() const {
     std::string res;
     if (step_m != IterationStep::INITIALIZATION) {
         res = std::to_string(time_m) + " ";
@@ -327,48 +392,90 @@ std::string Acclimate::timeinfo() {
     }
     return res;
 }
+#endif
 
 void Acclimate::initialize(const settings::SettingsNode& settings_p) {
     const std::string& variant = settings_p["variant"].as<std::string>();
     if (variant == "basic") {
+#ifdef VARIANT_BASIC
         instance_m.reset(new Acclimate(settings_p, ModelVariantType::BASIC));
         Acclimate::Run<VariantBasic>::initialize();
+#else
+        error_("Model variant '" << variant << "' not available in this binary");
+#endif
     } else if (variant == "demand") {
+#ifdef VARIANT_DEMAND
         instance_m.reset(new Acclimate(settings_p, ModelVariantType::DEMAND));
         Acclimate::Run<VariantDemand>::initialize();
+#else
+        error_("Model variant '" << variant << "' not available in this binary");
+#endif
     } else if (variant == "prices") {
+#ifdef VARIANT_PRICES
         instance_m.reset(new Acclimate(settings_p, ModelVariantType::PRICES));
         Acclimate::Run<VariantPrices>::initialize();
+#else
+        error_("Model variant '" << variant << "' not available in this binary");
+#endif
     } else {
         error_("Unknown model variant '" << variant << "'");
     }
 }
 
-void Acclimate::run() {
+int Acclimate::run() {
     switch (variant_m) {
+#ifdef VARIANT_BASIC
         case ModelVariantType::BASIC:
-            Acclimate::Run<VariantBasic>::instance()->run();
-            break;
+            return Acclimate::Run<VariantBasic>::instance()->run();
+#endif
+#ifdef VARIANT_DEMAND
         case ModelVariantType::DEMAND:
-            Acclimate::Run<VariantDemand>::instance()->run();
-            break;
+            return Acclimate::Run<VariantDemand>::instance()->run();
+#endif
+#ifdef VARIANT_PRICES
         case ModelVariantType::PRICES:
-            Acclimate::Run<VariantPrices>::instance()->run();
-            break;
+            return Acclimate::Run<VariantPrices>::instance()->run();
+#endif
     }
 }
 
 void Acclimate::cleanup() {
     switch (variant_m) {
+#ifdef VARIANT_BASIC
         case ModelVariantType::BASIC:
             Acclimate::Run<VariantBasic>::instance()->cleanup();
             break;
+#endif
+#ifdef VARIANT_DEMAND
         case ModelVariantType::DEMAND:
             Acclimate::Run<VariantDemand>::instance()->cleanup();
             break;
+#endif
+#ifdef VARIANT_PRICES
         case ModelVariantType::PRICES:
             Acclimate::Run<VariantPrices>::instance()->cleanup();
             break;
+#endif
+    }
+}
+
+void Acclimate::memory_cleanup() {
+    switch (variant_m) {
+#ifdef VARIANT_BASIC
+        case ModelVariantType::BASIC:
+            Acclimate::Run<VariantBasic>::instance()->memory_cleanup();
+            break;
+#endif
+#ifdef VARIANT_DEMAND
+        case ModelVariantType::DEMAND:
+            Acclimate::Run<VariantDemand>::instance()->memory_cleanup();
+            break;
+#endif
+#ifdef VARIANT_PRICES
+        case ModelVariantType::PRICES:
+            Acclimate::Run<VariantPrices>::instance()->memory_cleanup();
+            break;
+#endif
     }
 }
 

@@ -61,7 +61,7 @@ inline const Consumer<ModelVariant>* EconomicAgent<ModelVariant>::as_consumer() 
 template<class ModelVariant>
 Storage<ModelVariant>* EconomicAgent<ModelVariant>::find_input_storage(const std::string& sector_name) const {
     for (const auto& is : input_storages) {
-        if (std::string(*is->sector) == sector_name) {
+        if (is->sector->id() == sector_name) {
             return is.get();
         }
     }

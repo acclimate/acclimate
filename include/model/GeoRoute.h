@@ -32,7 +32,7 @@ template<class ModelVariant>
 class GeoRoute {
   public:
     std::vector<GeoEntity<ModelVariant>*> path;
-    operator std::string() const;
+    std::string id() const;
 };
 }  // namespace acclimate
 

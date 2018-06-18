@@ -41,5 +41,7 @@ void SalesManagerDemand<ModelVariant>::distribute(const Flow& production_X) {
     }
 }
 
+#ifdef VARIANT_DEMAND
 template class SalesManagerDemand<VariantDemand>;
+#endif
 }  // namespace acclimate

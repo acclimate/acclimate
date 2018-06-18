@@ -174,6 +174,12 @@ const FlowQuantity BusinessConnection<ModelVariant>::get_flow_deficit() const {
 template<class ModelVariant>
 const Flow BusinessConnection<ModelVariant>::get_total_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    return round(get_transport_flow() + last_delivery_Z_);
+}
+
+template<class ModelVariant>
+const Flow BusinessConnection<ModelVariant>::get_transport_flow() const {
+    assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink<ModelVariant>* link = first_transport_link.get();
     Flow res = Flow(0.0);
     while (link) {
@@ -207,6 +213,7 @@ FloatType BusinessConnection<ModelVariant>::get_stddeviation() const {
     return res;
 }
 
+#ifdef VARIANT_DEMAND
 template<>
 void BusinessConnection<VariantDemand>::calc_demand_fulfill_history() {
     assertstep(PURCHASE);
@@ -226,6 +233,7 @@ void BusinessConnection<VariantDemand>::calc_demand_fulfill_history() {
         Acclimate::Run<VariantDemand>::instance()->event(EventType::DEMAND_FULFILL_HISTORY_UNDERFLOW, seller->firm, buyer->storage->economic_agent);
     }
 }
+#endif
 
 INSTANTIATE_BASIC(BusinessConnection);
 }  // namespace acclimate

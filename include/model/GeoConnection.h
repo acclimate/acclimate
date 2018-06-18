@@ -35,12 +35,12 @@ class GeoConnection : public GeoEntity<ModelVariant> {
     enum class Type { ROAD, AVIATION, SEAROUTE, UNSPECIFIED };
 
   public:
-    const GeoLocation<ModelVariant>* location1; // TODO encapsulate
-    const GeoLocation<ModelVariant>* location2; // TODO encapsulate
+    const GeoLocation<ModelVariant>* location1;  // TODO encapsulate
+    const GeoLocation<ModelVariant>* location2;  // TODO encapsulate
     const Type type;
     GeoConnection<ModelVariant>(TransportDelay delay, Type type_p, const GeoLocation<ModelVariant>* location1_p, const GeoLocation<ModelVariant>* location2_p);
     void invalidate_location(const GeoLocation<ModelVariant>* location);
-    operator std::string() const { return (location1 ? std::string(*location1) : std::string("INVALID")) + "-" + (location2 ? std::string(*location2) : std::string("INVALID")); }
+    std::string id() const override { return (location1 ? location1->id() : "INVALID") + "-" + (location2 ? location2->id() : "INVALID"); }
 };
 }  // namespace acclimate
 

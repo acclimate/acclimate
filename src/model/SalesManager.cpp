@@ -37,8 +37,9 @@ template<class ModelVariant>
 void SalesManager<ModelVariant>::add_demand_request_D(const Demand& demand_request_D) {
     assertstep(PURCHASE);
     firm->sector->add_demand_request_D(demand_request_D);
-#pragma omp critical(sum_demand_requests_D_)
-    { sum_demand_requests_D_ += demand_request_D; }
+    sum_demand_requests_D_lock.call([&]() {
+                                        sum_demand_requests_D_ += demand_request_D;
+                                    });
 }
 
 template<class ModelVariant>
@@ -64,7 +65,7 @@ const Flow SalesManager<ModelVariant>::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
-        res += bc->get_total_flow();
+        res += bc->get_transport_flow();
     }
     return res;
 }
@@ -74,7 +75,7 @@ bool SalesManager<ModelVariant>::remove_business_connection(BusinessConnection<M
     auto it = std::find_if(business_connections.begin(), business_connections.end(),
                            [business_connection](const std::shared_ptr<BusinessConnection<ModelVariant>>& it) { return it.get() == business_connection; });
     if (it == std::end(business_connections)) {
-        error("Business connection " << std::string(*business_connection) << " not found");
+        error("Business connection " << business_connection->id() << " not found");
     }
     business_connections.erase(it);
 #ifdef DEBUG
@@ -98,7 +99,7 @@ template<class ModelVariant>
 void SalesManager<ModelVariant>::print_details() const {
     info(business_connections.size() << " outputs:");
     for (const auto& bc : business_connections) {
-        info("    " << std::string(*bc) << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
+        info("    " << bc->id() << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
     }
 }
 #endif

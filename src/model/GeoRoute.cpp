@@ -24,13 +24,13 @@
 namespace acclimate {
 
 template<class ModelVariant>
-GeoRoute<ModelVariant>::operator std::string() const {
+std::string GeoRoute<ModelVariant>::id() const {
     std::string res;
     for (std::size_t i = 0; i < path.size(); ++i) {
         if (i > 0) {
             res += "->";
         }
-        res += std::string(*path[i]);
+        res += path[i]->id();
     }
     return res;
 }

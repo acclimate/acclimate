@@ -23,52 +23,15 @@
 namespace acclimate {
 
 template<typename T>
-RasteredTimeData<T>::RasteredTimeData(const std::string& filename_p, const std::string& variable_name) : RasteredData<T>::RasteredData(filename_p) {
-    try {
-        file.reset(new netCDF::NcFile(filename, netCDF::NcFile::read, netCDF::NcFile::nc4));
-    } catch (netCDF::exceptions::NcException& ex) {
-        error("Could not open '" + filename + "'");
-    }
-    variable = file->getVar(variable_name);
+RasteredTimeData<T>::RasteredTimeData(const std::string& filename_p, const std::string& variable_name)
+    : RasteredData<T>::RasteredData(filename_p), ExternalForcing::ExternalForcing(filename_p, variable_name) {
     read_boundaries(file.get());
-    data = new T[y_count * x_count];
-    time_variable = file->getVar("time");
-    time_index_count = time_variable.getDim(0).getSize();
-    time_index = 0;
+    data.reset(new T[y_count * x_count]);
 }
 
 template<typename T>
-int RasteredTimeData<T>::next() {
-    if (time_index >= time_index_count) {
-        return -1;
-    }
-    variable.getVar({time_index, 0, 0}, {1, y_count, x_count}, data);
-    unsigned int day;
-    time_variable.getVar({time_index}, {1}, &day);
-    time_index++;
-    return day;
-}
-
-template<typename T>
-const std::string RasteredTimeData<T>::calendar_str() const {
-    try {
-        std::string res;
-        time_variable.getAtt("calendar").getValues(res);
-        return res;
-    } catch (netCDF::exceptions::NcException& e) {
-        error("Could not read calendar attribute in " << filename << ": " << e.what());
-    }
-}
-
-template<typename T>
-const std::string RasteredTimeData<T>::time_units_str() const {
-    try {
-        std::string res;
-        time_variable.getAtt("units").getValues(res);
-        return res;
-    } catch (netCDF::exceptions::NcException& e) {
-        error("Could not read time units attribute in " << filename << ": " << e.what());
-    }
+void RasteredTimeData<T>::read_data() {
+    variable.getVar({time_index, 0, 0}, {1, y_count, x_count}, data.get());
 }
 
 template class RasteredTimeData<int>;

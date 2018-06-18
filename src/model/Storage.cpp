@@ -65,6 +65,7 @@ Ratio Storage<ModelVariant>::get_input_share_u() const {
     return initial_input_flow_I_star_ / economic_agent->as_firm()->initial_total_use_U_star();
 }
 
+#ifdef VARIANT_PRICES
 template<>
 void Storage<VariantPrices>::calc_content_S() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -87,6 +88,7 @@ void Storage<VariantPrices>::calc_content_S() {
         Acclimate::Run<VariantPrices>::instance()->event(EventType::STORAGE_EMPTY, sector, nullptr, economic_agent);
     }
 }
+#endif
 
 template<class ModelVariant>
 void Storage<ModelVariant>::calc_content_S() {
@@ -128,8 +130,9 @@ void Storage<ModelVariant>::set_desired_used_flow_U_tilde(const Flow& desired_us
 template<class ModelVariant>
 void Storage<ModelVariant>::push_flow_Z(const Flow& flow_Z) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-#pragma omp critical(input_flow_I_)
-    { input_flow_I_[sector->model->current_register()] += flow_Z; }
+    input_flow_I_lock.call([&]() {
+                               input_flow_I_[sector->model->current_register()] += flow_Z;
+                           });
 }
 
 template<class ModelVariant>

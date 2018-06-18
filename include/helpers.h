@@ -25,6 +25,10 @@
 #include <iostream>
 #include <stdexcept>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 namespace acclimate {
 
 class exception : public std::runtime_error {
@@ -32,15 +36,43 @@ class exception : public std::runtime_error {
     explicit exception(const std::string& s) : std::runtime_error(s){};
 };
 
+class OpenMPLock {
+  protected:
+#ifdef _OPENMP
+    omp_lock_t lock;
+#endif
+  public:
+    OpenMPLock() {
+#ifdef _OPENMP
+        omp_init_lock(&lock);
+#endif
+    }
+    ~OpenMPLock() {
+#ifdef _OPENMP
+        omp_destroy_lock(&lock);
+#endif
+    }
+    template<typename Func>
+    inline void call(const Func& f) {
+#ifdef _OPENMP
+        omp_set_lock(&lock);
+#endif
+        f();
+#ifdef _OPENMP
+        omp_unset_lock(&lock);
+#endif
+    }
+};
+
 #define UNUSED(x) (void)(x)
 
 #undef assert
 #ifdef DEBUG
-#define error(a)                                                                                      \
-    {                                                                                                 \
-        std::ostringstream ss;                                                                        \
-        ss << std::string(*this) << " error: " << a << " (" << __FILE__ << ", l." << __LINE__ << ")"; \
-        throw acclimate::exception(ss.str());                                                         \
+#define error(a)                                                                        \
+    {                                                                                   \
+        std::ostringstream ss;                                                          \
+        ss << id() << " error: " << a << " (" << __FILE__ << ", l." << __LINE__ << ")"; \
+        throw acclimate::exception(ss.str());                                           \
     }
 #define error_(a)                                                              \
     {                                                                          \
@@ -54,33 +86,33 @@ class exception : public std::runtime_error {
         ss << "assertion failed: " << __STRING(expr) << " (" << __FILE__ << ", l." << __LINE__ << ")"; \
         throw acclimate::exception(ss.str());                                                          \
     }
-#define assert(expr)                                                                                                          \
-    if (!(expr)) {                                                                                                            \
-        std::ostringstream ss;                                                                                                \
-        ss << std::string(*this) << " assertion failed: " << __STRING(expr) << " (" << __FILE__ << ", l." << __LINE__ << ")"; \
-        throw acclimate::exception(ss.str());                                                                                 \
+#define assert(expr)                                                                                            \
+    if (!(expr)) {                                                                                              \
+        std::ostringstream ss;                                                                                  \
+        ss << id() << " assertion failed: " << __STRING(expr) << " (" << __FILE__ << ", l." << __LINE__ << ")"; \
+        throw acclimate::exception(ss.str());                                                                   \
     }
 #ifndef TEST
-#define assertstep(a)                                                                 \
-    if (Acclimate::instance()->step() != IterationStep::a) {                          \
-        std::ostringstream ss;                                                        \
-        ss << std::string(*this) << " error: should be in " << __STRING(a) << " step" \
-           << " (" << __FILE__ << ", l." << __LINE__ << ")";                          \
-        throw acclimate::exception(ss.str());                                         \
+#define assertstep(a)                                                   \
+    if (Acclimate::instance()->step() != IterationStep::a) {            \
+        std::ostringstream ss;                                          \
+        ss << id() << " error: should be in " << __STRING(a) << " step" \
+           << " (" << __FILE__ << ", l." << __LINE__ << ")";            \
+        throw acclimate::exception(ss.str());                           \
     }
 #define assertstepor(a, b)                                                                                        \
     if (Acclimate::instance()->step() != IterationStep::a && Acclimate::instance()->step() != IterationStep::b) { \
         std::ostringstream ss;                                                                                    \
-        ss << std::string(*this) << " error: should be in " << __STRING(a) << " or " << __STRING(b) << " step"    \
+        ss << id() << " error: should be in " << __STRING(a) << " or " << __STRING(b) << " step"                  \
            << " (" << __FILE__ << ", l." << __LINE__ << ")";                                                      \
         throw acclimate::exception(ss.str());                                                                     \
     }
-#define assertstepnot(a)                                                                  \
-    if (Acclimate::instance()->step() == IterationStep::a) {                              \
-        std::ostringstream ss;                                                            \
-        ss << std::string(*this) << " error: should NOT be in " << __STRING(a) << " step" \
-           << " (" << __FILE__ << ", l." << __LINE__ << ")";                              \
-        throw acclimate::exception(ss.str());                                             \
+#define assertstepnot(a)                                                    \
+    if (Acclimate::instance()->step() == IterationStep::a) {                \
+        std::ostringstream ss;                                              \
+        ss << id() << " error: should NOT be in " << __STRING(a) << " step" \
+           << " (" << __FILE__ << ", l." << __LINE__ << ")";                \
+        throw acclimate::exception(ss.str());                               \
     }
 #else
 #define assertstep(a) \
@@ -91,13 +123,11 @@ class exception : public std::runtime_error {
     {}
 #endif
 #define warning(a) \
-    _Pragma("omp critical (output)") { std::cout << Acclimate::instance()->timeinfo() << ", " << std::string(*this) << ": Warning: " << a << std::endl; }
+    _Pragma("omp critical (output)") { std::cout << Acclimate::instance()->timeinfo() << ", " << id() << ": Warning: " << a << std::endl; }
 #define info(a) \
-    _Pragma("omp critical (output)") { std::cout << Acclimate::instance()->timeinfo() << ", " << std::string(*this) << ": " << a << std::endl; }
-#define debug(a)                                                                                                                        \
-    _Pragma("omp critical (output)") {                                                                                                  \
-        std::cout << Acclimate::instance()->timeinfo() << ", " << std::string(*this) << ": " << __STRING(a) << " = " << a << std::endl; \
-    }
+    _Pragma("omp critical (output)") { std::cout << Acclimate::instance()->timeinfo() << ", " << id() << ": " << a << std::endl; }
+#define debug(a) \
+    _Pragma("omp critical (output)") { std::cout << Acclimate::instance()->timeinfo() << ", " << id() << ": " << __STRING(a) << " = " << a << std::endl; }
 #define warning_(a) \
     _Pragma("omp critical (output)") { std::cout << Acclimate::instance()->timeinfo() << ": Warning: " << a << std::endl; }
 #define info_(a) \

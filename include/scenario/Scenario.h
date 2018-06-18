@@ -50,9 +50,7 @@ class Scenario {
     virtual bool iterate();
     virtual std::string calendar_str() const { return "standard"; };
     virtual std::string time_units_str() const;
-#ifdef DEBUG
-    virtual inline explicit operator std::string() const { return "SCENARIO"; }
-#endif
+    virtual inline std::string id() const { return "SCENARIO"; }
 };
 }  // namespace acclimate
 

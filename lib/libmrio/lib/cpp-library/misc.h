@@ -5,6 +5,26 @@
 #ifndef MISC_H
 #define MISC_H
 
+template<typename Val>
+struct count_type {
+    template<typename... Args>
+    struct in : std::integral_constant<std::size_t, 0> {};
+    template<typename... Args>
+    struct in<Val, Args...> : std::integral_constant<std::size_t, 1 + in<Args...>::value> {};
+    template<typename NotVal, typename... Args>
+    struct in<NotVal, Args...> : std::integral_constant<std::size_t, in<Args...>::value> {};
+};
+
+template<typename Valtype, Valtype Val>
+struct count_value {
+    template<Valtype... Args>
+    struct in : std::integral_constant<std::size_t, 0> {};
+    template<Valtype... Args>
+    struct in<Val, Args...> : std::integral_constant<std::size_t, 1 + in<Args...>::value> {};
+    template<Valtype NotVal, Valtype... Args>
+    struct in<NotVal, Args...> : std::integral_constant<std::size_t, in<Args...>::value> {};
+};
+
 //
 // Scope exit helper
 // Call on scope exit (like finally)

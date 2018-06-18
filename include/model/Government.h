@@ -57,7 +57,7 @@ class Government {
     void iterate_purchase();
     void iterate_investment();
     void define_tax(const std::string& sector, const Ratio& tax_ratio_p);
-    inline operator std::string() const { return "GOVM:" + std::string(*region); }
+    inline std::string id() const { return "GOVM:" + region->id(); }
 };
 }  // namespace acclimate
 

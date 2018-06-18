@@ -29,10 +29,12 @@ PurchasingManagerBasic<ModelVariant>::PurchasingManagerBasic(Storage<ModelVarian
 
 template<class ModelVariant>
 void PurchasingManagerBasic<ModelVariant>::iterate_purchase() {
-    for (auto it = business_connections.begin(); it != business_connections.end(); it++) {
+    for (auto it = business_connections.begin(); it != business_connections.end(); ++it) {
         (*it)->send_demand_request_D((*it)->initial_flow_Z_star());
     }
 }
 
+#ifdef VARIANT_BASIC
 template class PurchasingManagerBasic<VariantBasic>;
+#endif
 }  // namespace acclimate

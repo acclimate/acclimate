@@ -27,6 +27,7 @@
 
 namespace acclimate {
 
+using hstring = settings::hstring;
 template<class ModelVariant>
 class Scenario;
 template<class ModelVariant>
@@ -66,10 +67,11 @@ class Output {
     bool write_region_parameter_variant(const Region<ModelVariant>* region, const settings::hstring& name);
     void write_sector_parameters(const Sector<ModelVariant>* sector, const settings::SettingsNode& parameters);
     bool write_sector_parameter_variant(const Sector<ModelVariant>* sector, const settings::hstring& name);
-    void internal_write_value(const std::string& name, const Stock& v);
-    void internal_write_value(const std::string& name, const Flow& v);
+    inline void internal_write_value(const hstring& name, const Stock& v);
+    inline void internal_write_value(const hstring& name, const Flow& v);
+    inline void internal_write_value(const hstring& name, FloatType v);
     template<int precision_digits_p>
-    inline void internal_write_value(const std::string& name, const Type<precision_digits_p>& v);
+    inline void internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix = hstring::null());
 
   protected:
     const settings::SettingsNode& settings;
@@ -85,43 +87,46 @@ class Output {
     virtual void internal_iterate_begin();
     virtual void internal_iterate_end();
     virtual void internal_end();
-    virtual void internal_write_value(const std::string& name, const FloatType& v);
-    virtual void internal_start_target(const std::string& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region);
-    virtual void internal_start_target(const std::string& name, Sector<ModelVariant>* sector);
-    virtual void internal_start_target(const std::string& name, Region<ModelVariant>* region);
-    virtual void internal_start_target(const std::string& name);
+    virtual void internal_write_value(const hstring& name, FloatType v, const hstring& suffix);
+    virtual void internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region);
+    virtual void internal_start_target(const hstring& name, Sector<ModelVariant>* sector);
+    virtual void internal_start_target(const hstring& name, Region<ModelVariant>* region);
+    virtual void internal_start_target(const hstring& name);
     virtual void internal_end_target();
 
   public:
     Model<ModelVariant>* const model;
     Scenario<ModelVariant>* const scenario;
-    Output(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p, Scenario<ModelVariant>* scenario_p, const settings::SettingsNode& output_node_p);
+    Output(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p, Scenario<ModelVariant>* scenario_p, settings::SettingsNode output_node_p);
     virtual void initialize() = 0;
-    virtual void event(const EventType& type,
+    virtual void event(EventType type,
                        const Sector<ModelVariant>* sector_from,
                        const Region<ModelVariant>* region_from,
                        const Sector<ModelVariant>* sector_to,
                        const Region<ModelVariant>* region_to,
-                       const FloatType& value);
-    virtual void event(const EventType& type,
+                       FloatType value);
+    virtual void event(EventType type,
                        const Sector<ModelVariant>* sector_from,
                        const Region<ModelVariant>* region_from,
                        const EconomicAgent<ModelVariant>* economic_agent_to,
-                       const FloatType& value);
-    virtual void event(const EventType& type,
+                       FloatType value);
+    virtual void event(EventType type,
                        const EconomicAgent<ModelVariant>* economic_agent_from,
                        const EconomicAgent<ModelVariant>* economic_agent_to,
-                       const FloatType& value);
-    virtual void event(const EventType& type,
+                       FloatType value);
+    virtual void event(EventType type,
                        const EconomicAgent<ModelVariant>* economic_agent_from,
                        const Sector<ModelVariant>* sector_to,
                        const Region<ModelVariant>* region_to,
-                       const FloatType& value);
+                       FloatType value);
     void start();
     void iterate();
     void end();
+    virtual void flush(){};
+    virtual void checkpoint_stop(){};
+    virtual void checkpoint_resume(){};
     virtual ~Output() = default;
-    virtual inline operator std::string() const { return "OUTPUT"; }
+    virtual inline std::string id() const { return "OUTPUT"; }
 };
 }  // namespace acclimate
 

@@ -31,8 +31,8 @@ template<class ModelVariant>
 HistogramOutput<ModelVariant>::HistogramOutput(const settings::SettingsNode& settings_p,
                                                Model<ModelVariant>* model_p,
                                                Scenario<ModelVariant>* scenario_p,
-                                               const settings::SettingsNode& output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, output_node_p) {
+                                               settings::SettingsNode output_node_p)
+    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)) {
     windows = 0;
     min = 0;
     max = 1;
@@ -82,7 +82,7 @@ void HistogramOutput<ModelVariant>::internal_iterate_begin() {
 
 template<class ModelVariant>
 void HistogramOutput<ModelVariant>::internal_iterate_end() {
-    for (std::size_t i = 0; i < windows; i++) {
+    for (std::size_t i = 0; i < windows; ++i) {
         file << model->time() << " " << (min + i * (max - min) / (windows - 1)) << " " << count[i] << "\n";
     }
     file << "\n";
@@ -94,10 +94,11 @@ void HistogramOutput<ModelVariant>::internal_end() {
 }
 
 template<class ModelVariant>
-void HistogramOutput<ModelVariant>::internal_write_value(const std::string& name, const FloatType& v) {
+void HistogramOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     UNUSED(name);
+    UNUSED(suffix);
     if (v >= min && (v < max || !exclude_max)) {
-        count[iround((v - min) * (windows - 1) / (max - min))]++;
+        ++count[iround((v - min) * (windows - 1) / (max - min))];
     }
 }
 

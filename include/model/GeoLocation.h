@@ -39,13 +39,13 @@ class GeoLocation : public GeoEntity<ModelVariant> {
 
   protected:
     std::unique_ptr<GeoPoint> centroid_m;
-    const std::string name_m;
+    const std::string id_m;
 
   public:
     std::vector<std::shared_ptr<GeoConnection<ModelVariant>>> connections;
     const Type type;
 
-    GeoLocation(TransportDelay delay_p, Type type_p, std::string name_p);
+    GeoLocation(TransportDelay delay_p, Type type_p, std::string id_p);
     virtual ~GeoLocation();
     virtual inline Region<ModelVariant>* as_region() {
         assert(type == Type::REGION);
@@ -59,9 +59,9 @@ class GeoLocation : public GeoEntity<ModelVariant> {
         assertstep(INITIALIZATION);
         return centroid_m.reset(centroid_p.release());
     }
-    const GeoPoint* centroid() const { return centroid_m.get(); };
+    const GeoPoint* centroid() const { return centroid_m.get(); }
     void remove_connection(const GeoConnection<ModelVariant>* connection);
-    operator std::string() const { return name_m; }
+    inline std::string id() const override { return id_m; }
 };
 }  // namespace acclimate
 

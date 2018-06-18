@@ -31,6 +31,7 @@ namespace acclimate {
 
 template<class ModelVariant>
 class Model;
+
 template<class ModelVariant>
 class Sector;
 
@@ -44,13 +45,20 @@ class Region : public GeoLocation<ModelVariant> {
     void iterate_purchase_variant();
     void iterate_investment_variant();
 
+  public:
+    using GeoLocation<ModelVariant>::connections;
+
   protected:
     Flow export_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
+    OpenMPLock export_flow_Z_lock;
     Flow import_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
+    OpenMPLock import_flow_Z_lock;
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
+    OpenMPLock consumption_flow_Y_lock;
     std::unique_ptr<Government<ModelVariant>> government_;
     const IntType index_;
     typename ModelVariant::RegionParameters parameters_;
+    OpenMPLock economic_agents_lock;
 
     struct route_hash {
         std::size_t operator()(const std::pair<IntType, typename Sector<ModelVariant>::TransportType>& p) const {
@@ -64,6 +72,8 @@ class Region : public GeoLocation<ModelVariant> {
     std::vector<std::unique_ptr<EconomicAgent<ModelVariant>>> economic_agents;
     std::unordered_map<std::pair<IntType, typename Sector<ModelVariant>::TransportType>, GeoRoute<ModelVariant>, route_hash> routes;
 
+  public:
+    using GeoLocation<ModelVariant>::id;
     Region<ModelVariant>* as_region() override;
     const Region<ModelVariant>* as_region() const override;
     inline const Flow& consumption_C() const {
@@ -94,11 +104,12 @@ class Region : public GeoLocation<ModelVariant> {
         assertstep(INITIALIZATION);
         return parameters_;
     };
+
     inline IntType index() const { return index_; };
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);
     void add_consumption_flow_Y(const Flow& consumption_flow_Y_p);
-    const Flow get_gdp() const;
+    Flow get_gdp() const;
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();

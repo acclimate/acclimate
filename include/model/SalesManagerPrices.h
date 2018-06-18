@@ -40,8 +40,9 @@ struct SupplyParameters {
 template<class ModelVariant>
 class SalesManagerPrices : public SalesManager<ModelVariant> {
   public:
-    using SalesManager<ModelVariant>::firm;
     using SalesManager<ModelVariant>::business_connections;
+    using SalesManager<ModelVariant>::firm;
+    using SalesManager<ModelVariant>::id;
 
   protected:
     using SalesManager<ModelVariant>::sum_demand_requests_D_;

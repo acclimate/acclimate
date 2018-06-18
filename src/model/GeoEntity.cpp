@@ -30,7 +30,7 @@ GeoEntity<ModelVariant>::GeoEntity(TransportDelay delay_p, Type type_p) : delay(
 
 template<class ModelVariant>
 void GeoEntity<ModelVariant>::set_forcing_nu(Forcing forcing_nu_p) {
-    for (std::size_t i = 0; i < transport_chain_links.size(); i++) {
+    for (std::size_t i = 0; i < transport_chain_links.size(); ++i) {
         transport_chain_links[i]->set_forcing_nu(forcing_nu_p);
     }
 }
@@ -47,7 +47,7 @@ void GeoEntity<ModelVariant>::remove_transport_chain_link(TransportChainLink<Mod
     auto it = std::find_if(transport_chain_links.begin(), transport_chain_links.end(),
                            [transport_chain_link](const TransportChainLink<ModelVariant>* it) { return it == transport_chain_link; });
     if (it == std::end(transport_chain_links)) {
-        error("Transport chain link " << std::string(*transport_chain_link) << " not found");
+        error("Transport chain link " << transport_chain_link->id() << " not found");
     }
     transport_chain_links.erase(it);
 }

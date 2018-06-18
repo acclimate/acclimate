@@ -30,8 +30,8 @@ template<class ModelVariant>
 GnuplotOutput<ModelVariant>::GnuplotOutput(const settings::SettingsNode& settings_p,
                                            Model<ModelVariant>* model_p,
                                            Scenario<ModelVariant>* scenario_p,
-                                           const settings::SettingsNode& output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, output_node_p) {}
+                                           settings::SettingsNode output_node_p)
+    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
 
 template<class ModelVariant>
 void GnuplotOutput<ModelVariant>::initialize() {
@@ -74,16 +74,16 @@ void GnuplotOutput<ModelVariant>::internal_end() {
 template<class ModelVariant>
 void GnuplotOutput<ModelVariant>::internal_start() {
     file << "# Sectors:\n# set ytics (";
-    for (std::size_t i = 0; i < model->sectors.size(); i++) {
-        file << "\"" << std::string(*model->sectors[i]) << "\" " << i;
+    for (std::size_t i = 0; i < model->sectors.size(); ++i) {
+        file << "\"" << model->sectors[i]->id() << "\" " << i;
         if (i < model->sectors.size() - 1) {
             file << ", ";
         }
         sector_index.emplace(model->sectors[i].get(), i);
     }
     file << ")\n# Regions:\n# set ytics (";
-    for (std::size_t i = 0; i < model->regions.size(); i++) {
-        file << "\"" << std::string(*model->regions[i]) << "\" " << i;
+    for (std::size_t i = 0; i < model->regions.size(); ++i) {
+        file << "\"" << model->regions[i]->id() << "\" " << i;
         if (i < model->regions.size() - 1) {
             file << ", ";
         }
@@ -93,10 +93,11 @@ void GnuplotOutput<ModelVariant>::internal_start() {
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_write_value(const std::string& name, const FloatType& v) {
+void GnuplotOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     UNUSED(name);
+    UNUSED(suffix);
     file << model->time() << " ";
-    for (auto it = stack.begin(); it != stack.end(); it++) {
+    for (auto it = stack.begin(); it != stack.end(); ++it) {
         if (it->region >= 0) {
             if (it->sector >= 0) {
                 file << it->sector << " " << it->region << " ";
@@ -113,7 +114,7 @@ void GnuplotOutput<ModelVariant>::internal_write_value(const std::string& name, 
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
     UNUSED(name);
     Target t;
     t.sector = sector_index[sector];
@@ -122,7 +123,7 @@ void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name,
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name, Sector<ModelVariant>* sector) {
+void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector) {
     UNUSED(name);
     Target t;
     t.sector = sector_index[sector];
@@ -131,7 +132,7 @@ void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name,
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name, Region<ModelVariant>* region) {
+void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Region<ModelVariant>* region) {
     UNUSED(name);
     Target t;
     t.sector = -1;
@@ -140,7 +141,7 @@ void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name,
 }
 
 template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const std::string& name) {
+void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name) {
     UNUSED(name);
     Target t;
     t.sector = -1;

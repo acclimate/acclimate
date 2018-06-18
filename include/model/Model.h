@@ -46,6 +46,10 @@ class Model {
         const Region<ModelVariant>* region_to;
         FloatType value;
     };
+    std::vector<std::unique_ptr<Sector<ModelVariant>>> sectors;
+    std::vector<std::unique_ptr<Region<ModelVariant>>> regions;
+    std::vector<std::unique_ptr<GeoLocation<ModelVariant>>> other_locations;
+    Sector<ModelVariant>* const consumption_sector;
 
   private:
     Time time_ = Time(0.0);
@@ -56,11 +60,39 @@ class Model {
     bool no_self_supply_ = false;
 
   public:
-    std::vector<std::unique_ptr<Sector<ModelVariant>>> sectors;
-    std::vector<std::unique_ptr<Region<ModelVariant>>> regions;
-    std::vector<std::unique_ptr<GeoLocation<ModelVariant>>> other_locations;
-    Sector<ModelVariant>* const consumption_sector;
-
+    inline const Time& time() const { return time_; };
+    inline const TimeStep& timestep() const { return timestep_; };
+    inline void switch_registers() {
+        assertstep(SCENARIO);
+        current_register_ = 1 - current_register_;
+    }
+    inline void tick() {
+        assertstep(SCENARIO);
+        time_ += delta_t_;
+        ++timestep_;
+    }
+    inline const Time& delta_t() const { return delta_t_; }
+    inline void delta_t(const Time& delta_t_p) {
+        assertstep(INITIALIZATION);
+        delta_t_ = delta_t_p;
+    }
+    inline const bool& no_self_supply() const { return no_self_supply_; }
+    inline void no_self_supply(bool no_self_supply_p) {
+        assertstep(INITIALIZATION);
+        no_self_supply_ = no_self_supply_p;
+    }
+    inline const unsigned char& current_register() const { return current_register_; };
+    inline unsigned char other_register() const { return 1 - current_register_; };
+    inline const typename ModelVariant::ModelParameters& parameters() const { return parameters_; };
+    inline typename ModelVariant::ModelParameters& parameters_writable() {
+        assertstep(INITIALIZATION);
+        return parameters_;
+    }
+    Region<ModelVariant>* add_region(std::string name);
+    Sector<ModelVariant>* add_sector(std::string name,
+                                     const Ratio& upper_storage_limit_omega_p,
+                                     const Time& initial_storage_fill_factor_psi_p,
+                                     typename Sector<ModelVariant>::TransportType transport_type_p);
     Model();
     void start(const Time& start_time);
     void iterate_consumption_and_production();
@@ -74,41 +106,7 @@ class Model {
     Consumer<ModelVariant>* find_consumer(Region<ModelVariant>* region) const;
     Consumer<ModelVariant>* find_consumer(const std::string& region_name) const;
     GeoLocation<ModelVariant>* find_location(const std::string& name) const;
-
-    Region<ModelVariant>* add_region(std::string name);
-    Sector<ModelVariant>* add_sector(std::string name,
-                                     const Ratio& upper_storage_limit_omega_p,
-                                     const Time& initial_storage_fill_factor_psi_p,
-                                     typename Sector<ModelVariant>::TransportType transport_type_p);
-    inline const Time& time() const { return time_; };
-    inline const TimeStep& timestep() const { return timestep_; };
-    inline void switch_registers() {
-        assertstep(SCENARIO);
-        current_register_ = 1 - current_register_;
-    }
-    inline void tick() {
-        assertstep(SCENARIO);
-        time_ += delta_t_;
-        timestep_++;
-    }
-    inline const Time& delta_t() const { return delta_t_; };
-    inline void delta_t(const Time& delta_t_p) {
-        assertstep(INITIALIZATION);
-        delta_t_ = delta_t_p;
-    };
-    inline const bool& no_self_supply() const { return no_self_supply_; };
-    inline void no_self_supply(bool no_self_supply_p) {
-        assertstep(INITIALIZATION);
-        no_self_supply_ = no_self_supply_p;
-    };
-    inline const unsigned char& current_register() const { return current_register_; };
-    inline unsigned char other_register() const { return 1 - current_register_; };
-    inline const typename ModelVariant::ModelParameters& parameters() const { return parameters_; };
-    inline typename ModelVariant::ModelParameters& parameters_writable() {
-        assertstep(INITIALIZATION);
-        return parameters_;
-    };
-    inline operator std::string() const { return "MODEL"; }
+    inline std::string id() const { return "MODEL"; }
 };
 }  // namespace acclimate
 

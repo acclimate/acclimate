@@ -38,7 +38,7 @@ PurchasingManagerPrices<ModelVariant>::PurchasingManagerPrices(Storage<ModelVari
 
 template<class ModelVariant>
 FloatType PurchasingManagerPrices<ModelVariant>::estimate_production_extension_penalty(const BusinessConnection<ModelVariant>* bc,
-                                                                                       const FloatType production_quantity_X) const {
+                                                                                       FloatType production_quantity_X) const {
     assert(production_quantity_X >= 0.0);
     if (production_quantity_X <= bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float()) {  // not in production extension
         return 0.0;
@@ -52,8 +52,8 @@ FloatType PurchasingManagerPrices<ModelVariant>::estimate_production_extension_p
 
 template<class ModelVariant>
 FloatType PurchasingManagerPrices<ModelVariant>::estimate_marginal_production_costs(const BusinessConnection<ModelVariant>* bc,
-                                                                                    const FloatType production_quantity_X,
-                                                                                    const FloatType unit_production_costs_n_c) const {
+                                                                                    FloatType production_quantity_X,
+                                                                                    FloatType unit_production_costs_n_c) const {
     assert(production_quantity_X >= 0.0);
     assert(!std::isnan(unit_production_costs_n_c));
     if (production_quantity_X <= bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float()) {  // not in production extension
@@ -65,7 +65,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::estimate_marginal_production_co
 
 template<class ModelVariant>
 FloatType PurchasingManagerPrices<ModelVariant>::estimate_marginal_production_extension_penalty(const BusinessConnection<ModelVariant>* bc,
-                                                                                                const FloatType production_quantity_X) const {
+                                                                                                FloatType production_quantity_X) const {
     assert(production_quantity_X >= 0.0);
     if (production_quantity_X <= bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float()) {  // not in production extension
         return 0.0;
@@ -77,12 +77,12 @@ FloatType PurchasingManagerPrices<ModelVariant>::estimate_marginal_production_ex
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_D_r(const FloatType D_r, const BusinessConnection<ModelVariant>* bc) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_D_r(FloatType D_r, const BusinessConnection<ModelVariant>* bc) const {
     return D_r / partial_D_r_scaled_D_r(bc);
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_D_r(const FloatType x, const BusinessConnection<ModelVariant>* bc) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_D_r(FloatType x, const BusinessConnection<ModelVariant>* bc) const {
     return x * partial_D_r_scaled_D_r(bc);
 }
 
@@ -92,12 +92,12 @@ inline FloatType PurchasingManagerPrices<ModelVariant>::partial_D_r_scaled_D_r(c
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_objective(const FloatType obj) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_objective(FloatType obj) const {
     return obj / partial_objective_scaled_objective();
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_objective(const FloatType x) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_objective(FloatType x) const {
     return x * partial_objective_scaled_objective();
 }
 
@@ -107,12 +107,12 @@ inline FloatType PurchasingManagerPrices<ModelVariant>::partial_objective_scaled
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_use(const FloatType use) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::scaled_use(FloatType use) const {
     return use / partial_use_scaled_use();
 }
 
 template<class ModelVariant>
-inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_use(const FloatType x) const {
+inline FloatType PurchasingManagerPrices<ModelVariant>::unscaled_use(FloatType x) const {
     return x * partial_use_scaled_use();
 }
 
@@ -126,7 +126,7 @@ void PurchasingManagerPrices<ModelVariant>::calc_desired_purchase(const Optimize
     Quantity S_shortage = data->transport_flow_deficit * storage->sector->model->delta_t()
                           + (storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity());
     FlowQuantity maximal_possible_purchase = FlowQuantity(0.0);
-    for (std::size_t r = 0; r < data->business_connections.size(); r++) {
+    for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
         FlowQuantity D_r_max = FlowQuantity(unscaled_D_r(data->upper_bounds[r], data->business_connections[r]));
         assert(!isnan(D_r_max));
         maximal_possible_purchase += D_r_max;
@@ -149,17 +149,17 @@ FloatType PurchasingManagerPrices<ModelVariant>::purchase_constraint(const Float
 #endif
         // has to be in the form g(D_r) <= 0
         FloatType use = 0.0;
-        for (unsigned int r = 0; r < data->business_connections.size(); r++) {
+        for (unsigned int r = 0; r < data->business_connections.size(); ++r) {
             FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
             assert(!std::isnan(D_r));
             use += D_r;
         }
         if (grad != nullptr) {
-            for (unsigned int r = 0; r < data->business_connections.size(); r++) {
+            for (unsigned int r = 0; r < data->business_connections.size(); ++r) {
                 grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r]) * 1.0 / partial_use_scaled_use();
 #ifdef OPTIMIZATION_WARNINGS
                 if (grad[r] > MAX_GRADIENT) {
-                    warning(string(*data->business_connections[r]) << ": large gradient of " << grad[r]);
+                    warning(data->business_connections[r]->id() << ": large gradient of " << grad[r]);
                 }
 #endif
             }
@@ -180,7 +180,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
 #endif
         FloatType costs = 0.0;
         FloatType purchase = 0.0;
-        for (std::size_t r = 0; r < data->business_connections.size(); r++) {
+        for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
             FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
             assert(!std::isnan(D_r));
             costs += n_r(D_r, data->business_connections[r]) * D_r + transport_penalty(D_r, data->business_connections[r]);
@@ -197,7 +197,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
             costs -= std::abs(partial_correction * correction);
         }
         if (grad != nullptr) {
-            for (std::size_t r = 0; r < data->business_connections.size(); r++) {
+            for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
                 FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
                 grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r])
                           * (grad_n_r(D_r, data->business_connections[r]) * D_r + n_r(D_r, data->business_connections[r]) - partial_correction
@@ -205,7 +205,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
                           / partial_objective_scaled_objective();
 #ifdef OPTIMIZATION_WARNINGS
                 if (grad[r] > MAX_GRADIENT) {
-                    warning(string(*data->business_connections[r]) << ": large gradient of " << grad[r]);
+                    warning(data->business_connections[r]->id() << ": large gradient of " << grad[r]);
                 }
 #endif
             }
@@ -220,7 +220,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::expected_average_price_E_n_r(const FloatType& D_r,
+FloatType PurchasingManagerPrices<ModelVariant>::expected_average_price_E_n_r(FloatType D_r,
                                                                               const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
@@ -267,7 +267,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::expected_average_price_E_n_r(co
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::n_r(const FloatType& D_r, const BusinessConnection<ModelVariant>* business_connection) const {
+FloatType PurchasingManagerPrices<ModelVariant>::n_r(FloatType D_r, const BusinessConnection<ModelVariant>* business_connection) const {
     assert(D_r >= 0.0);
     FloatType n_bar = to_float(business_connection->seller->communicated_parameters().offer_price_n_bar);
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
@@ -305,7 +305,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::n_r(const FloatType& D_r, const
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::grad_expected_average_price_E_n_r(const FloatType& D_r,
+FloatType PurchasingManagerPrices<ModelVariant>::grad_expected_average_price_E_n_r(FloatType D_r,
                                                                                    const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
@@ -331,8 +331,8 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_expected_average_price_E_n
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::calc_n_co(const FloatType& n_bar_min,
-                                                           const FloatType& D_r_min,
+FloatType PurchasingManagerPrices<ModelVariant>::calc_n_co(FloatType n_bar_min,
+                                                           FloatType D_r_min,
                                                            const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType n_co =
         estimate_marginal_production_costs(business_connection, to_float(business_connection->seller->communicated_parameters().production_X.get_quantity()),
@@ -345,7 +345,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::calc_n_co(const FloatType& n_ba
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::grad_n_r(const FloatType& D_r, const BusinessConnection<ModelVariant>* business_connection) const {
+FloatType PurchasingManagerPrices<ModelVariant>::grad_n_r(FloatType D_r, const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType n_bar = to_float(business_connection->seller->communicated_parameters().offer_price_n_bar);
     FloatType X =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;
@@ -381,7 +381,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_n_r(const FloatType& D_r, 
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::transport_penalty(const FloatType& D_r, const BusinessConnection<ModelVariant>* business_connection) const {
+FloatType PurchasingManagerPrices<ModelVariant>::transport_penalty(FloatType D_r, const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType target = 0.0;
     if (storage->sector->model->parameters().deviation_penalty) {
         target = to_float(business_connection->last_demand_request_D(this).get_quantity());
@@ -413,7 +413,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::transport_penalty(const FloatTy
 }
 
 template<class ModelVariant>
-FloatType PurchasingManagerPrices<ModelVariant>::partial_D_r_transport_penalty(const FloatType& D_r,
+FloatType PurchasingManagerPrices<ModelVariant>::partial_D_r_transport_penalty(FloatType D_r,
                                                                                const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType target = 0.0;
     if (storage->sector->model->parameters().deviation_penalty) {
@@ -505,7 +505,7 @@ void PurchasingManagerPrices<ModelVariant>::iterate_purchase() {
         FloatType costs = 0.0;
         FloatType use = 0.0;
         // distribute demand requests
-        for (std::size_t r = 0; r < data.business_connections.size(); r++) {
+        for (std::size_t r = 0; r < data.business_connections.size(); ++r) {
             FloatType D_r;
             D_r = unscaled_D_r(demand_requests_D[r], data.business_connections[r]);
             Demand demand_request_D = Demand(FlowQuantity(D_r), FlowValue(D_r));
@@ -514,12 +514,12 @@ void PurchasingManagerPrices<ModelVariant>::iterate_purchase() {
 
 #ifdef OPTIMIZATION_WARNINGS
             if (round(demand_request_D.get_quantity()) > round(FlowQuantity(unscaled_D_r(data.upper_bounds[r], data.business_connections[r])))) {
-                warning(string(*data.business_connections[r])
+                warning(data.business_connections[r]->id()
                         << ": upper limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_max: " << data.upper_bounds[r]
                         << " D_star: " << data.business_connections[r]->initial_flow_Z_star().get_quantity());
             }
             if (round(demand_request_D.get_quantity()) < round(FlowQuantity(unscaled_D_r(data.lower_bounds[r], data.business_connections[r])))) {
-                warning(string(*data.business_connections[r])
+                warning(data.business_connections[r]->id()
                         << ": lower limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_min: " << data.lower_bounds[r]
                         << " D_star: " << data.business_connections[r]->initial_flow_Z_star().get_quantity());
             }
@@ -585,7 +585,7 @@ void PurchasingManagerPrices<ModelVariant>::optimize_purchase(std::vector<FloatT
         nlopt::opt opt(static_cast<nlopt::algorithm>(storage->sector->model->parameters().optimization_algorithm), dimensions_optimization_problem);
 
         std::vector<FloatType> xtol_abs(data_p.business_connections.size());
-        for (unsigned int i = 0; i < data_p.business_connections.size(); i++) {
+        for (unsigned int i = 0; i < data_p.business_connections.size(); ++i) {
             xtol_abs[i] = scaled_D_r(FlowQuantity::precision, data_p.business_connections[i]);
         }
 
@@ -732,8 +732,7 @@ void PurchasingManagerPrices<ModelVariant>::print_distribution(const FloatType d
     {
         std::vector<FloatType> demand_requests_D(data->business_connections.size());
         std::copy(demand_requests_D_p, demand_requests_D_p + data->business_connections.size(), std::begin(demand_requests_D));
-        std::cout << Acclimate::instance()->timeinfo() << ", " << std::string(*this) << ": demand distribution for " << data->business_connections.size()
-                  << " inputs :\n";
+        std::cout << Acclimate::instance()->timeinfo() << ", " << id() << ": demand distribution for " << data->business_connections.size() << " inputs :\n";
         FloatType purchasing_quantity = 0.0;
         FloatType purchasing_value = 0.0;
         FloatType initial_sum = 0.0;
@@ -744,7 +743,7 @@ void PurchasingManagerPrices<ModelVariant>::print_distribution(const FloatType d
         obj = objective_costs(&demand_requests_D[0], &grad[0], data);
         FloatType total_upper_bound = 0.0;
         FloatType T_penalty = 0.0;
-        for (std::size_t r = 0; r < data->business_connections.size(); r++) {
+        for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
             FloatType D_r = unscaled_D_r(demand_requests_D[r], data->business_connections[r]);
             FloatType lower_bound_D_r = unscaled_D_r(data->lower_bounds[r], data->business_connections[r]);
             FloatType upper_bound_D_r = unscaled_D_r(data->upper_bounds[r], data->business_connections[r]);
@@ -764,7 +763,7 @@ void PurchasingManagerPrices<ModelVariant>::print_distribution(const FloatType d
 #else
             if (connection_details) {
 #endif
-                std::cout << "      " << std::string(*data->business_connections[r]) << " :\n"
+                std::cout << "      " << data->business_connections[r]->id() << " :\n"
                           << PRINT_ROW1("X", FlowQuantity(X)) << PRINT_ROW1("X_star", FlowQuantity(X_star)) << PRINT_ROW1("X_hat", FlowQuantity(X_hat))
                           << PRINT_ROW1("n_bar", FlowQuantity(n_bar)) << PRINT_ROW1("n_r(D_r)", FlowQuantity(n_r_l))
                           << PRINT_ROW2("penalty_t", FlowQuantity(n_r_tc_l), scaled_objective(n_r_tc_l))

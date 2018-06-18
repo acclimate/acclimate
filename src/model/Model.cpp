@@ -103,7 +103,7 @@ void Model<ModelVariant>::iterate_investment() {
 
 template<class ModelVariant>
 Region<ModelVariant>* Model<ModelVariant>::find_region(const std::string& name) const {
-    auto it = std::find_if(regions.begin(), regions.end(), [name](const std::unique_ptr<Region<ModelVariant>>& it) { return std::string(*it) == name; });
+    auto it = std::find_if(regions.begin(), regions.end(), [name](const std::unique_ptr<Region<ModelVariant>>& it) { return it->id() == name; });
     if (it == regions.end()) {
         return nullptr;
     }
@@ -112,7 +112,7 @@ Region<ModelVariant>* Model<ModelVariant>::find_region(const std::string& name) 
 
 template<class ModelVariant>
 Sector<ModelVariant>* Model<ModelVariant>::find_sector(const std::string& name) const {
-    auto it = std::find_if(sectors.begin(), sectors.end(), [name](const std::unique_ptr<Sector<ModelVariant>>& it) { return std::string(*it) == name; });
+    auto it = std::find_if(sectors.begin(), sectors.end(), [name](const std::unique_ptr<Sector<ModelVariant>>& it) { return it->id() == name; });
     if (it == sectors.end()) {
         return nullptr;
     }
@@ -131,7 +131,7 @@ Firm<ModelVariant>* Model<ModelVariant>::find_firm(const std::string& sector_nam
 template<class ModelVariant>
 Firm<ModelVariant>* Model<ModelVariant>::find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const {
     auto it = std::find_if(sector->firms.begin(), sector->firms.end(),
-                           [region_name](const Firm<ModelVariant>* it) { return std::string(*it->region) == region_name; });
+                           [region_name](const Firm<ModelVariant>* it) { return it->region->id() == region_name; });
     if (it == sector->firms.end()) {
         return nullptr;
     }
@@ -160,7 +160,7 @@ Consumer<ModelVariant>* Model<ModelVariant>::find_consumer(const std::string& re
 template<class ModelVariant>
 GeoLocation<ModelVariant>* Model<ModelVariant>::find_location(const std::string& name) const {
     auto it = std::find_if(other_locations.begin(), other_locations.end(),
-                           [name](const std::unique_ptr<GeoLocation<ModelVariant>>& it) { return std::string(*it) == name; });
+                           [name](const std::unique_ptr<GeoLocation<ModelVariant>>& it) { return it->id() == name; });
     if (it == other_locations.end()) {
         return nullptr;
     }

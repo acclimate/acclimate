@@ -60,13 +60,14 @@ class Sector {
     }
 
   protected:
-    const std::string name;
     const IntType index_;
+    const std::string id_;
     Demand total_demand_D_ = Demand(0.0);
+    OpenMPLock total_demand_D_lock;
     Flow total_production_X_ = Flow(0.0);
+    OpenMPLock total_production_X_lock;
     Flow last_total_production_X_ = Flow(0.0);
     typename ModelVariant::SectorParameters parameters_;
-
     Sector(Model<ModelVariant>* model_p,
            std::string name_p,
            const IntType index_p,
@@ -75,26 +76,29 @@ class Sector {
            TransportType transport_type_p);
 
   public:
+    inline const Demand& total_demand_D() const {
+        assertstepnot(PURCHASE);
+        return total_demand_D_;
+    }
+    inline const Demand& last_total_production_X() const { return last_total_production_X_; }
+    inline const Demand& total_production_X() const {
+        assertstepnot(CONSUMPTION_AND_PRODUCTION);
+        return total_production_X_;
+    }
+    inline const typename ModelVariant::SectorParameters& parameters() const { return parameters_; }
+    inline typename ModelVariant::SectorParameters& parameters_writable() {
+        assertstep(INITIALIZATION);
+        return parameters_;
+    }
+
+  public:
     const Ratio upper_storage_limit_omega;
     const Time initial_storage_fill_factor_psi;
     const TransportType transport_type;
     std::vector<Firm<ModelVariant>*> firms;
     Model<ModelVariant>* const model;
 
-    inline const Demand& total_demand_D() const {
-        assertstepnot(PURCHASE);
-        return total_demand_D_;
-    };
-    inline const Demand& last_total_production_X() const { return last_total_production_X_; };
-    inline const Demand& total_production_X() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return total_production_X_;
-    };
-    inline const typename ModelVariant::SectorParameters& parameters() const { return parameters_; };
-    inline typename ModelVariant::SectorParameters& parameters_writable() {
-        assertstep(INITIALIZATION);
-        return parameters_;
-    };
+  public:
     void add_demand_request_D(const Demand& demand_request_D);
     void add_production_X(const Flow& production_X);
     void add_initial_production_X(const Flow& production_X);
@@ -102,7 +106,7 @@ class Sector {
     void iterate_consumption_and_production();
     void remove_firm(Firm<ModelVariant>* firm);
     inline IntType index() const { return index_; };
-    inline operator std::string() const { return name; };
+    inline const std::string& id() const { return id_; };
 };
 }  // namespace acclimate
 #endif

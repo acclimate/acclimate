@@ -37,7 +37,7 @@ using TimeStep = unsigned int;
 using Ratio = FloatType;
 using Forcing = Ratio;
 
-inline FloatType fround(const FloatType x) {
+inline FloatType fround(FloatType x) {
 #ifdef BANKERS_ROUNDING
     return std::rint(x);
 #else
@@ -45,7 +45,7 @@ inline FloatType fround(const FloatType x) {
 #endif
 }
 
-inline IntType iround(const FloatType x) {
+inline IntType iround(FloatType x) {
 #ifdef BANKERS_ROUNDING
     return std::lrint(x);
 #else
@@ -54,7 +54,7 @@ inline IntType iround(const FloatType x) {
 }
 
 template<class T>
-inline FloatType to_float(const T& a) {
+inline FloatType to_float(T&& a) {
     return a.get_float();
 }
 
@@ -64,7 +64,7 @@ class Type {
     static constexpr FloatType precision_from_digits(const unsigned char precision_digits_p_) {
         return precision_digits_p_ == 0 ? 1 : 0.1 * precision_from_digits(precision_digits_p_ - 1);
     }
-    virtual void set_float(const FloatType f) = 0;
+    virtual void set_float(FloatType f) = 0;
 
   public:
     using base_type = FloatType;
@@ -72,7 +72,7 @@ class Type {
     static constexpr FloatType precision = precision_from_digits(precision_digits_p);
     virtual FloatType get_float() const = 0;
     friend std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
-        return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float() << std::defaultfloat;
+        return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float();
     }
     virtual ~Type(){};
 };
@@ -82,7 +82,7 @@ class Type {
     T() {}                                                                                                               \
                                                                                                                          \
   public:                                                                                                                \
-    explicit T(const FloatType t_) { set_float(t_); }                                                                    \
+    explicit T(FloatType t_) { set_float(t_); }                                                                          \
     T operator+(const T& other) const {                                                                                  \
         T res;                                                                                                           \
         res.t = t + other.t;                                                                                             \
@@ -110,17 +110,17 @@ class Type {
         t -= rhs.t;                                                                                                      \
         return *this;                                                                                                    \
     }                                                                                                                    \
-    bool operator>(const FloatType other) const { return get_float() > other; }                                          \
-    bool operator>=(const FloatType other) const { return get_float() >= other; }                                        \
-    bool operator<(const FloatType other) const { return get_float() < other; }                                          \
-    bool operator<=(const FloatType other) const { return get_float() <= other; }                                        \
+    bool operator>(FloatType other) const { return get_float() > other; }                                                \
+    bool operator>=(FloatType other) const { return get_float() >= other; }                                              \
+    bool operator<(FloatType other) const { return get_float() < other; }                                                \
+    bool operator<=(FloatType other) const { return get_float() <= other; }                                              \
     bool operator>(const T& other) const { return t > other.t; }                                                         \
     bool operator>=(const T& other) const { return t >= other.t; }                                                       \
     bool operator<(const T& other) const { return t < other.t; }                                                         \
     bool operator<=(const T& other) const { return t <= other.t; }                                                       \
-    T operator*(const FloatType other) const { return T(get_float() * other); }                                          \
-    T operator/(const FloatType other) const { return T(get_float() / other); }                                          \
-    friend T operator*(const FloatType lhs, const T& rhs) { return T(lhs * rhs.get_float()); }                           \
+    T operator*(FloatType other) const { return T(get_float() * other); }                                                \
+    T operator/(FloatType other) const { return T(get_float() / other); }                                                \
+    friend T operator*(FloatType lhs, const T& rhs) { return T(lhs * rhs.get_float()); }                                 \
     Ratio operator/(const T& other) const { return Ratio(static_cast<FloatType>(t) / static_cast<FloatType>(other.t)); } \
     friend bool same_sgn(const T& lhs, const T& rhs) { return (lhs.t >= 0) == (rhs.t >= 0); }                            \
     friend bool isnan(const T& other) { return std::isnan(other.t); }                                                    \
@@ -134,7 +134,7 @@ template<int precision_digits_p>
 class NonRoundedType : public Type<precision_digits_p> {
   protected:
     FloatType t;
-    inline void set_float(const FloatType f) override { t = f; }
+    inline void set_float(FloatType f) override { t = f; }
 
   public:
     inline FloatType get_float() const override { return t; }
@@ -146,7 +146,7 @@ template<int precision_digits_p>
 class RoundedType : public Type<precision_digits_p> {
   protected:
     IntType t;
-    inline void set_float(const FloatType f) override { t = iround(f / precision); }
+    inline void set_float(FloatType f) override { t = iround(f / precision); }
 
   public:
     using Type<precision_digits_p>::precision;
@@ -254,7 +254,7 @@ class PricedQuantity {
         }
     }
     PricedQuantity(const Q& quantity_p, const bool maybe_negative = false) : PricedQuantity(quantity_p, quantity_p * Price(1.0), maybe_negative){};
-    explicit PricedQuantity(const FloatType quantity_p) : PricedQuantity(Q(quantity_p), Q(quantity_p) * Price(1.0)){};
+    explicit PricedQuantity(FloatType quantity_p) : PricedQuantity(Q(quantity_p), Q(quantity_p) * Price(1.0)){};
     PricedQuantity(const Q& quantity_p, const Price& price_p, const bool maybe_negative = false)
         : PricedQuantity(quantity_p, quantity_p * price_p, maybe_negative){};
     PricedQuantity(const PricedQuantity& other) : quantity(other.quantity), value(other.value) {

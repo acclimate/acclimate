@@ -68,7 +68,18 @@ template<class ModelVariant>
 class Sector;
 template<class ModelVariant>
 class EconomicAgent;
-enum class ModelVariantType;
+
+enum class ModelVariantType {
+#ifdef VARIANT_BASIC
+    BASIC,
+#endif
+#ifdef VARIANT_DEMAND
+    DEMAND,
+#endif
+#ifdef VARIANT_PRICES
+    PRICES,
+#endif
+};
 
 enum class IterationStep {
     INITIALIZATION,
@@ -94,34 +105,35 @@ class Acclimate {
         std::unique_ptr<Model<ModelVariant>> model_m;
         std::vector<std::unique_ptr<Output<ModelVariant>>> outputs_m;
         static void initialize();
-        void run();
+        int run();
         void cleanup();
+        void memory_cleanup();
         Run();
 
       public:
         static Run* instance();
         inline const Model<ModelVariant>* model() { return model_m.get(); }
         inline const Output<ModelVariant>* output(const IntType i) { return outputs_m[i].get(); }
-        void event(const EventType& type,
+        void event(EventType type,
                    const Sector<ModelVariant>* sector_from,
                    const Region<ModelVariant>* region_from,
                    const Sector<ModelVariant>* sector_to,
                    const Region<ModelVariant>* region_to,
-                   const FloatType& value = std::numeric_limits<FloatType>::quiet_NaN());
-        void event(const EventType& type,
+                   FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
+        void event(EventType type,
                    const Sector<ModelVariant>* sector_from,
                    const Region<ModelVariant>* region_from,
                    const EconomicAgent<ModelVariant>* economic_agent_to,
-                   const FloatType& value = std::numeric_limits<FloatType>::quiet_NaN());
-        void event(const EventType& type,
+                   FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
+        void event(EventType type,
                    const EconomicAgent<ModelVariant>* economic_agent_from = nullptr,
                    const EconomicAgent<ModelVariant>* economic_agent_to = nullptr,
-                   const FloatType& value = std::numeric_limits<FloatType>::quiet_NaN());
-        void event(const EventType& type,
+                   FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
+        void event(EventType type,
                    const EconomicAgent<ModelVariant>* economic_agent_from,
                    const Sector<ModelVariant>* sector_to,
                    const Region<ModelVariant>* region_to,
-                   const FloatType& value = std::numeric_limits<FloatType>::quiet_NaN());
+                   FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
     };
 
   protected:
@@ -138,15 +150,19 @@ class Acclimate {
     static Acclimate* instance();
     static const std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> event_names;
 
-    inline const ModelVariantType& variant() { return variant_m; }
-    inline IterationStep step() { return step_m; }
-    inline const std::size_t& duration() { return duration_m; }
-    unsigned int thread_count();
-    std::string timeinfo();
+    inline const ModelVariantType& variant() const { return variant_m; }
+    inline IterationStep step() const { return step_m; }
+    inline unsigned int time() const { return time_m; }
+    inline const std::size_t& duration() const { return duration_m; }
+    unsigned int thread_count() const;
+#ifdef DEBUG
+    std::string timeinfo() const;
+#endif
     static void initialize(const settings::SettingsNode& settings_p);
-    void run();
+    int run();
     void cleanup();
+    void memory_cleanup();
 };
-}
+}  // namespace acclimate
 
 #endif

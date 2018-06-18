@@ -113,7 +113,7 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
                     (*served_bc)->push_flow_Z(round((*served_bc)->last_demand_request_D()));
                     production_without_cheapest_price_range += round((*served_bc)->last_demand_request_D());
 #ifdef DEBUG
-                    pushed_flows++;
+                    ++pushed_flows;
 #endif
                     begin_cheapest_price_range = served_bc + 1;
                 } else if (abs(round((*served_bc)->last_demand_request_D().get_price()
@@ -126,13 +126,13 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
                 } else {  // price lower than in cheapest price range
                     (*served_bc)->push_flow_Z(Flow(0.0));
 #ifdef DEBUG
-                    pushed_flows++;
+                    ++pushed_flows;
 #endif
                 }
             } else {  // demand request is zero
                 (*served_bc)->push_flow_Z(Flow(0.0));
 #ifdef DEBUG
-                pushed_flows++;
+                ++pushed_flows;
 #endif
             }
         }
@@ -168,7 +168,7 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
                     (*served_bc)->push_flow_Z(flow_Z);
                     total_revenue_R_ += flow_Z.get_value();
 #ifdef DEBUG
-                    pushed_flows++;
+                    ++pushed_flows;
 #endif
                 }
             } else {  // all demands in cheapest price range can be fulfilled
@@ -177,7 +177,7 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
                     assert((*served_bc)->last_demand_request_D().get_quantity() <= communicated_parameters_.production_X.get_quantity());
                     (*served_bc)->push_flow_Z(round((*served_bc)->last_demand_request_D()));
 #ifdef DEBUG
-                    pushed_flows++;
+                    ++pushed_flows;
 #endif
                 }
             }
@@ -212,7 +212,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_supply_distributi
     if (possible_production_X_hat_p.get_quantity() <= 0.0) {
         // no production due to supply shortage or forcing == 0
 
-        if (firm->forcing_lambda() <= 0.0) {
+        if (firm->forcing() <= 0.0) {
             warning("no production due to total forcing");
         } else {
             Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_PRODUCTION_SUPPLY_SHORTAGE, firm);
@@ -384,7 +384,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
     if (possible_production_X_hat_p.get_quantity() <= 0.0) {
         // no production due to supply shortage or forcing <= 0
 
-        if (firm->forcing_lambda() <= 0.0) {
+        if (firm->forcing() <= 0.0) {
             warning("no expected production due to total forcing");
         } else {
             Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_EXP_PRODUCTION_SUPPLY_SHORTAGE, firm);
@@ -418,7 +418,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
     Flow expected_production_X = Flow(0.0);
 
     // cycle over non-zero connections
-    for (auto business_connection = business_connections.begin(); business_connection != first_zero_connection; business_connection++) {
+    for (auto business_connection = business_connections.begin(); business_connection != first_zero_connection; ++business_connection) {
         // check that connection can be served under quantitative aspects
         if (round((expected_production_X + (*business_connection)->last_demand_request_D())).get_quantity() > possible_production_X_hat_p.get_quantity()) {
             supply_distribution_scenario.connection_not_served_completely = business_connection;
@@ -748,7 +748,7 @@ template<class ModelVariant>
 void SalesManagerPrices<ModelVariant>::print_parameters() const {
     info(PRINT_ROW1("X", communicated_parameters_.production_X.get_quantity())
          << PRINT_ROW1("X_exp", communicated_parameters_.expected_production_X.get_quantity())
-         << PRINT_ROW1("X_hat", communicated_parameters_.possible_production_X_hat) << PRINT_ROW1("  lambda", firm->forcing_lambda())
+         << PRINT_ROW1("X_hat", communicated_parameters_.possible_production_X_hat) << PRINT_ROW1("  lambda", firm->forcing())
          << PRINT_ROW1("X_star", firm->initial_production_X_star().get_quantity())
          << PRINT_ROW1("lambda X_star", firm->forced_initial_production_quantity_lambda_X_star())
          << PRINT_ROW1("p", communicated_parameters_.production_X.get_quantity() / firm->initial_production_X_star().get_quantity())
@@ -769,12 +769,11 @@ void SalesManagerPrices<ModelVariant>::print_connections(
     typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator end_equally_distributed) const {
 #pragma omp critical(output)
     {
-        std::cout << Acclimate::instance()->timeinfo() << ", " << std::string(*this) << ": supply distribution for " << business_connections.size()
-                  << " outputs :\n";
+        std::cout << Acclimate::instance()->timeinfo() << ", " << id() << ": supply distribution for " << business_connections.size() << " outputs :\n";
         FlowQuantity sum = FlowQuantity(0.0);
         FlowQuantity initial_sum = FlowQuantity(0.0);
         for (const auto& bc : business_connections) {
-            std::cout << "      " << std::string(*bc) << " :\n"
+            std::cout << "      " << bc->id() << " :\n"
                       << PRINT_ROW1("n", bc->last_demand_request_D().get_price()) << PRINT_ROW1("D_r", bc->last_demand_request_D().get_quantity())
                       << PRINT_ROW1("D_star", bc->initial_flow_Z_star().get_quantity()) << PRINT_ROW1("Z_last", bc->last_shipment_Z(this).get_quantity())
                       << PRINT_ROW1("in_share", (bc->initial_flow_Z_star() / bc->buyer->storage->initial_input_flow_I_star())) << '\n';
@@ -782,15 +781,15 @@ void SalesManagerPrices<ModelVariant>::print_connections(
             initial_sum += bc->initial_flow_Z_star().get_quantity();
         }
         if (supply_distribution_scenario.connection_not_served_completely != business_connections.end()) {
-            std::cout << "      not completely served: " << std::string(**supply_distribution_scenario.connection_not_served_completely) << '\n';
+            std::cout << "      not completely served: " << (*supply_distribution_scenario.connection_not_served_completely)->id() << '\n';
         } else {
             std::cout << "      all connections served completely\n";
         }
         if (begin_equally_distributed != business_connections.end()) {
-            std::cout << "      first_equal_distribution: " << std::string(**begin_equally_distributed) << '\n';
+            std::cout << "      first_equal_distribution: " << (*begin_equally_distributed)->id() << '\n';
         }
         if (end_equally_distributed != business_connections.end()) {
-            std::cout << "      last_equal_distribution:  " << std::string(**end_equally_distributed) << '\n';
+            std::cout << "      last_equal_distribution:  " << (*end_equally_distributed)->id() << '\n';
         }
         std::cout << "      Sums:\n" << PRINT_ROW1("sum D_r", sum) << PRINT_ROW1("sum_star D_r", initial_sum);
     }

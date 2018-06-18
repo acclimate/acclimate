@@ -25,25 +25,37 @@ namespace acclimate {
 
 template<class ModelVariant>
 DirectPopulation<ModelVariant>::DirectPopulation(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : RasteredScenario<ModelVariant>(settings_p, model_p) {}
+    : RasteredScenario<ModelVariant, FloatType>(settings_p, model_p) {}
 
 template<class ModelVariant>
-void DirectPopulation<ModelVariant>::set_forcing(Region<ModelVariant>* region, const FloatType& forcing_p) const {
+FloatType DirectPopulation<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
+    return 0.0;
+}
+
+template<class ModelVariant>
+void DirectPopulation<ModelVariant>::reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const {
+    forcing = 0.0;
+}
+
+template<class ModelVariant>
+void DirectPopulation<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, FloatType proxy_sum) const {
     for (auto& it : region->economic_agents) {
-        if (it->type == EconomicAgent<ModelVariant>::Type::FIRM) {
-            it->as_firm()->forcing_lambda(1.0 - forcing_p);
+        if (it->is_firm()) {
+            it->as_firm()->forcing(1.0 - forcing / proxy_sum);
         }
     }
 }
 
 template<class ModelVariant>
-inline FloatType DirectPopulation<ModelVariant>::get_affected_population_per_cell(const FloatType& x,
-                                                                                  const FloatType& y,
-                                                                                  const FloatType& population_p,
-                                                                                  const FloatType& external_forcing) const {
+void DirectPopulation<ModelVariant>::add_cell_forcing(FloatType x,
+                                                      FloatType y,
+                                                      FloatType proxy_value,
+                                                      FloatType cell_forcing,
+                                                      const Region<ModelVariant>* region,
+                                                      FloatType& region_forcing) const {
     UNUSED(x);
     UNUSED(y);
-    return std::min(population_p, external_forcing);
+    region_forcing += std::min(cell_forcing, proxy_value);
 }
 
 INSTANTIATE_BASIC(DirectPopulation);

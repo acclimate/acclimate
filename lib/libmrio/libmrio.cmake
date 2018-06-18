@@ -33,4 +33,4 @@ else()
 endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/lib/settingsnode/settingsnode.cmake)
-target_link_libraries(libmrio settingsnode)
+include_settingsnode(libmrio)

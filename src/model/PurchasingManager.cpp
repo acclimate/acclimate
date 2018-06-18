@@ -43,7 +43,7 @@ bool PurchasingManager<ModelVariant>::remove_business_connection(const BusinessC
     auto it = std::find_if(business_connections.begin(), business_connections.end(),
                            [business_connection](const std::shared_ptr<BusinessConnection<ModelVariant>>& it) { return it.get() == business_connection; });
     if (it == std::end(business_connections)) {
-        error("Business connection " << std::string(*business_connection) << " not found");
+        error("Business connection " << business_connection->id() << " not found");
     }
     business_connections.erase(it);
     if (business_connections.empty()) {
@@ -64,11 +64,11 @@ const FlowQuantity PurchasingManager<ModelVariant>::get_flow_deficit() const {
 }
 
 template<class ModelVariant>
-const Flow PurchasingManager<ModelVariant>::get_total_flow() const {
+const Flow PurchasingManager<ModelVariant>::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
-        res += bc->get_total_flow();
+        res += bc->get_transport_flow();
     }
     return res;
 }
@@ -127,7 +127,7 @@ template<class ModelVariant>
 void PurchasingManager<ModelVariant>::print_details() const {
     info(business_connections.size() << " inputs:  I_star= " << storage->initial_input_flow_I_star().get_quantity());
     for (const auto& bc : business_connections) {
-        info("    " << std::string(*bc) << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity() << "  X_star= " << std::setw(11)
+        info("    " << bc->id() << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity() << "  X_star= " << std::setw(11)
                     << bc->seller->firm->initial_production_X_star().get_quantity());
     }
 }

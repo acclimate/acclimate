@@ -22,6 +22,7 @@
 #define ACCLIMATE_MODELINITIALIZER_H
 
 #include <unordered_map>
+#include "model/GeoEntity.h"
 #include "settingsnode.h"
 #include "variants/VariantPrices.h"
 
@@ -128,8 +129,8 @@ class ModelInitializer {
     void initialize();
 #ifdef DEBUG
     void print_network_characteristics() const;
-    inline operator std::string() const { return "MODELINITIALIZER"; }
 #endif
+    inline std::string id() const { return "MODELINITIALIZER"; }
 };
 }  // namespace acclimate
 

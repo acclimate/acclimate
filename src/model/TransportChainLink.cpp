@@ -70,7 +70,6 @@ void TransportChainLink<ModelVariant>::push_flow_Z(const Flow& flow_Z, const Flo
             flow_to_push = std::min(overflow + front_flow_Z.current, Flow(forcing_nu * front_flow_Z.initial, front_flow_Z.current.get_price()));
         }
         overflow = overflow + front_flow_Z.current - flow_to_push;
-
         if (next_transport_chain_link) {
             next_transport_chain_link->push_flow_Z(flow_to_push, initial_flow_Z_star);
         } else {
@@ -83,7 +82,6 @@ void TransportChainLink<ModelVariant>::push_flow_Z(const Flow& flow_Z, const Flo
             flow_to_push = std::min(overflow + flow_Z, Flow(forcing_nu * initial_flow_Z_star, flow_Z.get_price()));
         }
         overflow = overflow + flow_Z - flow_to_push;
-
         if (next_transport_chain_link) {
             next_transport_chain_link->push_flow_Z(flow_to_push, initial_flow_Z_star);
         } else {

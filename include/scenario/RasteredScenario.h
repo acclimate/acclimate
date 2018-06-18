@@ -21,71 +21,56 @@
 #ifndef ACCLIMATE_RASTEREDSCENARIO_H
 #define ACCLIMATE_RASTEREDSCENARIO_H
 
+#include "scenario/ExternalScenario.h"
 #include "scenario/RasteredData.h"
-#include "scenario/RasteredTimeData.h"
-#include "scenario/Scenario.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 class Region;
 
-template<class ModelVariant>
-class RasteredScenario : public Scenario<ModelVariant> {
+template<class ModelVariant, class RegionForcingType>
+class RasteredScenario : public ExternalScenario<ModelVariant> {
   public:
     struct RegionInfo {
         Region<ModelVariant>* region;
-        FloatType population;
-        FloatType people_affected;
-        FloatType forcing;
+        FloatType proxy_sum;
+        RegionForcingType forcing;
     };
 
   protected:
-    using Scenario<ModelVariant>::settings;
-    using Scenario<ModelVariant>::set_firm_property;
-    using Scenario<ModelVariant>::set_consumer_property;
-    using Scenario<ModelVariant>::start_time;
-    using Scenario<ModelVariant>::stop_time;
+    using ExternalScenario<ModelVariant>::forcing;
+    using ExternalScenario<ModelVariant>::model;
+    using ExternalScenario<ModelVariant>::next_time;
+    using ExternalScenario<ModelVariant>::settings;
 
-    std::string forcing_file;
-    std::string expression;
-    std::string variable_name;
-    bool remove_afterwards = false;
-    unsigned int file_index_from = 0;
-    unsigned int file_index_to = 0;
-    unsigned int file_index = 0;
-    std::string calendar_str_;
-    std::string time_units_str_;
-    Time next_time = Time(0.0);
-    Time time_offset = Time(0.0);
-    int time_step_width = 1;
-    bool stop_time_known = false;
-
-    std::unique_ptr<RasteredTimeData<FloatType>> forcing;
     std::unique_ptr<RasteredData<int>> iso_raster;
-    std::unique_ptr<RasteredData<FloatType>> population;
-    FloatType people_affected_ = 0;
+    std::unique_ptr<RasteredData<FloatType>> proxy;
     std::vector<RegionInfo> region_forcings;
-    bool next_forcing_file();
-    virtual void set_forcing(Region<ModelVariant>* region, const FloatType& forcing_) const = 0;
-    virtual FloatType get_affected_population_per_cell(const FloatType& x,
-                                                       const FloatType& y,
-                                                       const FloatType& population,
-                                                       const FloatType& external_forcing) const = 0;
-    std::string fill_template(const std::string& in) const;
+    FloatType total_current_proxy_sum_;
+
+    virtual RegionForcingType new_region_forcing(Region<ModelVariant>* region) const = 0;
+    virtual void set_region_forcing(Region<ModelVariant>* region, const RegionForcingType& forcing, FloatType proxy_sum) const = 0;
+    virtual void reset_forcing(Region<ModelVariant>* region, RegionForcingType& forcing) const = 0;
+    virtual void add_cell_forcing(FloatType x,
+                                  FloatType y,
+                                  FloatType proxy_value,
+                                  FloatType cell_forcing,
+                                  const Region<ModelVariant>* region,
+                                  RegionForcingType& region_forcing) const = 0;
+    void internal_start() override;
+    void internal_iterate_start() override;
+    bool internal_iterate_end() override;
+    void iterate_first_timestep() override;
+    ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
+    void read_forcings() override;
     RasteredScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
 
   public:
-    using Scenario<ModelVariant>::model;
-    using Scenario<ModelVariant>::is_first_timestep;
+    using ExternalScenario<ModelVariant>::id;
     virtual ~RasteredScenario(){};
-    bool iterate() override;
-    Time start() override;
-    void end() override;
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
-    std::string calendar_str() const override { return calendar_str_; };
-    std::string time_units_str() const override { return time_units_str_; };
-    inline FloatType people_affected() const { return people_affected_; };
+    inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; };
 };
 }  // namespace acclimate
 

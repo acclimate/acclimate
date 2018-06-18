@@ -45,6 +45,7 @@ class Storage {
     Flow initial_input_flow_I_star_ = Flow(0.0);  // == initial_used_flow_U_star_
     Flow used_flow_U_ = Flow(0.0);
     Flow desired_used_flow_U_tilde_ = Flow(0.0);
+    OpenMPLock input_flow_I_lock;
 
   public:
     const Stock& content_S() const {
@@ -92,7 +93,7 @@ class Storage {
     void add_initial_flow_Z_star(const Flow& flow_Z_star);
     bool subtract_initial_flow_Z_star(const Flow& flow_Z_star);
     void iterate_consumption_and_production();
-    inline operator std::string() const { return std::string(*sector) + ":_S_->" + std::string(*economic_agent); }
+    inline std::string id() const { return sector->id() + ":_S_->" + economic_agent->id(); }
 };
 }  // namespace acclimate
 

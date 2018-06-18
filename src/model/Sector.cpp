@@ -27,12 +27,12 @@ namespace acclimate {
 
 template<class ModelVariant>
 Sector<ModelVariant>::Sector(Model<ModelVariant>* model_p,
-                             std::string name_p,
+                             std::string id_p,
                              const IntType index_p,
                              const Ratio& upper_storage_limit_omega_p,
                              const Time& initial_storage_fill_factor_psi_p,
                              TransportType transport_type_p)
-    : name(std::move(name_p)),
+    : id_(std::move(id_p)),
       index_(index_p),
       model(model_p),
       upper_storage_limit_omega(upper_storage_limit_omega_p),
@@ -42,15 +42,17 @@ Sector<ModelVariant>::Sector(Model<ModelVariant>* model_p,
 template<class ModelVariant>
 void Sector<ModelVariant>::add_demand_request_D(const Demand& demand_request_D) {
     assertstep(PURCHASE);
-#pragma omp critical(total_demand_D)
-    { total_demand_D_ += demand_request_D; }
+    total_demand_D_lock.call([&]() {
+                                 total_demand_D_ += demand_request_D;
+                             });
 }
 
 template<class ModelVariant>
 void Sector<ModelVariant>::add_production_X(const Flow& production_X) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-#pragma omp critical(total_production_X)
-    { total_production_X_ += production_X; }
+    total_production_X_lock.call([&]() {
+                                     total_production_X_ += production_X;
+                                 });
 }
 
 template<class ModelVariant>
@@ -77,7 +79,7 @@ void Sector<ModelVariant>::iterate_consumption_and_production() {
 
 template<class ModelVariant>
 void Sector<ModelVariant>::remove_firm(Firm<ModelVariant>* firm) {
-    for (auto it = firms.begin(); it != firms.end(); it++) {
+    for (auto it = firms.begin(); it != firms.end(); ++it) {
         if (*it == firm) {
             firms.erase(it);
             break;

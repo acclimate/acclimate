@@ -33,10 +33,10 @@ CapacityManagerPrices<ModelVariant>::CapacityManagerPrices(Firm<ModelVariant>* f
 #ifdef DEBUG
 template<class ModelVariant>
 void CapacityManagerPrices<ModelVariant>::print_inputs() const {
-    info(std::string(*this) << ": " << firm->input_storages.size() << " inputs:");
+    info(id() << ": " << firm->input_storages.size() << " inputs:");
     for (const auto& is : firm->input_storages) {
         Flow possible_use_U_hat = is->get_possible_use_U_hat();
-        info("    " << std::string(*is) << ":"
+        info("    " << is->id() << ":"
 
                     << "  U_hat= " << std::setw(11) << possible_use_U_hat.get_quantity()
 
@@ -49,14 +49,14 @@ void CapacityManagerPrices<ModelVariant>::print_inputs() const {
 
 template<class ModelVariant>
 const Flow CapacityManagerPrices<ModelVariant>::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs) const {
-    Ratio possible_production_capacity_p_hat = firm->forcing_lambda() * possible_overcapacity_ratio_beta;
+    Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     Price unit_commodity_costs = Price(0.0);
 
     for (auto& input_storage : firm->input_storages) {
         Flow possible_use_U_hat = input_storage->get_possible_use_U_hat();
         if (consider_transport_in_production_costs) {
-            Flow total_flow = input_storage->purchasing_manager->get_total_flow();
-            unit_commodity_costs += (possible_use_U_hat + total_flow).get_price() * input_storage->get_technology_coefficient_a();
+            Flow transport_flow = input_storage->purchasing_manager->get_transport_flow();
+            unit_commodity_costs += (possible_use_U_hat + transport_flow).get_price() * input_storage->get_technology_coefficient_a();
         } else {
             unit_commodity_costs += possible_use_U_hat.get_price() * input_storage->get_technology_coefficient_a();
         }

@@ -56,14 +56,14 @@ class PurchasingManager {
     explicit PurchasingManager(Storage<ModelVariant>* storage_p);
     virtual ~PurchasingManager();
     virtual const FlowQuantity get_flow_deficit() const;
-    virtual const Flow get_total_flow() const;
+    virtual const Flow get_transport_flow() const;
     const Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
     const Flow get_sum_of_last_shipments() const;
     virtual void iterate_consumption_and_production();
     virtual void iterate_purchase() = 0;
     virtual bool remove_business_connection(const BusinessConnection<ModelVariant>* business_connection);
-    inline operator std::string() const { return std::string(*storage->sector) + "->" + std::string(*storage->economic_agent); }
+    inline std::string id() const { return storage->sector->id() + "->" + storage->economic_agent->id(); }
     inline const Demand& initial_demand_D_star() const { return storage->initial_input_flow_I_star(); }
     virtual void add_initial_demand_D_star(const Demand& demand_D_p);
     virtual void subtract_initial_demand_D_star(const Demand& demand_D_p);

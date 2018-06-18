@@ -27,18 +27,28 @@
 
 namespace acclimate {
 
-#define INSTANTIATE_BASIC(classname)         \
-    template class classname<VariantBasic>;  \
-    template class classname<VariantDemand>; \
-    template class classname<VariantPrices>
+#ifdef VARIANT_PRICES
+#define INSTANTIATE_PRICES(classname) template class classname<VariantPrices>;
+#else
+#define INSTANTIATE_PRICES(classname)
+#endif
 
-#define INSTANTIATE_DEMAND(classname)        \
-    template class classname<VariantDemand>; \
-    template class classname<VariantPrices>
+#ifdef VARIANT_DEMAND
+#define INSTANTIATE_DEMAND(classname) \
+    INSTANTIATE_PRICES(classname);    \
+    template class classname<VariantDemand>;
+#else
+#define INSTANTIATE_DEMAND(classname) INSTANTIATE_PRICES(classname)
+#endif
 
-#define INSTANTIATE_PRICES(classname) template class classname<VariantPrices>
+#ifdef VARIANT_BASIC
+#define INSTANTIATE_BASIC(classname) \
+    INSTANTIATE_DEMAND(classname);   \
+    template class classname<VariantBasic>;
+#else
+#define INSTANTIATE_BASIC(classname) INSTANTIATE_DEMAND(classname)
+#endif
 
-enum class ModelVariantType { BASIC, DEMAND, PRICES };
 }  // namespace acclimate
 
 #endif

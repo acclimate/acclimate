@@ -53,7 +53,7 @@ class CapacityManager {
     Ratio get_production_capacity_p() const;
     Ratio get_desired_production_capacity_p_tilde() const;
     Ratio get_possible_production_capacity_p_hat() const;
-    inline operator std::string() const { return std::string(*firm); }
+    inline std::string id() const { return firm->id(); }
 };
 }  // namespace acclimate
 

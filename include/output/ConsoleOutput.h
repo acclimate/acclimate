@@ -54,18 +54,18 @@ class ConsoleOutput : public Output<ModelVariant> {
     void internal_start() override;
     void internal_iterate_begin() override;
     void internal_end() override;
-    void internal_write_value(const std::string& name, const FloatType& v) override;
-    void internal_start_target(const std::string& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) override;
-    void internal_start_target(const std::string& name, Sector<ModelVariant>* sector) override;
-    void internal_start_target(const std::string& name, Region<ModelVariant>* region) override;
-    void internal_start_target(const std::string& name) override;
+    void internal_write_value(const hstring& name, FloatType v, const hstring& suffix) override;
+    void internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) override;
+    void internal_start_target(const hstring& name, Sector<ModelVariant>* sector) override;
+    void internal_start_target(const hstring& name, Region<ModelVariant>* region) override;
+    void internal_start_target(const hstring& name) override;
     void internal_end_target() override;
 
   public:
     ConsoleOutput(const settings::SettingsNode& settings_p,
                   Model<ModelVariant>* model_p,
                   Scenario<ModelVariant>* scenario_p,
-                  const settings::SettingsNode& output_node_p);
+                  settings::SettingsNode output_node_p);
     void initialize() override;
 };
 }  // namespace acclimate

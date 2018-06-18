@@ -34,6 +34,7 @@ class SalesManager {
 
   protected:
     Demand sum_demand_requests_D_ = Demand(0.0);
+    OpenMPLock sum_demand_requests_D_lock;
 
   public:
     const Demand& sum_demand_requests_D() const {
@@ -51,7 +52,7 @@ class SalesManager {
     void subtract_initial_demand_request_D_star(const Demand& initial_demand_request_D_star);
     const Flow get_transport_flow() const;
     bool remove_business_connection(BusinessConnection<ModelVariant>* business_connection);
-    inline explicit operator std::string() const { return std::string(*firm); }
+    inline std::string id() const { return firm->id(); }
 #ifdef DEBUG
     void print_details() const;
 #endif

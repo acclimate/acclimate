@@ -45,7 +45,7 @@ class GeoEntity {
     Type type() const { return type_m; }
     void set_forcing_nu(Forcing forcing_nu_p);
     void remove_transport_chain_link(TransportChainLink<ModelVariant>* transport_chain_link);
-    virtual operator std::string() const = 0;
+    virtual std::string id() const = 0;
 };
 }  // namespace acclimate
 

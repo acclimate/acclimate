@@ -42,6 +42,7 @@ class BusinessConnection {
     Price transport_costs = Price(0.0);
     Ratio demand_fulfill_history_ = Ratio(1.0);
     Time time_;
+    OpenMPLock seller_business_connections_lock;
     std::unique_ptr<TransportChainLink<ModelVariant>> first_transport_link;
 
   public:
@@ -91,13 +92,15 @@ class BusinessConnection {
     inline void invalidate_buyer() { buyer = nullptr; }
     inline void invalidate_seller() { seller = nullptr; }
     const Ratio& demand_fulfill_history() const;  // only for VariantDemand
+
     std::size_t get_id(const TransportChainLink<ModelVariant>* transport_chain_link) const;
     const Flow get_flow_mean() const;
     const FlowQuantity get_flow_deficit() const;
     const Flow get_total_flow() const;
+    const Flow get_transport_flow() const;
     const Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
-	FloatType get_minimum_passage() const;
+    FloatType get_minimum_passage() const;
     TransportDelay get_transport_delay_tau() const;
     void push_flow_Z(const Flow& flow_Z);
     void deliver_flow_Z(const Flow& flow_Z);
@@ -106,10 +109,7 @@ class BusinessConnection {
 
     void calc_demand_fulfill_history();  // only for VariantDemand
 
-    inline operator std::string() const {
-        return (seller ? std::string(*seller) : std::string("INVALID")) + "->"
-               + (buyer ? std::string(*buyer->storage->economic_agent) : std::string("INVALID"));
-    }
+    inline std::string id() const { return (seller ? seller->id() : "INVALID") + "->" + (buyer ? buyer->storage->economic_agent->id() : "INVALID"); }
 };
 }  // namespace acclimate
 

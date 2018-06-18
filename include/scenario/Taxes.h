@@ -29,6 +29,7 @@ template<class ModelVariant>
 class Taxes : public Scenario<ModelVariant> {
   protected:
     using Scenario<ModelVariant>::model;
+    using Scenario<ModelVariant>::id;
     using Scenario<ModelVariant>::settings;
     using Scenario<ModelVariant>::stop_time;
     using Scenario<ModelVariant>::start_time;
