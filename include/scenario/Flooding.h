@@ -37,6 +37,7 @@ class Flooding : public RasteredScenario<ModelVariant, FloatType> {
         FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const override;
 
   public:
+    using RasteredScenario<ModelVariant, FloatType>::id;
     Flooding(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
 };
 }  // namespace acclimate

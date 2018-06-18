@@ -82,7 +82,7 @@ class PurchasingManagerPrices : public PurchasingManager<ModelVariant> {
         return total_transport_penalty_;
     }
     explicit PurchasingManagerPrices(Storage<ModelVariant>* storage_p);
-    virtual ~PurchasingManagerPrices(){};
+    virtual ~PurchasingManagerPrices(){}
     void calc_optimization_parameters(std::vector<FloatType>& demand_requests_D_p,
                                       std::vector<BusinessConnection<ModelVariant>*>& zero_connections_p,
                                       OptimizerData<ModelVariant>& data_p) const;

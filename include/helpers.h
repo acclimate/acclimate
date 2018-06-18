@@ -33,7 +33,7 @@ namespace acclimate {
 
 class exception : public std::runtime_error {
   public:
-    explicit exception(const std::string& s) : std::runtime_error(s){};
+    explicit exception(const std::string& s) : std::runtime_error(s){}
 };
 
 class OpenMPLock {

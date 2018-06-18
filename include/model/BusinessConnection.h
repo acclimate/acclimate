@@ -46,8 +46,8 @@ class BusinessConnection {
     std::unique_ptr<TransportChainLink<ModelVariant>> first_transport_link;
 
   public:
-    inline const Time& time() const { return time_; };
-    inline void time(const Time& time_p) { time_ = time_p; };
+    inline const Time& time() const { return time_; }
+    inline void time(const Time& time_p) { time_ = time_p; }
     inline const Flow& last_shipment_Z(const SalesManager<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != seller) {
@@ -57,7 +57,7 @@ class BusinessConnection {
         UNUSED(caller);
 #endif
         return last_shipment_Z_;
-    };
+    }
     inline const Flow& last_delivery_Z(const SalesManager<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != seller) {
@@ -67,7 +67,7 @@ class BusinessConnection {
         UNUSED(caller);
 #endif
         return last_delivery_Z_;
-    };
+    }
     inline const Demand& last_demand_request_D(const PurchasingManager<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != buyer) {
@@ -77,12 +77,12 @@ class BusinessConnection {
         UNUSED(caller);
 #endif
         return last_demand_request_D_;
-    };
-    inline const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; };
+    }
+    inline const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; }
     inline void initial_flow_Z_star(const Flow& new_initial_flow_Z_star) {
         assertstep(INVESTMENT);
         initial_flow_Z_star_ = new_initial_flow_Z_star;
-    };
+    }
     const Ratio& demand_fulfill_history() const;  // only for VariantDemand
 
   public:
@@ -118,7 +118,7 @@ class BusinessConnection {
 
     void calc_demand_fulfill_history();  // only for VariantDemand
 
-    inline std::string id() const { return seller->id() + "->" + buyer->storage->economic_agent->id(); };
+    inline std::string id() const { return seller->id() + "->" + buyer->storage->economic_agent->id(); }
 };
 }  // namespace acclimate
 

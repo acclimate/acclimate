@@ -21,6 +21,8 @@
 #ifndef ACCLIMATE_VARIANTDEMAND_H
 #define ACCLIMATE_VARIANTDEMAND_H
 
+#ifdef VARIANT_DEMAND
+
 #include "variants/Variant.h"
 
 namespace acclimate {
@@ -51,5 +53,7 @@ class VariantDemand : public Variant {
 #include "model/CapacityManager.h"
 #include "model/PurchasingManagerDemand.h"
 #include "model/SalesManagerDemand.h"
+
+#endif
 
 #endif

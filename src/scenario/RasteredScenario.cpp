@@ -46,7 +46,6 @@ template<class ModelVariant, class RegionForcingType>
 void RasteredScenario<ModelVariant, RegionForcingType>::internal_start() {
     const settings::SettingsNode& scenario_node = settings["scenario"];
 
-
     // open iso raster
     {
         const std::string& variable = scenario_node["isoraster"]["variable"].as<std::string>("iso");
@@ -100,10 +99,9 @@ void RasteredScenario<ModelVariant, RegionForcingType>::iterate_first_timestep()
         }
     }
 #ifdef DEBUG
-        for (auto& r : region_forcings) {
-            if (r.region) {
-                info(r.region->id() << ": proxy sum: " << r.proxy_sum);
-            }
+    for (auto& r : region_forcings) {
+        if (r.region) {
+            info(r.region->id() << ": proxy sum: " << r.proxy_sum);
         }
     }
     info("Total proxy sum: " << total_proxy_sum << " (" << total_proxy_sum_all << ")");

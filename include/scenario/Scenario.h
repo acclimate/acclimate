@@ -41,13 +41,13 @@ class Scenario {
 
   public:
     Scenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
-    virtual ~Scenario(){};
+    virtual ~Scenario(){}
     virtual Time start();
-    virtual void end(){};
-    virtual bool is_first_timestep() const { return model->timestep() == 0; };
-    virtual bool is_last_timestep() const { return model->time() >= stop_time; };
+    virtual void end(){}
+    virtual bool is_first_timestep() const { return model->timestep() == 0; }
+    virtual bool is_last_timestep() const { return model->time() >= stop_time; }
     virtual bool iterate();
-    virtual std::string calendar_str() const { return "standard"; };
+    virtual std::string calendar_str() const { return "standard"; }
     virtual std::string time_units_str() const;
     virtual inline std::string id() const { return "SCENARIO"; }
 };

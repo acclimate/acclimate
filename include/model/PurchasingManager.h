@@ -49,12 +49,12 @@ class PurchasingManager {
         UNUSED(caller);
 #endif
         return demand_D_;
-    };
+    }
 
   protected:
   public:
     explicit PurchasingManager(Storage<ModelVariant>* storage_p);
-    virtual ~PurchasingManager(){};
+    virtual ~PurchasingManager(){}
     virtual const FlowQuantity get_flow_deficit() const;
     virtual const Flow get_transport_flow() const;
     const Flow get_disequilibrium() const;

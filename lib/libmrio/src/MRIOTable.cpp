@@ -430,7 +430,7 @@ void Table<T, I>::insert_sector_offset_x_y(const SuperSector<I>* i, const I& i_r
                     insert_sector_offset_y(i, i_regions_count, subsectors_count, x, x_offset + offset, subsectors_count);
                 }
             } else {
-                x_offset--;
+                --x_offset;
                 insert_sector_offset_y(i, i_regions_count, subsectors_count, x, x_offset, 1);
             }
         }
@@ -476,7 +476,7 @@ void Table<T, I>::insert_sector_offset_y(
                     data[x_offset * new_size + y_offset + offset] = data[x * index_set_.size() + y] / subsectors_count / divide_by;
                 }
             } else {
-                y_offset--;
+                --y_offset;
                 data[x_offset * new_size + y_offset] = data[x * index_set_.size() + y] / divide_by;
             }
         }

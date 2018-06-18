@@ -23,7 +23,8 @@
 
 #include <unordered_map>
 #include "settingsnode.h"
-#include "variants/VariantPrices.h"
+#include "acclimate.h"
+#include "model/GeographicPoint.h"
 
 namespace acclimate {
 
@@ -39,7 +40,6 @@ template<class ModelVariant>
 class Region;
 template<class ModelVariant>
 class Sector;
-class GeographicPoint;
 
 template<class ModelVariant>
 class ModelInitializer {

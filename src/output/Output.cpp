@@ -141,6 +141,7 @@ bool Output<ModelVariant>::write_firm_parameter_variant(const Firm<ModelVariant>
     return false;
 }
 
+#ifdef VARIANT_PRICES
 template<>
 bool Output<VariantPrices>::write_firm_parameter_variant(const Firm<VariantPrices>* p, const hstring& name) {
     switch (name) {
@@ -173,6 +174,7 @@ bool Output<VariantPrices>::write_firm_parameter_variant(const Firm<VariantPrice
     }
     return true;
 }
+#endif
 
 template<class ModelVariant>
 bool Output<ModelVariant>::write_economic_agent_parameter(const EconomicAgent<ModelVariant>* p, const hstring& name) {
@@ -291,6 +293,7 @@ bool Output<ModelVariant>::write_input_storage_parameter_variant(const Storage<M
     return false;
 }
 
+#ifdef VARIANT_PRICES
 template<>
 bool Output<VariantPrices>::write_input_storage_parameter_variant(const Storage<VariantPrices>* s, const hstring& name) {
     switch (name) {
@@ -317,6 +320,7 @@ bool Output<VariantPrices>::write_input_storage_parameter_variant(const Storage<
     }
     return true;
 }
+#endif
 
 template<class ModelVariant>
 void Output<ModelVariant>::write_input_storages(const EconomicAgent<ModelVariant>* ea, const settings::SettingsNode& it) {
@@ -572,6 +576,7 @@ bool Output<ModelVariant>::write_sector_parameter_variant(const Sector<ModelVari
     return false;
 }
 
+#ifdef VARIANT_PRICES
 template<>
 bool Output<VariantPrices>::write_sector_parameter_variant(const Sector<VariantPrices>* sector, const hstring& name) {
     switch (name) {
@@ -586,6 +591,7 @@ bool Output<VariantPrices>::write_sector_parameter_variant(const Sector<VariantP
     }
     return true;
 }
+#endif
 
 template<class ModelVariant>
 void Output<ModelVariant>::iterate() {

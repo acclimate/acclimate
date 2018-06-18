@@ -473,7 +473,7 @@ void ModelInitializer<ModelVariant>::read_transport_times_csv(const std::string&
             error("Index and transport_delays are not consistent: Not enough rows");
         }
         if (transport_line.empty() || (transport_line.length() == 1 && transport_line[0] == '\r')) {
-            row--;
+            --row;
             continue;
         }
 
@@ -673,14 +673,18 @@ void ModelInitializer<ModelVariant>::initialize() {
     post_initialize_variant();
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void ModelInitializer<VariantBasic>::pre_initialize_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void ModelInitializer<VariantDemand>::pre_initialize_variant() {
     const settings::SettingsNode& parameters = settings["parameters"];
     model->parameters_writable().history_weight = parameters["history_weight"].as<Ratio>();
 }
+#endif
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::pre_initialize_variant() {
@@ -729,11 +733,15 @@ void ModelInitializer<ModelVariant>::pre_initialize_variant() {
     }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void ModelInitializer<VariantBasic>::post_initialize_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void ModelInitializer<VariantDemand>::post_initialize_variant() {}
+#endif
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::post_initialize_variant() {

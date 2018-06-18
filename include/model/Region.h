@@ -72,20 +72,20 @@ class Region : public GeographicEntity<ModelVariant> {
     void set_centroid(GeographicPoint* centroid_p) {
         assertstep(INITIALIZATION);
         return centroid_.reset(centroid_p);
-    };
-    const GeographicPoint* centroid() const { return centroid_.get(); };
+    }
+    const GeographicPoint* centroid() const { return centroid_.get(); }
     inline const Flow& consumption_C() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
         return consumption_flow_Y_[model->current_register()];
-    };
+    }
     inline const Flow& import_flow_Z() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
         return import_flow_Z_[model->current_register()];
-    };
+    }
     inline const Flow& export_flow_Z() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
         return export_flow_Z_[model->current_register()];
-    };
+    }
     inline void set_government(Government<ModelVariant>* government_p) {
         assertstep(INITIALIZATION);
 #ifdef DEBUG
@@ -94,14 +94,14 @@ class Region : public GeographicEntity<ModelVariant> {
         }
 #endif
         government_.reset(government_p);
-    };
-    inline Government<ModelVariant>* government() { return government_.get(); };
-    inline Government<ModelVariant> const* government() const { return government_.get(); };
-    inline const typename ModelVariant::RegionParameters& parameters() const { return parameters_; };
+    }
+    inline Government<ModelVariant>* government() { return government_.get(); }
+    inline Government<ModelVariant> const* government() const { return government_.get(); }
+    inline const typename ModelVariant::RegionParameters& parameters() const { return parameters_; }
     inline const typename ModelVariant::RegionParameters& parameters_writable() const {
         assertstep(INITIALIZATION);
         return parameters_;
-    };
+    }
 
   private:
     void iterate_consumption_and_production_variant();

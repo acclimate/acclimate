@@ -89,11 +89,11 @@ class ArrayOutput : public Output<ModelVariant> {
         UNUSED(v);
         UNUSED(path);
         UNUSED(name);
-    };
+    }
     virtual bool internal_handle_event(Event& event) {
         UNUSED(event);
         return true;
-    };
+    }
 
   public:
     ArrayOutput(const settings::SettingsNode& settings_p,
@@ -101,7 +101,7 @@ class ArrayOutput : public Output<ModelVariant> {
                 Scenario<ModelVariant>* scenario_p,
                 settings::SettingsNode output_node_p,
                 const bool over_time_p = true);
-    virtual ~ArrayOutput(){};
+    virtual ~ArrayOutput(){}
     void event(EventType type,
                const Sector<ModelVariant>* sector_from,
                const Region<ModelVariant>* region_from,
@@ -110,7 +110,7 @@ class ArrayOutput : public Output<ModelVariant> {
                FloatType value) override;
     virtual void initialize() override;
     const typename ArrayOutput<ModelVariant>::Variable& get_variable(const hstring& fullname) const;
-    const std::vector<Event>& get_events() const { return events; };
+    const std::vector<Event>& get_events() const { return events; }
 };
 }  // namespace acclimate
 

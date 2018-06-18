@@ -50,29 +50,29 @@ class EconomicAgent {
     const Type type;
 
   public:
-    inline const typename ModelVariant::AgentParameters& parameters() const { return parameters_; };
+    inline const typename ModelVariant::AgentParameters& parameters() const { return parameters_; }
     inline typename ModelVariant::AgentParameters const& parameters_writable() const {
         assertstep(INITIALIZATION);
         return parameters_;
-    };
+    }
 
   protected:
     EconomicAgent(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p);
 
   public:
-    inline const Forcing& forcing() const { return forcing_; };
+    inline const Forcing& forcing() const { return forcing_; }
     inline void forcing(const Forcing& forcing_p) {
         assertstep(SCENARIO);
         assert(forcing_p >= 0.0);
         forcing_ = forcing_p;
-    };
+    }
     virtual Firm<ModelVariant>* as_firm();
     virtual const Firm<ModelVariant>* as_firm() const;
     virtual Consumer<ModelVariant>* as_consumer();
     virtual const Consumer<ModelVariant>* as_consumer() const;
-    inline bool is_firm() const { return type == Type::FIRM; };
-    inline bool is_consumer() const { return type == Type::CONSUMER; };
-    virtual ~EconomicAgent(){};
+    inline bool is_firm() const { return type == Type::FIRM; }
+    inline bool is_consumer() const { return type == Type::CONSUMER; }
+    virtual ~EconomicAgent(){}
     virtual void iterate_consumption_and_production() = 0;
     virtual void iterate_expectation() = 0;
     virtual void iterate_purchase() = 0;

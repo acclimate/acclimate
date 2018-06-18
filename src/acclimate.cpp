@@ -354,7 +354,7 @@ unsigned int Acclimate::thread_count() const {
 }
 
 #ifdef DEBUG
-std::string Acclimate::timeinfo() {
+std::string Acclimate::timeinfo() const {
     std::string res;
     if (step_m != IterationStep::INITIALIZATION) {
         res = std::to_string(time_m) + " ";

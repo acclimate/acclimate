@@ -88,10 +88,12 @@ BusinessConnection<ModelVariant>::~BusinessConnection() {
 }
 #endif
 
+#ifdef VARIANT_DEMAND
 template<>
 const Ratio& BusinessConnection<VariantDemand>::demand_fulfill_history() const {
     return demand_fulfill_history_;
 }
+#endif
 
 template<class ModelVariant>
 bool BusinessConnection<ModelVariant>::get_domestic() const {

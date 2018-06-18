@@ -46,17 +46,17 @@ class Sector {
     inline const Demand& total_demand_D() const {
         assertstepnot(PURCHASE);
         return total_demand_D_;
-    };
-    inline const Demand& last_total_production_X() const { return last_total_production_X_; };
+    }
+    inline const Demand& last_total_production_X() const { return last_total_production_X_; }
     inline const Demand& total_production_X() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
         return total_production_X_;
-    };
-    inline const typename ModelVariant::SectorParameters& parameters() const { return parameters_; };
+    }
+    inline const typename ModelVariant::SectorParameters& parameters() const { return parameters_; }
     inline typename ModelVariant::SectorParameters& parameters_writable() {
         assertstep(INITIALIZATION);
         return parameters_;
-    };
+    }
 
   public:
     const Ratio upper_storage_limit_omega;
@@ -76,8 +76,8 @@ class Sector {
     void subtract_initial_production_X(const Flow& production_X);
     void iterate_consumption_and_production();
     void remove_firm(Firm<ModelVariant>* firm);
-    inline IntType index() const { return index_; };
-    inline const std::string& id() const { return id_; };
+    inline IntType index() const { return index_; }
+    inline const std::string& id() const { return id_; }
 };
 }  // namespace acclimate
 #endif

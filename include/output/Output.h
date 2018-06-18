@@ -77,8 +77,8 @@ class Output {
     const settings::SettingsNode& settings;
     const settings::SettingsNode output_node;
     time_t start_time;
-    inline bool is_first_timestep() const { return scenario->is_first_timestep(); };
-    inline bool is_last_timestep() const { return scenario->is_last_timestep(); };
+    inline bool is_first_timestep() const { return scenario->is_first_timestep(); }
+    inline bool is_last_timestep() const { return scenario->is_last_timestep(); }
     inline void parameter_not_found(const std::string& name) const;
     virtual void internal_write_header(tm* timestamp, int max_threads);
     virtual void internal_write_footer(tm* duration);
@@ -122,9 +122,9 @@ class Output {
     void start();
     void iterate();
     void end();
-    virtual void flush(){};
-    virtual void checkpoint_stop(){};
-    virtual void checkpoint_resume(){};
+    virtual void flush(){}
+    virtual void checkpoint_stop(){}
+    virtual void checkpoint_resume(){}
     virtual ~Output() = default;
     virtual inline std::string id() const { return "OUTPUT"; }
 };

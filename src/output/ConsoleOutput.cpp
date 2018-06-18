@@ -118,7 +118,7 @@ void ConsoleOutput<ModelVariant>::internal_start_target(const hstring& name) {
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_end_target() {
-    stack--;
+    --stack;
 }
 
 INSTANTIATE_BASIC(ConsoleOutput);

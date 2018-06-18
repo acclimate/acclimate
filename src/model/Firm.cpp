@@ -151,6 +151,7 @@ void Firm<ModelVariant>::subtract_initial_total_use_U_star(const Flow& initial_u
     }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Firm<VariantBasic>::iterate_purchase() {
     assertstep(PURCHASE);
@@ -158,7 +159,9 @@ void Firm<VariantBasic>::iterate_purchase() {
         is->purchasing_manager->iterate_purchase();
     }
 }
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Firm<VariantDemand>::iterate_purchase() {
     assertstep(PURCHASE);
@@ -166,6 +169,7 @@ void Firm<VariantDemand>::iterate_purchase() {
         is->purchasing_manager->iterate_purchase();
     }
 }
+#endif
 
 template<class ModelVariant>
 void Firm<ModelVariant>::iterate_purchase() {
@@ -175,14 +179,20 @@ void Firm<ModelVariant>::iterate_purchase() {
     }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Firm<VariantBasic>::iterate_investment() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Firm<VariantDemand>::iterate_investment() {}
+#endif
 
+#ifdef VARIANT_PRICES
 template<>
 void Firm<VariantPrices>::iterate_investment() {}
+#endif
 
 template<class ModelVariant>
 void Firm<ModelVariant>::iterate_investment() {
