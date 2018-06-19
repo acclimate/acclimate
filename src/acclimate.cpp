@@ -110,29 +110,29 @@ Acclimate::Run<ModelVariant>::Run() {
     }
 
     Scenario<ModelVariant>* scenario;
-    {
-        const std::string& type = settings["scenario"]["type"].as<std::string>();
+    for (auto scenario_node : settings["scenarios"].as_sequence()) {
+        const std::string& type = scenario_node["type"].as<std::string>();
         if (type == "events") {
-            scenario = new Scenario<ModelVariant>(settings, model);
+            scenario = new Scenario<ModelVariant>(settings, scenario_node, model);
         } else if (type == "taxes") {
-            scenario = new Taxes<ModelVariant>(settings, model);
+            scenario = new Taxes<ModelVariant>(settings, scenario_node, model);
         } else if (type == "flooding") {
-            scenario = new Flooding<ModelVariant>(settings, model);
+            scenario = new Flooding<ModelVariant>(settings, scenario_node, model);
         } else if (type == "hurricanes") {
-            scenario = new Hurricanes<ModelVariant>(settings, model);
+            scenario = new Hurricanes<ModelVariant>(settings, scenario_node, model);
         } else if (type == "direct_population") {
-            scenario = new DirectPopulation<ModelVariant>(settings, model);
+            scenario = new DirectPopulation<ModelVariant>(settings, scenario_node, model);
         } else if (type == "heat_labor_productivity") {
-            scenario = new HeatLaborProductivity<ModelVariant>(settings, model);
+            scenario = new HeatLaborProductivity<ModelVariant>(settings, scenario_node, model);
         } else if (type == "event_series") {
-            scenario = new EventSeriesScenario<ModelVariant>(settings, model);
+            scenario = new EventSeriesScenario<ModelVariant>(settings, scenario_node, model);
         } else {
             error_("Unknown scenario type '" << type << "'");
         }
-        scenario_m.reset(scenario);
+        scenarios_m.emplace_back(scenario);
     }
 
-    for (const auto& node : settings["outputs"].as_sequence()) {
+    for (auto node : settings["outputs"].as_sequence()) {
         Output<ModelVariant>* output;
         const std::string& type = node["format"].as<std::string>();
         if (type == "console") {
@@ -172,8 +172,7 @@ int Acclimate::Run<ModelVariant>::run() {
 
     Acclimate::instance()->step(IterationStep::INITIALIZATION);
 
-    const Time start_time = scenario_m->start();
-    model_m->start(start_time);
+    model_m->start();
     for (const auto& output : outputs_m) {
         output->start();
     }
@@ -194,7 +193,11 @@ int Acclimate::Run<ModelVariant>::run() {
 #endif
     auto t0 = std::chrono::high_resolution_clock::now();
 
-    while (scenario_m->iterate()) {
+
+    while (!model_m->done()) {
+        for (const auto& scenario : scenarios_m) {
+            scenario->iterate();
+        }
 #ifdef ENABLE_DMTCP
         if (Acclimate::instance()->settings.has("checkpoint")) {
             if (Acclimate::instance()->settings["checkpoint"].as<std::size_t>()
@@ -269,9 +272,9 @@ int Acclimate::Run<ModelVariant>::run() {
 
 template<class ModelVariant>
 void Acclimate::Run<ModelVariant>::cleanup() {
-    Acclimate::instance()->step(IterationStep::CLEANUP);
-    if (scenario_m) {
-        scenario_m->end();
+    Acclimate::instance()->step(IterationStep::CLEANUP);  
+    for (auto& scenario : scenarios_m) {
+        scenario->end();
     }
     for (auto& output : outputs_m) {
         output->end();
@@ -282,7 +285,7 @@ void Acclimate::Run<ModelVariant>::cleanup() {
 template<class ModelVariant>
 void Acclimate::Run<ModelVariant>::memory_cleanup() {
     outputs_m.clear();
-    scenario_m.reset();
+    scenarios_m.clear();
     model_m.reset();
 }
 
@@ -395,7 +398,7 @@ std::string Acclimate::timeinfo() const {
 #endif
 
 void Acclimate::initialize(const settings::SettingsNode& settings_p) {
-    const std::string& variant = settings_p["variant"].as<std::string>();
+    const std::string& variant = settings_p["model"]["variant"].as<std::string>();
     if (variant == "basic") {
 #ifdef VARIANT_BASIC
         instance_m.reset(new Acclimate(settings_p, ModelVariantType::BASIC));

@@ -55,8 +55,8 @@ Sector<ModelVariant>* Model<ModelVariant>::add_sector(std::string name,
 }
 
 template<class ModelVariant>
-void Model<ModelVariant>::start(const Time& start_time) {
-    time_ = start_time;
+void Model<ModelVariant>::start() {
+    time_ = start_time_;
     timestep_ = 0;
 }
 

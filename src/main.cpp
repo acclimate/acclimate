@@ -37,6 +37,7 @@ static void print_usage(const char* program_name) {
                  "\n\n"
                  "Authors: Sven Willner <sven.willner@pik-potsdam.de>\n"
                  "         Christian Otto <christian.otto@pik-potsdam.de>\n"
+                 "         Kilian Kuhla <kilian.kuhla@pik-potsdam.de>\n"
                  "\n"
                  "Usage:   "
               << program_name

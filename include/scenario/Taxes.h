@@ -30,12 +30,11 @@ class Taxes : public Scenario<ModelVariant> {
   protected:
     using Scenario<ModelVariant>::model;
     using Scenario<ModelVariant>::id;
+    using Scenario<ModelVariant>::scenario_node;
     using Scenario<ModelVariant>::settings;
-    using Scenario<ModelVariant>::stop_time;
-    using Scenario<ModelVariant>::start_time;
 
   public:
-    Taxes(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, const Model<ModelVariant>* model_p);
     Time start() override;
     bool iterate() override;
 };

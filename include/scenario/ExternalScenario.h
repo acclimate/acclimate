@@ -33,11 +33,10 @@ template<class ModelVariant>
 class ExternalScenario : public Scenario<ModelVariant> {
   protected:
     using Scenario<ModelVariant>::id;
+    using Scenario<ModelVariant>::scenario_node;
     using Scenario<ModelVariant>::settings;
     using Scenario<ModelVariant>::set_firm_property;
     using Scenario<ModelVariant>::set_consumer_property;
-    using Scenario<ModelVariant>::start_time;
-    using Scenario<ModelVariant>::stop_time;
 
     std::string forcing_file;
     std::string expression;
@@ -57,7 +56,7 @@ class ExternalScenario : public Scenario<ModelVariant> {
 
     bool next_forcing_file();
     std::string fill_template(const std::string& in) const;
-    ExternalScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, const Model<ModelVariant>* model_p);
 
     virtual void internal_start(){}
     virtual void internal_iterate_start(){}

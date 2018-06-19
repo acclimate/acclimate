@@ -26,8 +26,8 @@
 namespace acclimate {
 
 template<class ModelVariant>
-HeatLaborProductivity<ModelVariant>::HeatLaborProductivity(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : RasteredScenario<ModelVariant, HeatLaborProductivity<ModelVariant>::RegionForcingType>(settings_p, model_p) {}
+HeatLaborProductivity<ModelVariant>::HeatLaborProductivity(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, const Model<ModelVariant>* model_p)
+    : RasteredScenario<ModelVariant, HeatLaborProductivity<ModelVariant>::RegionForcingType>(settings_p, scenario_node_p, model_p) {}
 
 template<class ModelVariant>
 typename HeatLaborProductivity<ModelVariant>::RegionForcingType HeatLaborProductivity<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {

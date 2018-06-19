@@ -42,7 +42,10 @@ namespace acclimate {
 template<class ModelVariant>
 ModelInitializer<ModelVariant>::ModelInitializer(Model<ModelVariant>* model_p, const settings::SettingsNode& settings_p)
     : model(model_p), settings(settings_p) {
-    const settings::SettingsNode& parameters = settings["parameters"];
+    const settings::SettingsNode& parameters = settings["model"];
+    const settings::SettingsNode& run = settings["run"];
+    model->start_time(run["start"].as<Time>());
+    model->stop_time(run["stop"].as<Time>());
     model->delta_t(parameters["delta_t"].as<Time>());
     model->no_self_supply(parameters["no_self_supply"].as<bool>());
 }
@@ -62,7 +65,7 @@ template<class ModelVariant>
 settings::SettingsNode ModelInitializer<ModelVariant>::get_firm_property(const std::string& sector_name,
                                                                          const std::string& region_name,
                                                                          const std::string& property_name) const {
-    const settings::SettingsNode& firm_settings = settings["firm"];
+    const settings::SettingsNode& firm_settings = settings["firms"];
     if (firm_settings.has(sector_name + ":" + region_name) && firm_settings[sector_name + ":" + region_name].has(property_name)) {
         return firm_settings[sector_name + ":" + region_name][property_name];
     }
@@ -105,9 +108,9 @@ template<>
 Sector<VariantBasic>* ModelInitializer<VariantBasic>::add_sector(const std::string& name) {
     Sector<VariantBasic>* sector = model->find_sector(name);
     if (sector == nullptr) {
-        sector = model->add_sector(name, get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
-                                   get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
-                                   Sector<VariantBasic>::map_transport_type(get_named_property("sector", name, "transport").template as<settings::hstring>()));
+        sector = model->add_sector(name, get_named_property("sectors", name, "upper_storage_limit").template as<Ratio>(),
+                                   get_named_property("sectors", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
+                                   Sector<VariantBasic>::map_transport_type(get_named_property("sectors", name, "transport").template as<settings::hstring>()));
     }
     return sector;
 }
@@ -118,11 +121,11 @@ template<>
 Sector<VariantDemand>* ModelInitializer<VariantDemand>::add_sector(const std::string& name) {
     Sector<VariantDemand>* sector = model->find_sector(name);
     if (sector == nullptr) {
-        sector = model->add_sector(name, get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
-                                   get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
-                                   Sector<VariantDemand>::map_transport_type(get_named_property("sector", name, "transport").template as<settings::hstring>()));
+        sector = model->add_sector(name, get_named_property("sectors", name, "upper_storage_limit").template as<Ratio>(),
+                                   get_named_property("sectors", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
+                                   Sector<VariantDemand>::map_transport_type(get_named_property("sectors", name, "transport").template as<settings::hstring>()));
         sector->parameters_writable().storage_refill_enforcement_gamma =
-            get_named_property("sector", name, "storage_refill_enforcement").template as<FloatType>() * model->delta_t();
+            get_named_property("sectors", name, "storage_refill_enforcement").template as<FloatType>() * model->delta_t();
     }
     return sector;
 }
@@ -133,21 +136,21 @@ template<>
 Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::string& name) {
     Sector<VariantPrices>* sector = model->find_sector(name);
     if (sector == nullptr) {
-        sector = model->add_sector(name, get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
-                                   get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
-                                   Sector<VariantPrices>::map_transport_type(get_named_property("sector", name, "transport").template as<settings::hstring>()));
-        sector->parameters_writable().supply_elasticity = get_named_property("sector", name, "supply_elasticity").template as<Ratio>();
+        sector = model->add_sector(name, get_named_property("sectors", name, "upper_storage_limit").template as<Ratio>(),
+                                   get_named_property("sectors", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
+                                   Sector<VariantPrices>::map_transport_type(get_named_property("sectors", name, "transport").template as<settings::hstring>()));
+        sector->parameters_writable().supply_elasticity = get_named_property("sectors", name, "supply_elasticity").template as<Ratio>();
         sector->parameters_writable().price_increase_production_extension =
-            get_named_property("sector", name, "price_increase_production_extension").template as<Price>();
+            get_named_property("sectors", name, "price_increase_production_extension").template as<Price>();
         sector->parameters_writable().estimated_price_increase_production_extension =
-            get_named_property("sector", name, "estimated_price_increase_production_extension")
+            get_named_property("sectors", name, "estimated_price_increase_production_extension")
                 .template as<Price>(to_float(sector->parameters_writable().price_increase_production_extension));
-        sector->parameters_writable().initial_markup = get_named_property("sector", name, "initial_markup").template as<Price>();
-        sector->parameters_writable().consumption_price_elasticity = get_named_property("sector", name, "consumption_price_elasticity").template as<Ratio>();
+        sector->parameters_writable().initial_markup = get_named_property("sectors", name, "initial_markup").template as<Price>();
+        sector->parameters_writable().consumption_price_elasticity = get_named_property("sectors", name, "consumption_price_elasticity").template as<Ratio>();
         sector->parameters_writable().target_storage_refill_time =
-            get_named_property("sector", name, "target_storage_refill_time").template as<FloatType>() * model->delta_t();
+            get_named_property("sectors", name, "target_storage_refill_time").template as<FloatType>() * model->delta_t();
         sector->parameters_writable().target_storage_withdraw_time =
-            get_named_property("sector", name, "target_storage_withdraw_time").template as<FloatType>() * model->delta_t();
+            get_named_property("sectors", name, "target_storage_withdraw_time").template as<FloatType>() * model->delta_t();
     }
     return sector;
 }
@@ -881,14 +884,14 @@ void ModelInitializer<VariantBasic>::pre_initialize_variant() {}
 #ifdef VARIANT_DEMAND
 template<>
 void ModelInitializer<VariantDemand>::pre_initialize_variant() {
-    const settings::SettingsNode& parameters = settings["parameters"];
+    const settings::SettingsNode& parameters = settings["model"];
     model->parameters_writable().history_weight = parameters["history_weight"].as<Ratio>();
 }
 #endif
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::pre_initialize_variant() {
-    const settings::SettingsNode& parameters = settings["parameters"];
+    const settings::SettingsNode& parameters = settings["model"];
     model->parameters_writable().transport_penalty_small = parameters["transport_penalty_small"].as<Price>();
     model->parameters_writable().transport_penalty_large = parameters["transport_penalty_large"].as<Price>();
     model->parameters_writable().optimization_maxiter = parameters["optimization_maxiter"].as<unsigned int>();

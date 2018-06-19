@@ -58,10 +58,15 @@ class Model {
     Time delta_t_ = Time(1.0);
     typename ModelVariant::ModelParameters parameters_;
     bool no_self_supply_ = false;
-
+  protected:
+	Time start_time_ = Time(0.0);
+	Time stop_time_ = Time(0.0);
   public:
     inline const Time& time() const { return time_; }
     inline const TimeStep& timestep() const { return timestep_; }
+    inline const Time& start_time() const { return start_time_; };
+    inline const Time& stop_time() const { return stop_time_; };
+    bool done() const { return time() > stop_time(); };
     inline void switch_registers() {
         assertstep(SCENARIO);
         current_register_ = 1 - current_register_;
@@ -77,6 +82,14 @@ class Model {
         delta_t_ = delta_t_p;
     }
     inline const bool& no_self_supply() const { return no_self_supply_; }
+    inline void start_time(const Time& start_time) {
+        assertstep(INITIALIZATION);
+        start_time_ = start_time;
+    }
+    inline void stop_time(const Time& stop_time) {
+        assertstep(INITIALIZATION);
+        stop_time_ = stop_time;
+    }
     inline void no_self_supply(bool no_self_supply_p) {
         assertstep(INITIALIZATION);
         no_self_supply_ = no_self_supply_p;
@@ -94,7 +107,7 @@ class Model {
                                      const Time& initial_storage_fill_factor_psi_p,
                                      typename Sector<ModelVariant>::TransportType transport_type_p);
     Model();
-    void start(const Time& start_time);
+    void start();
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();

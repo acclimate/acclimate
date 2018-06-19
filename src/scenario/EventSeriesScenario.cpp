@@ -28,8 +28,8 @@
 namespace acclimate {
 
 template<class ModelVariant>
-EventSeriesScenario<ModelVariant>::EventSeriesScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : ExternalScenario<ModelVariant>(settings_p, model_p) {}
+EventSeriesScenario<ModelVariant>::EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, const Model<ModelVariant>* model_p)
+    : ExternalScenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
 
 template<class ModelVariant>
 ExternalForcing* EventSeriesScenario<ModelVariant>::read_forcing_file(const std::string& filename, const std::string& variable_name) {

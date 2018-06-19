@@ -42,6 +42,7 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     using ExternalScenario<ModelVariant>::forcing;
     using ExternalScenario<ModelVariant>::model;
     using ExternalScenario<ModelVariant>::next_time;
+    using ExternalScenario<ModelVariant>::scenario_node;
     using ExternalScenario<ModelVariant>::settings;
 
     std::unique_ptr<RasteredData<int>> iso_raster;
@@ -64,7 +65,7 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     void iterate_first_timestep() override;
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
-    RasteredScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, const Model<ModelVariant>* model_p);
 
   public:
     using ExternalScenario<ModelVariant>::id;

@@ -101,7 +101,7 @@ class Acclimate {
 
       protected:
         static std::unique_ptr<Run> instance_m;
-        std::unique_ptr<Scenario<ModelVariant>> scenario_m;
+        std::vector<std::unique_ptr<Scenario<ModelVariant>>> scenarios_m;
         std::unique_ptr<Model<ModelVariant>> model_m;
         std::vector<std::unique_ptr<Output<ModelVariant>>> outputs_m;
         static void initialize();
