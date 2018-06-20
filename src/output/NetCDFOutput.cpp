@@ -130,7 +130,10 @@ void NetCDFOutput<ModelVariant>::internal_write_settings() {
 }
 
 template<class ModelVariant>
-void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
+void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v,
+                                                      const hstring& path,
+                                                      const hstring& name,
+                                                      const hstring& suffix) {
     auto meta = new VariableMeta();
     std::vector<netCDF::NcDim> dims;
     meta->index.push_back(0);
@@ -197,9 +200,9 @@ void NetCDFOutput<ModelVariant>::internal_end() {
 template<class ModelVariant>
 bool NetCDFOutput<ModelVariant>::internal_handle_event(typename ArrayOutput<ModelVariant>::Event& event) {
     netcdf_event_lock.call([&]() {
-                               var_events.putVar({event_cnt}, &event);
-                               ++event_cnt;
-                           });
+        var_events.putVar({event_cnt}, &event);
+        ++event_cnt;
+    });
     return false;
 }
 

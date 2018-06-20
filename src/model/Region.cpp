@@ -36,25 +36,19 @@ Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string id_p, con
 template<class ModelVariant>
 void Region<ModelVariant>::add_export_Z(const Flow& export_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    export_flow_Z_lock.call([&]() {
-                                export_flow_Z_[model->current_register()] += export_flow_Z_p;
-                            });
+    export_flow_Z_lock.call([&]() { export_flow_Z_[model->current_register()] += export_flow_Z_p; });
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_import_Z(const Flow& import_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    import_flow_Z_lock.call([&]() {
-                                import_flow_Z_[model->current_register()] += import_flow_Z_p;
-                            });
+    import_flow_Z_lock.call([&]() { import_flow_Z_[model->current_register()] += import_flow_Z_p; });
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_consumption_flow_Y(const Flow& consumption_flow_Y_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    consumption_flow_Y_lock.call([&]() {
-                                     consumption_flow_Y_[model->current_register()] += consumption_flow_Y_p;
-                                 });
+    consumption_flow_Y_lock.call([&]() { consumption_flow_Y_[model->current_register()] += consumption_flow_Y_p; });
 }
 
 template<class ModelVariant>
@@ -69,10 +63,6 @@ void Region<ModelVariant>::iterate_consumption_and_production() {
     import_flow_Z_[model->other_register()] = Flow(0.0);
     consumption_flow_Y_[model->other_register()] = Flow(0.0);
     iterate_consumption_and_production_variant();
-#pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
-        economic_agents[i]->iterate_consumption_and_production();
-    }
 }
 
 #ifdef VARIANT_BASIC
@@ -123,10 +113,6 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_purchase() {
     assertstep(PURCHASE);
     iterate_purchase_variant();
-#pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
-        economic_agents[i]->iterate_purchase();
-    }
 }
 
 #ifdef VARIANT_BASIC
@@ -150,10 +136,6 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_investment() {
     assertstep(INVESTMENT);
     iterate_investment_variant();
-#pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
-        economic_agents[i]->iterate_investment();
-    }
 }
 
 #ifdef VARIANT_BASIC
@@ -209,10 +191,10 @@ inline const Region<ModelVariant>* Region<ModelVariant>::as_region() const {
 template<class ModelVariant>
 void Region<ModelVariant>::remove_economic_agent(EconomicAgent<ModelVariant>* economic_agent) {
     economic_agents_lock.call([&]() {
-                                  auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
-                                                         [economic_agent](const std::unique_ptr<EconomicAgent<ModelVariant>>& it) { return it.get() == economic_agent; });
-                                  economic_agents.erase(it);
-                              });
+        auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
+                               [economic_agent](const std::unique_ptr<EconomicAgent<ModelVariant>>& it) { return it.get() == economic_agent; });
+        economic_agents.erase(it);
+    });
 }
 
 INSTANTIATE_BASIC(Region);

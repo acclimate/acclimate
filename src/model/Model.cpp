@@ -40,6 +40,16 @@ template<class ModelVariant>
 void Model<ModelVariant>::start(const Time& start_time) {
     time_ = start_time;
     timestep_ = 0;
+    for (const auto& region : regions_R) {
+        for (const auto& economic_agent : region->economic_agents) {
+            economic_agents.push_back(std::make_pair(economic_agent.get(), 0));
+            for (const auto& is : economic_agent->input_storages) {
+                purchasing_managers.push_back(std::make_pair(is->purchasing_manager.get(), 0));
+            }
+        }
+    }
+    std::random_shuffle(std::begin(economic_agents), std::end(economic_agents));
+    std::random_shuffle(std::begin(purchasing_managers), std::end(purchasing_managers));
 }
 
 template<class ModelVariant>
@@ -54,6 +64,12 @@ void Model<ModelVariant>::iterate_consumption_and_production() {
     for (std::size_t i = 0; i < regions_R.size(); ++i) {
         regions_R[i]->iterate_consumption_and_production();
     }
+
+#pragma omp parallel for default(shared) schedule(guided)
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
+        auto& p = economic_agents[i];
+        p.first->iterate_consumption_and_production();
+    }
 }
 
 template<class ModelVariant>
@@ -63,15 +79,35 @@ void Model<ModelVariant>::iterate_expectation() {
     for (std::size_t i = 0; i < regions_R.size(); ++i) {
         regions_R[i]->iterate_expectation();
     }
+
+#pragma omp parallel for default(shared) schedule(guided)
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
+        auto& p = economic_agents[i];
+        p.first->iterate_expectation();
+    }
 }
 
 template<class ModelVariant>
 void Model<ModelVariant>::iterate_purchase() {
     assertstep(PURCHASE);
+
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < regions_R.size(); ++i) {
         regions_R[i]->iterate_purchase();
     }
+
+#pragma omp parallel for default(shared) schedule(guided)
+    for (std::size_t i = 0; i < purchasing_managers.size(); ++i) {
+        auto t1 = std::chrono::high_resolution_clock::now();
+        auto& p = purchasing_managers[i];
+        p.first->iterate_purchase();
+        auto t2 = std::chrono::high_resolution_clock::now();
+        p.second = (t2 - t1).count();
+    }
+    std::sort(std::begin(purchasing_managers), std::end(purchasing_managers),
+              [](const std::pair<PurchasingManager<ModelVariant>*, std::size_t>& a, const std::pair<PurchasingManager<ModelVariant>*, std::size_t>& b) {
+                  return b.second > a.second;
+              });
 }
 
 template<class ModelVariant>
@@ -80,6 +116,12 @@ void Model<ModelVariant>::iterate_investment() {
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < regions_R.size(); ++i) {
         regions_R[i]->iterate_investment();
+    }
+
+#pragma omp parallel for default(shared) schedule(guided)
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
+        auto& p = economic_agents[i];
+        p.first->iterate_investment();
     }
 }
 

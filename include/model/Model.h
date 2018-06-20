@@ -33,6 +33,8 @@ template<class ModelVariant>
 class EconomicAgent;
 template<class ModelVariant>
 class Firm;
+template<class ModelVariant>
+class PurchasingManager;
 
 template<class ModelVariant>
 class Model {
@@ -57,6 +59,8 @@ class Model {
     Time delta_t_ = Time(1.0);
     typename ModelVariant::ModelParameters parameters_;
     bool no_self_supply_ = false;
+    std::vector<std::pair<PurchasingManager<ModelVariant>*,std::size_t>> purchasing_managers;
+    std::vector<std::pair<EconomicAgent<ModelVariant>*,std::size_t>> economic_agents;
 
   public:
     inline const Time& time() const { return time_; }

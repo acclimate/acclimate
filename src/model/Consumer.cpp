@@ -102,26 +102,6 @@ void Consumer<ModelVariant>::iterate_expectation() {
     assertstep(EXPECTATION);
 }
 
-#ifdef VARIANT_BASIC
-template<>
-void Consumer<VariantBasic>::iterate_purchase() {
-    assertstep(PURCHASE);
-    for (const auto& is : input_storages) {
-        is->purchasing_manager->iterate_purchase();
-    }
-}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-void Consumer<VariantDemand>::iterate_purchase() {
-    assertstep(PURCHASE);
-    for (const auto& is : input_storages) {
-        is->purchasing_manager->iterate_purchase();
-    }
-}
-#endif
-
 template<class ModelVariant>
 void Consumer<ModelVariant>::iterate_purchase() {
     assertstep(PURCHASE);

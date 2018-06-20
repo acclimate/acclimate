@@ -488,9 +488,6 @@ void Output<ModelVariant>::write_region_parameters(const Region<ModelVariant>* r
                     internal_write_value(name, region->government()->budget());
                 }
                 break;
-            case hstring::hash("people_affected"):
-                // handled in iterate
-                break;
             case hstring::hash("total_flow"): {
                 std::vector<Flow> flows(model->regions_R.size(), Flow(0.0));
                 for (const auto& ea : region->economic_agents) {
