@@ -31,11 +31,13 @@ Hurricanes<ModelVariant>::Hurricanes(const settings::SettingsNode& settings_p, c
 
 template<class ModelVariant>
 FloatType Hurricanes<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
+    UNUSED(region);
     return 0.0;
 }
 
 template<class ModelVariant>
 void Hurricanes<ModelVariant>::reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const {
+    UNUSED(region);
     forcing = 0.0;
 }
 
@@ -55,6 +57,7 @@ void Hurricanes<ModelVariant>::add_cell_forcing(FloatType x,
                                                 FloatType cell_forcing,
                                                 const Region<ModelVariant>* region,
                                                 FloatType& region_forcing) const {
+    UNUSED(region);
     UNUSED(x);
     UNUSED(y);
     region_forcing += cell_forcing > threshold ? proxy_value : 0.0;

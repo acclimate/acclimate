@@ -48,7 +48,7 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     std::unique_ptr<RasteredData<int>> iso_raster;
     std::unique_ptr<RasteredData<FloatType>> proxy;
     std::vector<RegionInfo> region_forcings;
-    FloatType total_current_proxy_sum_;
+    FloatType total_current_proxy_sum_ = 0;
 
     virtual RegionForcingType new_region_forcing(Region<ModelVariant>* region) const = 0;
     virtual void set_region_forcing(Region<ModelVariant>* region, const RegionForcingType& forcing, FloatType proxy_sum) const = 0;

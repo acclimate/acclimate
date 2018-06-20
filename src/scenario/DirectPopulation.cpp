@@ -29,11 +29,13 @@ DirectPopulation<ModelVariant>::DirectPopulation(const settings::SettingsNode& s
 
 template<class ModelVariant>
 FloatType DirectPopulation<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
+    UNUSED(region);
     return 0.0;
 }
 
 template<class ModelVariant>
 void DirectPopulation<ModelVariant>::reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const {
+    UNUSED(region);
     forcing = 0.0;
 }
 
@@ -53,6 +55,7 @@ void DirectPopulation<ModelVariant>::add_cell_forcing(FloatType x,
                                                       FloatType cell_forcing,
                                                       const Region<ModelVariant>* region,
                                                       FloatType& region_forcing) const {
+    UNUSED(region);
     UNUSED(x);
     UNUSED(y);
     region_forcing += std::min(cell_forcing, proxy_value);

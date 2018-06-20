@@ -21,6 +21,7 @@
 #include "model/Model.h"
 #include <algorithm>
 #include <chrono>
+#include <random>
 #include "model/Consumer.h"
 #include "model/Firm.h"
 #include "model/Infrastructure.h"
@@ -48,8 +49,10 @@ void Model<ModelVariant>::start(const Time& start_time) {
             }
         }
     }
-    std::random_shuffle(std::begin(economic_agents), std::end(economic_agents));
-    std::random_shuffle(std::begin(purchasing_managers), std::end(purchasing_managers));
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(std::begin(economic_agents), std::end(economic_agents), g);
+    std::shuffle(std::begin(purchasing_managers), std::end(purchasing_managers), g);
 }
 
 template<class ModelVariant>

@@ -33,9 +33,8 @@ template<class ModelVariant>
 typename HeatLaborProductivity<ModelVariant>::RegionForcingType HeatLaborProductivity<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
     if (region) {
         return std::vector<FloatType>(region->economic_agents.size(), 0.0);
-    } else {
-        return std::vector<FloatType>();
     }
+    return std::vector<FloatType>();
 }
 
 template<class ModelVariant>

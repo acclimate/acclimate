@@ -89,6 +89,7 @@ class ArrayOutput : public Output<ModelVariant> {
         UNUSED(v);
         UNUSED(path);
         UNUSED(name);
+        UNUSED(suffix);
     }
     virtual bool internal_handle_event(Event& event) {
         UNUSED(event);

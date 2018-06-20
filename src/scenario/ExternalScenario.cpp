@@ -115,7 +115,7 @@ bool ExternalScenario<ModelVariant>::next_forcing_file() {
         time_offset = model->time() + model->delta_t();
     }
     time_units_str_ = new_time_units_str;
-    next_time = Time(forcing->next_timestep() / time_step_width);
+    next_time = static_cast<Time>(forcing->next_timestep() / time_step_width);
     if (next_time < 0) {
         error("Empty forcing in " << filename);
     }

@@ -60,10 +60,10 @@ class ProgressOutput : public Output<ModelVariant> {
     void internal_end() override;
 
   public:
-    ProgressOutput(const settings::SettingsNode& settings,
-                   Model<ModelVariant>* model,
-                   Scenario<ModelVariant>* scenario,
-                   const settings::SettingsNode& output_node);
+    ProgressOutput(const settings::SettingsNode& settings_p,
+                   Model<ModelVariant>* model_p,
+                   Scenario<ModelVariant>* scenario_p,
+                   settings::SettingsNode output_node_p);
     void initialize() override;
     void checkpoint_stop() override;
     void checkpoint_resume() override;

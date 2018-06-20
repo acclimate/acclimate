@@ -436,6 +436,8 @@ int Acclimate::run() {
         case ModelVariantType::PRICES:
             return Acclimate::Run<VariantPrices>::instance()->run();
 #endif
+        default:
+            return -1;
     }
 }
 
