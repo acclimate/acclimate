@@ -84,6 +84,7 @@ if(ACCLIMATE_USE_TQDM)
   ExternalProject_Add(tqdm.cpp
     GIT_REPOSITORY https://github.com/swillner/tqdm.cpp
     GIT_TAG "bd7707e"
+    CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
     )
   ExternalProject_Get_Property(tqdm.cpp SOURCE_DIR)
@@ -128,8 +129,8 @@ if(NOT HAVE_NEW_NETCDF_CPP)
 endif()
 
 include(lib/settingsnode/settingsnode.cmake)
-target_link_libraries(acclimate settingsnode)
-include_yaml_cpp(acclimate ON "yaml-cpp-0.6.1")
+include_settingsnode(acclimate)
+include_yaml_cpp(acclimate ON "yaml-cpp-0.6.2")
 
 include(lib/libmrio/libmrio.cmake)
 target_link_libraries(acclimate libmrio)
