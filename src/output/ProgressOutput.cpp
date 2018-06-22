@@ -68,6 +68,7 @@ void ProgressOutput<ModelVariant>::checkpoint_resume() {
     tqdm::Params p;
     p.ascii = "";
     p.f = stdout;
+    p.miniters = 1;
     it.reset(new tqdm::RangeTqdm<int>(tqdm::RangeIterator<int>(total), tqdm::RangeIterator<int>(total, total), p));
 #endif
 }
@@ -84,6 +85,7 @@ void ProgressOutput<ModelVariant>::internal_iterate_end() {
 #ifdef USE_TQDM
     if (!it->ended()) {
         ++(*it);
+        std::cout << std::flush;
     }
 #endif
 }
