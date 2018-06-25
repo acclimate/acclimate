@@ -20,7 +20,6 @@
 #ifndef LIBMRIO_DISAGGREGATION_H
 #define LIBMRIO_DISAGGREGATION_H
 
-#include <cstddef>
 #include <limits>
 #include <memory>
 #include <string>

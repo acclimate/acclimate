@@ -20,7 +20,6 @@
 #ifndef LIBMRIO_MRIOINDEXSET_H
 #define LIBMRIO_MRIOINDEXSET_H
 
-#include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
