@@ -70,7 +70,7 @@ class PurchasingManager {
     inline const Demand& initial_demand_D_star() const { return storage->initial_input_flow_I_star(); }
     virtual void add_initial_demand_D_star(const Demand& demand_D_p);
     virtual void subtract_initial_demand_D_star(const Demand& demand_D_p);
-    inline Model<ModelVariant>* model() const { return storage->sector->model(); }
+    inline Model<ModelVariant>* model() const { return storage->model(); }
     inline std::string id() const { return storage->sector->id() + "->" + storage->economic_agent->id(); }
 #ifdef DEBUG
     void print_details() const;

@@ -38,7 +38,7 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
       last_demand_request_D_(initial_flow_Z_star_p),
       last_delivery_Z_(initial_flow_Z_star_p),
       last_shipment_Z_(initial_flow_Z_star_p),
-      time_(model()->time()),
+      time_(buyer_p->model()->time()),
       buyer(buyer_p),
       seller(seller_p) {
     seller_business_connections_lock.call([&]() { seller->business_connections.emplace_back(this); });
