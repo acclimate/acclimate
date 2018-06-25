@@ -20,8 +20,7 @@
 
 #include "model/GeographicEntity.h"
 #include <algorithm>
-#include "model/Infrastructure.h"
-#include "model/Region.h"
+#include "run.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {

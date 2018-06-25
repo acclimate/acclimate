@@ -19,11 +19,7 @@
 */
 
 #include "model/PurchasingManager.h"
-#include "model/BusinessConnection.h"
-#include "model/EconomicAgent.h"
-#include "model/Model.h"
-#include "model/SalesManager.h"
-#include "model/Sector.h"
+#include <iomanip>
 #include "model/Storage.h"
 #include "variants/ModelVariants.h"
 

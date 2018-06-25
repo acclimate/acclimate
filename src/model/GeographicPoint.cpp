@@ -18,12 +18,9 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <utility>
-
 #include "model/GeographicPoint.h"
-#include "model/Infrastructure.h"
-#include "model/Region.h"
-#include "variants/ModelVariants.h"
+#include <cmath>
+#include <utility>
 
 namespace acclimate {
 

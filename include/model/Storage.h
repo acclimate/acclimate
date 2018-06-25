@@ -21,12 +21,17 @@
 #ifndef ACCLIMATE_STORAGE_H
 #define ACCLIMATE_STORAGE_H
 
-#include "acclimate.h"
+#include <memory>
+#include <string>
+#include "run.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 class EconomicAgent;
+template<class ModelVariant>
+class Model;
 template<class ModelVariant>
 class Sector;
 
@@ -93,6 +98,7 @@ class Storage {
     void add_initial_flow_Z_star(const Flow& flow_Z_star);
     bool subtract_initial_flow_Z_star(const Flow& flow_Z_star);
     void iterate_consumption_and_production();
+    inline Model<ModelVariant>* model() const { return sector->model(); }
     inline std::string id() const { return sector->id() + ":_S_->" + economic_agent->id(); }
 };
 }  // namespace acclimate

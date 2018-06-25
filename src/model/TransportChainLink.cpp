@@ -19,7 +19,7 @@
 */
 
 #include "model/TransportChainLink.h"
-#include "model/BusinessConnection.h"
+#include "run.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {

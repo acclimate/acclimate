@@ -21,7 +21,10 @@
 #ifndef ACCLIMATE_INFRASTRUCTURE_H
 #define ACCLIMATE_INFRASTRUCTURE_H
 
+#include <string>
+#include <vector>
 #include "model/GeographicEntity.h"
+#include "types.h"
 
 namespace acclimate {
 

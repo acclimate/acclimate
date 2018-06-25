@@ -21,12 +21,16 @@
 #ifndef ACCLIMATE_TRANSPORTCHAINLINK_H
 #define ACCLIMATE_TRANSPORTCHAINLINK_H
 
-#include "model/Storage.h"
+#include <string>
+#include <vector>
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 class BusinessConnection;
+template<class ModelVariant>
+class Model;
 
 template<class ModelVariant>
 class TransportChainLink {
@@ -59,6 +63,7 @@ class TransportChainLink {
     FloatType get_stddeviation() const;
     const FlowQuantity get_flow_deficit() const;
 
+    inline Model<ModelVariant>* model() const { return business_connection->model(); }
     inline std::string id() const {
 #ifdef TRANSPORT
         const TransportChainLink<ModelVariant>* link = this;

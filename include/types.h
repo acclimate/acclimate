@@ -22,11 +22,62 @@
 #define ACCLIMATE_TYPES_H
 
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <limits>
-#include "helpers.h"
+#include <stdexcept>
+#include <string>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+#define UNUSED(x) (void)(x)
+
+#ifdef DEBUG
+#define typeassert(expr)                                                 \
+    if (!(expr)) {                                                       \
+        throw acclimate::exception("assertion failed: " __STRING(expr)); \
+    }
+#else
+#define typeassert(expr) \
+    {}
+#endif
 
 namespace acclimate {
+
+class exception : public std::runtime_error {
+  public:
+    explicit exception(const std::string& s) : std::runtime_error(s) {}
+    explicit exception(const char* s) : std::runtime_error(s) {}
+};
+
+class OpenMPLock {
+  protected:
+#ifdef _OPENMP
+    omp_lock_t lock;
+#endif
+  public:
+    OpenMPLock() {
+#ifdef _OPENMP
+        omp_init_lock(&lock);
+#endif
+    }
+    ~OpenMPLock() {
+#ifdef _OPENMP
+        omp_destroy_lock(&lock);
+#endif
+    }
+    template<typename Func>
+    inline void call(const Func& f) {
+#ifdef _OPENMP
+        omp_set_lock(&lock);
+#endif
+        f();
+#ifdef _OPENMP
+        omp_unset_lock(&lock);
+#endif
+    }
+};
 
 using FloatType = double;
 using IntType = long;
@@ -74,7 +125,7 @@ class Type {
     friend std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
         return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float();
     }
-    virtual ~Type(){}
+    virtual ~Type() {}
 };
 
 #define INCLUDE_STANDARD_OPS(T)                                                                                          \
@@ -246,25 +297,25 @@ class PricedQuantity {
 
   public:
     PricedQuantity(const Q& quantity_p, const V& value_p, const bool maybe_negative = false) : quantity(quantity_p), value(value_p) {
-        assert_(!isnan(quantity));
-        assert_(!isnan(value));
+        typeassert(!isnan(quantity));
+        typeassert(!isnan(value));
         if (!maybe_negative) {
-            assert_(quantity >= 0.0);
-            assert_(value >= 0.0);
+            typeassert(quantity >= 0.0);
+            typeassert(value >= 0.0);
         }
     }
-    PricedQuantity(const Q& quantity_p, const bool maybe_negative = false) : PricedQuantity(quantity_p, quantity_p * Price(1.0), maybe_negative){}
-    explicit PricedQuantity(FloatType quantity_p) : PricedQuantity(Q(quantity_p), Q(quantity_p) * Price(1.0)){}
+    PricedQuantity(const Q& quantity_p, const bool maybe_negative = false) : PricedQuantity(quantity_p, quantity_p * Price(1.0), maybe_negative) {}
+    explicit PricedQuantity(FloatType quantity_p) : PricedQuantity(Q(quantity_p), Q(quantity_p) * Price(1.0)) {}
     PricedQuantity(const Q& quantity_p, const Price& price_p, const bool maybe_negative = false)
-        : PricedQuantity(quantity_p, quantity_p * price_p, maybe_negative){}
+        : PricedQuantity(quantity_p, quantity_p * price_p, maybe_negative) {}
     PricedQuantity(const PricedQuantity& other) : quantity(other.quantity), value(other.value) {
         if (quantity <= 0.0) {
             value = V(0.0);
         } else {
             value = other.value;
         }
-        assert_(quantity >= 0.0);
-        assert_(value >= 0.0);
+        typeassert(quantity >= 0.0);
+        typeassert(value >= 0.0);
     }
 
     const Q& get_quantity() const { return quantity; }
@@ -282,38 +333,38 @@ class PricedQuantity {
             return std::numeric_limits<FloatType>::quiet_NaN();
         } else {
             FloatType price(to_float(value) / to_float(quantity));
-            assert_(price >= 0.0);
+            typeassert(price >= 0.0);
             return price;
         }
     }
 
     void set_price(const Price& price) {
-        assert_(price > 0.0);
+        typeassert(price > 0.0);
         if (quantity <= 0.0) {
             value = V(0.0);
         } else {
             value = quantity * price;
         }
-        assert_(value >= 0.0);
+        typeassert(value >= 0.0);
     }
     void set_quantity_keep_value(const Q& quantity_p) {
         quantity = quantity_p;
-        assert_(quantity >= 0);
+        typeassert(quantity >= 0);
     }
     void set_value(const V& value_p) {
         value = value_p;
-        assert_(value >= 0);
+        typeassert(value >= 0);
     }
 
     PricedQuantity operator+(const PricedQuantity& other) const { return PricedQuantity(quantity + other.quantity, value + other.value, true); }
     PricedQuantity operator-(const PricedQuantity& other) const { return PricedQuantity(quantity - other.quantity, value - other.value, true); }
     PricedQuantity operator*(const Ratio& other) const { return PricedQuantity(quantity * other, value * other); }
     PricedQuantity operator/(const Ratio& other) const {
-        assert_(other > 0.0);
+        typeassert(other > 0.0);
         return PricedQuantity(quantity / other, value / other);
     }
     Ratio operator/(const PricedQuantity& other) const {
-        assert_(other.quantity > 0.0);
+        typeassert(other.quantity > 0.0);
         return Ratio(quantity / other.quantity);
     }
 
@@ -329,26 +380,26 @@ class PricedQuantity {
         } else {
             value = other.value;
         }
-        assert_(quantity >= 0.0);
-        assert_(value >= 0.0);
+        typeassert(quantity >= 0.0);
+        typeassert(value >= 0.0);
         return *this;
     }
     const PricedQuantity& operator+=(const PricedQuantity& other) {
         quantity += other.quantity;
         value += other.value;
-        assert_(quantity >= 0.0);
-        assert_(value >= 0.0);
+        typeassert(quantity >= 0.0);
+        typeassert(value >= 0.0);
         return *this;
     }
     const PricedQuantity& operator-=(const PricedQuantity& other) {
         quantity -= other.quantity;
         value -= other.value;
-        assert_(quantity >= 0.0);
+        typeassert(quantity >= 0.0);
         if (round(quantity) <= 0.0) {
             quantity = Q(0.0);
             value = V(0.0);
         }
-        assert_(value >= 0.0);
+        typeassert(value >= 0.0);
         return *this;
     }
     const PricedQuantity& add_possibly_negative(const PricedQuantity& other) {
@@ -400,12 +451,12 @@ using Stock = PricedQuantity<Quantity, Value>;
 using Demand = Flow;
 
 inline Stock operator*(const Flow& flow, const Time& time) {
-    assert_(time >= 0.0);
+    typeassert(time >= 0.0);
     return Stock(flow.get_quantity() * time, flow.get_value() * time, true);
 }
 
 inline Flow operator/(const Stock& stock, const Time& time) {
-    assert_(time >= 0.0);
+    typeassert(time >= 0.0);
     return Flow(stock.get_quantity() / time, stock.get_value() / time, true);
 }
 }  // namespace acclimate

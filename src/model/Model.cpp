@@ -22,18 +22,16 @@
 #include <algorithm>
 #include <chrono>
 #include <random>
-#include "model/Consumer.h"
-#include "model/Firm.h"
-#include "model/Infrastructure.h"
+#include "model/EconomicAgent.h"
 #include "model/Region.h"
 #include "model/Sector.h"
-#include "output/Output.h"
+#include "model/Storage.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-Model<ModelVariant>::Model() : consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0))) {
+Model<ModelVariant>::Model(Run<ModelVariant>* run_p) : run_m(run_p), consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0))) {
     sectors_C.emplace_back(consumption_sector);
 }
 

@@ -24,6 +24,7 @@
 #include <fstream>
 #include <vector>
 #include "output/Output.h"
+#include "types.h"
 
 namespace acclimate {
 

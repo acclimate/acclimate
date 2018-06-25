@@ -19,14 +19,17 @@
 */
 
 #include "scenario/HeatLaborProductivity.h"
-
-#include <settingsnode.h>
+#include <algorithm>
+#include <cstddef>
+#include <string>
+#include "model/EconomicAgent.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-HeatLaborProductivity<ModelVariant>::HeatLaborProductivity(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
+HeatLaborProductivity<ModelVariant>::HeatLaborProductivity(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p)
     : RasteredScenario<ModelVariant, HeatLaborProductivity<ModelVariant>::RegionForcingType>(settings_p, model_p) {}
 
 template<class ModelVariant>

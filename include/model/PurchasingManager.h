@@ -21,25 +21,31 @@
 #ifndef ACCLIMATE_PURCHASINGMANAGER_H
 #define ACCLIMATE_PURCHASINGMANAGER_H
 
-#include "model/EconomicAgent.h"
+#include <string>
+#include <vector>
+#include "run.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 class BusinessConnection;
 template<class ModelVariant>
+class EconomicAgent;
+template<class ModelVariant>
+class Model;
+template<class ModelVariant>
 class Storage;
 
 template<class ModelVariant>
 class PurchasingManager {
-  public:
-    Storage<ModelVariant>* const storage;
-    std::vector<BusinessConnection<ModelVariant>*> business_connections;
-
   protected:
     Demand demand_D_ = Demand(0.0);
 
   public:
+    Storage<ModelVariant>* const storage;
+    std::vector<BusinessConnection<ModelVariant>*> business_connections;
+
     inline const Demand& demand_D(const EconomicAgent<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != storage->economic_agent) {
@@ -51,10 +57,8 @@ class PurchasingManager {
         return demand_D_;
     }
 
-  protected:
-  public:
     explicit PurchasingManager(Storage<ModelVariant>* storage_p);
-    virtual ~PurchasingManager(){}
+    virtual ~PurchasingManager() {}
     virtual const FlowQuantity get_flow_deficit() const;
     virtual const Flow get_transport_flow() const;
     const Flow get_disequilibrium() const;
@@ -63,10 +67,11 @@ class PurchasingManager {
     virtual void iterate_consumption_and_production();
     virtual void iterate_purchase() = 0;
     virtual bool remove_business_connection(const BusinessConnection<ModelVariant>* business_connection);
-    inline std::string id() const { return storage->sector->id() + "->" + storage->economic_agent->id(); }
     inline const Demand& initial_demand_D_star() const { return storage->initial_input_flow_I_star(); }
     virtual void add_initial_demand_D_star(const Demand& demand_D_p);
     virtual void subtract_initial_demand_D_star(const Demand& demand_D_p);
+    inline Model<ModelVariant>* model() const { return storage->sector->model(); }
+    inline std::string id() const { return storage->sector->id() + "->" + storage->economic_agent->id(); }
 #ifdef DEBUG
     void print_details() const;
 #endif

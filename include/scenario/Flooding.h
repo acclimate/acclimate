@@ -21,10 +21,17 @@
 #ifndef ACCLIMATE_FLOODING_H
 #define ACCLIMATE_FLOODING_H
 
+#include <cstddef>
 #include <vector>
 #include "scenario/RasteredScenario.h"
+#include "types.h"
 
 namespace acclimate {
+
+template<class ModelVariant>
+class Model;
+template<class ModelVariant>
+class Region;
 
 template<class ModelVariant>
 class Flooding : public RasteredScenario<ModelVariant, FloatType> {
@@ -38,7 +45,7 @@ class Flooding : public RasteredScenario<ModelVariant, FloatType> {
 
   public:
     using RasteredScenario<ModelVariant, FloatType>::id;
-    Flooding(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    Flooding(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p);
 };
 }  // namespace acclimate
 

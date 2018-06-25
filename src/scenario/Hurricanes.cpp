@@ -19,12 +19,14 @@
 */
 
 #include "scenario/Hurricanes.h"
+#include "model/EconomicAgent.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-Hurricanes<ModelVariant>::Hurricanes(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
+Hurricanes<ModelVariant>::Hurricanes(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p)
     : RasteredScenario<ModelVariant, FloatType>(settings_p, model_p) {
     threshold = settings_p["scenario"]["forcing"]["threshold"].as<double>();
 }
@@ -51,12 +53,8 @@ void Hurricanes<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, 
 }
 
 template<class ModelVariant>
-void Hurricanes<ModelVariant>::add_cell_forcing(FloatType x,
-                                                FloatType y,
-                                                FloatType proxy_value,
-                                                FloatType cell_forcing,
-                                                const Region<ModelVariant>* region,
-                                                FloatType& region_forcing) const {
+void Hurricanes<ModelVariant>::add_cell_forcing(
+    FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const {
     UNUSED(region);
     UNUSED(x);
     UNUSED(y);

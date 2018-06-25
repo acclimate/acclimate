@@ -21,9 +21,14 @@
 #ifndef ACCLIMATE_MODEL_H
 #define ACCLIMATE_MODEL_H
 
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 #include "model/Infrastructure.h"
-#include "model/Region.h"
-#include "model/Sector.h"
+#include "run.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -35,9 +40,15 @@ template<class ModelVariant>
 class Firm;
 template<class ModelVariant>
 class PurchasingManager;
+template<class ModelVariant>
+class Region;
+template<class ModelVariant>
+class Sector;
 
 template<class ModelVariant>
 class Model {
+    friend class Run<ModelVariant>;
+
   public:
     struct Event {
         const unsigned char type;
@@ -47,10 +58,6 @@ class Model {
         const Region<ModelVariant>* region_to;
         FloatType value;
     };
-    std::vector<std::unique_ptr<Sector<ModelVariant>>> sectors_C;
-    std::vector<std::unique_ptr<Region<ModelVariant>>> regions_R;
-    std::vector<std::unique_ptr<Infrastructure<ModelVariant>>> infrastructure_G;
-    Sector<ModelVariant>* const consumption_sector;
 
   private:
     Time time_ = Time(0.0);
@@ -59,10 +66,21 @@ class Model {
     Time delta_t_ = Time(1.0);
     typename ModelVariant::ModelParameters parameters_;
     bool no_self_supply_ = false;
-    std::vector<std::pair<PurchasingManager<ModelVariant>*,std::size_t>> purchasing_managers;
-    std::vector<std::pair<EconomicAgent<ModelVariant>*,std::size_t>> economic_agents;
+    std::vector<std::pair<PurchasingManager<ModelVariant>*, std::size_t>> purchasing_managers;
+    std::vector<std::pair<EconomicAgent<ModelVariant>*, std::size_t>> economic_agents;
+    Run<ModelVariant>* const run_m;
+    inline Model<ModelVariant>* model() { return this; }
+
+  protected:
+    Model(Run<ModelVariant>* const run_p);
 
   public:
+    std::vector<std::unique_ptr<Sector<ModelVariant>>> sectors_C;
+    std::vector<std::unique_ptr<Region<ModelVariant>>> regions_R;
+    std::vector<std::unique_ptr<Infrastructure<ModelVariant>>> infrastructure_G;
+    Sector<ModelVariant>* const consumption_sector;
+
+    inline Run<ModelVariant>* run() const { return run_m; }
     inline const Time& time() const { return time_; }
     inline const TimeStep& timestep() const { return timestep_; }
     inline void switch_registers() {
@@ -93,7 +111,6 @@ class Model {
     }
 
   public:
-    Model();
     void start(const Time& start_time);
     void iterate_consumption_and_production();
     void iterate_expectation();

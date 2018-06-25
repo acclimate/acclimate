@@ -21,12 +21,15 @@
 #ifndef ACCLIMATE_CAPACITYMANAGER_H
 #define ACCLIMATE_CAPACITYMANAGER_H
 
-#include "acclimate.h"
+#include <string>
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 class Firm;
+template<class ModelVariant>
+class Model;
 
 template<class ModelVariant>
 class CapacityManager {
@@ -53,6 +56,7 @@ class CapacityManager {
     Ratio get_production_capacity_p() const;
     Ratio get_desired_production_capacity_p_tilde() const;
     Ratio get_possible_production_capacity_p_hat() const;
+    inline Model<ModelVariant>* model() const { return firm->model(); }
     inline std::string id() const { return firm->id(); }
 };
 }  // namespace acclimate

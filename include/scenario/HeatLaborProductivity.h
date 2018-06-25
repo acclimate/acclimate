@@ -21,9 +21,16 @@
 #ifndef ACCLIMATE_HEATLABORPRODUCTIVITY_H
 #define ACCLIMATE_HEATLABORPRODUCTIVITY_H
 
+#include <vector>
 #include "scenario/RasteredScenario.h"
+#include "types.h"
 
 namespace acclimate {
+
+template<class ModelVariant>
+class Model;
+template<class ModelVariant>
+class Region;
 
 using HeatLaborProductivityRegionForcingType = std::vector<FloatType>;
 
@@ -42,7 +49,7 @@ class HeatLaborProductivity : public RasteredScenario<ModelVariant, HeatLaborPro
                           RegionForcingType& region_forcing) const override;
 
   public:
-    HeatLaborProductivity(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    HeatLaborProductivity(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p);
 };
 }  // namespace acclimate
 

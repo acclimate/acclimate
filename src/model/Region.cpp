@@ -20,48 +20,52 @@
 
 #include "model/Region.h"
 #include <algorithm>
+#include <cstddef>
+#include <utility>
 #include "model/EconomicAgent.h"
 #include "model/GeographicEntity.h"
 #include "model/Government.h"
 #include "model/Infrastructure.h"
-#include "model/Model.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string id_p, const IntType index_p)
-    : GeographicEntity<ModelVariant>(GeographicEntity<ModelVariant>::Type::REGION), id_(std::move(id_p)), index_(index_p), model(model_p) {}
+    : GeographicEntity<ModelVariant>(GeographicEntity<ModelVariant>::Type::REGION), id_m(std::move(id_p)), index_m(index_p), model_m(model_p) {}
+
+template<class ModelVariant>
+Region<ModelVariant>::~Region() {}
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_export_Z(const Flow& export_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    export_flow_Z_lock.call([&]() { export_flow_Z_[model->current_register()] += export_flow_Z_p; });
+    export_flow_Z_lock.call([&]() { export_flow_Z_[model()->current_register()] += export_flow_Z_p; });
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_import_Z(const Flow& import_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    import_flow_Z_lock.call([&]() { import_flow_Z_[model->current_register()] += import_flow_Z_p; });
+    import_flow_Z_lock.call([&]() { import_flow_Z_[model()->current_register()] += import_flow_Z_p; });
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_consumption_flow_Y(const Flow& consumption_flow_Y_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    consumption_flow_Y_lock.call([&]() { consumption_flow_Y_[model->current_register()] += consumption_flow_Y_p; });
+    consumption_flow_Y_lock.call([&]() { consumption_flow_Y_[model()->current_register()] += consumption_flow_Y_p; });
 }
 
 template<class ModelVariant>
 Flow Region<ModelVariant>::get_gdp() const {
-    return consumption_flow_Y_[model->current_register()] + export_flow_Z_[model->current_register()] - import_flow_Z_[model->current_register()];
+    return consumption_flow_Y_[model()->current_register()] + export_flow_Z_[model()->current_register()] - import_flow_Z_[model()->current_register()];
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    export_flow_Z_[model->other_register()] = Flow(0.0);
-    import_flow_Z_[model->other_register()] = Flow(0.0);
-    consumption_flow_Y_[model->other_register()] = Flow(0.0);
+    export_flow_Z_[model()->other_register()] = Flow(0.0);
+    import_flow_Z_[model()->other_register()] = Flow(0.0);
+    consumption_flow_Y_[model()->other_register()] = Flow(0.0);
     iterate_consumption_and_production_variant();
 }
 
@@ -77,8 +81,8 @@ void Region<VariantDemand>::iterate_consumption_and_production_variant() {}
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_consumption_and_production_variant() {
-    if (government_) {
-        government_->iterate_consumption_and_production();
+    if (government_m) {
+        government_m->iterate_consumption_and_production();
     }
 }
 
@@ -104,8 +108,8 @@ void Region<VariantDemand>::iterate_expectation_variant() {}
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_expectation_variant() {
-    if (government_) {
-        government_->iterate_expectation();
+    if (government_m) {
+        government_m->iterate_expectation();
     }
 }
 
@@ -127,8 +131,8 @@ void Region<VariantDemand>::iterate_purchase_variant() {}
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_purchase_variant() {
-    if (government_) {
-        government_->iterate_purchase();
+    if (government_m) {
+        government_m->iterate_purchase();
     }
 }
 
@@ -150,8 +154,8 @@ void Region<VariantDemand>::iterate_investment_variant() {}
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_investment_variant() {
-    if (government_) {
-        government_->iterate_investment();
+    if (government_m) {
+        government_m->iterate_investment();
     }
 }
 

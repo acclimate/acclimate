@@ -19,16 +19,20 @@
 */
 
 #include "scenario/Scenario.h"
+#include <random>
+#include <utility>
 #include "model/EconomicAgent.h"
 #include "model/Region.h"
 #include "model/Sector.h"
+#include "run.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-Scenario<ModelVariant>::Scenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p) : model(model_p), settings(settings_p) {
-    srand(0);
+Scenario<ModelVariant>::Scenario(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p) : model_m(model_p), settings(settings_p) {
+    std::srand(0);
 }
 
 template<class ModelVariant>
@@ -76,14 +80,14 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
             if (type == "firm") {
                 if (it.has("sector")) {
                     if (it.has("region")) {
-                        Firm<ModelVariant>* firm = model->find_firm(it["sector"].template as<std::string>(), it["region"].template as<std::string>());
+                        Firm<ModelVariant>* firm = model()->find_firm(it["sector"].template as<std::string>(), it["region"].template as<std::string>());
                         if (firm) {
                             set_firm_property(firm, it, reset);
                         } else {
                             error("Firm " << it["sector"].template as<std::string>() << ":" << it["region"].template as<std::string>() << " not found");
                         }
                     } else {
-                        Sector<ModelVariant>* sector = model->find_sector(it["sector"].template as<std::string>());
+                        Sector<ModelVariant>* sector = model()->find_sector(it["sector"].template as<std::string>());
                         if (sector) {
                             for (auto& p : sector->firms_N) {
                                 set_firm_property(p, it, reset);
@@ -94,7 +98,7 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                     }
                 } else {
                     if (it.has("region")) {
-                        Region<ModelVariant>* region = model->find_region(it["region"].template as<std::string>());
+                        Region<ModelVariant>* region = model()->find_region(it["region"].template as<std::string>());
                         if (region) {
                             for (auto& ea : region->economic_agents) {
                                 if (ea->type == EconomicAgent<ModelVariant>::Type::FIRM) {
@@ -105,7 +109,7 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                             error("Region " << it["region"].template as<std::string>() << " not found");
                         }
                     } else {
-                        for (auto& s : model->sectors_C) {
+                        for (auto& s : model()->sectors_C) {
                             for (auto& p : s->firms_N) {
                                 set_firm_property(p, it, reset);
                             }
@@ -114,14 +118,14 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                 }
             } else if (type == "consumer") {
                 if (it.has("region")) {
-                    Consumer<ModelVariant>* consumer = model->find_consumer(it["region"].template as<std::string>());
+                    Consumer<ModelVariant>* consumer = model()->find_consumer(it["region"].template as<std::string>());
                     if (consumer) {
                         set_consumer_property(consumer, it, reset);
                     } else {
                         error("Consumer " << it["region"].template as<std::string>() << " not found");
                     }
                 } else {
-                    for (auto& r : model->regions_R) {
+                    for (auto& r : model()->regions_R) {
                         for (auto& ea : r->economic_agents) {
                             if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
                                 set_consumer_property(ea->as_consumer(), it, reset);
@@ -136,7 +140,7 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
 
 template<class ModelVariant>
 bool Scenario<ModelVariant>::iterate() {
-    if (model->time() > stop_time) {
+    if (model()->time() > stop_time) {
         return false;
     }
 
@@ -145,9 +149,9 @@ bool Scenario<ModelVariant>::iterate() {
         if (type == "shock") {
             const Time from = event["from"].template as<Time>();
             const Time to = event["to"].template as<Time>();
-            if (model->time() >= from && model->time() <= to) {
+            if (model()->time() >= from && model()->time() <= to) {
                 apply_target(event["targets"], false);
-            } else if (model->time() == to + model->delta_t()) {
+            } else if (model()->time() == to + model()->delta_t()) {
                 apply_target(event["targets"], true);
             }
         }

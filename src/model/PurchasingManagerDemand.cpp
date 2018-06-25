@@ -20,8 +20,9 @@
 
 #include "model/PurchasingManagerDemand.h"
 #include "model/BusinessConnection.h"
-#include "model/Model.h"
-#include "variants/ModelVariants.h"
+#include "run.h"
+#include "types.h"
+#include "variants/VariantDemand.h"
 
 namespace acclimate {
 
@@ -38,10 +39,10 @@ void PurchasingManagerDemand<ModelVariant>::iterate_purchase() {
 template<class ModelVariant>
 void PurchasingManagerDemand<ModelVariant>::calc_demand_D() {
     assertstep(PURCHASE);
-    demand_D_ = round((std::max(FlowQuantity(0.0), storage->desired_used_flow_U_tilde().get_quantity()
-                                                       + ((storage->initial_content_S_star() - storage->content_S()).get_quantity()
-                                                          + get_flow_deficit() * storage->sector->model->delta_t())
-                                                             / storage->sector->parameters().storage_refill_enforcement_gamma)));
+    demand_D_ = round(
+        (std::max(FlowQuantity(0.0), storage->desired_used_flow_U_tilde().get_quantity()
+                                         + ((storage->initial_content_S_star() - storage->content_S()).get_quantity() + get_flow_deficit() * model()->delta_t())
+                                               / storage->sector->parameters().storage_refill_enforcement_gamma)));
 }
 
 template<class ModelVariant>

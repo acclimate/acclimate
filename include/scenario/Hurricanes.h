@@ -21,9 +21,16 @@
 #ifndef ACCLIMATE_HURRICANES_H
 #define ACCLIMATE_HURRICANES_H
 
+#include <vector>
 #include "scenario/RasteredScenario.h"
+#include "types.h"
 
 namespace acclimate {
+
+template<class ModelVariant>
+class Model;
+template<class ModelVariant>
+class Region;
 
 template<class ModelVariant>
 class Hurricanes : public RasteredScenario<ModelVariant, FloatType> {
@@ -36,7 +43,7 @@ class Hurricanes : public RasteredScenario<ModelVariant, FloatType> {
         FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const override;
 
   public:
-    Hurricanes(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    Hurricanes(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p);
 };
 }  // namespace acclimate
 

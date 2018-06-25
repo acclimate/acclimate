@@ -19,9 +19,16 @@
 */
 
 #include "model/Firm.h"
+#include <vector>
+#include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
 #include "model/Model.h"
+#include "model/PurchasingManagerBasic.h"
+#include "model/PurchasingManagerDemand.h"
 #include "model/Region.h"
+#include "model/SalesManagerBasic.h"
+#include "model/SalesManagerDemand.h"
+#include "model/SalesManagerPrices.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
 #include "variants/ModelVariants.h"

@@ -21,7 +21,8 @@
 #ifndef ACCLIMATE_PROGRESSOUTPUT_H
 #define ACCLIMATE_PROGRESSOUTPUT_H
 
-#include <output/Output.h>
+#include <memory>
+#include "output/Output.h"
 
 namespace tqdm {
 template<typename SizeType>

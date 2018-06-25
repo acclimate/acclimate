@@ -21,14 +21,19 @@
 #ifndef ACCLIMATE_FIRM_H
 #define ACCLIMATE_FIRM_H
 
+#include <memory>
+#include "run.h"
 #include "model/EconomicAgent.h"
-#include "model/Region.h"
-#include "model/Sector.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class Modelvariant>
 class BusinessConnection;
+template<class Modelvariant>
+class Region;
+template<class Modelvariant>
+class Sector;
 
 template<class ModelVariant>
 class Firm : public EconomicAgent<ModelVariant> {
@@ -44,6 +49,7 @@ class Firm : public EconomicAgent<ModelVariant> {
   public:
     using EconomicAgent<ModelVariant>::id;
     using EconomicAgent<ModelVariant>::input_storages;
+    using EconomicAgent<ModelVariant>::model;
     using EconomicAgent<ModelVariant>::region;
     using EconomicAgent<ModelVariant>::sector;
     std::unique_ptr<typename ModelVariant::CapacityManagerType> const capacity_manager;

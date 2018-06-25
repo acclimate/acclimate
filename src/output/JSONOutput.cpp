@@ -19,10 +19,15 @@
 */
 
 #include "output/JSONOutput.h"
+#include <ctime>
+#include <iostream>
+#include <string>
+#include <utility>
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "scenario/Scenario.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 #include "version.h"
 
@@ -52,7 +57,7 @@ void JSONOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_thre
     *out << "{\n"
             "\"info_header\": {\n"
             "    \"start_time\": \""
-         << asctime(timestamp)
+         << std::asctime(timestamp)
          << "\",\n"
             "    \"version\": \""
          << ACCLIMATE_VERSION
@@ -68,7 +73,7 @@ void JSONOutput<ModelVariant>::internal_write_footer(tm* duration) {
     *out << "},\n"
             "\"info_footer\": {\n"
             "    \"duration\": \""
-         << mktime(duration)
+         << std::mktime(duration)
          << "s\"\n"
             "}\n";
 }
@@ -82,7 +87,7 @@ void JSONOutput<ModelVariant>::internal_write_settings() {
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_iterate_begin() {
-    *out << "    \"" << model->time() << "\": {\n";
+    *out << "    \"" << model()->time() << "\": {\n";
 }
 
 template<class ModelVariant>

@@ -19,9 +19,13 @@
 */
 
 #include "model/Storage.h"
+#include <algorithm>
+#include "model/EconomicAgent.h"
 #include "model/Model.h"
 #include "model/Sector.h"
+#include "run.h"
 #include "variants/ModelVariants.h"
+#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
@@ -33,20 +37,20 @@ template<class ModelVariant>
 void Storage<ModelVariant>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     calc_content_S();
-    input_flow_I_[2] = input_flow_I_[sector->model->other_register()];
-    input_flow_I_[sector->model->other_register()] = Flow(0.0);
+    input_flow_I_[2] = input_flow_I_[model()->other_register()];
+    input_flow_I_[model()->other_register()] = Flow(0.0);
     purchasing_manager->iterate_consumption_and_production();
 }
 
 template<class ModelVariant>
 const Flow Storage<ModelVariant>::get_possible_use_U_hat() const {
     assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
-    return content_S_ / sector->model->delta_t() + current_input_flow_I();
+    return content_S_ / model()->delta_t() + current_input_flow_I();
 }
 
 template<class ModelVariant>
 const Flow& Storage<ModelVariant>::current_input_flow_I() const {
-    return input_flow_I_[sector->model->other_register()];
+    return input_flow_I_[model()->other_register()];
 }
 
 template<class ModelVariant>
@@ -69,23 +73,22 @@ Ratio Storage<ModelVariant>::get_input_share_u() const {
 template<>
 void Storage<VariantPrices>::calc_content_S() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * sector->model->delta_t());
-    if (sector->model->parameters().min_storage > 0.0) {
-        Quantity quantity = std::max(sector->model->parameters().min_storage * initial_content_S_star_.get_quantity(), content_S_.get_quantity());
+    content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * model()->delta_t());
+    if (model()->parameters().min_storage > 0.0) {
+        Quantity quantity = std::max(model()->parameters().min_storage * initial_content_S_star_.get_quantity(), content_S_.get_quantity());
         content_S_ = Stock(quantity, quantity * content_S_.get_price());
     }
     assert(content_S_.get_quantity() >= 0.0);
 
     Stock maxStock = initial_content_S_star_ * forcing_mu_ * sector->upper_storage_limit_omega;
     if (maxStock.get_quantity() < content_S_.get_quantity()) {
-        Acclimate::Run<VariantPrices>::instance()->event(EventType::STORAGE_OVERRUN, sector, nullptr, economic_agent,
-                                                         to_float(content_S_.get_quantity() - maxStock.get_quantity()));
+        model()->run()->event(EventType::STORAGE_OVERRUN, sector, nullptr, economic_agent, to_float(content_S_.get_quantity() - maxStock.get_quantity()));
         const Price tmp = content_S_.get_price();
         content_S_ = maxStock;
         content_S_.set_price(tmp);
     }
     if (content_S_.get_quantity() <= 0.0) {
-        Acclimate::Run<VariantPrices>::instance()->event(EventType::STORAGE_EMPTY, sector, nullptr, economic_agent);
+        model()->run()->event(EventType::STORAGE_EMPTY, sector, nullptr, economic_agent);
     }
 }
 #endif
@@ -93,17 +96,16 @@ void Storage<VariantPrices>::calc_content_S() {
 template<class ModelVariant>
 void Storage<ModelVariant>::calc_content_S() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * sector->model->delta_t());
+    content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * model()->delta_t());
     assert(content_S_.get_quantity() >= 0.0);
 
     Stock maxStock = initial_content_S_star_ * forcing_mu_ * sector->upper_storage_limit_omega;
     if (maxStock.get_quantity() < content_S_.get_quantity()) {
-        Acclimate::Run<ModelVariant>::instance()->event(EventType::STORAGE_OVERRUN, sector, nullptr, economic_agent,
-                                                        to_float(content_S_.get_quantity() - maxStock.get_quantity()));
+        model()->run()->event(EventType::STORAGE_OVERRUN, sector, nullptr, economic_agent, to_float(content_S_.get_quantity() - maxStock.get_quantity()));
         content_S_ = maxStock;
     }
     if (content_S_.get_quantity() <= 0.0) {
-        Acclimate::Run<ModelVariant>::instance()->event(EventType::STORAGE_EMPTY, sector, nullptr, economic_agent);
+        model()->run()->event(EventType::STORAGE_EMPTY, sector, nullptr, economic_agent);
     }
 }
 
@@ -130,15 +132,13 @@ void Storage<ModelVariant>::set_desired_used_flow_U_tilde(const Flow& desired_us
 template<class ModelVariant>
 void Storage<ModelVariant>::push_flow_Z(const Flow& flow_Z) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    input_flow_I_lock.call([&]() {
-                               input_flow_I_[sector->model->current_register()] += flow_Z;
-                           });
+    input_flow_I_lock.call([&]() { input_flow_I_[model()->current_register()] += flow_Z; });
 }
 
 template<class ModelVariant>
 const Flow& Storage<ModelVariant>::next_input_flow_I() const {
     assertstep(UNDEFINED);
-    return input_flow_I_[sector->model->current_register()];
+    return input_flow_I_[model()->current_register()];
 }
 
 template<class ModelVariant>

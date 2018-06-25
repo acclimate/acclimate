@@ -21,8 +21,14 @@
 #ifndef ACCLIMATE_SALESMANAGER_H
 #define ACCLIMATE_SALESMANAGER_H
 
+#include <memory>
+#include <string>
+#include <vector>
+#include "run.h"
 #include "model/BusinessConnection.h"
 #include "model/Firm.h"
+#include "model/Model.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -44,7 +50,7 @@ class SalesManager {
 
   public:
     explicit SalesManager(Firm<ModelVariant>* firm_p);
-    virtual ~SalesManager(){}
+    virtual ~SalesManager() {}
     virtual void distribute(const Flow& production_X) = 0;
     virtual void iterate_expectation();
     void add_demand_request_D(const Demand& demand_request_D);
@@ -52,6 +58,7 @@ class SalesManager {
     void subtract_initial_demand_request_D_star(const Demand& initial_demand_request_D_star);
     const Flow get_transport_flow() const;
     std::unique_ptr<BusinessConnection<ModelVariant>> remove_business_connection(BusinessConnection<ModelVariant>* business_connection);
+    inline Model<ModelVariant>* model() const { return firm->model(); }
     inline std::string id() const { return firm->id(); }
 #ifdef DEBUG
     void print_details() const;

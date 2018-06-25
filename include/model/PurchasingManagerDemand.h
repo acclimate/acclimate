@@ -26,11 +26,15 @@
 namespace acclimate {
 
 template<class ModelVariant>
+class Storage;
+
+template<class ModelVariant>
 class PurchasingManagerDemand : public PurchasingManager<ModelVariant> {
   public:
     using PurchasingManager<ModelVariant>::business_connections;
     using PurchasingManager<ModelVariant>::get_flow_deficit;
     using PurchasingManager<ModelVariant>::id;
+    using PurchasingManager<ModelVariant>::model;
     using PurchasingManager<ModelVariant>::storage;
 
   private:

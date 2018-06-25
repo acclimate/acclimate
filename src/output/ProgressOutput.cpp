@@ -20,9 +20,10 @@
 
 #include "output/ProgressOutput.h"
 #include <iostream>
+#include <string>
+#include <utility>
 #include "model/Model.h"
 #include "model/Sector.h"
-#include "scenario/Scenario.h"
 #include "variants/ModelVariants.h"
 #ifdef USE_TQDM
 #pragma GCC diagnostic push

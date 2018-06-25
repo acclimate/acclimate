@@ -21,8 +21,12 @@
 #ifndef ACCLIMATE_RASTEREDDATA_H
 #define ACCLIMATE_RASTEREDDATA_H
 
-#include "acclimate.h"
+#include <cstddef>
+#include <iterator>
+#include <memory>
+#include <string>
 #include "netcdf_headers.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -63,7 +67,7 @@ class RasteredData {
 
       public:
         using iterator_category = std::forward_iterator_tag;
-        iterator(FloatType l_, const std::size_t& c_, FloatType gridsize_, const std::size_t& count_) : l(l_), c(c_), gridsize(gridsize_), count(count_){}
+        iterator(FloatType l_, const std::size_t& c_, FloatType gridsize_, const std::size_t& count_) : l(l_), c(c_), gridsize(gridsize_), count(count_) {}
         iterator operator++() {
             if (c < count) {
                 c++;
@@ -80,7 +84,7 @@ class RasteredData {
         const RasteredData& rd;
 
       public:
-        explicit X(const RasteredData& rd_) : rd(rd_){}
+        explicit X(const RasteredData& rd_) : rd(rd_) {}
         iterator begin() const { return iterator(rd.t_x_min, 0, rd.t_x_gridsize, rd.x_count); }
         iterator end() const { return iterator(rd.t_x_max, rd.x_count, rd.t_x_gridsize, rd.x_count); }
     };
@@ -90,7 +94,7 @@ class RasteredData {
         const RasteredData& rd;
 
       public:
-        explicit Y(const RasteredData& rd_) : rd(rd_){}
+        explicit Y(const RasteredData& rd_) : rd(rd_) {}
         iterator begin() const { return iterator(rd.t_y_min, 0, rd.t_y_gridsize, rd.y_count); }
         iterator end() const { return iterator(rd.t_y_max, rd.y_count, rd.t_y_gridsize, rd.y_count); }
     };

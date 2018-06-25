@@ -19,10 +19,9 @@
 */
 
 #include "output/ArrayOutput.h"
-#include "model/Model.h"
-#include "model/Region.h"
-#include "model/Sector.h"
-#include "scenario/Scenario.h"
+#include <limits>
+#include <utility>
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
@@ -40,12 +39,14 @@ ArrayOutput<ModelVariant>::ArrayOutput(const settings::SettingsNode& settings_p,
 template<class ModelVariant>
 void ArrayOutput<ModelVariant>::initialize() {
     include_events = output_node["events"].template as<bool>(false);
-    sectors_size = model->sectors_C.size();
-    regions_size = model->regions_R.size();
+    sectors_size = model()->sectors_C.size();
+    regions_size = model()->regions_R.size();
 }
 
 template<class ModelVariant>
-inline typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::create_variable(const hstring& path, const hstring& name, const hstring& suffix) {
+inline typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::create_variable(const hstring& path,
+                                                                                                const hstring& name,
+                                                                                                const hstring& suffix) {
     const auto key = suffix ^ name ^ path;
     auto it = variables.find(key);
     if (it == variables.end()) {
@@ -81,7 +82,7 @@ inline std::size_t ArrayOutput<ModelVariant>::current_index() const {
         return stack.back().index;
     }
     if (over_time) {
-        return model->timestep();
+        return model()->timestep();
     }
     return 0;
 }
@@ -114,7 +115,7 @@ void ArrayOutput<ModelVariant>::internal_end_target() {
 template<class ModelVariant>
 void ArrayOutput<ModelVariant>::internal_iterate_begin() {
     if (over_time) {
-        const unsigned int t = model->timestep();
+        const unsigned int t = model()->timestep();
         for (auto& var : variables) {
             Variable& v = var.second;
             v.data.resize((t + 1) * v.size, std::numeric_limits<FloatType>::quiet_NaN());
@@ -140,7 +141,7 @@ void ArrayOutput<ModelVariant>::event(EventType type,
                                       FloatType value) {
     if (include_events) {
         Event event_struct;
-        event_struct.time = model->timestep();
+        event_struct.time = model()->timestep();
         event_struct.type = static_cast<unsigned char>(type);
         event_struct.sector_from = (sector_from == nullptr ? -1 : sector_from->index());
         event_struct.region_from = (region_from == nullptr ? -1 : region_from->index());

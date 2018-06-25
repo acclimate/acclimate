@@ -21,10 +21,11 @@
 #ifndef ACCLIMATE_MODELINITIALIZER_H
 #define ACCLIMATE_MODELINITIALIZER_H
 
+#include <string>
 #include <unordered_map>
-#include "settingsnode.h"
-#include "acclimate.h"
 #include "model/GeographicPoint.h"
+#include "settingsnode.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -48,7 +49,7 @@ class ModelInitializer {
     settings::SettingsNode get_named_property(const std::string& tag_name, const std::string& node_name, const std::string& property_name) const;
 
   protected:
-    Model<ModelVariant>* const model;
+    Model<ModelVariant>* const model_m;
     const settings::SettingsNode& settings;
     Distance transport_time;
     std::unordered_map<std::string, GeographicPoint> region_centroids;
@@ -84,6 +85,7 @@ class ModelInitializer {
 #ifdef DEBUG
     void print_network_characteristics() const;
 #endif
+    inline Model<ModelVariant>* model() const { return model_m; }
     inline std::string id() const { return "MODELINITIALIZER"; }
 };
 }  // namespace acclimate

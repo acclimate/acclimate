@@ -19,16 +19,16 @@
 */
 
 #include "scenario/RasteredScenario.h"
-#include <sstream>
-
-#include "scenario/ExternalForcing.h"
+#include <cstddef>
+#include "run.h"
 #include "scenario/RasteredTimeData.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant, class RegionForcingType>
-RasteredScenario<ModelVariant, RegionForcingType>::RasteredScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
+RasteredScenario<ModelVariant, RegionForcingType>::RasteredScenario(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p)
     : ExternalScenario<ModelVariant>(settings_p, model_p) {}
 
 template<class ModelVariant, class RegionForcingType>
@@ -62,7 +62,7 @@ void RasteredScenario<ModelVariant, RegionForcingType>::internal_start() {
         std::vector<const char*> index_val(index_size);
         index_var.getVar(&index_val[0]);
         for (const auto& r : index_val) {
-            const auto region = model->find_region(r);
+            const auto region = model()->find_region(r);
             region_forcings.emplace_back(RegionInfo{
                 region,                     // region
                 0,                          // proxy_sum

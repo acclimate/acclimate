@@ -19,8 +19,8 @@
 */
 
 #include "model/SalesManagerDemand.h"
-#include "model/BusinessConnection.h"
-#include "variants/ModelVariants.h"
+#include "model/Firm.h"
+#include "variants/VariantDemand.h"
 
 namespace acclimate {
 

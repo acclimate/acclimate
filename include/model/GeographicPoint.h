@@ -21,7 +21,8 @@
 #ifndef ACCLIMATE_GEOGRAPHICPOINT_H
 #define ACCLIMATE_GEOGRAPHICPOINT_H
 
-#include "acclimate.h"
+#include <string>
+#include "types.h"
 
 namespace acclimate {
 

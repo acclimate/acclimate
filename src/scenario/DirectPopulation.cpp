@@ -19,12 +19,13 @@
 */
 
 #include "scenario/DirectPopulation.h"
+#include <algorithm>
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-DirectPopulation<ModelVariant>::DirectPopulation(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
+DirectPopulation<ModelVariant>::DirectPopulation(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p)
     : RasteredScenario<ModelVariant, FloatType>(settings_p, model_p) {}
 
 template<class ModelVariant>
@@ -49,12 +50,8 @@ void DirectPopulation<ModelVariant>::set_region_forcing(Region<ModelVariant>* re
 }
 
 template<class ModelVariant>
-void DirectPopulation<ModelVariant>::add_cell_forcing(FloatType x,
-                                                      FloatType y,
-                                                      FloatType proxy_value,
-                                                      FloatType cell_forcing,
-                                                      const Region<ModelVariant>* region,
-                                                      FloatType& region_forcing) const {
+void DirectPopulation<ModelVariant>::add_cell_forcing(
+    FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const {
     UNUSED(region);
     UNUSED(x);
     UNUSED(y);

@@ -21,13 +21,13 @@
 #ifndef ACCLIMATE_EXTERNALSCENARIO_H
 #define ACCLIMATE_EXTERNALSCENARIO_H
 
+#include <memory>
+#include <string>
 #include "scenario/ExternalForcing.h"
 #include "scenario/Scenario.h"
+#include "types.h"
 
 namespace acclimate {
-
-template<class ModelVariant>
-class Region;
 
 template<class ModelVariant>
 class ExternalScenario : public Scenario<ModelVariant> {
@@ -57,19 +57,19 @@ class ExternalScenario : public Scenario<ModelVariant> {
 
     bool next_forcing_file();
     std::string fill_template(const std::string& in) const;
-    ExternalScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    ExternalScenario(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p);
 
-    virtual void internal_start(){}
-    virtual void internal_iterate_start(){}
+    virtual void internal_start() {}
+    virtual void internal_iterate_start() {}
     virtual bool internal_iterate_end() { return true; }
-    virtual void iterate_first_timestep(){}
+    virtual void iterate_first_timestep() {}
     virtual ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) = 0;
     virtual void read_forcings() = 0;
 
   public:
     using Scenario<ModelVariant>::model;
     using Scenario<ModelVariant>::is_first_timestep;
-    virtual ~ExternalScenario(){}
+    virtual ~ExternalScenario() {}
     bool iterate() override;
     Time start() override;
     void end() override;

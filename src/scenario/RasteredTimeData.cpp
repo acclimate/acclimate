@@ -19,6 +19,8 @@
 */
 
 #include "scenario/RasteredTimeData.h"
+#include <memory>
+#include "types.h"
 
 namespace acclimate {
 

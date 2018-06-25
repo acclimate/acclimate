@@ -19,30 +19,35 @@
 */
 
 #include "input/ModelInitializer.h"
+#include <algorithm>
 #include <fstream>
+#include <memory>
+#include <vector>
+#include "MRIOIndexSet.h"
 #include "MRIOTable.h"
 #include "model/BusinessConnection.h"
-#include "model/CapacityManagerPrices.h"
 #include "model/Consumer.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/GeographicPoint.h"
+#include "model/Infrastructure.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
 #include "netcdf_headers.h"
 #include "optimization.h"
+#include "run.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 ModelInitializer<ModelVariant>::ModelInitializer(Model<ModelVariant>* model_p, const settings::SettingsNode& settings_p)
-    : model(model_p), settings(settings_p), transport_time(0) {
+    : model_m(model_p), settings(settings_p), transport_time(0) {
     const settings::SettingsNode& parameters = settings["parameters"];
-    model->delta_t(parameters["delta_t"].as<Time>());
-    model->no_self_supply(parameters["no_self_supply"].as<bool>());
+    model()->delta_t(parameters["delta_t"].as<Time>());
+    model()->no_self_supply(parameters["no_self_supply"].as<bool>());
 }
 
 template<class ModelVariant>
@@ -114,14 +119,14 @@ Consumer<ModelVariant>* ModelInitializer<ModelVariant>::add_consumer(Region<Mode
 
 template<class ModelVariant>
 Region<ModelVariant>* ModelInitializer<ModelVariant>::add_region(const std::string& name) {
-    Region<ModelVariant>* region = model->find_region(name);
+    Region<ModelVariant>* region = model()->find_region(name);
     if (!region) {
-        region = new Region<ModelVariant>(model, name, model->regions_R.size());
-        model->regions_R.emplace_back(region);
+        region = new Region<ModelVariant>(model(), name, model()->regions_R.size());
+        model()->regions_R.emplace_back(region);
         switch (transport_time_base) {
             case TransportTimeBase::CONST:
             case TransportTimeBase::CENTROIDS:
-                for (auto& region_to : model->regions_R) {
+                for (auto& region_to : model()->regions_R) {
                     TransportDelay transport_delay_tau;
                     if (transport_time_base == TransportTimeBase::CENTROIDS) {
                         const auto c = region_centroids.find(name);
@@ -132,9 +137,9 @@ Region<ModelVariant>* ModelInitializer<ModelVariant>::add_region(const std::stri
                         unsigned int transport_delay_tau_int;
                         const FloatType distance = region->centroid()->distance_to(*region_to->centroid());
                         if (distance >= threshold_road_transport) {
-                            transport_delay_tau_int = iround(distance / avg_water_speed / 24. / to_float(model->delta_t()));
+                            transport_delay_tau_int = iround(distance / avg_water_speed / 24. / to_float(model()->delta_t()));
                         } else {
-                            transport_delay_tau_int = iround(distance / avg_road_speed / 24. / to_float(model->delta_t()));
+                            transport_delay_tau_int = iround(distance / avg_road_speed / 24. / to_float(model()->delta_t()));
                         }
                         if (transport_delay_tau_int > 254) {
                             error("Transport delay too large: " << transport_delay_tau_int);
@@ -148,7 +153,7 @@ Region<ModelVariant>* ModelInitializer<ModelVariant>::add_region(const std::stri
                     region_to->connections.push_back(inf);
                     inf->connections.push_back(region);
                     inf->connections.push_back(region_to.get());
-                    model->infrastructure_G.emplace_back(inf);
+                    model()->infrastructure_G.emplace_back(inf);
                     Path<ModelVariant> path = {
                         transport_delay_tau,  // distance
                         inf                   // infrastructure
@@ -167,11 +172,12 @@ Region<ModelVariant>* ModelInitializer<ModelVariant>::add_region(const std::stri
 #ifdef VARIANT_BASIC
 template<>
 Sector<VariantBasic>* ModelInitializer<VariantBasic>::add_sector(const std::string& name) {
-    Sector<VariantBasic>* sector = model->find_sector(name);
+    Sector<VariantBasic>* sector = model()->find_sector(name);
     if (sector == nullptr) {
-        sector = new Sector<VariantBasic>(model, name, model->sectors_C.size(), get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
-                                          get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t());
-        model->sectors_C.emplace_back(sector);
+        sector =
+            new Sector<VariantBasic>(model(), name, model()->sectors_C.size(), get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
+                                     get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t());
+        model()->sectors_C.emplace_back(sector);
     }
     return sector;
 }
@@ -180,13 +186,14 @@ Sector<VariantBasic>* ModelInitializer<VariantBasic>::add_sector(const std::stri
 #ifdef VARIANT_DEMAND
 template<>
 Sector<VariantDemand>* ModelInitializer<VariantDemand>::add_sector(const std::string& name) {
-    Sector<VariantDemand>* sector = model->find_sector(name);
+    Sector<VariantDemand>* sector = model()->find_sector(name);
     if (sector == nullptr) {
-        sector = new Sector<VariantDemand>(model, name, model->sectors_C.size(), get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
-                                           get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t());
+        sector =
+            new Sector<VariantDemand>(model(), name, model()->sectors_C.size(), get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
+                                      get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t());
         sector->parameters_writable().storage_refill_enforcement_gamma =
-            get_named_property("sector", name, "storage_refill_enforcement").template as<FloatType>() * model->delta_t();
-        model->sectors_C.emplace_back(sector);
+            get_named_property("sector", name, "storage_refill_enforcement").template as<FloatType>() * model()->delta_t();
+        model()->sectors_C.emplace_back(sector);
     }
     return sector;
 }
@@ -195,10 +202,11 @@ Sector<VariantDemand>* ModelInitializer<VariantDemand>::add_sector(const std::st
 #ifdef VARIANT_PRICES
 template<>
 Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::string& name) {
-    Sector<VariantPrices>* sector = model->find_sector(name);
+    Sector<VariantPrices>* sector = model()->find_sector(name);
     if (sector == nullptr) {
-        sector = new Sector<VariantPrices>(model, name, model->sectors_C.size(), get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
-                                           get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t());
+        sector =
+            new Sector<VariantPrices>(model(), name, model()->sectors_C.size(), get_named_property("sector", name, "upper_storage_limit").template as<Ratio>(),
+                                      get_named_property("sector", name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t());
         sector->parameters_writable().supply_elasticity = get_named_property("sector", name, "supply_elasticity").template as<Ratio>();
         sector->parameters_writable().price_increase_production_extension =
             get_named_property("sector", name, "price_increase_production_extension").template as<Price>();
@@ -208,10 +216,10 @@ Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::st
         sector->parameters_writable().initial_markup = get_named_property("sector", name, "initial_markup").template as<Price>();
         sector->parameters_writable().consumption_price_elasticity = get_named_property("sector", name, "consumption_price_elasticity").template as<Ratio>();
         sector->parameters_writable().target_storage_refill_time =
-            get_named_property("sector", name, "target_storage_refill_time").template as<FloatType>() * model->delta_t();
+            get_named_property("sector", name, "target_storage_refill_time").template as<FloatType>() * model()->delta_t();
         sector->parameters_writable().target_storage_withdraw_time =
-            get_named_property("sector", name, "target_storage_withdraw_time").template as<FloatType>() * model->delta_t();
-        model->sectors_C.emplace_back(sector);
+            get_named_property("sector", name, "target_storage_withdraw_time").template as<FloatType>() * model()->delta_t();
+        model()->sectors_C.emplace_back(sector);
     }
     return sector;
 }
@@ -220,14 +228,14 @@ Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::st
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::initialize_connection(
     Sector<ModelVariant>* sector_from, Region<ModelVariant>* region_from, Sector<ModelVariant>* sector_to, Region<ModelVariant>* region_to, const Flow& flow) {
-    Firm<ModelVariant>* firm_from = model->find_firm(sector_from, region_from->id());
+    Firm<ModelVariant>* firm_from = model()->find_firm(sector_from, region_from->id());
     if (!firm_from) {
         firm_from = add_firm(sector_from, region_from);
         if (!firm_from) {
             return;
         }
     }
-    Firm<ModelVariant>* firm_to = model->find_firm(sector_to, region_to->id());
+    Firm<ModelVariant>* firm_to = model()->find_firm(sector_to, region_to->id());
     if (!firm_to) {
         firm_to = add_firm(sector_to, region_to);
         if (!firm_to) {
@@ -239,7 +247,7 @@ void ModelInitializer<ModelVariant>::initialize_connection(
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::initialize_connection(Firm<ModelVariant>* firm_from, EconomicAgent<ModelVariant>* economic_agent_to, const Flow& flow) {
-    if (model->no_self_supply() && (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to))) {
+    if (model()->no_self_supply() && (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to))) {
         return;
     }
 #ifdef DEBUG
@@ -280,7 +288,7 @@ void ModelInitializer<ModelVariant>::clean_network() {
 #ifdef CLEANUP_INFO
         info("Cleaning up...");
 #endif
-        for (auto region = model->regions_R.begin(); region != model->regions_R.end(); ++region) {
+        for (auto region = model()->regions_R.begin(); region != model()->regions_R.end(); ++region) {
             for (auto economic_agent = (*region)->economic_agents.begin(); economic_agent != (*region)->economic_agents.end();) {
                 if ((*economic_agent)->type == EconomicAgent<ModelVariant>::Type::FIRM) {
                     Firm<ModelVariant>* firm = (*economic_agent)->as_firm();
@@ -359,7 +367,7 @@ template<class ModelVariant>
 void ModelInitializer<ModelVariant>::print_network_characteristics() const {
     FloatType average_transport_delay = 0;
     unsigned int region_wo_firm_count = 0;
-    for (auto& region : model->regions_R) {
+    for (auto& region : model()->regions_R) {
         FloatType average_transport_delay_region = 0;
         unsigned int firm_count = 0;
         for (auto& economic_agent : region->economic_agents) {
@@ -386,7 +394,7 @@ void ModelInitializer<ModelVariant>::print_network_characteristics() const {
             warning(region->id() << ": no firm");
         }
     }
-    average_transport_delay /= FloatType(model->regions_R.size() - region_wo_firm_count);
+    average_transport_delay /= FloatType(model()->regions_R.size() - region_wo_firm_count);
 #ifdef CLEANUP_INFO
     info("Average transport delay: " << average_transport_delay);
 #endif
@@ -450,10 +458,10 @@ void ModelInitializer<ModelVariant>::read_transport_times_csv(const std::string&
             region_name.erase(region_name.size() - 1);
         }
 
-        Region<ModelVariant>* region = model->find_region(region_name);
+        Region<ModelVariant>* region = model()->find_region(region_name);
         if (!region) {
-            region = new Region<ModelVariant>(model, region_name, model->regions_R.size());
-            model->regions_R.emplace_back(region);
+            region = new Region<ModelVariant>(model(), region_name, model()->regions_R.size());
+            model()->regions_R.emplace_back(region);
         }
 
         regions.push_back(region);
@@ -496,7 +504,7 @@ void ModelInitializer<ModelVariant>::read_transport_times_csv(const std::string&
             regions[col]->connections.push_back(inf);
             inf->connections.push_back(regions[row]);
             inf->connections.push_back(regions[col]);
-            model->infrastructure_G.emplace_back(inf);
+            model()->infrastructure_G.emplace_back(inf);
             Path<ModelVariant> path = {
                 transport_delay_tau,  // distance
                 inf                   // infrastructure
@@ -525,30 +533,30 @@ void ModelInitializer<ModelVariant>::build_artificial_network() {
         Region<ModelVariant>* region = add_region("RG" + std::to_string(i));
         add_consumer(region);
         for (std::size_t i = 0; i < sectors_cnt; ++i) {
-            add_firm(model->sectors_C[i + 1].get(), region);
+            add_firm(model()->sectors_C[i + 1].get(), region);
         }
     }
     const Flow flow = Flow(FlowQuantity(1.0), Price(1.0));
     const Flow double_flow = Flow(FlowQuantity(2.0), Price(1.0));
     for (std::size_t r = 0; r < regions_cnt; ++r) {
         for (std::size_t i = 0; i < sectors_cnt; ++i) {
-            info(model->sectors_C[i + 1]->firms_N[r]->id()
-                 << "->" << model->sectors_C[(i + 1) % sectors_cnt + 1]->firms_N[r]->id() << " = " << flow.get_quantity());
-            initialize_connection(model->sectors_C[i + 1]->firms_N[r], model->sectors_C[(i + 1) % sectors_cnt + 1]->firms_N[r], flow);
+            info(model()->sectors_C[i + 1]->firms_N[r]->id()
+                 << "->" << model()->sectors_C[(i + 1) % sectors_cnt + 1]->firms_N[r]->id() << " = " << flow.get_quantity());
+            initialize_connection(model()->sectors_C[i + 1]->firms_N[r], model()->sectors_C[(i + 1) % sectors_cnt + 1]->firms_N[r], flow);
             if (!closed && r == regions_cnt - 1) {
-                info(model->sectors_C[i + 1]->firms_N[r]->id()
-                     << "->" << model->find_consumer(model->regions_R[r].get())->id() << " = " << double_flow.get_quantity());
-                initialize_connection(model->sectors_C[i + 1]->firms_N[r], model->find_consumer(model->regions_R[r].get()), double_flow);
+                info(model()->sectors_C[i + 1]->firms_N[r]->id()
+                     << "->" << model()->find_consumer(model()->regions_R[r].get())->id() << " = " << double_flow.get_quantity());
+                initialize_connection(model()->sectors_C[i + 1]->firms_N[r], model()->find_consumer(model()->regions_R[r].get()), double_flow);
             } else {
-                info(model->sectors_C[i + 1]->firms_N[r]->id()
-                     << "->" << model->find_consumer(model->regions_R[r].get())->id() << " = " << flow.get_quantity());
-                initialize_connection(model->sectors_C[i + 1]->firms_N[r], model->find_consumer(model->regions_R[r].get()), flow);
+                info(model()->sectors_C[i + 1]->firms_N[r]->id()
+                     << "->" << model()->find_consumer(model()->regions_R[r].get())->id() << " = " << flow.get_quantity());
+                initialize_connection(model()->sectors_C[i + 1]->firms_N[r], model()->find_consumer(model()->regions_R[r].get()), flow);
             }
             if (closed || r < regions_cnt - 1) {
-                info(model->sectors_C[i + 1]->firms_N[r]->id()
-                     << "->" << model->sectors_C[(i + skewness) % sectors_cnt + 1]->firms_N[(r + 1) % regions_cnt]->id() << " = " << flow.get_quantity());
-                initialize_connection(model->sectors_C[i + 1]->firms_N[r], model->sectors_C[(i + skewness) % sectors_cnt + 1]->firms_N[(r + 1) % regions_cnt],
-                                      flow);
+                info(model()->sectors_C[i + 1]->firms_N[r]->id()
+                     << "->" << model()->sectors_C[(i + skewness) % sectors_cnt + 1]->firms_N[(r + 1) % regions_cnt]->id() << " = " << flow.get_quantity());
+                initialize_connection(model()->sectors_C[i + 1]->firms_N[r],
+                                      model()->sectors_C[(i + skewness) % sectors_cnt + 1]->firms_N[(r + 1) % regions_cnt], flow);
             }
         }
     }
@@ -577,15 +585,6 @@ void ModelInitializer<ModelVariant>::read_flows() {
         table.read_from_csv(index_file, flows_file, flow_threshold);
         flows_file.close();
         index_file.close();
-    } else if (type == "mrio") {
-        read_transport();
-        filename = network["file"].as<std::string>();
-        std::ifstream flows_file(filename.c_str(), std::ios::in | std::ios::binary);
-        if (!flows_file) {
-            error("Could not open flows file '" << filename << "'");
-        }
-        table.read_from_mrio(flows_file, flow_threshold);
-        flows_file.close();
     } else if (type == "netcdf") {
         read_transport();
         filename = network["file"].as<std::string>();
@@ -600,7 +599,7 @@ void ModelInitializer<ModelVariant>::read_flows() {
         const std::string& sector_name = index.sector->name;
         Region<ModelVariant>* region = add_region(region_name);
         if (sector_name == "FCON") {
-            Consumer<ModelVariant>* consumer = model->find_consumer(region);
+            Consumer<ModelVariant>* consumer = model()->find_consumer(region);
             if (!consumer) {
                 consumer = add_consumer(region);
                 economic_agents.push_back(consumer);
@@ -609,7 +608,7 @@ void ModelInitializer<ModelVariant>::read_flows() {
             }
         } else {
             Sector<ModelVariant>* sector = add_sector(sector_name);
-            Firm<ModelVariant>* firm = model->find_firm(sector, region->id());
+            Firm<ModelVariant>* firm = model()->find_firm(sector, region->id());
             if (!firm) {
                 firm = add_firm(sector, region);
                 if (!firm) {
@@ -620,7 +619,7 @@ void ModelInitializer<ModelVariant>::read_flows() {
         }
     }
 
-    const Ratio time_factor = model->delta_t() / Time(365.0);
+    const Ratio time_factor = model()->delta_t() / Time(365.0);
     const FlowQuantity daily_flow_threshold = round(FlowQuantity(flow_threshold * time_factor));
     auto d = table.raw_data().begin();
     for (auto& source : economic_agents) {
@@ -682,52 +681,52 @@ void ModelInitializer<VariantBasic>::pre_initialize_variant() {}
 template<>
 void ModelInitializer<VariantDemand>::pre_initialize_variant() {
     const settings::SettingsNode& parameters = settings["parameters"];
-    model->parameters_writable().history_weight = parameters["history_weight"].as<Ratio>();
+    model()->parameters_writable().history_weight = parameters["history_weight"].as<Ratio>();
 }
 #endif
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::pre_initialize_variant() {
     const settings::SettingsNode& parameters = settings["parameters"];
-    model->parameters_writable().transport_penalty_small = parameters["transport_penalty_small"].as<Price>();
-    model->parameters_writable().transport_penalty_large = parameters["transport_penalty_large"].as<Price>();
-    model->parameters_writable().optimization_maxiter = parameters["optimization_maxiter"].as<unsigned int>();
-    model->parameters_writable().optimization_timeout = parameters["optimization_timeout"].as<unsigned int>();
-    model->parameters_writable().quadratic_transport_penalty = parameters["quadratic_transport_penalty"].as<bool>();
-    model->parameters_writable().maximal_decrease_reservation_price_limited_by_markup =
+    model()->parameters_writable().transport_penalty_small = parameters["transport_penalty_small"].as<Price>();
+    model()->parameters_writable().transport_penalty_large = parameters["transport_penalty_large"].as<Price>();
+    model()->parameters_writable().optimization_maxiter = parameters["optimization_maxiter"].as<unsigned int>();
+    model()->parameters_writable().optimization_timeout = parameters["optimization_timeout"].as<unsigned int>();
+    model()->parameters_writable().quadratic_transport_penalty = parameters["quadratic_transport_penalty"].as<bool>();
+    model()->parameters_writable().maximal_decrease_reservation_price_limited_by_markup =
         parameters["maximal_decrease_reservation_price_limited_by_markup"].as<bool>();
-    model->parameters_writable().always_extend_expected_demand_curve = parameters["always_extend_expected_demand_curve"].as<bool>();
-    model->parameters_writable().naive_expectations = parameters["naive_expectations"].as<bool>();
-    model->parameters_writable().deviation_penalty = parameters["deviation_penalty"].as<bool>(false);
-    model->parameters_writable().cost_correction = parameters["cost_correction"].as<bool>();
-    model->parameters_writable().min_storage = parameters["min_storage"].as<Ratio>(0.0);
-    model->parameters_writable().cheapest_price_range_preserve_seller_price = parameters["cheapest_price_range_preserve_seller_price"].as<bool>(false);
-    model->parameters_writable().cheapest_price_range_generic_size = (parameters["cheapest_price_range_width"].as<std::string>() == "auto");
-    if (!model->parameters_writable().cheapest_price_range_generic_size) {
-        model->parameters_writable().cheapest_price_range_width = parameters["cheapest_price_range_width"].as<Price>();
+    model()->parameters_writable().always_extend_expected_demand_curve = parameters["always_extend_expected_demand_curve"].as<bool>();
+    model()->parameters_writable().naive_expectations = parameters["naive_expectations"].as<bool>();
+    model()->parameters_writable().deviation_penalty = parameters["deviation_penalty"].as<bool>(false);
+    model()->parameters_writable().cost_correction = parameters["cost_correction"].as<bool>();
+    model()->parameters_writable().min_storage = parameters["min_storage"].as<Ratio>(0.0);
+    model()->parameters_writable().cheapest_price_range_preserve_seller_price = parameters["cheapest_price_range_preserve_seller_price"].as<bool>(false);
+    model()->parameters_writable().cheapest_price_range_generic_size = (parameters["cheapest_price_range_width"].as<std::string>() == "auto");
+    if (!model()->parameters_writable().cheapest_price_range_generic_size) {
+        model()->parameters_writable().cheapest_price_range_width = parameters["cheapest_price_range_width"].as<Price>();
     }
-    model->parameters_writable().relative_transport_penalty = parameters["relative_transport_penalty"].as<bool>();
+    model()->parameters_writable().relative_transport_penalty = parameters["relative_transport_penalty"].as<bool>();
     const std::string& optimization_algorithm = parameters["optimization_algorithm"].as<std::string>("slsqp");
     if (optimization_algorithm == "slsqp") {
-        model->parameters_writable().optimization_algorithm = nlopt::LD_SLSQP;
+        model()->parameters_writable().optimization_algorithm = nlopt::LD_SLSQP;
     } else if (optimization_algorithm == "mma") {
-        model->parameters_writable().optimization_algorithm = nlopt::LD_MMA;
+        model()->parameters_writable().optimization_algorithm = nlopt::LD_MMA;
     } else if (optimization_algorithm == "ccsaq") {
-        model->parameters_writable().optimization_algorithm = nlopt::LD_CCSAQ;
+        model()->parameters_writable().optimization_algorithm = nlopt::LD_CCSAQ;
     } else if (optimization_algorithm == "lbfgs") {
-        model->parameters_writable().optimization_algorithm = nlopt::LD_LBFGS;
+        model()->parameters_writable().optimization_algorithm = nlopt::LD_LBFGS;
     } else if (optimization_algorithm == "tnewton_precond_restart") {
-        model->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON_PRECOND_RESTART;
+        model()->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON_PRECOND_RESTART;
     } else if (optimization_algorithm == "tnewton_precond") {
-        model->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON_PRECOND;
+        model()->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON_PRECOND;
     } else if (optimization_algorithm == "tnewton_restart") {
-        model->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON_RESTART;
+        model()->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON_RESTART;
     } else if (optimization_algorithm == "tnewton") {
-        model->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON;
+        model()->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON;
     } else if (optimization_algorithm == "var1") {
-        model->parameters_writable().optimization_algorithm = nlopt::LD_VAR1;
+        model()->parameters_writable().optimization_algorithm = nlopt::LD_VAR1;
     } else if (optimization_algorithm == "var2") {
-        model->parameters_writable().optimization_algorithm = nlopt::LD_VAR2;
+        model()->parameters_writable().optimization_algorithm = nlopt::LD_VAR2;
     } else {
         error("unknown optimization alorithm '" << optimization_algorithm << "'");
     }
@@ -746,7 +745,7 @@ void ModelInitializer<VariantDemand>::post_initialize_variant() {}
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::post_initialize_variant() {
     // initialize price dependent members of each capacityManager, which can only be calculated after the whole network has been initialized
-    for (auto& sector : model->sectors_C) {
+    for (auto& sector : model()->sectors_C) {
         for (auto& firm : sector->firms_N) {
             firm->sales_manager->initialize();
         }

@@ -19,20 +19,24 @@
 */
 
 #include "scenario/ExternalScenario.h"
-
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
-
 #include "model/EconomicAgent.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "netcdf_headers.h"
+#include "run.h"
 #include "scenario/ExternalForcing.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-ExternalScenario<ModelVariant>::ExternalScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
+ExternalScenario<ModelVariant>::ExternalScenario(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p)
     : Scenario<ModelVariant>(settings_p, model_p) {}
 
 template<class ModelVariant>
@@ -48,14 +52,14 @@ std::string ExternalScenario<ModelVariant>::fill_template(const std::string& in)
             break;
         }
         ss.write(&*in.begin() + pos, start - pos);
-        start += strlen(beg_mark);
+        start += std::strlen(beg_mark);
         std::string key = in.substr(start, stop - start);
         if (key != "index") {
             ss << settings["scenario"]["parameters"][key.c_str()].template as<std::string>();
         } else {
             ss << file_index;
         }
-        pos = stop + strlen(end_mark);
+        pos = stop + std::strlen(end_mark);
     }
     ss << in.substr(pos, std::string::npos);
     return ss.str();
@@ -84,12 +88,12 @@ bool ExternalScenario<ModelVariant>::next_forcing_file() {
         return false;
     }
     if (remove_afterwards) {
-        remove(forcing_file.c_str());
+        std::remove(forcing_file.c_str());
     }
     if (!expression.empty()) {
         const std::string final_expression = fill_template(expression);
         info("Invoking '" << final_expression << "'");
-        if (system(final_expression.c_str()) != 0) {
+        if (std::system(final_expression.c_str()) != 0) {
             error("Invoking '" << final_expression << "' raised an error");
         }
     }
@@ -112,7 +116,7 @@ bool ExternalScenario<ModelVariant>::next_forcing_file() {
         if (new_ref_year != ref_year + 1) {
             error("Forcing files differ by more than a year");
         }
-        time_offset = model->time() + model->delta_t();
+        time_offset = model()->time() + model()->delta_t();
     }
     time_units_str_ = new_time_units_str;
     next_time = static_cast<Time>(forcing->next_timestep() / time_step_width);
@@ -175,7 +179,7 @@ void ExternalScenario<ModelVariant>::end() {
 
 template<class ModelVariant>
 bool ExternalScenario<ModelVariant>::iterate() {
-    if (stop_time_known && model->time() > stop_time) {
+    if (stop_time_known && model()->time() > stop_time) {
         return false;
     }
     if (is_first_timestep()) {
@@ -183,12 +187,12 @@ bool ExternalScenario<ModelVariant>::iterate() {
     }
 
     internal_iterate_start();
-    if (model->time() == next_time) {
+    if (model()->time() == next_time) {
         read_forcings();
         next_time = Time(forcing->next_timestep() / time_step_width);
         if (next_time < 0) {
             if (!next_forcing_file() && !stop_time_known) {
-                stop_time = model->time();
+                stop_time = model()->time();
                 stop_time_known = true;
             }
         } else {

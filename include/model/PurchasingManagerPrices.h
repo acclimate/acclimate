@@ -21,12 +21,21 @@
 #ifndef ACCLIMATE_PURCHASINGMANAGERPRICES_H
 #define ACCLIMATE_PURCHASINGMANAGERPRICES_H
 
+#include <vector>
+#include "run.h"
 #include "model/PurchasingManager.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
+class BusinessConnection;
+template<class ModelVariant>
+class EconomicAgent;
+template<class ModelVariant>
 class PurchasingManagerPrices;
+template<class ModelVariant>
+class Storage;
 
 template<class ModelVariant>
 struct OptimizerData {
@@ -42,9 +51,10 @@ template<class ModelVariant>
 class PurchasingManagerPrices : public PurchasingManager<ModelVariant> {
   public:
     using PurchasingManager<ModelVariant>::business_connections;
-    using PurchasingManager<ModelVariant>::storage;
     using PurchasingManager<ModelVariant>::get_flow_deficit;
     using PurchasingManager<ModelVariant>::id;
+    using PurchasingManager<ModelVariant>::model;
+    using PurchasingManager<ModelVariant>::storage;
 
   protected:
     using PurchasingManager<ModelVariant>::demand_D_;
@@ -82,7 +92,7 @@ class PurchasingManagerPrices : public PurchasingManager<ModelVariant> {
         return total_transport_penalty_;
     }
     explicit PurchasingManagerPrices(Storage<ModelVariant>* storage_p);
-    virtual ~PurchasingManagerPrices(){}
+    virtual ~PurchasingManagerPrices() {}
     void calc_optimization_parameters(std::vector<FloatType>& demand_requests_D_p,
                                       std::vector<BusinessConnection<ModelVariant>*>& zero_connections_p,
                                       OptimizerData<ModelVariant>& data_p) const;

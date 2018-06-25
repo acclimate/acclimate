@@ -19,12 +19,9 @@
 */
 
 #include "model/SalesManager.h"
+#include <iomanip>
 #include "model/BusinessConnection.h"
-#include "model/EconomicAgent.h"
 #include "model/Firm.h"
-#include "model/PurchasingManager.h"
-#include "model/Sector.h"
-#include "model/Storage.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
@@ -36,9 +33,7 @@ template<class ModelVariant>
 void SalesManager<ModelVariant>::add_demand_request_D(const Demand& demand_request_D) {
     assertstep(PURCHASE);
     firm->sector->add_demand_request_D(demand_request_D);
-    sum_demand_requests_D_lock.call([&]() {
-                                        sum_demand_requests_D_ += demand_request_D;
-                                    });
+    sum_demand_requests_D_lock.call([&]() { sum_demand_requests_D_ += demand_request_D; });
 }
 
 template<class ModelVariant>

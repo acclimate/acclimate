@@ -21,16 +21,22 @@
 #ifndef ACCLIMATE_BUSINESSCONNECTION_H
 #define ACCLIMATE_BUSINESSCONNECTION_H
 
+#include <memory>
+#include <string>
 #include "model/TransportChainLink.h"
+#include "run.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Path;
+class Model;
 template<class ModelVariant>
-class SalesManager;
+struct Path;
 template<class ModelVariant>
 class PurchasingManager;
+template<class ModelVariant>
+class SalesManager;
 
 template<class ModelVariant>
 class BusinessConnection {
@@ -118,6 +124,7 @@ class BusinessConnection {
 
     void calc_demand_fulfill_history();  // only for VariantDemand
 
+    inline Model<ModelVariant>* model() const { return buyer->model(); }
     inline std::string id() const { return seller->id() + "->" + buyer->storage->economic_agent->id(); }
 };
 }  // namespace acclimate

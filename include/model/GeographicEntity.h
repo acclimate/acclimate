@@ -21,7 +21,8 @@
 #ifndef ACCLIMATE_GEOGRAPHICENTITY_H
 #define ACCLIMATE_GEOGRAPHICENTITY_H
 
-#include "acclimate.h"
+#include <string>
+#include <vector>
 
 namespace acclimate {
 

@@ -21,8 +21,16 @@
 #ifndef ACCLIMATE_ARRAYOUTPUT_H
 #define ACCLIMATE_ARRAYOUTPUT_H
 
+#include <cstddef>
 #include <unordered_map>
+#include <vector>
 #include "output/Output.h"
+#include "run.h"
+#include "types.h"
+
+namespace settings {
+class SettingsNode;
+}
 
 namespace acclimate {
 
@@ -102,7 +110,7 @@ class ArrayOutput : public Output<ModelVariant> {
                 Scenario<ModelVariant>* scenario_p,
                 settings::SettingsNode output_node_p,
                 const bool over_time_p = true);
-    virtual ~ArrayOutput(){}
+    virtual ~ArrayOutput() {}
     void event(EventType type,
                const Sector<ModelVariant>* sector_from,
                const Region<ModelVariant>* region_from,

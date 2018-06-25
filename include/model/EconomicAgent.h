@@ -21,16 +21,23 @@
 #ifndef ACCLIMATE_ECONOMICAGENT_H
 #define ACCLIMATE_ECONOMICAGENT_H
 
+#include <memory>
+#include <string>
+#include <vector>
+#include "model/Region.h"
+#include "model/Sector.h"
 #include "model/Storage.h"
+#include "run.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Region;
+class Consumer;
 template<class ModelVariant>
 class Firm;
 template<class ModelVariant>
-class Consumer;
+class Model;
 
 template<class ModelVariant>
 class EconomicAgent {
@@ -72,13 +79,14 @@ class EconomicAgent {
     virtual const Consumer<ModelVariant>* as_consumer() const;
     inline bool is_firm() const { return type == Type::FIRM; }
     inline bool is_consumer() const { return type == Type::CONSUMER; }
-    virtual ~EconomicAgent(){}
+    virtual ~EconomicAgent() {}
     virtual void iterate_consumption_and_production() = 0;
     virtual void iterate_expectation() = 0;
     virtual void iterate_purchase() = 0;
     virtual void iterate_investment() = 0;
     Storage<ModelVariant>* find_input_storage(const std::string& sector_name) const;
     void remove_storage(Storage<ModelVariant>* storage);
+    inline Model<ModelVariant>* model() const { return sector->model(); }
     virtual inline std::string id() const { return sector->id() + ":" + region->id(); }
 #ifdef DEBUG
     virtual void print_details() const = 0;

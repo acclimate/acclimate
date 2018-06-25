@@ -20,7 +20,7 @@
 
 #include "model/Infrastructure.h"
 #include <algorithm>
-#include "model/TransportChainLink.h"
+#include <cstddef>
 #include "variants/ModelVariants.h"
 
 namespace acclimate {

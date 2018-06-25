@@ -19,9 +19,12 @@
 */
 
 #include "output/HistogramOutput.h"
-#include <sstream>
+#include <cstddef>
+#include <ctime>
+#include <string>
+#include <utility>
 #include "model/Model.h"
-#include "scenario/Scenario.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 #include "version.h"
 
@@ -52,13 +55,13 @@ void HistogramOutput<ModelVariant>::initialize() {
 
 template<class ModelVariant>
 void HistogramOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_threads) {
-    file << "# Start time: " << asctime(timestamp) << "# Version: " << ACCLIMATE_VERSION << "\n"
+    file << "# Start time: " << std::asctime(timestamp) << "# Version: " << ACCLIMATE_VERSION << "\n"
          << "# Max number of threads: " << max_threads << "\n";
 }
 
 template<class ModelVariant>
 void HistogramOutput<ModelVariant>::internal_write_footer(tm* duration) {
-    file << "# Duration: " << mktime(duration) << "s\n";
+    file << "# Duration: " << std::mktime(duration) << "s\n";
 }
 
 template<class ModelVariant>
@@ -83,7 +86,7 @@ void HistogramOutput<ModelVariant>::internal_iterate_begin() {
 template<class ModelVariant>
 void HistogramOutput<ModelVariant>::internal_iterate_end() {
     for (std::size_t i = 0; i < windows; ++i) {
-        file << model->time() << " " << (min + i * (max - min) / (windows - 1)) << " " << count[i] << "\n";
+        file << model()->time() << " " << (min + i * (max - min) / (windows - 1)) << " " << count[i] << "\n";
     }
     file << "\n";
 }

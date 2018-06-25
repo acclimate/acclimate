@@ -19,8 +19,13 @@
 */
 
 #include "output/GnuplotOutput.h"
-#include <sstream>
+#include <cstddef>
+#include <ctime>
+#include <string>
+#include <utility>
 #include "model/Model.h"
+#include "run.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 #include "version.h"
 
@@ -44,13 +49,13 @@ void GnuplotOutput<ModelVariant>::initialize() {
 
 template<class ModelVariant>
 void GnuplotOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_threads) {
-    file << "# Start time: " << asctime(timestamp) << "# Version: " << ACCLIMATE_VERSION << "\n"
+    file << "# Start time: " << std::asctime(timestamp) << "# Version: " << ACCLIMATE_VERSION << "\n"
          << "# Max number of threads: " << max_threads << "\n";
 }
 
 template<class ModelVariant>
 void GnuplotOutput<ModelVariant>::internal_write_footer(tm* duration) {
-    file << "# Duration: " << mktime(duration) << "s\n";
+    file << "# Duration: " << std::mktime(duration) << "s\n";
 }
 
 template<class ModelVariant>
@@ -74,20 +79,20 @@ void GnuplotOutput<ModelVariant>::internal_end() {
 template<class ModelVariant>
 void GnuplotOutput<ModelVariant>::internal_start() {
     file << "# Sectors:\n# set ytics (";
-    for (std::size_t i = 0; i < model->sectors_C.size(); ++i) {
-        file << "\"" << model->sectors_C[i]->id() << "\" " << i;
-        if (i < model->sectors_C.size() - 1) {
+    for (std::size_t i = 0; i < model()->sectors_C.size(); ++i) {
+        file << "\"" << model()->sectors_C[i]->id() << "\" " << i;
+        if (i < model()->sectors_C.size() - 1) {
             file << ", ";
         }
-        sector_index.emplace(model->sectors_C[i].get(), i);
+        sector_index.emplace(model()->sectors_C[i].get(), i);
     }
     file << ")\n# Regions:\n# set ytics (";
-    for (std::size_t i = 0; i < model->regions_R.size(); ++i) {
-        file << "\"" << model->regions_R[i]->id() << "\" " << i;
-        if (i < model->regions_R.size() - 1) {
+    for (std::size_t i = 0; i < model()->regions_R.size(); ++i) {
+        file << "\"" << model()->regions_R[i]->id() << "\" " << i;
+        if (i < model()->regions_R.size() - 1) {
             file << ", ";
         }
-        region_index.emplace(model->regions_R[i].get(), i);
+        region_index.emplace(model()->regions_R[i].get(), i);
     }
     file << ")\n";
 }
@@ -96,7 +101,7 @@ template<class ModelVariant>
 void GnuplotOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     UNUSED(name);
     UNUSED(suffix);
-    file << model->time() << " ";
+    file << model()->time() << " ";
     for (auto it = stack.begin(); it != stack.end(); ++it) {
         if (it->region >= 0) {
             if (it->sector >= 0) {

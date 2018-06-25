@@ -22,8 +22,10 @@
 #define ACCLIMATE_OUTPUT_H
 
 #include <ctime>
-#include "acclimate.h"
+#include <string>
+#include "run.h"
 #include "settingsnode.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -76,7 +78,8 @@ class Output {
   protected:
     const settings::SettingsNode& settings;
     settings::SettingsNode output_node;
-    time_t start_time;
+    Model<ModelVariant>* const model_m;
+    std::time_t start_time;
     inline bool is_first_timestep() const { return scenario->is_first_timestep(); }
     inline bool is_last_timestep() const { return scenario->is_last_timestep(); }
     inline void parameter_not_found(const std::string& name) const;
@@ -95,7 +98,6 @@ class Output {
     virtual void internal_end_target();
 
   public:
-    Model<ModelVariant>* const model;
     Scenario<ModelVariant>* const scenario;
     Output(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p, Scenario<ModelVariant>* scenario_p, settings::SettingsNode output_node_p);
     virtual void initialize() = 0;
@@ -126,6 +128,7 @@ class Output {
     virtual void checkpoint_stop() {}
     virtual void checkpoint_resume() {}
     virtual ~Output() = default;
+    inline Model<ModelVariant>* model() const { return model_m; }
     virtual inline std::string id() const { return "OUTPUT"; }
 };
 }  // namespace acclimate

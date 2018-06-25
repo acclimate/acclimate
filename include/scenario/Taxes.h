@@ -22,6 +22,7 @@
 #define ACCLIMATE_TAXES_H
 
 #include "scenario/Scenario.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -35,7 +36,7 @@ class Taxes : public Scenario<ModelVariant> {
     using Scenario<ModelVariant>::start_time;
 
   public:
-    Taxes(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    Taxes(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p);
     Time start() override;
     bool iterate() override;
 };

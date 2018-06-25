@@ -19,10 +19,8 @@
 */
 
 #include "model/SalesManagerBasic.h"
-#include "model/BusinessConnection.h"
-#include "model/EconomicAgent.h"
 #include "model/Firm.h"
-#include "variants/ModelVariants.h"
+#include "variants/VariantBasic.h"
 
 namespace acclimate {
 

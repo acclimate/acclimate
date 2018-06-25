@@ -20,12 +20,15 @@
 
 #include "scenario/Flooding.h"
 #include <algorithm>
+#include <string>
+#include "run.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
+Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p)
     : RasteredScenario<ModelVariant, FloatType>(settings_p, model_p) {
     const auto& scenario_node = settings_p["scenario"];
     if (scenario_node.has("sectors")) {

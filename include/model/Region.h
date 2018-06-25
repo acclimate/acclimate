@@ -21,14 +21,21 @@
 #ifndef ACCLIMATE_REGION_H
 #define ACCLIMATE_REGION_H
 
+#include <memory>
+#include <string>
 #include <unordered_map>
-#include "model/EconomicAgent.h"
+#include <vector>
 #include "model/GeographicEntity.h"
 #include "model/GeographicPoint.h"
-#include "model/Government.h"
+#include "run.h"
+#include "types.h"
 
 namespace acclimate {
 
+template<class ModelVariant>
+class EconomicAgent;
+template<class ModelVariant>
+class Government;
 template<class ModelVariant>
 class Infrastructure;
 template<class ModelVariant>
@@ -52,15 +59,15 @@ class Region : public GeographicEntity<ModelVariant> {
     OpenMPLock import_flow_Z_lock;
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
     OpenMPLock consumption_flow_Y_lock;
-    std::unique_ptr<GeographicPoint> centroid_;
-    std::unique_ptr<Government<ModelVariant>> government_;
-    const IntType index_;
-    const std::string id_;
-    typename ModelVariant::RegionParameters parameters_;
+    std::unique_ptr<GeographicPoint> centroid_m;
+    std::unique_ptr<Government<ModelVariant>> government_m;
+    const IntType index_m;
+    const std::string id_m;
+    typename ModelVariant::RegionParameters parameters_m;
     OpenMPLock economic_agents_lock;
+    Model<ModelVariant>* const model_m;
 
   public:
-    Model<ModelVariant>* const model;
     std::vector<std::unique_ptr<EconomicAgent<ModelVariant>>> economic_agents;
 #ifndef TRANSPORT
     std::unordered_map<const Region<ModelVariant>*, Path<ModelVariant>> paths;
@@ -71,36 +78,36 @@ class Region : public GeographicEntity<ModelVariant> {
     const Region<ModelVariant>* as_region() const override;
     void set_centroid(GeographicPoint* centroid_p) {
         assertstep(INITIALIZATION);
-        return centroid_.reset(centroid_p);
+        return centroid_m.reset(centroid_p);
     }
-    const GeographicPoint* centroid() const { return centroid_.get(); }
+    const GeographicPoint* centroid() const { return centroid_m.get(); }
     inline const Flow& consumption_C() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return consumption_flow_Y_[model->current_register()];
+        return consumption_flow_Y_[model()->current_register()];
     }
     inline const Flow& import_flow_Z() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return import_flow_Z_[model->current_register()];
+        return import_flow_Z_[model()->current_register()];
     }
     inline const Flow& export_flow_Z() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return export_flow_Z_[model->current_register()];
+        return export_flow_Z_[model()->current_register()];
     }
     inline void set_government(Government<ModelVariant>* government_p) {
         assertstep(INITIALIZATION);
 #ifdef DEBUG
-        if (government_) {
+        if (government_m) {
             error("Government already set");
         }
 #endif
-        government_.reset(government_p);
+        government_m.reset(government_p);
     }
-    inline Government<ModelVariant>* government() { return government_.get(); }
-    inline Government<ModelVariant> const* government() const { return government_.get(); }
-    inline const typename ModelVariant::RegionParameters& parameters() const { return parameters_; }
+    inline Government<ModelVariant>* government() { return government_m.get(); }
+    inline Government<ModelVariant> const* government() const { return government_m.get(); }
+    inline const typename ModelVariant::RegionParameters& parameters() const { return parameters_m; }
     inline const typename ModelVariant::RegionParameters& parameters_writable() const {
         assertstep(INITIALIZATION);
-        return parameters_;
+        return parameters_m;
     }
 
   private:
@@ -111,7 +118,8 @@ class Region : public GeographicEntity<ModelVariant> {
 
   public:
     Region(Model<ModelVariant>* model_p, std::string id_p, IntType index_p);
-    inline IntType index() const { return index_; };
+    ~Region();
+    inline IntType index() const { return index_m; };
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);
     void add_consumption_flow_Y(const Flow& consumption_flow_Y_p);
@@ -122,7 +130,8 @@ class Region : public GeographicEntity<ModelVariant> {
     void iterate_investment();
     const Path<ModelVariant>& find_path_to(const Region<ModelVariant>* region) const;
     void remove_economic_agent(EconomicAgent<ModelVariant>* economic_agent);
-    inline std::string id() const override { return id_; };
+    inline Model<ModelVariant>* model() const { return model_m; }
+    inline std::string id() const override { return id_m; }
 };
 }  // namespace acclimate
 

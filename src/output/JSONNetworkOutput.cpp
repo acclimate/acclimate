@@ -21,6 +21,7 @@
 #include "output/JSONNetworkOutput.h"
 #include <algorithm>
 #include <fstream>
+#include <utility>
 #include "model/BusinessConnection.h"
 #include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
@@ -32,6 +33,7 @@
 #include "model/Sector.h"
 #include "model/Storage.h"
 #include "scenario/Scenario.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
@@ -52,12 +54,12 @@ void JSONNetworkOutput<ModelVariant>::initialize() {
 
 template<class ModelVariant>
 void JSONNetworkOutput<ModelVariant>::internal_iterate_end() {
-    if (model->timestep() == timestep) {
+    if (model()->timestep() == timestep) {
         std::ofstream out;
         out.open(filename.c_str(), std::ofstream::out);
 
         out << "\"nodes\": [";
-        for (const auto& region : model->regions_R) {
+        for (const auto& region : model()->regions_R) {
             for (const auto& ea : region->economic_agents) {
                 out << "\n  {";
                 std::string sector;
@@ -95,7 +97,7 @@ void JSONNetworkOutput<ModelVariant>::internal_iterate_end() {
         out << "\n],\n";
 
         out << "\"links\": [ ";
-        for (const auto& region : model->regions_R) {
+        for (const auto& region : model()->regions_R) {
             for (const auto& ea : region->economic_agents) {
                 for (const auto& is : ea->input_storages) {
                     for (const auto& bc : is->purchasing_manager->business_connections) {

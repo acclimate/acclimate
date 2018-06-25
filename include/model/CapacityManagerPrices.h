@@ -22,6 +22,7 @@
 #define ACCLIMATE_CAPACITYMANAGERPRICES_H
 
 #include "model/CapacityManager.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -34,6 +35,7 @@ class CapacityManagerPrices : public CapacityManager<ModelVariant> {
     using CapacityManager<ModelVariant>::calc_possible_and_desired_production;
     using CapacityManager<ModelVariant>::firm;
     using CapacityManager<ModelVariant>::id;
+    using CapacityManager<ModelVariant>::model;
     using CapacityManager<ModelVariant>::possible_overcapacity_ratio_beta;
 
   private:

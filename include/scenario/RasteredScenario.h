@@ -21,8 +21,12 @@
 #ifndef ACCLIMATE_RASTEREDSCENARIO_H
 #define ACCLIMATE_RASTEREDSCENARIO_H
 
+#include <memory>
+#include <string>
+#include <vector>
 #include "scenario/ExternalScenario.h"
 #include "scenario/RasteredData.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -65,10 +69,10 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     void iterate_first_timestep() override;
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
-    RasteredScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    RasteredScenario(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p);
 
   public:
-    virtual ~RasteredScenario(){}
+    virtual ~RasteredScenario() {}
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
     inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; }
 };
