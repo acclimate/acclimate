@@ -90,10 +90,6 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_expectation() {
     assertstep(EXPECTATION);
     iterate_expectation_variant();
-#pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
-        economic_agents[i]->iterate_expectation();
-    }
 }
 
 #ifdef VARIANT_BASIC
