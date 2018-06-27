@@ -121,9 +121,10 @@ template<>
 Sector<VariantDemand>* ModelInitializer<VariantDemand>::add_sector(const std::string& name) {
     Sector<VariantDemand>* sector = model->find_sector(name);
     if (sector == nullptr) {
-        sector = model->add_sector(name, get_named_property("sectors", name, "upper_storage_limit").template as<Ratio>(),
-                                   get_named_property("sectors", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
-                                   Sector<VariantDemand>::map_transport_type(get_named_property("sectors", name, "transport").template as<settings::hstring>()));
+        sector =
+            model->add_sector(name, get_named_property("sectors", name, "upper_storage_limit").template as<Ratio>(),
+                              get_named_property("sectors", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
+                              Sector<VariantDemand>::map_transport_type(get_named_property("sectors", name, "transport").template as<settings::hstring>()));
         sector->parameters_writable().storage_refill_enforcement_gamma =
             get_named_property("sectors", name, "storage_refill_enforcement").template as<FloatType>() * model->delta_t();
     }
@@ -136,9 +137,10 @@ template<>
 Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::string& name) {
     Sector<VariantPrices>* sector = model->find_sector(name);
     if (sector == nullptr) {
-        sector = model->add_sector(name, get_named_property("sectors", name, "upper_storage_limit").template as<Ratio>(),
-                                   get_named_property("sectors", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
-                                   Sector<VariantPrices>::map_transport_type(get_named_property("sectors", name, "transport").template as<settings::hstring>()));
+        sector =
+            model->add_sector(name, get_named_property("sectors", name, "upper_storage_limit").template as<Ratio>(),
+                              get_named_property("sectors", name, "initial_storage_fill_factor").template as<FloatType>() * model->delta_t(),
+                              Sector<VariantPrices>::map_transport_type(get_named_property("sectors", name, "transport").template as<settings::hstring>()));
         sector->parameters_writable().supply_elasticity = get_named_property("sectors", name, "supply_elasticity").template as<Ratio>();
         sector->parameters_writable().price_increase_production_extension =
             get_named_property("sectors", name, "price_increase_production_extension").template as<Price>();
@@ -580,8 +582,9 @@ void ModelInitializer<ModelVariant>::read_centroids_netcdf(const std::string& fi
 
     const settings::SettingsNode& transport = settings["transport"];
     const auto threshold_road_transport = transport["threshold_road_transport"].as<FloatType>();
-    const auto avg_road_speed = transport["avg_road_speed"].as<FloatType>();
-    const auto avg_water_speed = transport["avg_water_speed"].as<FloatType>();
+    const auto aviation_speed = transport["aviation_speed"].as<FloatType>();
+    const auto road_speed = transport["road_speed"].as<FloatType>();
+    const auto sea_speed = transport["sea_speed"].as<FloatType>();
 
     for (auto& region_from : model->regions) {
         if (!region_from->centroid()) {
@@ -591,14 +594,46 @@ void ModelInitializer<ModelVariant>::read_centroids_netcdf(const std::string& fi
             if (region_from == region_to) {
                 break;
             }
-            TransportDelay transport_delay;
             const auto distance = region_from->centroid()->distance_to(*region_to->centroid());
-            if (distance >= threshold_road_transport) {
-                transport_delay = iround(distance / avg_water_speed / 24. / to_float(model->delta_t()));
-            } else {
-                transport_delay = iround(distance / avg_road_speed / 24. / to_float(model->delta_t()));
+            // create roadsea route
+            {
+                TransportDelay transport_delay;
+                typename GeoConnection<ModelVariant>::Type type;
+                if (distance >= threshold_road_transport) {
+                    transport_delay = iround(distance / sea_speed / 24. / to_float(model->delta_t()));
+                    type = GeoConnection<ModelVariant>::Type::SEAROUTE;
+                } else {
+                    transport_delay = iround(distance / road_speed / 24. / to_float(model->delta_t()));
+                    type = GeoConnection<ModelVariant>::Type::ROAD;
+                }
+                if (transport_delay > 0) {
+                    --transport_delay;
+                }
+                auto inf = std::make_shared<GeoConnection<ModelVariant>>(transport_delay, type, region_from.get(), region_to.get());
+                region_from->connections.push_back(inf);
+                region_to->connections.push_back(inf);
+
+                GeoRoute<ModelVariant> route;
+                route.path.emplace_back(inf.get());
+                region_from->routes.emplace(std::make_pair(region_to->index(), Sector<ModelVariant>::TransportType::ROADSEA), route);
+                region_to->routes.emplace(std::make_pair(region_from->index(), Sector<ModelVariant>::TransportType::ROADSEA), route);
             }
-            create_simple_transport_connection(region_from.get(), region_to.get(), transport_delay);
+            // create aviation route
+            {
+                TransportDelay transport_delay = iround(distance / aviation_speed / 24. / to_float(model->delta_t()));
+                if (transport_delay > 0) {
+                    --transport_delay;
+                }
+                auto inf = std::make_shared<GeoConnection<ModelVariant>>(transport_delay, GeoConnection<ModelVariant>::Type::AVIATION, region_from.get(),
+                                                                         region_to.get());
+                region_from->connections.push_back(inf);
+                region_to->connections.push_back(inf);
+
+                GeoRoute<ModelVariant> route;
+                route.path.emplace_back(inf.get());
+                region_from->routes.emplace(std::make_pair(region_to->index(), Sector<ModelVariant>::TransportType::AVIATION), route);
+                region_to->routes.emplace(std::make_pair(region_from->index(), Sector<ModelVariant>::TransportType::AVIATION), route);
+            }
         }
     }
 }
