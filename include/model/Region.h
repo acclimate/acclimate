@@ -25,8 +25,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "model/GeographicEntity.h"
-#include "model/GeographicPoint.h"
+#include "model/GeoLocation.h"
+#include "model/GeoRoute.h"
 #include "run.h"
 #include "types.h"
 
@@ -40,17 +40,12 @@ template<class ModelVariant>
 class Infrastructure;
 template<class ModelVariant>
 class Model;
+template<class ModelVariant>
+class Sector;
 
 template<class ModelVariant>
-struct Path {
-    Distance distance;
-    Infrastructure<ModelVariant>* infrastructure;
-};
-
-template<class ModelVariant>
-class Region : public GeographicEntity<ModelVariant> {
-  public:
-    using GeographicEntity<ModelVariant>::connections;
+class Region : public GeoLocation<ModelVariant> {
+    friend class Model<ModelVariant>;
 
   protected:
     Flow export_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
@@ -59,28 +54,31 @@ class Region : public GeographicEntity<ModelVariant> {
     OpenMPLock import_flow_Z_lock;
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
     OpenMPLock consumption_flow_Y_lock;
-    std::unique_ptr<GeographicPoint> centroid_m;
     std::unique_ptr<Government<ModelVariant>> government_m;
     const IntType index_m;
-    const std::string id_m;
     typename ModelVariant::RegionParameters parameters_m;
     OpenMPLock economic_agents_lock;
-    Model<ModelVariant>* const model_m;
+
+    struct route_hash {
+        std::size_t operator()(const std::pair<IntType, typename Sector<ModelVariant>::TransportType>& p) const {
+            return (p.first << 3) | (static_cast<IntType>(p.second));
+        }
+    };
+    Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p);
+    void iterate_consumption_and_production_variant();
+    void iterate_expectation_variant();
+    void iterate_purchase_variant();
+    void iterate_investment_variant();
 
   public:
     std::vector<std::unique_ptr<EconomicAgent<ModelVariant>>> economic_agents;
-#ifndef TRANSPORT
-    std::unordered_map<const Region<ModelVariant>*, Path<ModelVariant>> paths;
-#endif
+    std::unordered_map<std::pair<IntType, typename Sector<ModelVariant>::TransportType>, GeoRoute<ModelVariant>, route_hash> routes;
+    using GeoLocation<ModelVariant>::connections;
 
-  public:
+    using GeoLocation<ModelVariant>::id;
+    using GeoLocation<ModelVariant>::model;
     Region<ModelVariant>* as_region() override;
     const Region<ModelVariant>* as_region() const override;
-    void set_centroid(GeographicPoint* centroid_p) {
-        assertstep(INITIALIZATION);
-        return centroid_m.reset(centroid_p);
-    }
-    const GeographicPoint* centroid() const { return centroid_m.get(); }
     inline const Flow& consumption_C() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
         return consumption_flow_Y_[model()->current_register()];
@@ -109,15 +107,6 @@ class Region : public GeographicEntity<ModelVariant> {
         assertstep(INITIALIZATION);
         return parameters_m;
     }
-
-  private:
-    void iterate_consumption_and_production_variant();
-    void iterate_expectation_variant();
-    void iterate_purchase_variant();
-    void iterate_investment_variant();
-
-  public:
-    Region(Model<ModelVariant>* model_p, std::string id_p, IntType index_p);
     ~Region();
     inline IntType index() const { return index_m; };
     void add_export_Z(const Flow& export_flow_Z_p);
@@ -128,10 +117,8 @@ class Region : public GeographicEntity<ModelVariant> {
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
-    const Path<ModelVariant>& find_path_to(const Region<ModelVariant>* region) const;
+    const GeoRoute<ModelVariant>& find_path_to(Region<ModelVariant>* region, typename Sector<ModelVariant>::TransportType transport_type) const;
     void remove_economic_agent(EconomicAgent<ModelVariant>* economic_agent);
-    inline Model<ModelVariant>* model() const { return model_m; }
-    inline std::string id() const override { return id_m; }
 };
 }  // namespace acclimate
 

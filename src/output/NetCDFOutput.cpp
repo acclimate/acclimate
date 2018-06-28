@@ -93,14 +93,14 @@ void NetCDFOutput<ModelVariant>::initialize() {
 
     const auto& sector_var = file->addVar("sector", netCDF::NcType::nc_STRING, {dim_sector});
     sector_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < model()->sectors_C.size(); ++i) {
-        sector_var.putVar({i}, model()->sectors_C[i]->id());
+    for (std::size_t i = 0; i < model()->sectors.size(); ++i) {
+        sector_var.putVar({i}, model()->sectors[i]->id());
     }
 
     const auto& region_var = file->addVar("region", netCDF::NcType::nc_STRING, {dim_region});
     region_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < model()->regions_R.size(); ++i) {
-        region_var.putVar({i}, model()->regions_R[i]->id());
+    for (std::size_t i = 0; i < model()->regions.size(); ++i) {
+        region_var.putVar({i}, model()->regions[i]->id());
     }
 }
 

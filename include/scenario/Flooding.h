@@ -45,7 +45,7 @@ class Flooding : public RasteredScenario<ModelVariant, FloatType> {
 
   public:
     using RasteredScenario<ModelVariant, FloatType>::id;
-    Flooding(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p);
+    Flooding(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
 };
 }  // namespace acclimate
 

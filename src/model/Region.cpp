@@ -23,16 +23,14 @@
 #include <cstddef>
 #include <utility>
 #include "model/EconomicAgent.h"
-#include "model/GeographicEntity.h"
 #include "model/Government.h"
-#include "model/Infrastructure.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string id_p, const IntType index_p)
-    : GeographicEntity<ModelVariant>(GeographicEntity<ModelVariant>::Type::REGION), id_m(std::move(id_p)), index_m(index_p), model_m(model_p) {}
+    : GeoLocation<ModelVariant>(model_p, 0, GeoLocation<ModelVariant>::Type::REGION, std::move(id_p)), index_m(index_p) {}
 
 template<class ModelVariant>
 Region<ModelVariant>::~Region() {}
@@ -156,26 +154,13 @@ void Region<ModelVariant>::iterate_investment_variant() {
 }
 
 template<class ModelVariant>
-const Path<ModelVariant>& Region<ModelVariant>::find_path_to(const Region<ModelVariant>* region) const {
-#ifdef TRANSPORT
-    error("Not implemented: Find proper path (not simply assuming all regions are connected by infrastructures)");
-    path->distance = 0;
-    for (auto it = connections.begin(); it != connections.end(); ++it) {
-        Infrastructure<ModelVariant>* inf = (*it)->as_infrastructure();
-        if ((inf->connections.size() > 0 && static_cast<void*>(inf->connections[0]) == static_cast<void*>(region))
-            || (inf->connections.size() > 1 && static_cast<void*>(inf->connections[1]) == static_cast<void*>(region))) {
-            path->infrastructure = inf;
-            path->distance = inf->distance;
-            break;
-        }
-    }
-#else
-    const auto& it = paths.find(region);
-    if (it == std::end(paths)) {
-        error("No transport data from " << id() << " to " << region->id());
+const GeoRoute<ModelVariant>& Region<ModelVariant>::find_path_to(Region<ModelVariant>* region,
+                                                                 typename Sector<ModelVariant>::TransportType transport_type) const {
+    const auto& it = routes.find(std::make_pair(region->index(), transport_type));
+    if (it == std::end(routes)) {
+        error("No transport data from " << id() << " to " << region->id() << " via " << Sector<ModelVariant>::unmap_transport_type(transport_type));
     }
     return it->second;
-#endif
 }
 
 template<class ModelVariant>

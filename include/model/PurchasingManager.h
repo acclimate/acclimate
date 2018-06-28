@@ -44,7 +44,7 @@ class PurchasingManager {
 
   public:
     Storage<ModelVariant>* const storage;
-    std::vector<BusinessConnection<ModelVariant>*> business_connections;
+    std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>> business_connections;
 
     inline const Demand& demand_D(const EconomicAgent<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
@@ -58,7 +58,7 @@ class PurchasingManager {
     }
 
     explicit PurchasingManager(Storage<ModelVariant>* storage_p);
-    virtual ~PurchasingManager() {}
+    virtual ~PurchasingManager();
     virtual const FlowQuantity get_flow_deficit() const;
     virtual const Flow get_transport_flow() const;
     const Flow get_disequilibrium() const;

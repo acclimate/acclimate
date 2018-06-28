@@ -25,8 +25,11 @@
 
 const char* acclimate_info = "Version:                " ACCLIMATE_VERSION
                              "\n"
+                             "\n"
                              "Authors:                Sven Willner <sven.willner@pik-potsdam.de>\n"
                              "                        Christian Otto <christian.otto@pik-potsdam.de>\n"
+                             "\n"
+                             "Contributor:            Kilian Kuhla <kilian.kuhla@pik-potsdam.de>\n"
                              "\n"
                              "Citation:               C. Otto, S.N. Willner, L. Wenz, F. Frieler, A. Levermann (2017).\n"
                              "                        Modeling loss-propagation in the global supply network: The dynamic\n"

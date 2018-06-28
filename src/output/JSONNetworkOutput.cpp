@@ -59,7 +59,7 @@ void JSONNetworkOutput<ModelVariant>::internal_iterate_end() {
         out.open(filename.c_str(), std::ofstream::out);
 
         out << "\"nodes\": [";
-        for (const auto& region : model()->regions_R) {
+        for (const auto& region : model()->regions) {
             for (const auto& ea : region->economic_agents) {
                 out << "\n  {";
                 std::string sector;
@@ -97,7 +97,7 @@ void JSONNetworkOutput<ModelVariant>::internal_iterate_end() {
         out << "\n],\n";
 
         out << "\"links\": [ ";
-        for (const auto& region : model()->regions_R) {
+        for (const auto& region : model()->regions) {
             for (const auto& ea : region->economic_agents) {
                 for (const auto& is : ea->input_storages) {
                     for (const auto& bc : is->purchasing_manager->business_connections) {

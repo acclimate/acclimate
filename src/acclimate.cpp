@@ -63,11 +63,12 @@ Acclimate::Acclimate(settings::SettingsNode settings_p) {
 #ifdef BANKERS_ROUNDING
     fesetround(FE_TONEAREST);
 #endif
+
 #ifdef FLOATING_POINT_EXCEPTIONS
     signal(SIGFPE, handle_fpe_error);
     feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);
 #endif
-    const std::string& variant = settings_p["variant"].as<std::string>();
+    const std::string& variant = settings_p["model"]["variant"].as<std::string>();
     if (variant == "basic") {
 #ifdef VARIANT_BASIC
         variant_m = ModelVariantType::BASIC;
@@ -112,4 +113,5 @@ int Acclimate::run() {
             return -1;
     }
 }
+
 }  // namespace acclimate

@@ -76,8 +76,7 @@ int main(int argc, char* argv[]) {
                       << acclimate::FlowQuantity::precision_digits
                       << "\n"
                          "Precision Price:        "
-                      << acclimate::Price::precision_digits << "\n"
-                      << std::endl;
+                      << acclimate::Price::precision_digits << std::endl;
 #ifdef ACCLIMATE_HAS_DIFF
         } else if (arg == "--diff" || arg == "-d") {
             std::cout << acclimate_git_diff << std::flush;

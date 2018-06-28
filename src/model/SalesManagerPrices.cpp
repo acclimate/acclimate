@@ -39,8 +39,8 @@ const Flow SalesManagerPrices<ModelVariant>::calc_production_X() {
     // sort all incoming connections by price (descending), then by quantity (descending)
     std::sort(
         business_connections.begin(), business_connections.end(),
-        [](const std::unique_ptr<BusinessConnection<ModelVariant>>& business_connection_1,
-           const std::unique_ptr<BusinessConnection<ModelVariant>>& business_connection_2) {
+        [](const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection_1,
+           const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection_2) {
             if (business_connection_1->last_demand_request_D().get_quantity() <= 0.0 && business_connection_2->last_demand_request_D().get_quantity() > 0.0) {
                 // we want to store empty demand requests at the end of the business connections
                 return false;
@@ -196,7 +196,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_supply_distributi
 
     // find first (in order) connection with zero demand
     auto first_zero_connection = std::find_if(business_connections.begin(), business_connections.end(),
-                                              [](const std::unique_ptr<BusinessConnection<ModelVariant>>& business_connection) {
+                                              [](const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection) {
                                                   return business_connection->last_demand_request_D().get_quantity() <= 0.0;
                                               });
 
@@ -369,7 +369,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
     assertstep(EXPECTATION);
     // find first (in order) connection with zero demand
     auto first_zero_connection = std::find_if(business_connections.begin(), business_connections.end(),
-                                              [](const std::unique_ptr<BusinessConnection<ModelVariant>>& business_connection) {
+                                              [](const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection) {
                                                   return business_connection->last_demand_request_D().get_quantity() <= 0.0;
                                               });
 
@@ -764,8 +764,8 @@ void SalesManagerPrices<ModelVariant>::print_parameters() const {
 #ifdef DEBUG
 template<class ModelVariant>
 void SalesManagerPrices<ModelVariant>::print_connections(
-    typename std::vector<std::unique_ptr<BusinessConnection<ModelVariant>>>::const_iterator begin_equally_distributed,
-    typename std::vector<std::unique_ptr<BusinessConnection<ModelVariant>>>::const_iterator end_equally_distributed) const {
+    typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator begin_equally_distributed,
+    typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator end_equally_distributed) const {
 #pragma omp critical(output)
     {
         std::cout << model()->run()->timeinfo() << ", " << id() << ": supply distribution for " << business_connections.size() << " outputs :\n";

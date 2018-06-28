@@ -35,6 +35,35 @@ class Firm;
 
 template<class ModelVariant>
 class Sector {
+    friend class Model<ModelVariant>;
+
+  public:
+    enum class TransportType { AVIATION, IMMEDIATE, ROADSEA };
+    static TransportType map_transport_type(const settings::hstring& transport_type) {
+        switch (transport_type) {
+            case settings::hstring::hash("aviation"):
+                return TransportType::AVIATION;
+            case settings::hstring::hash("immediate"):
+                return TransportType::IMMEDIATE;
+            case settings::hstring::hash("roadsea"):
+                return TransportType::ROADSEA;
+            default:
+                error_("Unknown transport type " << transport_type);
+        }
+    }
+    static const char* unmap_transport_type(TransportType transport_type) {
+        switch (transport_type) {
+            case TransportType::AVIATION:
+                return "aviation";
+            case TransportType::IMMEDIATE:
+                return "immediate";
+            case TransportType::ROADSEA:
+                return "roadsea";
+            default:
+                error_("Unkown transport type");
+        }
+    }
+
   protected:
     const IntType index_m;
     const std::string id_m;
@@ -45,12 +74,14 @@ class Sector {
     Flow last_total_production_X_m = Flow(0.0);
     typename ModelVariant::SectorParameters parameters_m;
     Model<ModelVariant>* const model_m;
+    Sector(Model<ModelVariant>* model_p,
+           std::string name_p,
+           const IntType index_p,
+           const Ratio& upper_storage_limit_omega_p,
+           const Time& initial_storage_fill_factor_psi_p,
+           TransportType transport_type_p);
 
   public:
-    const Ratio upper_storage_limit_omega;
-    const Time initial_storage_fill_factor_psi;
-    std::vector<Firm<ModelVariant>*> firms_N;
-
     inline const Demand& total_demand_D() const {
         assertstepnot(PURCHASE);
         return total_demand_D_;
@@ -65,6 +96,14 @@ class Sector {
         assertstep(INITIALIZATION);
         return parameters_m;
     }
+
+  public:
+    const Ratio upper_storage_limit_omega;
+    const Time initial_storage_fill_factor_psi;
+    const TransportType transport_type;
+    std::vector<Firm<ModelVariant>*> firms;
+
+  public:
     Sector(Model<ModelVariant>* model_p,
            std::string id_p,
            const IntType index_p,

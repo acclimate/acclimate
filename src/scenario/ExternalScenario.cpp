@@ -19,25 +19,21 @@
 */
 
 #include "scenario/ExternalScenario.h"
-#include <cstddef>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
-#include <sstream>
 #include "model/EconomicAgent.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "netcdf_headers.h"
-#include "run.h"
 #include "scenario/ExternalForcing.h"
-#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-ExternalScenario<ModelVariant>::ExternalScenario(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p)
-    : Scenario<ModelVariant>(settings_p, model_p) {}
+ExternalScenario<ModelVariant>::ExternalScenario(const settings::SettingsNode& settings_p,
+                                                 settings::SettingsNode scenario_node_p,
+                                                 Model<ModelVariant>* const model_p)
+    : Scenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
 
 template<class ModelVariant>
 std::string ExternalScenario<ModelVariant>::fill_template(const std::string& in) const {
@@ -55,7 +51,7 @@ std::string ExternalScenario<ModelVariant>::fill_template(const std::string& in)
         start += std::strlen(beg_mark);
         std::string key = in.substr(start, stop - start);
         if (key != "index") {
-            ss << settings["scenario"]["parameters"][key.c_str()].template as<std::string>();
+            ss << scenario_node["parameters"][key.c_str()].template as<std::string>();
         } else {
             ss << file_index;
         }
@@ -130,13 +126,7 @@ bool ExternalScenario<ModelVariant>::next_forcing_file() {
 
 template<class ModelVariant>
 Time ExternalScenario<ModelVariant>::start() {
-    const settings::SettingsNode& scenario_node = settings["scenario"];
-
-    if (scenario_node.has("start")) {
-        start_time = scenario_node["start"].as<Time>();
-    }
-    if (scenario_node.has("stop")) {
-        stop_time = scenario_node["stop"].as<Time>();
+    if (model()->stop_time() > Time(0.0)) {
         stop_time_known = true;
     } else {
         stop_time_known = false;
@@ -166,7 +156,7 @@ Time ExternalScenario<ModelVariant>::start() {
         error("Empty forcing");
     }
 
-    return start_time;
+    return model()->start_time();
 }
 
 template<class ModelVariant>
@@ -179,7 +169,7 @@ void ExternalScenario<ModelVariant>::end() {
 
 template<class ModelVariant>
 bool ExternalScenario<ModelVariant>::iterate() {
-    if (stop_time_known && model()->time() > stop_time) {
+    if (stop_time_known && model()->time() > model()->stop_time()) {
         return false;
     }
     if (is_first_timestep()) {
@@ -192,7 +182,7 @@ bool ExternalScenario<ModelVariant>::iterate() {
         next_time = Time(forcing->next_timestep() / time_step_width);
         if (next_time < 0) {
             if (!next_forcing_file() && !stop_time_known) {
-                stop_time = model()->time();
+                // TODO stop_time = model()->time();
                 stop_time_known = true;
             }
         } else {

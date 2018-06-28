@@ -29,12 +29,14 @@ Sector<ModelVariant>::Sector(Model<ModelVariant>* model_p,
                              std::string id_p,
                              const IntType index_p,
                              const Ratio& upper_storage_limit_omega_p,
-                             const Time& initial_storage_fill_factor_psi_p)
+                             const Time& initial_storage_fill_factor_psi_p,
+                             TransportType transport_type_p)
     : id_m(std::move(id_p)),
       index_m(index_p),
       model_m(model_p),
       upper_storage_limit_omega(upper_storage_limit_omega_p),
-      initial_storage_fill_factor_psi(initial_storage_fill_factor_psi_p) {}
+      initial_storage_fill_factor_psi(initial_storage_fill_factor_psi_p),
+      transport_type(transport_type_p) {}
 
 template<class ModelVariant>
 void Sector<ModelVariant>::add_demand_request_D(const Demand& demand_request_D) {
@@ -72,9 +74,9 @@ void Sector<ModelVariant>::iterate_consumption_and_production() {
 
 template<class ModelVariant>
 void Sector<ModelVariant>::remove_firm(Firm<ModelVariant>* firm) {
-    for (auto it = firms_N.begin(); it != firms_N.end(); ++it) {
+    for (auto it = firms.begin(); it != firms.end(); ++it) { // TODO use find_if
         if (*it == firm) {
-            firms_N.erase(it);
+            firms.erase(it);
             break;
         }
     }

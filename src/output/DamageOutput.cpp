@@ -53,8 +53,8 @@ void DamageOutput<ModelVariant>::initialize() {
 
 template<class ModelVariant>
 void DamageOutput<ModelVariant>::internal_iterate_end() {
-    for (const auto& sector : model()->sectors_C) {
-        for (const auto& firm : sector->firms_N) {
+    for (const auto& sector : model()->sectors) {
+        for (const auto& firm : sector->firms) {
             damage += firm->total_loss().get_quantity();
         }
     }

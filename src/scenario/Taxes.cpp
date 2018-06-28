@@ -28,7 +28,8 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Taxes<ModelVariant>::Taxes(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p) : Scenario<ModelVariant>(settings_p, model_p) {}
+Taxes<ModelVariant>::Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p)
+    : Scenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
 
 #ifdef VARIANT_BASIC
 template<>
@@ -46,14 +47,10 @@ Time Taxes<VariantDemand>::start() {
 
 template<class ModelVariant>
 Time Taxes<ModelVariant>::start() {
-    for (auto& region : model()->regions_R) {
+    for (auto& region : model()->regions) {
         region->set_government(new Government<ModelVariant>(region.get()));
     }
-    if (settings["scenario"].has("start")) {
-        start_time = settings["scenario"]["start"].template as<Time>();
-    }
-    stop_time = settings["scenario"]["stop"].template as<Time>();
-    return start_time;
+    return model()->start_time();
 }
 
 #ifdef VARIANT_BASIC
@@ -72,11 +69,11 @@ bool Taxes<VariantDemand>::iterate() {
 
 template<class ModelVariant>
 bool Taxes<ModelVariant>::iterate() {
-    if (model()->time() > stop_time) {
+    if (model()->time() > model()->stop_time()) {
         return false;
     }
 
-    for (const settings::SettingsNode& tax : settings["scenario"]["taxes"].as_sequence()) {
+    for (const settings::SettingsNode& tax : scenario_node["taxes"].as_sequence()) {
         const Time start_tax = tax["start_tax"].as<Time>();
         const Time full_tax = tax["full_tax"].as<Time>();
         if (model()->time() >= start_tax - model()->delta_t() && model()->time() <= full_tax - model()->delta_t()) {
@@ -90,7 +87,7 @@ bool Taxes<ModelVariant>::iterate() {
                 }
                 region->government()->define_tax(sector, tax_ratio);
             } else {
-                for (auto& region : model()->regions_R) {
+                for (auto& region : model()->regions) {
                     region->government()->define_tax(sector, tax_ratio);
                 }
             }

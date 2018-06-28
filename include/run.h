@@ -87,8 +87,8 @@ class Run {
 
   protected:
     static std::unique_ptr<Run> instance_m;
-    std::unique_ptr<Scenario<ModelVariant>> scenario_m;
     std::unique_ptr<Model<ModelVariant>> model_m;
+    std::vector<std::unique_ptr<Scenario<ModelVariant>>> scenarios_m;
     std::vector<std::unique_ptr<Output<ModelVariant>>> outputs_m;
     unsigned int time_m = 0;
     std::size_t duration_m = 0;

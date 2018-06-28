@@ -228,10 +228,15 @@ FloatType PurchasingManagerPrices<ModelVariant>::expected_average_price_E_n_r(Fl
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
+
+    // Here should be something like X_expected = xi_min * X_expected; with xi_min is the mininum passage on the business connections
+    X_expected = business_connection->get_minimum_passage() * X_expected;
+    // X = business_connection->get_minimum_passage() * X;
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
     assert(Z_last <= X);
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
     FloatType X_new = D_r + ratio_X_expected_to_X * (X - Z_last);
+    // X_new = business_connection->get_minimum_passage() * X_new;
     assert(X_new >= 0.0);
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity())) {
@@ -274,6 +279,8 @@ FloatType PurchasingManagerPrices<ModelVariant>::n_r(FloatType D_r, const Busine
     X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());
     X_expected = to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());
 
+    X_expected = business_connection->get_minimum_passage() * X_expected;
+
     FloatType E_n_r = expected_average_price_E_n_r(D_r, business_connection);  // expected average price for D_r
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
 
@@ -306,6 +313,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_expected_average_price_E_n
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
+    X_expected = business_connection->get_minimum_passage() * X_expected;
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
     FloatType X_new = D_r + ratio_X_expected_to_X * (X - Z_last);
@@ -346,6 +354,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_n_r(FloatType D_r, const B
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
+    X_expected = business_connection->get_minimum_passage() * X_expected;
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
     FloatType grad_E_n_r = grad_expected_average_price_E_n_r(D_r, business_connection);  // expected gradient of average price for D_r
@@ -666,7 +675,9 @@ void PurchasingManagerPrices<ModelVariant>::calc_optimization_parameters(std::ve
                                                                          OptimizerData<ModelVariant>& data_p) const {
     if (storage->desired_used_flow_U_tilde().get_quantity() <= 0.0) {
         warning("desired_used_flow_U_tilde is zero : no purchase");
-        zero_connections_p = business_connections;
+        for (const auto& bc : business_connections) {
+            zero_connections_p.push_back(bc.get());
+        }
         return;
     }
     demand_requests_D_p.reserve(business_connections.size());
@@ -681,7 +692,7 @@ void PurchasingManagerPrices<ModelVariant>::calc_optimization_parameters(std::ve
     FloatType total_initial_value = 0.0;
     for (const auto& bc : business_connections) {
         if (bc->seller->communicated_parameters().possible_production_X_hat.get_quantity() <= 0.0) {
-            zero_connections_p.push_back(bc);
+            zero_connections_p.push_back(bc.get());
         } else {  // this supplier can deliver a non-zero amount
             // assumption, we cannot crowd out other purchasers given that our maximum offer price is n_max, calculate analytical approximation for maximal
             // deliverable amount of purchaser X_max(n_max) and consider boundary conditions
@@ -690,24 +701,26 @@ void PurchasingManagerPrices<ModelVariant>::calc_optimization_parameters(std::ve
             const FloatType X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
 #endif
             const FloatType Z_last = to_float(bc->last_shipment_Z().get_quantity());
-            const FloatType X_expected = to_float(bc->seller->communicated_parameters().expected_production_X.get_quantity());  // wo expectation X_expected = X
+            const FloatType X_expected =
+                bc->get_minimum_passage()
+                * to_float(bc->seller->communicated_parameters().expected_production_X.get_quantity());  // wo expectation X_expected = X
             const FloatType ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
-            const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc));
+            const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
             assert(X_max <= X_hat);
             const FloatType lower_limit = 0.0;
             const FloatType upper_limit = X_max - ratio_X_expected_to_X * (X - Z_last);
             // in expected_average_price_E_n_r may happen, but it could also be the case that the optimizer does not respect D_r in [D_r_min,D_r_max]
             if (upper_limit > 0.0) {
                 const FloatType initial_value = std::min(upper_limit, std::max(lower_limit, ratio_X_expected_to_X * Z_last));
-                data_p.business_connections.push_back(bc);
-                data_p.lower_bounds.push_back(scaled_D_r(lower_limit, bc));
-                data_p.upper_bounds.push_back(scaled_D_r(upper_limit, bc));
-                demand_requests_D_p.push_back(scaled_D_r(initial_value, bc));
+                data_p.business_connections.push_back(bc.get());
+                data_p.lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
+                data_p.upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
+                demand_requests_D_p.push_back(scaled_D_r(initial_value, bc.get()));
                 total_upper_limit += upper_limit;
                 total_initial_value += initial_value;
                 max_possible_demand_quantity += upper_limit;
             } else {
-                zero_connections_p.push_back(bc);
+                zero_connections_p.push_back(bc.get());
             }
         }
     }

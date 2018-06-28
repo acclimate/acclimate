@@ -26,116 +26,113 @@ namespace acclimate {
 
 template<class ModelVariant>
 TransportChainLink<ModelVariant>::TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p,
-#ifdef TRANSPORT
-                                                     unique_ptr<TransportChainLink<ModelVariant>>& next_transport_chain_link_p,
-#endif
                                                      const TransportDelay& transport_delay_tau,
-                                                     const Flow& initial_flow_Z_star)
-    : current_transport_delay_tau(transport_delay_tau), initial_transport_delay_tau(transport_delay_tau), business_connection(business_connection_p) {
-#ifdef TRANSPORT
-    next_transport_chain_link.reset(next_transport_chain_link_p.get());
-#endif
-    if (initial_transport_delay_tau > 1) {
-        transport_queue = std::vector<Flow>(initial_transport_delay_tau - 1, initial_flow_Z_star);
-        initial_transport_queue = std::vector<FlowQuantity>(initial_transport_delay_tau - 1, initial_flow_Z_star.get_quantity());
+                                                     const Flow& initial_flow_Z_star,
+                                                     GeoEntity<ModelVariant>* geo_entity_p)
+    : initial_transport_delay_tau(transport_delay_tau),
+      business_connection(business_connection_p),
+      geo_entity(geo_entity_p),
+      overflow(0.0),
+      initial_flow_quantity(initial_flow_Z_star.get_quantity()),
+      transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
+      pos(0),
+      forcing_nu(-1) {
+    if (geo_entity) {
+        geo_entity->transport_chain_links.push_back(this);
     }
-    pos = 0;
+}
+
+template<class ModelVariant>
+TransportChainLink<ModelVariant>::~TransportChainLink() {
+    if (geo_entity) {
+        geo_entity->remove_transport_chain_link(this);
+    }
+}
+
+template<class ModelVariant>
+FloatType TransportChainLink<ModelVariant>::get_passage() const {
+    return forcing_nu;
 }
 
 template<class ModelVariant>
 void TransportChainLink<ModelVariant>::push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    if (current_transport_delay_tau > 1) {
-        Flow front_flow_Z = transport_queue[pos];
-        transport_queue[pos] = flow_Z;
-        initial_transport_queue[pos] = initial_flow_Z_star;
-        pos = (pos + 1) % (current_transport_delay_tau - 1);
-#ifdef TRANSPORT
-        if (next_transport_chain_link) {
-            next_transport_chain_link->push_flow_Z(front_flow_Z, initial_flow_Z_star);
+    Flow flow_to_push = Flow(0.0);
+    if (transport_queue.size() > 0) {
+        auto front_flow_Z = transport_queue[pos];
+        transport_queue[pos] = AnnotatedFlow(flow_Z, initial_flow_Z_star);
+        pos = (pos + 1) % transport_queue.size();
+
+        if (forcing_nu < 0) {
+            flow_to_push = overflow + front_flow_Z.current;
         } else {
-            business_connection->deliver_flow_Z(front_flow_Z);
+            flow_to_push = std::min(overflow + front_flow_Z.current, Flow(forcing_nu * front_flow_Z.initial, front_flow_Z.current.get_price()));
         }
-#else
-        business_connection->deliver_flow_Z(front_flow_Z);
-#endif
+        overflow = overflow + front_flow_Z.current - flow_to_push;
+        if (next_transport_chain_link) {
+            next_transport_chain_link->push_flow_Z(flow_to_push, initial_flow_Z_star);
+        } else {
+            business_connection->deliver_flow_Z(flow_to_push);
+        }
     } else {
-#ifdef TRANSPORT
-        if (next_transport_chain_link) {
-            next_transport_chain_link->push_flow_Z(flow_Z, initial_flow_Z_star);
+        if (forcing_nu < 0) {
+            flow_to_push = overflow + flow_Z;
         } else {
-            business_connection->deliver_flow_Z(flow_Z);
+            flow_to_push = std::min(overflow + flow_Z, Flow(forcing_nu * initial_flow_Z_star, flow_Z.get_price()));
         }
-#else
-        business_connection->deliver_flow_Z(flow_Z);
-#endif
+        overflow = overflow + flow_Z - flow_to_push;
+        if (next_transport_chain_link) {
+            next_transport_chain_link->push_flow_Z(flow_to_push, initial_flow_Z_star);
+        } else {
+            business_connection->deliver_flow_Z(flow_to_push);
+        }
     }
 }
 
 template<class ModelVariant>
-void TransportChainLink<ModelVariant>::set_forcing_nu(const Forcing& forcing_nu) {
+void TransportChainLink<ModelVariant>::set_forcing_nu(Forcing forcing_nu_p) {
     assertstep(SCENARIO);
-    error("Not implemented yet");
-    UNUSED(forcing_nu);
-    // if (forcing_nu == Forcing(0)) {
-    // LATER set length to infinity
-    // } else {
-    // TransportDelay new_length = (TransportDelay) floor((double) initial_transport_delay_tau / forcing_nu);
-    // LATER distribute evenly to new queue of new_length
-    // }
+    forcing_nu = forcing_nu_p;
 }
 
 template<class ModelVariant>
-const Flow TransportChainLink<ModelVariant>::get_total_flow() const {
+Flow TransportChainLink<ModelVariant>::get_total_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    if (current_transport_delay_tau > 1) {
-        Flow res = Flow(0.0);
-        for (int i = 0; i < current_transport_delay_tau - 1; ++i) {
-            res += transport_queue[i];
-        }
-        return res;
+    Flow res = Flow(0.0);
+    for (const auto& f : transport_queue) {
+        res += f.current;
     }
-    return Flow(0.0);
+    return res + overflow;
 }
 
 template<class ModelVariant>
-const Flow TransportChainLink<ModelVariant>::get_disequilibrium() const {
+Flow TransportChainLink<ModelVariant>::get_disequilibrium() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    if (current_transport_delay_tau > 1) {
-        Flow res = Flow(0.0);
-        for (int i = 0; i < current_transport_delay_tau - 1; ++i) {
-            res.add_possibly_negative(absdiff(transport_queue[i], initial_transport_queue[i]));
-        }
-        return res;
+    Flow res = Flow(0.0);
+    for (const auto& f : transport_queue) {
+        res.add_possibly_negative(absdiff(f.current, f.initial));
     }
-    return Flow(0.0);
+    return res;
 }
 
 template<class ModelVariant>
 FloatType TransportChainLink<ModelVariant>::get_stddeviation() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    if (current_transport_delay_tau > 1) {
-        FloatType res = 0;
-#define SQR(a) ((a) * (a))
-        for (int i = 0; i < current_transport_delay_tau - 1; ++i) {
-            res += SQR(to_float((absdiff(transport_queue[i], initial_transport_queue[i])).get_quantity()));
-        }
-        return res;
+    FloatType res = 0.0;
+    for (const auto& f : transport_queue) {
+        res += to_float((absdiff(f.current, f.initial)).get_quantity()) * to_float((absdiff(f.current, f.initial)).get_quantity());
     }
-    return 0.0;
+    return res;
 }
 
 template<class ModelVariant>
-const FlowQuantity TransportChainLink<ModelVariant>::get_flow_deficit() const {
+FlowQuantity TransportChainLink<ModelVariant>::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    if (current_transport_delay_tau > 1) {
-        FlowQuantity res = FlowQuantity(0.0);
-        for (int i = 0; i < current_transport_delay_tau - 1; ++i) {
-            res += round(initial_transport_queue[i] - transport_queue[i].get_quantity());
-        }
-        return round(res);
+    FlowQuantity res = FlowQuantity(0.0);
+    for (const auto& f : transport_queue) {
+        res += round(f.initial - f.current.get_quantity());
     }
-    return FlowQuantity(0.0);
+    return round(res - overflow.get_quantity());
 }
 
 INSTANTIATE_BASIC(TransportChainLink);

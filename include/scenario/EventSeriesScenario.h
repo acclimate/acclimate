@@ -60,8 +60,9 @@ class EventSeriesScenario : public ExternalScenario<ModelVariant> {
     void read_forcings() override;
 
   public:
+    using ExternalScenario<ModelVariant>::id;
     using ExternalScenario<ModelVariant>::model;
-    EventSeriesScenario(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p);
+    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
 };
 }  // namespace acclimate
 

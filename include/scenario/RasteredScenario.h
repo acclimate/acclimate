@@ -43,10 +43,10 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     };
 
   protected:
-    using ExternalScenario<ModelVariant>::id;
     using ExternalScenario<ModelVariant>::forcing;
     using ExternalScenario<ModelVariant>::model;
     using ExternalScenario<ModelVariant>::next_time;
+    using ExternalScenario<ModelVariant>::scenario_node;
     using ExternalScenario<ModelVariant>::settings;
 
     std::unique_ptr<RasteredData<int>> iso_raster;
@@ -69,9 +69,10 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     void iterate_first_timestep() override;
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
-    RasteredScenario(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p);
+    RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
 
   public:
+    using ExternalScenario<ModelVariant>::id;
     virtual ~RasteredScenario() {}
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
     inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; }

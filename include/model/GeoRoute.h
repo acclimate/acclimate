@@ -18,30 +18,21 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_DIRECTPOPULATION_H
-#define ACCLIMATE_DIRECTPOPULATION_H
+#ifndef ACCLIMATE_GEOROUTE_H
+#define ACCLIMATE_GEOROUTE_H
 
-#include "scenario/RasteredScenario.h"
-#include "types.h"
+#include "acclimate.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Model;
-template<class ModelVariant>
-class Region;
+class GeoEntity;
 
 template<class ModelVariant>
-class DirectPopulation : public RasteredScenario<ModelVariant, FloatType> {
-  protected:
-    FloatType new_region_forcing(Region<ModelVariant>* region) const override;
-    void set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, FloatType proxy_sum) const override;
-    void reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const override;
-    void add_cell_forcing(
-        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const override;
-
+class GeoRoute {
   public:
-    DirectPopulation(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
+    std::vector<GeoEntity<ModelVariant>*> path;
+    std::string id() const;
 };
 }  // namespace acclimate
 

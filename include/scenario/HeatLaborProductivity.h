@@ -31,7 +31,6 @@ template<class ModelVariant>
 class Model;
 template<class ModelVariant>
 class Region;
-
 using HeatLaborProductivityRegionForcingType = std::vector<FloatType>;
 
 template<class ModelVariant>
@@ -49,7 +48,7 @@ class HeatLaborProductivity : public RasteredScenario<ModelVariant, HeatLaborPro
                           RegionForcingType& region_forcing) const override;
 
   public:
-    HeatLaborProductivity(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p);
+    HeatLaborProductivity(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
 };
 }  // namespace acclimate
 

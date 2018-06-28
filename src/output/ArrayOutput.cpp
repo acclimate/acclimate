@@ -39,8 +39,8 @@ ArrayOutput<ModelVariant>::ArrayOutput(const settings::SettingsNode& settings_p,
 template<class ModelVariant>
 void ArrayOutput<ModelVariant>::initialize() {
     include_events = output_node["events"].template as<bool>(false);
-    sectors_size = model()->sectors_C.size();
-    regions_size = model()->regions_R.size();
+    sectors_size = model()->sectors.size();
+    regions_size = model()->regions.size();
 }
 
 template<class ModelVariant>
