@@ -48,6 +48,7 @@ void ProgressOutput<ModelVariant>::initialize() {
     tqdm::Params p;
     p.ascii = "";
     p.f = stdout;
+    p.miniters = 1;
     total = output_node["total"].template as<int>();
     it.reset(new tqdm::RangeTqdm<int>(tqdm::RangeIterator<int>(total), tqdm::RangeIterator<int>(total, total), p));
 #else
