@@ -24,14 +24,9 @@
 #include <memory>
 #include "output/Output.h"
 
-namespace tqdm {
-template<typename SizeType>
-class RangeIterator;
-template<typename IteratorType>
-class Tqdm;
-template<typename SizeType = int>
-using RangeTqdm = Tqdm<RangeIterator<SizeType>>;
-}  // namespace tqdm
+namespace progressbar {
+class ProgressBar;
+}
 
 namespace acclimate {
 
@@ -51,10 +46,7 @@ class ProgressOutput : public Output<ModelVariant> {
     using Output<ModelVariant>::settings;
 
   protected:
-#ifdef USE_TQDM
-    std::unique_ptr<tqdm::RangeTqdm<int>> it;
-#endif
-    int total;
+    std::unique_ptr<progressbar::ProgressBar> bar;
 
   protected:
     void internal_iterate_end() override;
@@ -66,7 +58,6 @@ class ProgressOutput : public Output<ModelVariant> {
                    Scenario<ModelVariant>* scenario_p,
                    settings::SettingsNode output_node_p);
     void initialize() override;
-    void checkpoint_stop() override;
     void checkpoint_resume() override;
 };
 }  // namespace acclimate

@@ -24,14 +24,8 @@
 #include <utility>
 #include "model/Model.h"
 #include "model/Sector.h"
+#include "progressbar.h"
 #include "variants/ModelVariants.h"
-#ifdef USE_TQDM
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wredundant-decls"
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-#include "tqdm/tqdm.h"
-#pragma GCC diagnostic pop
-#endif
 
 namespace acclimate {
 
@@ -44,52 +38,23 @@ ProgressOutput<ModelVariant>::ProgressOutput(const settings::SettingsNode& setti
 
 template<class ModelVariant>
 void ProgressOutput<ModelVariant>::initialize() {
-#ifdef USE_TQDM
-    tqdm::Params p;
-    p.ascii = "";
-    p.f = stdout;
-    p.miniters = 1;
-    total = output_node["total"].template as<int>();
-    it.reset(new tqdm::RangeTqdm<int>(tqdm::RangeIterator<int>(total), tqdm::RangeIterator<int>(total, total), p));
-#else
-    error("tqdm not enabled");
-#endif
-}
-
-template<class ModelVariant>
-void ProgressOutput<ModelVariant>::checkpoint_stop() {
-#ifdef USE_TQDM
-    total = it->size_remaining();
-    it->close();
-#endif
+    const auto total = output_node["total"].template as<std::size_t>();
+    bar.reset(new progressbar::ProgressBar(total));
 }
 
 template<class ModelVariant>
 void ProgressOutput<ModelVariant>::checkpoint_resume() {
-#ifdef USE_TQDM
-    tqdm::Params p;
-    p.ascii = "";
-    p.f = stdout;
-    p.miniters = 1;
-    it.reset(new tqdm::RangeTqdm<int>(tqdm::RangeIterator<int>(total), tqdm::RangeIterator<int>(total, total), p));
-#endif
+    bar->reset_eta();
 }
 
 template<class ModelVariant>
 void ProgressOutput<ModelVariant>::internal_end() {
-#ifdef USE_TQDM
-    it->close();
-#endif
+    bar->close();
 }
 
 template<class ModelVariant>
 void ProgressOutput<ModelVariant>::internal_iterate_end() {
-#ifdef USE_TQDM
-    if (!it->ended()) {
-        ++(*it);
-        std::cout << std::flush;
-    }
-#endif
+    ++(*bar);
 }
 
 INSTANTIATE_BASIC(ProgressOutput);
