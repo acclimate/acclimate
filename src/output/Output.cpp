@@ -600,51 +600,70 @@ bool Output<VariantPrices>::write_sector_parameter_variant(const Sector<VariantP
 template<class ModelVariant>
 void Output<ModelVariant>::iterate() {
     internal_iterate_begin();
-    for (const auto& observables : output_node["observables"].as_sequence()) {
-        for (const auto& observable : observables.as_map()) {
-            const auto name = hstring(observable.first);
-            const settings::SettingsNode& it = observable.second;
-            switch (name) {
-                case hstring::hash("firm"): {
-                    if (!it.has("set")) {
-                        if (!it.has("sector")) {
-                            if (!it.has("region")) {
-                                for (const auto& sector : model()->sectors) {
-                                    for (const auto& p : sector->firms) {
-                                        internal_start_target(hstring("firms"), p->sector, p->region);
-                                        write_firm_parameters(p, it);
-                                        internal_end_target();
-                                    }
-                                }
-                            } else {
-                                const Region<ModelVariant>* region = model()->find_region(it["region"].as<std::string>());
-                                if (region) {
-                                    for (const auto& ea : region->economic_agents) {
-                                        if (ea->type == EconomicAgent<ModelVariant>::Type::FIRM) {
-                                            const Firm<ModelVariant>* p = ea->as_firm();
+    if (output_node.has("observables")) {
+        for (const auto& observables : output_node["observables"].as_sequence()) {
+            for (const auto& observable : observables.as_map()) {
+                const auto name = hstring(observable.first);
+                const settings::SettingsNode& it = observable.second;
+                switch (name) {
+                    case hstring::hash("firm"): {
+                        if (!it.has("set")) {
+                            if (!it.has("sector")) {
+                                if (!it.has("region")) {
+                                    for (const auto& sector : model()->sectors) {
+                                        for (const auto& p : sector->firms) {
                                             internal_start_target(hstring("firms"), p->sector, p->region);
                                             write_firm_parameters(p, it);
                                             internal_end_target();
                                         }
                                     }
                                 } else {
-                                    warning("Region " << it["region"].as<std::string>() << " not found");
+                                    const Region<ModelVariant>* region = model()->find_region(it["region"].as<std::string>());
+                                    if (region) {
+                                        for (const auto& ea : region->economic_agents) {
+                                            if (ea->type == EconomicAgent<ModelVariant>::Type::FIRM) {
+                                                const Firm<ModelVariant>* p = ea->as_firm();
+                                                internal_start_target(hstring("firms"), p->sector, p->region);
+                                                write_firm_parameters(p, it);
+                                                internal_end_target();
+                                            }
+                                        }
+                                    } else {
+                                        warning("Region " << it["region"].as<std::string>() << " not found");
+                                    }
                                 }
-                            }
-                        } else {
-                            if (!it.has("region")) {
-                                const Sector<ModelVariant>* sector = model()->find_sector(it["sector"].as<std::string>());
-                                if (sector) {
-                                    for (const auto& p : sector->firms) {
+                            } else {
+                                if (!it.has("region")) {
+                                    const Sector<ModelVariant>* sector = model()->find_sector(it["sector"].as<std::string>());
+                                    if (sector) {
+                                        for (const auto& p : sector->firms) {
+                                            internal_start_target(hstring("firms"), p->sector, p->region);
+                                            write_firm_parameters(p, it);
+                                            internal_end_target();
+                                        }
+                                    } else {
+                                        warning("Sector " << it["sector"].as<std::string>() << " not found");
+                                    }
+                                } else {
+                                    const Firm<ModelVariant>* p = model()->find_firm(it["sector"].as<std::string>(), it["region"].as<std::string>());
+                                    if (p) {
                                         internal_start_target(hstring("firms"), p->sector, p->region);
                                         write_firm_parameters(p, it);
                                         internal_end_target();
+                                    } else {
+                                        warning("Firm " << it["sector"].as<std::string>() << ":" << it["region"].as<std::string>() << " not found");
                                     }
-                                } else {
-                                    warning("Sector " << it["sector"].as<std::string>() << " not found");
                                 }
-                            } else {
-                                const Firm<ModelVariant>* p = model()->find_firm(it["sector"].as<std::string>(), it["region"].as<std::string>());
+                            }
+                        } else {
+                            std::istringstream ss(it["set"].as<std::string>());
+                            std::string ps;
+                            while (getline(ss, ps, ',')) {
+                                std::istringstream ss_l(ps);
+                                std::string sector_name, region_name;
+                                getline(ss_l, sector_name, ':');
+                                getline(ss_l, region_name, ':');
+                                const Firm<ModelVariant>* p = model()->find_firm(sector_name, region_name);
                                 if (p) {
                                     internal_start_target(hstring("firms"), p->sector, p->region);
                                     write_firm_parameters(p, it);
@@ -654,158 +673,142 @@ void Output<ModelVariant>::iterate() {
                                 }
                             }
                         }
-                    } else {
-                        std::istringstream ss(it["set"].as<std::string>());
-                        std::string ps;
-                        while (getline(ss, ps, ',')) {
-                            std::istringstream ss_l(ps);
-                            std::string sector_name, region_name;
-                            getline(ss_l, sector_name, ':');
-                            getline(ss_l, region_name, ':');
-                            const Firm<ModelVariant>* p = model()->find_firm(sector_name, region_name);
-                            if (p) {
-                                internal_start_target(hstring("firms"), p->sector, p->region);
-                                write_firm_parameters(p, it);
+                    } break;
+
+                    case hstring::hash("consumer"): {
+                        if (!it.has("region")) {
+                            for (const auto& region : model()->regions) {
+                                for (const auto& ea : region->economic_agents) {
+                                    if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
+                                        Consumer<ModelVariant>* c = ea->as_consumer();
+                                        internal_start_target(hstring("consumers"), c->region);
+                                        write_consumer_parameters(c, it);
+                                        internal_end_target();
+                                    }
+                                }
+                            }
+                        } else {
+                            Consumer<ModelVariant>* c = model()->find_consumer(it["region"].as<std::string>());
+                            if (c) {
+                                internal_start_target(hstring("consumers"), c->region);
+                                write_consumer_parameters(c, it);
                                 internal_end_target();
                             } else {
-                                warning("Firm " << it["sector"].as<std::string>() << ":" << it["region"].as<std::string>() << " not found");
+                                warning("Consumer " << it["region"].as<std::string>() << " not found");
                             }
                         }
-                    }
-                } break;
+                    } break;
 
-                case hstring::hash("consumer"): {
-                    if (!it.has("region")) {
+                    case hstring::hash("agent"): {
                         for (const auto& region : model()->regions) {
                             for (const auto& ea : region->economic_agents) {
+                                internal_start_target(hstring("agents"), ea->sector, ea->region);
                                 if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
-                                    Consumer<ModelVariant>* c = ea->as_consumer();
-                                    internal_start_target(hstring("consumers"), c->region);
-                                    write_consumer_parameters(c, it);
+                                    write_consumer_parameters(ea->as_consumer(), it);
+                                } else {
+                                    write_firm_parameters(ea->as_firm(), it);
+                                }
+                                internal_end_target();
+                            }
+                        }
+                    } break;
+
+                    case hstring::hash("storage"): {
+                        for (const auto& region : model()->regions) {
+                            for (const auto& ea : region->economic_agents) {
+                                internal_start_target(hstring("storages"), ea->sector, ea->region);
+                                for (const auto& is : ea->input_storages) {
+                                    internal_start_target(hstring("storages"), is->sector);
+                                    write_input_storage_parameters(is.get(), it);
                                     internal_end_target();
+                                }
+                                internal_end_target();
+                            }
+                        }
+                    } break;
+
+                    case hstring::hash("flow"): {
+                        for (const auto& sector : model()->sectors) {
+                            for (const auto& ps : sector->firms) {
+                                internal_start_target(hstring("flows"), ps->sector, ps->region);
+                                for (const auto& bc : ps->sales_manager->business_connections) {
+                                    internal_start_target(hstring("flows"), bc->buyer->storage->economic_agent->sector,
+                                                          bc->buyer->storage->economic_agent->region);
+                                    write_connection_parameters(bc.get(), it);
+                                    internal_end_target();
+                                }
+                                internal_end_target();
+                            }
+                        }
+                    } break;
+
+                    case hstring::hash("region"): {
+                        const char* region_name = nullptr;
+                        if (it.has("name")) {
+                            region_name = it["name"].as<std::string>().c_str();
+                        }
+                        if (dynamic_cast<RasteredScenario<ModelVariant, FloatType>*>(scenario)) {
+                            for (const auto& observable : it["parameters"].as_sequence()) {
+                                const hstring& name = observable.as<hstring>();
+                                switch (name) {
+                                    case hstring::hash("total_current_proxy_sum"):
+                                        for (const auto& forcing : static_cast<RasteredScenario<ModelVariant, FloatType>*>(scenario)->forcings()) {
+                                            if (forcing.region && ((region_name == nullptr) || forcing.region->id() == region_name)) {
+                                                internal_start_target(hstring("regions"), forcing.region);
+                                                internal_write_value(name, forcing.forcing);
+                                                internal_end_target();
+                                            }
+                                        }
+                                        break;
                                 }
                             }
                         }
-                    } else {
-                        Consumer<ModelVariant>* c = model()->find_consumer(it["region"].as<std::string>());
-                        if (c) {
-                            internal_start_target(hstring("consumers"), c->region);
-                            write_consumer_parameters(c, it);
-                            internal_end_target();
-                        } else {
-                            warning("Consumer " << it["region"].as<std::string>() << " not found");
-                        }
-                    }
-                } break;
-
-                case hstring::hash("agent"): {
-                    for (const auto& region : model()->regions) {
-                        for (const auto& ea : region->economic_agents) {
-                            internal_start_target(hstring("agents"), ea->sector, ea->region);
-                            if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
-                                write_consumer_parameters(ea->as_consumer(), it);
-                            } else {
-                                write_firm_parameters(ea->as_firm(), it);
-                            }
-                            internal_end_target();
-                        }
-                    }
-                } break;
-
-                case hstring::hash("storage"): {
-                    for (const auto& region : model()->regions) {
-                        for (const auto& ea : region->economic_agents) {
-                            internal_start_target(hstring("storages"), ea->sector, ea->region);
-                            for (const auto& is : ea->input_storages) {
-                                internal_start_target(hstring("storages"), is->sector);
-                                write_input_storage_parameters(is.get(), it);
+                        for (const auto& region : model()->regions) {
+                            if ((region_name == nullptr) || region->id() == region_name) {
+                                internal_start_target(hstring("regions"), region.get());
+                                write_region_parameters(region.get(), it);
                                 internal_end_target();
                             }
-                            internal_end_target();
                         }
-                    }
-                } break;
+                    } break;
 
-                case hstring::hash("flow"): {
-                    for (const auto& sector : model()->sectors) {
-                        for (const auto& ps : sector->firms) {
-                            internal_start_target(hstring("flows"), ps->sector, ps->region);
-                            for (const auto& bc : ps->sales_manager->business_connections) {
-                                internal_start_target(hstring("flows"), bc->buyer->storage->economic_agent->sector, bc->buyer->storage->economic_agent->region);
-                                write_connection_parameters(bc.get(), it);
+                    case hstring::hash("sector"): {
+                        const char* sector_name = nullptr;
+                        if (it.has("sector")) {
+                            sector_name = it["sector"].as<std::string>().c_str();
+                        }
+                        for (const auto& sector : model()->sectors) {
+                            if (sector->id() == "FCON") {
+                                continue;
+                            }
+                            if ((sector_name == nullptr) || sector->id() == sector_name) {
+                                internal_start_target(hstring("sectors"), sector.get());
+                                write_sector_parameters(sector.get(), it);
                                 internal_end_target();
                             }
-                            internal_end_target();
                         }
-                    }
-                } break;
+                    } break;
 
-                case hstring::hash("region"): {
-                    const char* region_name = nullptr;
-                    if (it.has("name")) {
-                        region_name = it["name"].as<std::string>().c_str();
-                    }
-                    if (dynamic_cast<RasteredScenario<ModelVariant, FloatType>*>(scenario)) {
+                    case hstring::hash("meta"): {
+                        internal_start_target(hstring("meta"));
                         for (const auto& observable : it["parameters"].as_sequence()) {
                             const hstring& name = observable.as<hstring>();
                             switch (name) {
-                                case hstring::hash("total_current_proxy_sum"):
-                                    for (const auto& forcing : static_cast<RasteredScenario<ModelVariant, FloatType>*>(scenario)->forcings()) {
-                                        if (forcing.region && ((region_name == nullptr) || forcing.region->id() == region_name)) {
-                                            internal_start_target(hstring("regions"), forcing.region);
-                                            internal_write_value(name, forcing.forcing);
-                                            internal_end_target();
-                                        }
-                                    }
+                                case hstring::hash("duration"):
+                                    internal_write_value(name, model()->run()->duration());
+                                    break;
+                                default:
+                                    parameter_not_found(name);
                                     break;
                             }
                         }
-                    }
-                    for (const auto& region : model()->regions) {
-                        if ((region_name == nullptr) || region->id() == region_name) {
-                            internal_start_target(hstring("regions"), region.get());
-                            write_region_parameters(region.get(), it);
-                            internal_end_target();
-                        }
-                    }
-                } break;
+                        internal_end_target();
+                    } break;
 
-                case hstring::hash("sector"): {
-                    const char* sector_name = nullptr;
-                    if (it.has("sector")) {
-                        sector_name = it["sector"].as<std::string>().c_str();
-                    }
-                    for (const auto& sector : model()->sectors) {
-                        if (sector->id() == "FCON") {
-                            continue;
-                        }
-                        if ((sector_name == nullptr) || sector->id() == sector_name) {
-                            internal_start_target(hstring("sectors"), sector.get());
-                            write_sector_parameters(sector.get(), it);
-                            internal_end_target();
-                        }
-                    }
-                } break;
-
-                case hstring::hash("meta"): {
-                    internal_start_target(hstring("meta"));
-                    for (const auto& observable : it["parameters"].as_sequence()) {
-                        const hstring& name = observable.as<hstring>();
-                        switch (name) {
-                            case hstring::hash("duration"):
-                                internal_write_value(name, model()->run()->duration());
-                                break;
-                            default:
-                                parameter_not_found(name);
-                                break;
-                        }
-                    }
-                    internal_end_target();
-                } break;
-
-                default:
-                    parameter_not_found(name);
-                    break;
+                    default:
+                        parameter_not_found(name);
+                        break;
+                }
             }
         }
     }
