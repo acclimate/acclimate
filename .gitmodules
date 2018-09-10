@@ -10,3 +10,6 @@
 [submodule "lib/libmrio"]
 	path = lib/libmrio
 	url = https://github.com/swillner/libmrio
+[submodule "lib/pybind11"]
+	path = lib/pybind11
+	url = https://github.com/pybind/pybind11
