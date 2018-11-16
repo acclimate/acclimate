@@ -10,16 +10,7 @@ target_compile_options(libmrio PRIVATE "-std=c++11")
 
 option(LIBMRIO_WITH_NETCDF "NetCDF" ON)
 if(LIBMRIO_WITH_NETCDF)
-  find_package(NETCDF REQUIRED)
-  message(STATUS "NetCDF include directory: ${NETCDF_INCLUDE_DIR}")
-  message(STATUS "NetCDF library: ${NETCDF_LIBRARY}")
-  target_link_libraries(libmrio PRIVATE netcdf)
-
-  find_package(NETCDF_CPP4 REQUIRED)
-  message(STATUS "NetCDF_c++4 include directory: ${NETCDF_CPP4_INCLUDE_DIR}")
-  message(STATUS "NetCDF_c++4 library: ${NETCDF_CPP4_LIBRARY}")
-  target_link_libraries(libmrio PRIVATE netcdf_c++4)
-
+  include_netcdf_cxx4(libmrio ON v4.3.0)
   target_compile_definitions(libmrio PUBLIC LIBMRIO_WITH_NETCDF)
 endif()
 
