@@ -243,7 +243,7 @@ class SettingsNode {
         path = rhs.path;
     }
 
-    void json(std::ostream& os, std::string indent = "", bool first = true) const {
+    void json(std::ostream& os, const std::string& indent = "", bool first = true) const {
         if (first) {
             os << indent;
         }
@@ -281,7 +281,7 @@ class SettingsNode {
         }
     }
 
-    void yaml(std::ostream& os, std::string indent = "", bool first = true) const {
+    void yaml(std::ostream& os, const std::string& indent = "", bool first = true) const {
         if (first) {
             os << indent;
         }
