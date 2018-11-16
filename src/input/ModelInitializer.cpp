@@ -577,15 +577,6 @@ void ModelInitializer<ModelVariant>::read_flows() {
         table.read_from_csv(index_file, flows_file, flow_threshold);
         flows_file.close();
         index_file.close();
-    } else if (type == "mrio") {
-        read_transport();
-        filename = network["file"].as<std::string>();
-        std::ifstream flows_file(filename.c_str(), std::ios::in | std::ios::binary);
-        if (!flows_file) {
-            error("Could not open flows file '" << filename << "'");
-        }
-        table.read_from_mrio(flows_file, flow_threshold);
-        flows_file.close();
     } else if (type == "netcdf") {
         read_transport();
         filename = network["file"].as<std::string>();
