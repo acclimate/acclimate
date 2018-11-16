@@ -33,24 +33,18 @@ External dependecies:
   - Source code: [Unidata/netcdf-c](https://github.com/Unidata/netcdf-c)
 - [NetCDF CXX4](https://www.unidata.ucar.edu/software/netcdf) (C++ bindings for NetCDF)
   - used for reading and writing of NetCDF files
+  - will be built in by default
   - Source code: [Unidata/netcdf-cxx4](https://github.com/Unidata/netcdf-cxx4)
 - [NLOpt](http://ab-initio.mit.edu/wiki/index.php/NLopt)
   - used for numerical optimization
+  - will be built in by default
   - Source code: [stevengj/nlopt](https://github.com/stevengj/nlopt))
 - [YAML-cpp](https://github.com/jbeder/yaml-cpp)
   - used for reading settings files
-  - will be built in, when this repository is cloned recursively (`git clone --recursive ...`)
+  - will be built in by default
   - Source code: [jbeder/yaml-cpp](https://github.com/jbeder/yaml-cpp)
 
-Under Ubuntu-like Linux distributions you can install these using:
-
-```
-sudo apt-get install libnetcdf-dev libnetcdf-c++4-dev libnlopt-dev libyaml-cpp-dev
-```
-
-(older versions of `libyaml-cpp-dev` also require the installation of `libboost-dev`)
-
-Built-in dependecies (included in this repository as subtrees):
+Further built-in dependecies (included in this repository as subtrees):
 
 - [swillner/cmake-modules](https://github.com/swillner/cmake-modules)
   - used for compilation
