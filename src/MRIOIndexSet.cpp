@@ -18,7 +18,9 @@
 */
 
 #include "MRIOIndexSet.h"
-#include <algorithm>  // IWYU pragma: keep
+#include <algorithm>
+#include <cstddef>
+#include <iostream>
 #include <stdexcept>
 
 namespace mrio {

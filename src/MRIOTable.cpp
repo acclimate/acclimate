@@ -18,9 +18,10 @@
 */
 
 #include "MRIOTable.h"
+#include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <sstream>  // IWYU pragma: keep
+#include <sstream>
 #include <stdexcept>
 #include <tuple>
 #ifdef LIBMRIO_WITH_NETCDF
@@ -168,90 +169,6 @@ void Table<T, I>::write_to_csv(std::ostream& outstream) const {
     outstream.seekp(-1, std::ios_base::end);
 }
 
-template<typename T, typename I>
-void Table<T, I>::read_from_mrio(std::istream& instream, const T& threshold) {
-    unsigned char c;
-    instream >> c;
-    if (c != sizeof(I)) {
-        throw std::runtime_error("index type size mismatch");
-    }
-    instream >> c;
-    if (c != sizeof(T)) {
-        throw std::runtime_error("data type size mismatch");
-    }
-    I sectors_count;
-    instream >> sectors_count;
-    std::string s;
-    for (I i = 0; i < sectors_count; i++) {
-        getline(instream, s, '\0');
-        index_set_.add_sector(s);
-    }
-    I regions_count;
-    instream >> regions_count;
-    for (I i = 0; i < regions_count; i++) {
-        getline(instream, s, '\0');
-        index_set_.add_region(s);
-    }
-    I index_count;
-    instream >> index_count;
-    for (I i = 0; i < index_count; i++) {
-        I sector_index, region_index;
-        instream >> sector_index;
-        instream >> region_index;
-        index_set_.add_index(index_set_.supersectors()[sector_index].get(), index_set_.superregions()[region_index].get());
-    }
-    index_set_.rebuild_indices();
-    data.resize(index_set_.size() * index_set_.size(), 0);
-    T val;
-    for (auto& d : data) {
-        instream >> val;
-        if (val > threshold) {
-            d = val;
-        }
-    }
-}
-
-template<typename T, typename I>
-void Table<T, I>::write_to_mrio(std::ostream& outstream) const {
-    debug_out();
-    unsigned char c = sizeof(I);
-    outstream << c;
-    c = sizeof(T);
-    outstream << c;
-    outstream << index_set_.total_sectors_count();
-    c = 0;
-    for (const auto& sector : index_set_.supersectors()) {
-        if (sector->has_sub()) {
-            for (const auto& subsector : sector->sub()) {
-                outstream.write(subsector->name.c_str(), subsector->name.size() + 1);
-            }
-        } else {
-            outstream.write(sector->name.c_str(), sector->name.size() + 1);
-        }
-    }
-    outstream << index_set_.total_regions_count();
-    for (const auto& region : index_set_.superregions()) {
-        if (region->has_sub()) {
-            for (const auto& subregion : region->sub()) {
-                outstream.write(subregion->name.c_str(), subregion->name.size() + 1);
-            }
-        } else {
-            outstream.write(region->name.c_str(), region->name.size() + 1);
-        }
-    }
-
-    outstream << index_set_.size();
-    for (const auto& row : index_set_.total_indices) {
-        outstream << row.sector->total_index();
-        outstream << row.region->total_index();
-    }
-    for (const auto& row : index_set_.total_indices) {
-        for (const auto& col : index_set_.total_indices) {
-            outstream << (*this)(row.index, col.index);
-        }
-    }
-}
-
 #ifdef LIBMRIO_WITH_NETCDF
 template<typename T, typename I>
 void Table<T, I>::read_from_netcdf(const std::string& filename, const T& threshold) {
@@ -316,10 +233,10 @@ void Table<T, I>::read_from_netcdf(const std::string& filename, const T& thresho
     } else {
         std::size_t index_size = index_dim.getSize();
         netCDF::NcVar index_sector_var = file.getVar("index_sector");
-        std::vector<uint32_t> index_sector_val(index_size);
+        std::vector<std::uint32_t> index_sector_val(index_size);
         index_sector_var.getVar(&index_sector_val[0]);
         netCDF::NcVar index_region_var = file.getVar("index_region");
-        std::vector<uint32_t> index_region_val(index_size);
+        std::vector<std::uint32_t> index_region_val(index_size);
         index_region_var.getVar(&index_region_val[0]);
         for (unsigned int i = 0; i < index_size; ++i) {
             index_set_.add_index(index_set_.supersectors()[index_sector_val[i]].get(), index_set_.superregions()[index_region_val[i]].get());
@@ -430,7 +347,7 @@ void Table<T, I>::insert_sector_offset_x_y(const SuperSector<I>* i, const I& i_r
                     insert_sector_offset_y(i, i_regions_count, subsectors_count, x, x_offset + offset, subsectors_count);
                 }
             } else {
-                x_offset--;
+                --x_offset;
                 insert_sector_offset_y(i, i_regions_count, subsectors_count, x, x_offset, 1);
             }
         }
@@ -476,7 +393,7 @@ void Table<T, I>::insert_sector_offset_y(
                     data[x_offset * new_size + y_offset + offset] = data[x * index_set_.size() + y] / subsectors_count / divide_by;
                 }
             } else {
-                y_offset--;
+                --y_offset;
                 data[x_offset * new_size + y_offset] = data[x * index_set_.size() + y] / divide_by;
             }
         }
