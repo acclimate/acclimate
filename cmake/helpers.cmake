@@ -247,9 +247,6 @@ function(add_cpp_tools TARGET)
     NAME ${TARGET}_cppclean
     COMMAND cppclean
     ARGUMENTS INCLUDES SOURCEFILE)
-  #if(TARGET ${TARGET}_cppclean)
-  #  set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_cppclean)
-  #endif()
 
   add_on_source(${TARGET}
     NAME ${TARGET}_vera

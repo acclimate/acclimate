@@ -754,7 +754,6 @@ void ModelInitializer<ModelVariant>::build_artificial_network() {
         }
     }
     build_transport_network();
-
     const Flow flow = Flow(FlowQuantity(1.0), Price(1.0));
     const Flow double_flow = Flow(FlowQuantity(2.0), Price(1.0));
     for (std::size_t r = 0; r < regions_cnt; ++r) {
@@ -783,6 +782,7 @@ void ModelInitializer<ModelVariant>::build_artificial_network() {
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::build_agent_network_from_table(const mrio::Table<FloatType, std::size_t>& table, FloatType flow_threshold) {
+
     std::vector<EconomicAgent<ModelVariant>*> economic_agents;
     economic_agents.reserve(table.index_set().size());
 

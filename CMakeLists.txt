@@ -21,6 +21,7 @@ cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 include(cmake/helpers.cmake)
 include(cmake/libraries.cmake)
+add_system_paths()
 
 set_default_build_type(Release)
 
@@ -53,6 +54,7 @@ if(ACCLIMATE_PARALLELIZATION)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
+
 
 set(ACCLIMATE_OPTIONS "")
 set(ACCLIMATE_VARIANTS "")
@@ -103,28 +105,9 @@ acclimate_include_option(VARIANTS VARIANT_PRICES "include acclimate version 'pri
 string(REPLACE ";" ", " ACCLIMATE_VARIANTS "${ACCLIMATE_VARIANTS}")
 target_compile_definitions(acclimate PRIVATE ACCLIMATE_VARIANTS="${ACCLIMATE_VARIANTS}")
 
-# include nlopt
 include_nlopt(acclimate OFF "34fd7ce")
 
-# include NetCDF C library
-find_package(NETCDF REQUIRED)
-message(STATUS "NetCDF include directory: ${NETCDF_INCLUDE_DIR}")
-message(STATUS "NetCDF library: ${NETCDF_LIBRARY}")
-target_link_libraries(acclimate PRIVATE netcdf)
-
-# include NetCDF C++ library
-find_package(NETCDF_CPP4 REQUIRED)
-message(STATUS "NetCDF_c++4 include directory: ${NETCDF_CPP4_INCLUDE_DIR}")
-message(STATUS "NetCDF_c++4 library: ${NETCDF_CPP4_LIBRARY}")
-target_link_libraries(acclimate PRIVATE netcdf_c++4)
-
-include(CheckStructHasMember)
-set(CMAKE_REQUIRED_INCLUDES "${NETCDF_CPP4_INCLUDE_DIR}" "${NETCDF_INCLUDE_DIR}")
-set(CMAKE_REQUIRED_LIBRARIES "${NETCDF_CPP4_LIBRARY}" "${NETCDF_LIBRARY}" "${HDF5_LIBRARY}")
-check_struct_has_member("netCDF::NcFile" "sync()" "ncFile.h" HAVE_NEW_NETCDF_CPP LANGUAGE CXX)
-if(NOT HAVE_NEW_NETCDF_CPP)
-  message(FATAL_ERROR "NetCDF-C++ does not include sync procedure, need a newer library version")
-endif()
+include_netcdf_cxx4(acclimate OFF v4.3.0)
 
 include(lib/settingsnode/settingsnode.cmake)
 include_settingsnode(acclimate)
