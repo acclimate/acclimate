@@ -105,9 +105,9 @@ acclimate_include_option(VARIANTS VARIANT_PRICES "include acclimate version 'pri
 string(REPLACE ";" ", " ACCLIMATE_VARIANTS "${ACCLIMATE_VARIANTS}")
 target_compile_definitions(acclimate PRIVATE ACCLIMATE_VARIANTS="${ACCLIMATE_VARIANTS}")
 
-include_nlopt(acclimate OFF "34fd7ce")
+include_nlopt(acclimate ON "34fd7ce")
 
-include_netcdf_cxx4(acclimate OFF v4.3.0)
+include_netcdf_cxx4(acclimate ON v4.3.0)
 
 include(lib/settingsnode/settingsnode.cmake)
 target_link_libraries(acclimate PRIVATE settingsnode)
