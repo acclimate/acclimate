@@ -20,12 +20,9 @@
 
 #include "model/SalesManagerPrices.h"
 #include <algorithm>
-#include "model/BusinessConnection.h"
-#include "model/CapacityManagerPrices.h"
+#include <iostream>
 #include "model/Firm.h"
-#include "model/Model.h"
-#include "model/Storage.h"
-#include "model/TransportChainLink.h"
+#include "run.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
@@ -42,8 +39,8 @@ const Flow SalesManagerPrices<ModelVariant>::calc_production_X() {
     // sort all incoming connections by price (descending), then by quantity (descending)
     std::sort(
         business_connections.begin(), business_connections.end(),
-        [](const std::unique_ptr<BusinessConnection<ModelVariant>>& business_connection_1,
-           const std::unique_ptr<BusinessConnection<ModelVariant>>& business_connection_2) {
+        [](const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection_1,
+           const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection_2) {
             if (business_connection_1->last_demand_request_D().get_quantity() <= 0.0 && business_connection_2->last_demand_request_D().get_quantity() > 0.0) {
                 // we want to store empty demand requests at the end of the business connections
                 return false;
@@ -92,13 +89,13 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
 #endif
         assert(!isnan(supply_distribution_scenario.price_cheapest_buyer_accepted_in_optimization));
         Price cheapest_price_range_half_width = Price(0.0);
-        if (firm->sector->model->parameters().cheapest_price_range_generic_size) {
+        if (model()->parameters().cheapest_price_range_generic_size) {
             cheapest_price_range_half_width = firm->sector->parameters().price_increase_production_extension / 2
                                               * (firm->capacity_manager->possible_overcapacity_ratio_beta - 1)
                                               * (firm->capacity_manager->possible_overcapacity_ratio_beta - 1)
                                               / firm->capacity_manager->possible_overcapacity_ratio_beta;  // = maximal penalty per unit
         } else {
-            cheapest_price_range_half_width = firm->sector->model->parameters().cheapest_price_range_width / 2;
+            cheapest_price_range_half_width = model()->parameters().cheapest_price_range_width / 2;
         }
         auto begin_cheapest_price_range = business_connections.begin();
         auto end_cheapest_price_range = business_connections.begin();
@@ -157,13 +154,12 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
                 total_revenue_R_ = production_without_cheapest_price_range.get_value();
                 // serve demand requests in equal distribution range
                 for (auto served_bc = begin_cheapest_price_range; served_bc != end_cheapest_price_range; ++served_bc) {
-                    Flow flow_Z =
-                        Flow(round(FlowQuantity(to_float(production_cheapest_price_range)
-                                                * to_float((*served_bc)->last_demand_request_D().get_quantity() * price_shift
-                                                           + (*served_bc)->last_demand_request_D().get_value())
-                                                / to_float(demand_cheapest_price_range * price_shift + demand_value_cheapest_price_range))),
-                             firm->sector->model->parameters().cheapest_price_range_preserve_seller_price ? price_as_calculated_in_distribution_scenario
-                                                                                                          : (*served_bc)->last_demand_request_D().get_price());
+                    Flow flow_Z = Flow(round(FlowQuantity(to_float(production_cheapest_price_range)
+                                                          * to_float((*served_bc)->last_demand_request_D().get_quantity() * price_shift
+                                                                     + (*served_bc)->last_demand_request_D().get_value())
+                                                          / to_float(demand_cheapest_price_range * price_shift + demand_value_cheapest_price_range))),
+                                       model()->parameters().cheapest_price_range_preserve_seller_price ? price_as_calculated_in_distribution_scenario
+                                                                                                        : (*served_bc)->last_demand_request_D().get_price());
                     assert(flow_Z.get_quantity() <= (*served_bc)->last_demand_request_D().get_quantity());
                     (*served_bc)->push_flow_Z(flow_Z);
                     total_revenue_R_ += flow_Z.get_value();
@@ -200,7 +196,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_supply_distributi
 
     // find first (in order) connection with zero demand
     auto first_zero_connection = std::find_if(business_connections.begin(), business_connections.end(),
-                                              [](const std::unique_ptr<BusinessConnection<ModelVariant>>& business_connection) {
+                                              [](const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection) {
                                                   return business_connection->last_demand_request_D().get_quantity() <= 0.0;
                                               });
 
@@ -215,7 +211,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_supply_distributi
         if (firm->forcing() <= 0.0) {
             warning("no production due to total forcing");
         } else {
-            Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_PRODUCTION_SUPPLY_SHORTAGE, firm);
+            model()->run()->event(EventType::NO_PRODUCTION_SUPPLY_SHORTAGE, firm);
         }
         supply_distribution_scenario.connection_not_served_completely = business_connections.begin();
         supply_distribution_scenario.flow_not_served_completely = Flow(0.0);
@@ -228,9 +224,9 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_supply_distributi
         // no production due to demand shortage
 
         if (first_zero_connection == business_connections.begin()) {
-            Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_PRODUCTION_DEMAND_QUANTITY_SHORTAGE, firm);
+            model()->run()->event(EventType::NO_PRODUCTION_DEMAND_QUANTITY_SHORTAGE, firm);
         } else {
-            Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_PRODUCTION_DEMAND_VALUE_SHORTAGE, firm);
+            model()->run()->event(EventType::NO_PRODUCTION_DEMAND_VALUE_SHORTAGE, firm);
         }
         supply_distribution_scenario.connection_not_served_completely = business_connections.begin();
         supply_distribution_scenario.flow_not_served_completely = Flow(0.0);
@@ -357,7 +353,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_supply_distributi
         return std::make_tuple(production_X, offer_price_n_bar);
     }
     // no production
-    Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_PRODUCTION_HIGH_COSTS, firm);
+    model()->run()->event(EventType::NO_PRODUCTION_HIGH_COSTS, firm);
     warning("no production because of high costs / too low priced demand requests");
     supply_distribution_scenario.connection_not_served_completely = business_connections.begin();
     supply_distribution_scenario.flow_not_served_completely = Flow(0.0);
@@ -373,7 +369,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
     assertstep(EXPECTATION);
     // find first (in order) connection with zero demand
     auto first_zero_connection = std::find_if(business_connections.begin(), business_connections.end(),
-                                              [](const std::unique_ptr<BusinessConnection<ModelVariant>>& business_connection) {
+                                              [](const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection) {
                                                   return business_connection->last_demand_request_D().get_quantity() <= 0.0;
                                               });
 
@@ -387,7 +383,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
         if (firm->forcing() <= 0.0) {
             warning("no expected production due to total forcing");
         } else {
-            Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_EXP_PRODUCTION_SUPPLY_SHORTAGE, firm);
+            model()->run()->event(EventType::NO_EXP_PRODUCTION_SUPPLY_SHORTAGE, firm);
         }
         supply_distribution_scenario.connection_not_served_completely = business_connections.begin();
         supply_distribution_scenario.flow_not_served_completely = Flow(0.0);
@@ -399,9 +395,9 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
         // no production due to demand shortage
 
         if (first_zero_connection == business_connections.begin()) {
-            Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_EXP_PRODUCTION_DEMAND_QUANTITY_SHORTAGE, firm);
+            model()->run()->event(EventType::NO_EXP_PRODUCTION_DEMAND_QUANTITY_SHORTAGE, firm);
         } else {
-            Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_EXP_PRODUCTION_DEMAND_VALUE_SHORTAGE, firm);
+            model()->run()->event(EventType::NO_EXP_PRODUCTION_DEMAND_VALUE_SHORTAGE, firm);
         }
         supply_distribution_scenario.connection_not_served_completely = business_connections.begin();
         supply_distribution_scenario.flow_not_served_completely = Flow(0.0);
@@ -427,7 +423,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
         // check that price of demand request is high enough
         Price maximal_marginal_production_costs = Price(0.0);
 
-        if (!firm->sector->model->parameters().respect_markup_in_production_extension                           // we always want to attract more demand
+        if (!model()->parameters().respect_markup_in_production_extension                                       // we always want to attract more demand
             || expected_production_X.get_quantity() < firm->forced_initial_production_quantity_lambda_X_star()  // ... production is below lambda * X_star
         ) {
             maximal_marginal_production_costs = calc_marginal_production_costs(
@@ -454,10 +450,10 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
 
         const bool respect_markup_in_extension_of_revenue_curve = true;
 
-        if ((firm->sector->model->parameters().always_extend_expected_demand_curve                               // we always want to attract more demand
+        if ((model()->parameters().always_extend_expected_demand_curve                                           // we always want to attract more demand
              || expected_production_X.get_quantity() < firm->forced_initial_production_quantity_lambda_X_star()  // ... production is below lambda * X_star
              )
-            && !firm->sector->model->parameters().naive_expectations) {
+            && !model()->parameters().naive_expectations) {
             if (round(goal_fkt_marginal_costs_minus_marginal_revenue(
                     expected_production_X.get_quantity(), respect_markup_in_extension_of_revenue_curve ? minimal_offer_price : minimal_production_price,
                     (*cheapest_served_non_zero_connection)->last_demand_request_D().get_price()))
@@ -501,7 +497,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
     }
     // not all demand requests would be served completely
     Price minimal_price = Price(0.0);
-    if (!firm->sector->model->parameters().respect_markup_in_production_extension                           // we always want to attract more demand
+    if (!model()->parameters().respect_markup_in_production_extension                                       // we always want to attract more demand
         || expected_production_X.get_quantity() < firm->forced_initial_production_quantity_lambda_X_star()  // ... production is below lambda * X_star
     ) {
         minimal_price = minimal_production_price;
@@ -553,7 +549,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
         return std::make_tuple(expected_production_X, offer_price_n_bar);
     }
     // zero production
-    Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_EXP_PRODUCTION_HIGH_COSTS, firm);
+    model()->run()->event(EventType::NO_EXP_PRODUCTION_HIGH_COSTS, firm);
     // communicate least price we would produce for:
     const Price offer_price_n_bar = minimal_offer_price;
     return std::make_tuple(expected_production_X, offer_price_n_bar);
@@ -744,6 +740,9 @@ const Flow SalesManagerPrices<ModelVariant>::search_root_bisec_expectation(const
 }
 
 #ifdef DEBUG
+#define PRINT_ROW1(a, b) "      " << std::setw(14) << a << " = " << std::setw(14) << b << '\n'
+#define PRINT_ROW2(a, b, c) "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n"
+
 template<class ModelVariant>
 void SalesManagerPrices<ModelVariant>::print_parameters() const {
     info(PRINT_ROW1("X", communicated_parameters_.production_X.get_quantity())
@@ -765,11 +764,11 @@ void SalesManagerPrices<ModelVariant>::print_parameters() const {
 #ifdef DEBUG
 template<class ModelVariant>
 void SalesManagerPrices<ModelVariant>::print_connections(
-    typename std::vector<std::unique_ptr<BusinessConnection<ModelVariant>>>::const_iterator begin_equally_distributed,
-    typename std::vector<std::unique_ptr<BusinessConnection<ModelVariant>>>::const_iterator end_equally_distributed) const {
+    typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator begin_equally_distributed,
+    typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator end_equally_distributed) const {
 #pragma omp critical(output)
     {
-        std::cout << Acclimate::instance()->timeinfo() << ", " << id() << ": supply distribution for " << business_connections.size() << " outputs :\n";
+        std::cout << model()->run()->timeinfo() << ", " << id() << ": supply distribution for " << business_connections.size() << " outputs :\n";
         FlowQuantity sum = FlowQuantity(0.0);
         FlowQuantity initial_sum = FlowQuantity(0.0);
         for (const auto& bc : business_connections) {

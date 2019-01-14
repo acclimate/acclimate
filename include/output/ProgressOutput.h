@@ -21,7 +21,8 @@
 #ifndef ACCLIMATE_PROGRESSOUTPUT_H
 #define ACCLIMATE_PROGRESSOUTPUT_H
 
-#include <output/Output.h>
+#include <memory>
+#include "output/Output.h"
 
 namespace tqdm {
 template<typename SizeType>
@@ -44,8 +45,9 @@ class Scenario;
 template<class ModelVariant>
 class ProgressOutput : public Output<ModelVariant> {
   public:
-    using Output<ModelVariant>::output_node;
+    using Output<ModelVariant>::id;
     using Output<ModelVariant>::model;
+    using Output<ModelVariant>::output_node;
     using Output<ModelVariant>::settings;
 
   protected:
@@ -59,10 +61,10 @@ class ProgressOutput : public Output<ModelVariant> {
     void internal_end() override;
 
   public:
-    ProgressOutput(const settings::SettingsNode& settings,
-                   Model<ModelVariant>* model,
-                   Scenario<ModelVariant>* scenario,
-                   const settings::SettingsNode& output_node);
+    ProgressOutput(const settings::SettingsNode& settings_p,
+                   Model<ModelVariant>* model_p,
+                   Scenario<ModelVariant>* scenario_p,
+                   settings::SettingsNode output_node_p);
     void initialize() override;
     void checkpoint_stop() override;
     void checkpoint_resume() override;

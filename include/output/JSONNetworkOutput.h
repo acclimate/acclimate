@@ -21,7 +21,9 @@
 #ifndef ACCLIMATE_JSONNETWORKOUTPUT_H
 #define ACCLIMATE_JSONNETWORKOUTPUT_H
 
+#include <string>
 #include "output/Output.h"
+#include "types.h"
 
 namespace acclimate {
 

@@ -18,38 +18,21 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_CAPACITYMANAGERPRICES_H
-#define ACCLIMATE_CAPACITYMANAGERPRICES_H
+#ifndef ACCLIMATE_GEOROUTE_H
+#define ACCLIMATE_GEOROUTE_H
 
-#include "model/CapacityManager.h"
-#include "types.h"
+#include "acclimate.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Firm;
+class GeoEntity;
 
 template<class ModelVariant>
-class CapacityManagerPrices : public CapacityManager<ModelVariant> {
+class GeoRoute {
   public:
-    using CapacityManager<ModelVariant>::calc_possible_and_desired_production;
-    using CapacityManager<ModelVariant>::firm;
-    using CapacityManager<ModelVariant>::id;
-    using CapacityManager<ModelVariant>::model;
-    using CapacityManager<ModelVariant>::possible_overcapacity_ratio_beta;
-
-  private:
-    const Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs) const;
-
-  public:
-    CapacityManagerPrices(Firm<ModelVariant>*, Ratio);
-    ~CapacityManagerPrices() = default;
-    const Flow get_possible_production_X_hat() const override;
-    const Flow estimate_possible_production_X_hat() const;
-    const Flow calc_production_X() override;
-#ifdef DEBUG
-    void print_inputs() const;
-#endif
+    std::vector<GeoEntity<ModelVariant>*> path;
+    std::string id() const;
 };
 }  // namespace acclimate
 

@@ -11,6 +11,7 @@ target_compile_options(libmrio PRIVATE "-std=c++11")
 option(LIBMRIO_WITH_NETCDF "NetCDF" ON)
 if(LIBMRIO_WITH_NETCDF)
   include_netcdf_cxx4(libmrio ON v4.3.0)
+
   target_compile_definitions(libmrio PUBLIC LIBMRIO_WITH_NETCDF)
 endif()
 

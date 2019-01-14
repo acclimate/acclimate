@@ -19,10 +19,16 @@
 */
 
 #include "output/NetCDFOutput.h"
+#include <ctime>
+#include <limits>
+#include <ostream>
+#include <utility>
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
+#include "run.h"
 #include "scenario/Scenario.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 #include "version.h"
 
@@ -37,7 +43,7 @@ NetCDFOutput<ModelVariant>::NetCDFOutput(const settings::SettingsNode& settings_
                                          Model<ModelVariant>* model_p,
                                          Scenario<ModelVariant>* scenario_p,
                                          settings::SettingsNode output_node_p)
-    : ArrayOutput<ModelVariant>(settings_p, model_p, scenario_p, output_node_p, false) {
+    : ArrayOutput<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p), false) {
     flush_freq = 1;
     event_cnt = 0;
 }
@@ -48,7 +54,7 @@ void NetCDFOutput<ModelVariant>::initialize() {
     flush_freq = output_node["flush"].template as<TimeStep>();
     if (!output_node.has("file")) {
         std::ostringstream ss;
-        ss << time(nullptr);
+        ss << std::time(nullptr);
         ss << ".nc";
         filename = ss.str();
     } else {
@@ -63,7 +69,7 @@ void NetCDFOutput<ModelVariant>::initialize() {
     dim_sector = file->addDim("sector", sectors_size);
     dim_region = file->addDim("region", regions_size);
     netCDF::NcDim dim_event = file->addDim("event");
-    netCDF::NcDim dim_event_type = file->addDim("event_type", Acclimate::event_names.size());
+    netCDF::NcDim dim_event_type = file->addDim("event_type", Run<ModelVariant>::event_names.size());
     netCDF::NcCompoundType event_compound_type = file->addCompoundType("event_compound_type", sizeof(typename ArrayOutput<ModelVariant>::Event));
     event_compound_type.addMember("time", netCDF::NcType::nc_UINT, offsetof(typename ArrayOutput<ModelVariant>::Event, time));
     event_compound_type.addMember("type", netCDF::NcType::nc_UBYTE, offsetof(typename ArrayOutput<ModelVariant>::Event, type));
@@ -81,20 +87,20 @@ void NetCDFOutput<ModelVariant>::initialize() {
     include_events = true;
     const auto& event_type_var = file->addVar("event_types", netCDF::NcType::nc_STRING, {dim_event_type});
     event_type_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < Acclimate::event_names.size(); ++i) {
-        event_type_var.putVar({i}, std::string(Acclimate::event_names[i]));
+    for (std::size_t i = 0; i < Run<ModelVariant>::event_names.size(); ++i) {
+        event_type_var.putVar({i}, std::string(Run<ModelVariant>::event_names[i]));
     }
 
     const auto& sector_var = file->addVar("sector", netCDF::NcType::nc_STRING, {dim_sector});
     sector_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < model->sectors_C.size(); ++i) {
-        sector_var.putVar({i}, model->sectors_C[i]->id());
+    for (std::size_t i = 0; i < model()->sectors.size(); ++i) {
+        sector_var.putVar({i}, model()->sectors[i]->id());
     }
 
     const auto& region_var = file->addVar("region", netCDF::NcType::nc_STRING, {dim_region});
     region_var.setCompression(false, true, 7);
-    for (std::size_t i = 0; i < model->regions_R.size(); ++i) {
-        region_var.putVar({i}, model->regions_R[i]->id());
+    for (std::size_t i = 0; i < model()->regions.size(); ++i) {
+        region_var.putVar({i}, model()->regions[i]->id());
     }
 }
 
@@ -106,7 +112,7 @@ void NetCDFOutput<ModelVariant>::internal_start() {
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_threads) {
-    std::string str = asctime(timestamp);
+    std::string str = std::asctime(timestamp);
     str.erase(str.end() - 1);
     file->putAtt("start_time", str);
     file->putAtt("max_threads", netCDF::NcType::nc_INT, max_threads);
@@ -119,7 +125,7 @@ void NetCDFOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_th
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::internal_write_footer(tm* duration) {
-    file->putAtt("duration", netCDF::NcType::nc_INT, mktime(duration));
+    file->putAtt("duration", netCDF::NcType::nc_INT, std::mktime(duration));
 }
 
 template<class ModelVariant>
@@ -130,7 +136,10 @@ void NetCDFOutput<ModelVariant>::internal_write_settings() {
 }
 
 template<class ModelVariant>
-void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
+void NetCDFOutput<ModelVariant>::create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v,
+                                                      const hstring& path,
+                                                      const hstring& name,
+                                                      const hstring& suffix) {
     auto meta = new VariableMeta();
     std::vector<netCDF::NcDim> dims;
     meta->index.push_back(0);
@@ -168,19 +177,19 @@ netCDF::NcGroup& NetCDFOutput<ModelVariant>::create_group(const hstring& name) {
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::internal_iterate_begin() {
     ArrayOutput<ModelVariant>::internal_iterate_begin();
-    var_time_variable.putVar({model->timestep()}, to_float(model->time()));
+    var_time_variable.putVar({model()->timestep()}, to_float(model()->time()));
 }
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::internal_iterate_end() {
     for (auto& var : variables) {
         auto* meta = static_cast<VariableMeta*>(var.second.meta);
-        meta->index[0] = model->timestep();
+        meta->index[0] = model()->timestep();
         meta->sizes[0] = 1;
         meta->nc_var.putVar(meta->index, meta->sizes, &var.second.data[0]);
     }
     if (flush_freq > 0) {
-        if ((model->timestep() % flush_freq) == 0) {
+        if ((model()->timestep() % flush_freq) == 0) {
             flush();
         }
     }
@@ -197,9 +206,9 @@ void NetCDFOutput<ModelVariant>::internal_end() {
 template<class ModelVariant>
 bool NetCDFOutput<ModelVariant>::internal_handle_event(typename ArrayOutput<ModelVariant>::Event& event) {
     netcdf_event_lock.call([&]() {
-                               var_events.putVar({event_cnt}, &event);
-                               ++event_cnt;
-                           });
+        var_events.putVar({event_cnt}, &event);
+        ++event_cnt;
+    });
     return false;
 }
 

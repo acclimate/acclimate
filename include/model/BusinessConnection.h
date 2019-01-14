@@ -21,20 +21,26 @@
 #ifndef ACCLIMATE_BUSINESSCONNECTION_H
 #define ACCLIMATE_BUSINESSCONNECTION_H
 
+#include <memory>
+#include <string>
 #include "model/TransportChainLink.h"
+#include "run.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Path;
+class GeoRoute;
 template<class ModelVariant>
-class SalesManager;
+struct Model;
 template<class ModelVariant>
 class PurchasingManager;
+template<class ModelVariant>
+class SalesManager;
 
 template<class ModelVariant>
 class BusinessConnection {
-  private:
+  protected:
     Demand last_demand_request_D_;
     Flow initial_flow_Z_star_;
     Flow last_delivery_Z_;
@@ -46,8 +52,14 @@ class BusinessConnection {
     std::unique_ptr<TransportChainLink<ModelVariant>> first_transport_link;
 
   public:
-    inline const Time& time() const { return time_; };
-    inline void time(const Time& time_p) { time_ = time_p; };
+    typename ModelVariant::PurchasingManagerType* buyer;  // TODO encapsulate
+    typename ModelVariant::SalesManagerType* seller;      // TODO encapsulate
+
+    BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
+                       typename ModelVariant::SalesManagerType* seller_p,
+                       const Flow& initial_flow_Z_star_p);
+    inline const Time& time() const { return time_; }
+    inline void time(const Time& time_p) { time_ = time_p; }
     inline const Flow& last_shipment_Z(const SalesManager<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != seller) {
@@ -57,7 +69,7 @@ class BusinessConnection {
         UNUSED(caller);
 #endif
         return last_shipment_Z_;
-    };
+    }
     inline const Flow& last_delivery_Z(const SalesManager<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != seller) {
@@ -67,7 +79,7 @@ class BusinessConnection {
         UNUSED(caller);
 #endif
         return last_delivery_Z_;
-    };
+    }
     inline const Demand& last_demand_request_D(const PurchasingManager<ModelVariant>* const caller = nullptr) const {
 #ifdef DEBUG
         if (caller != buyer) {
@@ -77,48 +89,34 @@ class BusinessConnection {
         UNUSED(caller);
 #endif
         return last_demand_request_D_;
-    };
-    inline const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; };
+    }
+    inline const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; }
     inline void initial_flow_Z_star(const Flow& new_initial_flow_Z_star) {
         assertstep(INVESTMENT);
         initial_flow_Z_star_ = new_initial_flow_Z_star;
-    };
+    }
+    inline void invalidate_buyer() { buyer = nullptr; }
+    inline void invalidate_seller() { seller = nullptr; }
     const Ratio& demand_fulfill_history() const;  // only for VariantDemand
 
-  public:
-    typename ModelVariant::PurchasingManagerType* const buyer;
-    typename ModelVariant::SalesManagerType* const seller;
-
-  private:
-    void establish_connection();
-
-  public:
-    BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
-                       typename ModelVariant::SalesManagerType* seller_p,
-                       const Flow& initial_flow_Z_star_p);
-    BusinessConnection(typename ModelVariant::PurchasingManagerType* buyer_p,
-                       typename ModelVariant::SalesManagerType* seller_p,
-                       const Flow& initial_flow_Z_star_p,
-                       const Path<ModelVariant>& path);
+    std::size_t get_id(const TransportChainLink<ModelVariant>* transport_chain_link) const;
     const Flow get_flow_mean() const;
     const FlowQuantity get_flow_deficit() const;
     const Flow get_total_flow() const;
     const Flow get_transport_flow() const;
     const Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
+    FloatType get_minimum_passage() const;
     TransportDelay get_transport_delay_tau() const;
     void push_flow_Z(const Flow& flow_Z);
     void deliver_flow_Z(const Flow& flow_Z);
     void send_demand_request_D(const Demand& demand_request_D);
     bool get_domestic() const;
-#ifdef TRANSPORT
-    ~BusinessConnection();
-    void disconnect_from_geography();
-#endif
 
     void calc_demand_fulfill_history();  // only for VariantDemand
 
-    inline std::string id() const { return seller->id() + "->" + buyer->storage->economic_agent->id(); };
+    inline Model<ModelVariant>* model() const { return buyer->model(); }
+    inline std::string id() const { return (seller ? seller->id() : "INVALID") + "->" + (buyer ? buyer->storage->economic_agent->id() : "INVALID"); }
 };
 }  // namespace acclimate
 

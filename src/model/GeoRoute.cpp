@@ -18,27 +18,22 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_SALESMANAGERDEMAND_H
-#define ACCLIMATE_SALESMANAGERDEMAND_H
-
-#include "model/SalesManager.h"
-#include "types.h"
+#include "model/GeoRoute.h"
+#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Firm;
+std::string GeoRoute<ModelVariant>::id() const {
+    std::string res;
+    for (std::size_t i = 0; i < path.size(); ++i) {
+        if (i > 0) {
+            res += "->";
+        }
+        res += path[i]->id();
+    }
+    return res;
+}
 
-template<class ModelVariant>
-class SalesManagerDemand : public SalesManager<ModelVariant> {
-  public:
-    using SalesManager<ModelVariant>::sum_demand_requests_D;
-    using SalesManager<ModelVariant>::business_connections;
-
-  public:
-    explicit SalesManagerDemand(Firm<ModelVariant>* firm_p);
-    void distribute(const Flow& production_X) override;
-};
+INSTANTIATE_BASIC(GeoRoute);
 }  // namespace acclimate
-
-#endif

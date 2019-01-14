@@ -19,6 +19,9 @@
 */
 
 #include "scenario/ExternalForcing.h"
+#include <ostream>
+#include <utility>
+#include "run.h"
 
 namespace acclimate {
 
@@ -26,7 +29,7 @@ ExternalForcing::ExternalForcing(std::string filename_p, const std::string& vari
     try {
         file.reset(new netCDF::NcFile(filename, netCDF::NcFile::read, netCDF::NcFile::nc4));
     } catch (netCDF::exceptions::NcException& ex) {
-        error("Could not open '" + filename + "'");
+        error_("Could not open '" + filename + "'");
     }
     variable = file->getVar(variable_name);
     time_variable = file->getVar("time");
@@ -51,7 +54,7 @@ const std::string ExternalForcing::calendar_str() const {
         time_variable.getAtt("calendar").getValues(res);
         return res;
     } catch (netCDF::exceptions::NcException& e) {
-        error("Could not read calendar attribute in " << filename << ": " << e.what());
+        error_("Could not read calendar attribute in " << filename << ": " << e.what());
     }
 }
 
@@ -61,7 +64,7 @@ const std::string ExternalForcing::time_units_str() const {
         time_variable.getAtt("units").getValues(res);
         return res;
     } catch (netCDF::exceptions::NcException& e) {
-        error("Could not read time units attribute in " << filename << ": " << e.what());
+        error_("could not read time units attribute in " << filename << ": " << e.what());
     }
 }
 }  // namespace acclimate

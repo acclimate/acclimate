@@ -19,13 +19,20 @@
 */
 
 #include "output/Output.h"
+#include <ctime>
+#include <istream>
+#include <memory>
+#include <utility>
+#include <vector>
 #include "model/BusinessConnection.h"
 #include "model/Consumer.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
+#include "model/Government.h"
 #include "model/Model.h"
 #include "model/PurchasingManagerPrices.h"
 #include "model/Region.h"
+#include "model/SalesManagerPrices.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
 #include "scenario/RasteredScenario.h"
@@ -39,14 +46,14 @@ Output<ModelVariant>::Output(const settings::SettingsNode& settings_p,
                              Model<ModelVariant>* model_p,
                              Scenario<ModelVariant>* scenario_p,
                              settings::SettingsNode output_node_p)
-    : settings(settings_p), model(model_p), scenario(scenario_p), output_node(std::move(output_node_p)) {
+    : settings(settings_p), model_m(model_p), scenario(scenario_p), output_node(std::move(output_node_p)) {
     start_time = 0;
 }
 
 template<class ModelVariant>
 void Output<ModelVariant>::start() {
     start_time = time(nullptr);
-    internal_write_header(localtime(&start_time), Acclimate::instance()->thread_count());
+    internal_write_header(localtime(&start_time), model()->run()->thread_count());
     internal_write_settings();
     internal_start();
 }
@@ -141,6 +148,7 @@ bool Output<ModelVariant>::write_firm_parameter_variant(const Firm<ModelVariant>
     return false;
 }
 
+#ifdef VARIANT_PRICES
 template<>
 bool Output<VariantPrices>::write_firm_parameter_variant(const Firm<VariantPrices>* p, const hstring& name) {
     switch (name) {
@@ -173,6 +181,7 @@ bool Output<VariantPrices>::write_firm_parameter_variant(const Firm<VariantPrice
     }
     return true;
 }
+#endif
 
 template<class ModelVariant>
 bool Output<ModelVariant>::write_economic_agent_parameter(const EconomicAgent<ModelVariant>* p, const hstring& name) {
@@ -258,7 +267,7 @@ void Output<ModelVariant>::write_input_storage_parameters(const Storage<ModelVar
                 internal_write_value(name, s->last_input_flow_I());
                 break;
             case hstring::hash("possible_use"):
-                internal_write_value(name, (s->content_S() / s->sector->model->delta_t() + s->last_input_flow_I()));
+                internal_write_value(name, (s->content_S() / model()->delta_t() + s->last_input_flow_I()));
                 break;
             case hstring::hash("used_flow"):
                 internal_write_value(name, s->used_flow_U());
@@ -291,6 +300,7 @@ bool Output<ModelVariant>::write_input_storage_parameter_variant(const Storage<M
     return false;
 }
 
+#ifdef VARIANT_PRICES
 template<>
 bool Output<VariantPrices>::write_input_storage_parameter_variant(const Storage<VariantPrices>* s, const hstring& name) {
     switch (name) {
@@ -317,6 +327,7 @@ bool Output<VariantPrices>::write_input_storage_parameter_variant(const Storage<
     }
     return true;
 }
+#endif
 
 template<class ModelVariant>
 void Output<ModelVariant>::write_input_storages(const EconomicAgent<ModelVariant>* ea, const settings::SettingsNode& it) {
@@ -431,7 +442,7 @@ void Output<ModelVariant>::write_ingoing_connections(const Storage<ModelVariant>
             if ((sector_from_name == nullptr) || firm_from->sector->id() == sector_from_name) {
                 if ((region_from_name == nullptr) || firm_from->region->id() == region_from_name) {
                     internal_start_target(hstring("ingoing_connections"), firm_from->sector, firm_from->region);
-                    write_connection_parameters(bc, ingoing_connection_node["parameters"]);
+                    write_connection_parameters(bc.get(), ingoing_connection_node["parameters"]);
                     internal_end_target();
                 }
             }
@@ -484,11 +495,8 @@ void Output<ModelVariant>::write_region_parameters(const Region<ModelVariant>* r
                     internal_write_value(name, region->government()->budget());
                 }
                 break;
-            case hstring::hash("people_affected"):
-                // handled in iterate
-                break;
             case hstring::hash("total_flow"): {
-                std::vector<Flow> flows(model->regions_R.size(), Flow(0.0));
+                std::vector<Flow> flows(model()->regions.size(), Flow(0.0));
                 for (const auto& ea : region->economic_agents) {
                     if (ea->is_firm()) {
                         for (const auto& bc : ea->as_firm()->sales_manager->business_connections) {
@@ -496,14 +504,14 @@ void Output<ModelVariant>::write_region_parameters(const Region<ModelVariant>* r
                         }
                     }
                 }
-                for (const auto& region_to : model->regions_R) {
+                for (const auto& region_to : model()->regions) {
                     internal_start_target(hstring("regions"), region_to.get());
                     internal_write_value(hstring("total_flow"), flows[region_to->index()]);
                     internal_end_target();
                 }
             } break;
             case hstring::hash("sent_flow"): {
-                std::vector<Flow> flows(model->regions_R.size(), Flow(0.0));
+                std::vector<Flow> flows(model()->regions.size(), Flow(0.0));
                 for (const auto& ea : region->economic_agents) {
                     if (ea->is_firm()) {
                         for (const auto& bc : ea->as_firm()->sales_manager->business_connections) {
@@ -511,14 +519,14 @@ void Output<ModelVariant>::write_region_parameters(const Region<ModelVariant>* r
                         }
                     }
                 }
-                for (const auto& region_to : model->regions_R) {
+                for (const auto& region_to : model()->regions) {
                     internal_start_target(hstring("regions"), region_to.get());
                     internal_write_value(hstring("sent_flow"), flows[region_to->index()]);
                     internal_end_target();
                 }
             } break;
             case hstring::hash("received_flows"): {
-                std::vector<Flow> flows(model->regions_R.size(), Flow(0.0));
+                std::vector<Flow> flows(model()->regions.size(), Flow(0.0));
                 for (const auto& ea : region->economic_agents) {
                     if (ea->is_firm()) {
                         for (const auto& bc : ea->as_firm()->sales_manager->business_connections) {
@@ -526,7 +534,7 @@ void Output<ModelVariant>::write_region_parameters(const Region<ModelVariant>* r
                         }
                     }
                 }
-                for (const auto& region_to : model->regions_R) {
+                for (const auto& region_to : model()->regions) {
                     internal_start_target(hstring("regions"), region_to.get());
                     internal_write_value(hstring("received_flow"), flows[region_to->index()]);
                     internal_end_target();
@@ -572,6 +580,7 @@ bool Output<ModelVariant>::write_sector_parameter_variant(const Sector<ModelVari
     return false;
 }
 
+#ifdef VARIANT_PRICES
 template<>
 bool Output<VariantPrices>::write_sector_parameter_variant(const Sector<VariantPrices>* sector, const hstring& name) {
     switch (name) {
@@ -586,6 +595,7 @@ bool Output<VariantPrices>::write_sector_parameter_variant(const Sector<VariantP
     }
     return true;
 }
+#endif
 
 template<class ModelVariant>
 void Output<ModelVariant>::iterate() {
@@ -599,15 +609,15 @@ void Output<ModelVariant>::iterate() {
                     if (!it.has("set")) {
                         if (!it.has("sector")) {
                             if (!it.has("region")) {
-                                for (const auto& sector : model->sectors_C) {
-                                    for (const auto& p : sector->firms_N) {
+                                for (const auto& sector : model()->sectors) {
+                                    for (const auto& p : sector->firms) {
                                         internal_start_target(hstring("firms"), p->sector, p->region);
                                         write_firm_parameters(p, it);
                                         internal_end_target();
                                     }
                                 }
                             } else {
-                                const Region<ModelVariant>* region = model->find_region(it["region"].as<std::string>());
+                                const Region<ModelVariant>* region = model()->find_region(it["region"].as<std::string>());
                                 if (region) {
                                     for (const auto& ea : region->economic_agents) {
                                         if (ea->type == EconomicAgent<ModelVariant>::Type::FIRM) {
@@ -623,9 +633,9 @@ void Output<ModelVariant>::iterate() {
                             }
                         } else {
                             if (!it.has("region")) {
-                                const Sector<ModelVariant>* sector = model->find_sector(it["sector"].as<std::string>());
+                                const Sector<ModelVariant>* sector = model()->find_sector(it["sector"].as<std::string>());
                                 if (sector) {
-                                    for (const auto& p : sector->firms_N) {
+                                    for (const auto& p : sector->firms) {
                                         internal_start_target(hstring("firms"), p->sector, p->region);
                                         write_firm_parameters(p, it);
                                         internal_end_target();
@@ -634,7 +644,7 @@ void Output<ModelVariant>::iterate() {
                                     warning("Sector " << it["sector"].as<std::string>() << " not found");
                                 }
                             } else {
-                                const Firm<ModelVariant>* p = model->find_firm(it["sector"].as<std::string>(), it["region"].as<std::string>());
+                                const Firm<ModelVariant>* p = model()->find_firm(it["sector"].as<std::string>(), it["region"].as<std::string>());
                                 if (p) {
                                     internal_start_target(hstring("firms"), p->sector, p->region);
                                     write_firm_parameters(p, it);
@@ -652,7 +662,7 @@ void Output<ModelVariant>::iterate() {
                             std::string sector_name, region_name;
                             getline(ss_l, sector_name, ':');
                             getline(ss_l, region_name, ':');
-                            const Firm<ModelVariant>* p = model->find_firm(sector_name, region_name);
+                            const Firm<ModelVariant>* p = model()->find_firm(sector_name, region_name);
                             if (p) {
                                 internal_start_target(hstring("firms"), p->sector, p->region);
                                 write_firm_parameters(p, it);
@@ -666,7 +676,7 @@ void Output<ModelVariant>::iterate() {
 
                 case hstring::hash("consumer"): {
                     if (!it.has("region")) {
-                        for (const auto& region : model->regions_R) {
+                        for (const auto& region : model()->regions) {
                             for (const auto& ea : region->economic_agents) {
                                 if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
                                     Consumer<ModelVariant>* c = ea->as_consumer();
@@ -677,7 +687,7 @@ void Output<ModelVariant>::iterate() {
                             }
                         }
                     } else {
-                        Consumer<ModelVariant>* c = model->find_consumer(it["region"].as<std::string>());
+                        Consumer<ModelVariant>* c = model()->find_consumer(it["region"].as<std::string>());
                         if (c) {
                             internal_start_target(hstring("consumers"), c->region);
                             write_consumer_parameters(c, it);
@@ -689,7 +699,7 @@ void Output<ModelVariant>::iterate() {
                 } break;
 
                 case hstring::hash("agent"): {
-                    for (const auto& region : model->regions_R) {
+                    for (const auto& region : model()->regions) {
                         for (const auto& ea : region->economic_agents) {
                             internal_start_target(hstring("agents"), ea->sector, ea->region);
                             if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
@@ -703,7 +713,7 @@ void Output<ModelVariant>::iterate() {
                 } break;
 
                 case hstring::hash("storage"): {
-                    for (const auto& region : model->regions_R) {
+                    for (const auto& region : model()->regions) {
                         for (const auto& ea : region->economic_agents) {
                             internal_start_target(hstring("storages"), ea->sector, ea->region);
                             for (const auto& is : ea->input_storages) {
@@ -717,8 +727,8 @@ void Output<ModelVariant>::iterate() {
                 } break;
 
                 case hstring::hash("flow"): {
-                    for (const auto& sector : model->sectors_C) {
-                        for (const auto& ps : sector->firms_N) {
+                    for (const auto& sector : model()->sectors) {
+                        for (const auto& ps : sector->firms) {
                             internal_start_target(hstring("flows"), ps->sector, ps->region);
                             for (const auto& bc : ps->sales_manager->business_connections) {
                                 internal_start_target(hstring("flows"), bc->buyer->storage->economic_agent->sector, bc->buyer->storage->economic_agent->region);
@@ -751,7 +761,7 @@ void Output<ModelVariant>::iterate() {
                             }
                         }
                     }
-                    for (const auto& region : model->regions_R) {
+                    for (const auto& region : model()->regions) {
                         if ((region_name == nullptr) || region->id() == region_name) {
                             internal_start_target(hstring("regions"), region.get());
                             write_region_parameters(region.get(), it);
@@ -765,7 +775,7 @@ void Output<ModelVariant>::iterate() {
                     if (it.has("sector")) {
                         sector_name = it["sector"].as<std::string>().c_str();
                     }
-                    for (const auto& sector : model->sectors_C) {
+                    for (const auto& sector : model()->sectors) {
                         if (sector->id() == "FCON") {
                             continue;
                         }
@@ -783,7 +793,7 @@ void Output<ModelVariant>::iterate() {
                         const hstring& name = observable.as<hstring>();
                         switch (name) {
                             case hstring::hash("duration"):
-                                internal_write_value(name, Acclimate::instance()->duration());
+                                internal_write_value(name, model()->run()->duration());
                                 break;
                             default:
                                 parameter_not_found(name);

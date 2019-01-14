@@ -21,6 +21,8 @@
 #ifndef ACCLIMATE_VARIANTPRICES_H
 #define ACCLIMATE_VARIANTPRICES_H
 
+#ifdef VARIANT_PRICES
+
 #include "variants/Variant.h"
 
 namespace acclimate {
@@ -73,5 +75,7 @@ class VariantPrices : public Variant {
 #include "model/CapacityManagerPrices.h"
 #include "model/PurchasingManagerPrices.h"
 #include "model/SalesManagerPrices.h"
+
+#endif
 
 #endif

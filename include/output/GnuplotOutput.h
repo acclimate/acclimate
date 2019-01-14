@@ -23,7 +23,9 @@
 
 #include <fstream>
 #include <unordered_map>
+#include <vector>
 #include "output/Output.h"
+#include "types.h"
 
 namespace acclimate {
 

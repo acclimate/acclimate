@@ -20,7 +20,10 @@
 
 #include "scenario/RasteredData.h"
 
+#include <algorithm>
+#include <limits>
 #include <utility>
+#include "run.h"
 
 namespace acclimate {
 

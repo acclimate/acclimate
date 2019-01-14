@@ -19,10 +19,15 @@
 */
 
 #include "output/JSONOutput.h"
+#include <ctime>
+#include <iostream>
+#include <string>
+#include <utility>
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "scenario/Scenario.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 #include "version.h"
 
@@ -49,36 +54,40 @@ void JSONOutput<ModelVariant>::initialize() {
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_threads) {
-    *out << "{\n";
-    *out << "\"info_header\": {\n";
-    char time[256];
-    strftime(time, 256, "%c", timestamp);
-    *out << "    \"start_time\": \"" << time;
-    *out << "\",\n";
-    *out << "    \"version\": \"" << ACCLIMATE_VERSION << "\",\n";
-    *out << "    \"max_threads\": " << max_threads << ",\n";
-    *out << "},\n";
+    *out << "{\n"
+            "\"info_header\": {\n"
+            "    \"start_time\": \""
+         << std::asctime(timestamp)
+         << "\",\n"
+            "    \"version\": \""
+         << ACCLIMATE_VERSION
+         << "\",\n"
+            "    \"max_threads\": "
+         << max_threads
+         << ",\n"
+            "},\n";
 }
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_write_footer(tm* duration) {
-    *out << "},\n";
-    *out << "\"info_footer\": {\n";
-    *out << "    \"duration\": \"" << mktime(duration) << "s\"\n";
-    *out << "}\n";
+    *out << "},\n"
+            "\"info_footer\": {\n"
+            "    \"duration\": \""
+         << std::mktime(duration)
+         << "s\"\n"
+            "}\n";
 }
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_write_settings() {
-    //*out << "    \"settings\": '";
-    //*out << settings;
-    //*out << "'\n},\n";
-    *out << "\"data\": {\n";
+    *out << "    \"settings\": '" << settings
+         << "'\n},\n"
+            "\"data\": {\n";
 }
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_iterate_begin() {
-    *out << "    \"" << model->time() << "\": {\n";
+    *out << "    \"" << model()->time() << "\": {\n";
 }
 
 template<class ModelVariant>
@@ -104,21 +113,29 @@ void JSONOutput<ModelVariant>::internal_end_target() {
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
-    *out << "        \"" << name << "\": {\n";
-    *out << "            \"sector\": \"" << sector->id() << "\",\n";
-    *out << "            \"region\": \"" << region->id() << "\",\n";
+    *out << "        \"" << name
+         << "\": {\n"
+            "            \"sector\": \""
+         << sector->id()
+         << "\",\n"
+            "            \"region\": \""
+         << region->id() << "\",\n";
 }
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector) {
-    *out << "        \"" << name << "\": {\n";
-    *out << "            \"sector\": \"" << sector->id() << "\",\n";
+    *out << "        \"" << name
+         << "\": {\n"
+            "            \"sector\": \""
+         << sector->id() << "\",\n";
 }
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_start_target(const hstring& name, Region<ModelVariant>* region) {
-    *out << "        \"" << name << "\": {\n";
-    *out << "            \"region\": \"" << region->id() << "\",\n";
+    *out << "        \"" << name
+         << "\": {\n"
+            "            \"region\": \""
+         << region->id() << "\",\n";
 }
 
 template<class ModelVariant>

@@ -21,56 +21,56 @@
 #ifndef ACCLIMATE_TRANSPORTCHAINLINK_H
 #define ACCLIMATE_TRANSPORTCHAINLINK_H
 
-#include "model/Storage.h"
+#include <string>
+#include <vector>
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 class BusinessConnection;
+template<class ModelVariant>
+class GeoEntity;
+template<class ModelVariant>
+class Model;
 
 template<class ModelVariant>
 class TransportChainLink {
+    friend class BusinessConnection<ModelVariant>;
+
   protected:
-    std::vector<Flow> transport_queue;
-    std::vector<FlowQuantity> initial_transport_queue;
+    Forcing forcing_nu;
+    FlowQuantity initial_flow_quantity;
+    Flow overflow;
+    std::vector<AnnotatedFlow> transport_queue;
     TransportDelay pos;
+    std::unique_ptr<TransportChainLink<ModelVariant>> next_transport_chain_link;
+    GeoEntity<ModelVariant>* geo_entity;
+
+    TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p,
+                       const TransportDelay& initial_transport_delay_tau,
+                       const Flow& initial_flow_Z_star,
+                       GeoEntity<ModelVariant>* geo_entity_p);
 
   public:
-    TransportDelay current_transport_delay_tau;
     const TransportDelay initial_transport_delay_tau;
-#ifdef TRANSPORT
-    unique_ptr<TransportChainLink<ModelVariant>> next_transport_chain_link;
-#endif
     BusinessConnection<ModelVariant>* const business_connection;
 
-  public:
-#ifdef TRANSPORT
-    TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p,
-                       unique_ptr<TransportChainLink<ModelVariant>>& next_transport_chain_link_p,
-                       const TransportDelay& initial_transport_delay_tau,
-                       const Flow& initial_flow_Z_star);
-#else
-    TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p, const TransportDelay& transport_delay_tau, const Flow& initial_flow_Z_star);
-#endif
+    ~TransportChainLink();
     void push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star);
-    void set_forcing_nu(const Forcing& forcing_nu);
-    const Flow get_total_flow() const;
-    const Flow get_disequilibrium() const;
+    void set_forcing_nu(Forcing forcing_nu_p);
+    inline TransportDelay transport_delay() const { return transport_queue.size(); }
+    Flow get_total_flow() const;
+    Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
-    const FlowQuantity get_flow_deficit() const;
+    FloatType get_passage() const;
+    FlowQuantity get_flow_deficit() const;
+    inline void unregister_geoentity() { geo_entity = nullptr; }
 
+    inline Model<ModelVariant>* model() const { return business_connection->model(); }
     inline std::string id() const {
-#ifdef TRANSPORT
-        const TransportChainLink<ModelVariant>* link = this;
-        int index = 0;
-        while (link->next_transport_chain_link) {
-            link = link->next_transport_chain_link.get();
-            ++index;
-        }
-        return business_connection->seller->id() + "-" + std::to_string(index) + "->" + business_connection->buyer->storage->economic_agent->id();
-#else
-        return business_connection->seller->id() + "->" + business_connection->buyer->storage->economic_agent->id();
-#endif
+        return (business_connection->seller ? business_connection->seller->id() : "INVALID") + "-" + std::to_string(business_connection->get_id(this)) + "->"
+               + (business_connection->buyer ? business_connection->buyer->storage->economic_agent->id() : "INVALID");
     }
 };
 }  // namespace acclimate

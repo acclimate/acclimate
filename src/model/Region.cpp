@@ -20,71 +20,67 @@
 
 #include "model/Region.h"
 #include <algorithm>
+#include <cstddef>
+#include <utility>
 #include "model/EconomicAgent.h"
-#include "model/GeographicEntity.h"
 #include "model/Government.h"
-#include "model/Infrastructure.h"
-#include "model/Model.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string id_p, const IntType index_p)
-    : GeographicEntity<ModelVariant>(GeographicEntity<ModelVariant>::Type::REGION), id_(std::move(id_p)), index_(index_p), model(model_p) {}
+    : GeoLocation<ModelVariant>(model_p, 0, GeoLocation<ModelVariant>::Type::REGION, std::move(id_p)), index_m(index_p) {}
+
+template<class ModelVariant>
+Region<ModelVariant>::~Region() {}
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_export_Z(const Flow& export_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    export_flow_Z_lock.call([&]() {
-                                export_flow_Z_[model->current_register()] += export_flow_Z_p;
-                            });
+    export_flow_Z_lock.call([&]() { export_flow_Z_[model()->current_register()] += export_flow_Z_p; });
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_import_Z(const Flow& import_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    import_flow_Z_lock.call([&]() {
-                                import_flow_Z_[model->current_register()] += import_flow_Z_p;
-                            });
+    import_flow_Z_lock.call([&]() { import_flow_Z_[model()->current_register()] += import_flow_Z_p; });
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::add_consumption_flow_Y(const Flow& consumption_flow_Y_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    consumption_flow_Y_lock.call([&]() {
-                                     consumption_flow_Y_[model->current_register()] += consumption_flow_Y_p;
-                                 });
+    consumption_flow_Y_lock.call([&]() { consumption_flow_Y_[model()->current_register()] += consumption_flow_Y_p; });
 }
 
 template<class ModelVariant>
 Flow Region<ModelVariant>::get_gdp() const {
-    return consumption_flow_Y_[model->current_register()] + export_flow_Z_[model->current_register()] - import_flow_Z_[model->current_register()];
+    return consumption_flow_Y_[model()->current_register()] + export_flow_Z_[model()->current_register()] - import_flow_Z_[model()->current_register()];
 }
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    export_flow_Z_[model->other_register()] = Flow(0.0);
-    import_flow_Z_[model->other_register()] = Flow(0.0);
-    consumption_flow_Y_[model->other_register()] = Flow(0.0);
+    export_flow_Z_[model()->other_register()] = Flow(0.0);
+    import_flow_Z_[model()->other_register()] = Flow(0.0);
+    consumption_flow_Y_[model()->other_register()] = Flow(0.0);
     iterate_consumption_and_production_variant();
-#pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
-        economic_agents[i]->iterate_consumption_and_production();
-    }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Region<VariantBasic>::iterate_consumption_and_production_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Region<VariantDemand>::iterate_consumption_and_production_variant() {}
+#endif
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_consumption_and_production_variant() {
-    if (government_) {
-        government_->iterate_consumption_and_production();
+    if (government_m) {
+        government_m->iterate_consumption_and_production();
     }
 }
 
@@ -92,22 +88,22 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_expectation() {
     assertstep(EXPECTATION);
     iterate_expectation_variant();
-#pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
-        economic_agents[i]->iterate_expectation();
-    }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Region<VariantBasic>::iterate_expectation_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Region<VariantDemand>::iterate_expectation_variant() {}
+#endif
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_expectation_variant() {
-    if (government_) {
-        government_->iterate_expectation();
+    if (government_m) {
+        government_m->iterate_expectation();
     }
 }
 
@@ -115,22 +111,22 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_purchase() {
     assertstep(PURCHASE);
     iterate_purchase_variant();
-#pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
-        economic_agents[i]->iterate_purchase();
-    }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Region<VariantBasic>::iterate_purchase_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Region<VariantDemand>::iterate_purchase_variant() {}
+#endif
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_purchase_variant() {
-    if (government_) {
-        government_->iterate_purchase();
+    if (government_m) {
+        government_m->iterate_purchase();
     }
 }
 
@@ -138,46 +134,33 @@ template<class ModelVariant>
 void Region<ModelVariant>::iterate_investment() {
     assertstep(INVESTMENT);
     iterate_investment_variant();
-#pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
-        economic_agents[i]->iterate_investment();
-    }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Region<VariantBasic>::iterate_investment_variant() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Region<VariantDemand>::iterate_investment_variant() {}
+#endif
 
 template<class ModelVariant>
 void Region<ModelVariant>::iterate_investment_variant() {
-    if (government_) {
-        government_->iterate_investment();
+    if (government_m) {
+        government_m->iterate_investment();
     }
 }
 
 template<class ModelVariant>
-const Path<ModelVariant>& Region<ModelVariant>::find_path_to(const Region<ModelVariant>* region) const {
-#ifdef TRANSPORT
-    error("Not implemented: Find proper path (not simply assuming all regions are connected by infrastructures)");
-    path->distance = 0;
-    for (auto it = connections.begin(); it != connections.end(); ++it) {
-        Infrastructure<ModelVariant>* inf = (*it)->as_infrastructure();
-        if ((inf->connections.size() > 0 && static_cast<void*>(inf->connections[0]) == static_cast<void*>(region))
-            || (inf->connections.size() > 1 && static_cast<void*>(inf->connections[1]) == static_cast<void*>(region))) {
-            path->infrastructure = inf;
-            path->distance = inf->distance;
-            break;
-        }
-    }
-#else
-    const auto& it = paths.find(region);
-    if (it == std::end(paths)) {
-        error("No transport data from " << id() << " to " << region->id());
+const GeoRoute<ModelVariant>& Region<ModelVariant>::find_path_to(Region<ModelVariant>* region,
+                                                                 typename Sector<ModelVariant>::TransportType transport_type) const {
+    const auto& it = routes.find(std::make_pair(region->index(), transport_type));
+    if (it == std::end(routes)) {
+        error("No transport data from " << id() << " to " << region->id() << " via " << Sector<ModelVariant>::unmap_transport_type(transport_type));
     }
     return it->second;
-#endif
 }
 
 template<class ModelVariant>
@@ -193,10 +176,10 @@ inline const Region<ModelVariant>* Region<ModelVariant>::as_region() const {
 template<class ModelVariant>
 void Region<ModelVariant>::remove_economic_agent(EconomicAgent<ModelVariant>* economic_agent) {
     economic_agents_lock.call([&]() {
-                                  auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
-                                                         [economic_agent](const std::unique_ptr<EconomicAgent<ModelVariant>>& it) { return it.get() == economic_agent; });
-                                  economic_agents.erase(it);
-                              });
+        auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
+                               [economic_agent](const std::unique_ptr<EconomicAgent<ModelVariant>>& it) { return it.get() == economic_agent; });
+        economic_agents.erase(it);
+    });
 }
 
 INSTANTIATE_BASIC(Region);

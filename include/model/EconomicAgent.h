@@ -21,16 +21,23 @@
 #ifndef ACCLIMATE_ECONOMICAGENT_H
 #define ACCLIMATE_ECONOMICAGENT_H
 
+#include <memory>
+#include <string>
+#include <vector>
+#include "model/Region.h"
+#include "model/Sector.h"
 #include "model/Storage.h"
+#include "run.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Region;
+class Consumer;
 template<class ModelVariant>
 class Firm;
 template<class ModelVariant>
-class Consumer;
+class Model;
 
 template<class ModelVariant>
 class EconomicAgent {
@@ -50,35 +57,36 @@ class EconomicAgent {
     const Type type;
 
   public:
-    inline const typename ModelVariant::AgentParameters& parameters() const { return parameters_; };
+    inline const typename ModelVariant::AgentParameters& parameters() const { return parameters_; }
     inline typename ModelVariant::AgentParameters const& parameters_writable() const {
         assertstep(INITIALIZATION);
         return parameters_;
-    };
+    }
 
   protected:
     EconomicAgent(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p);
 
   public:
-    inline const Forcing& forcing() const { return forcing_; };
+    inline const Forcing& forcing() const { return forcing_; }
     inline void forcing(const Forcing& forcing_p) {
         assertstep(SCENARIO);
         assert(forcing_p >= 0.0);
         forcing_ = forcing_p;
-    };
+    }
     virtual Firm<ModelVariant>* as_firm();
     virtual const Firm<ModelVariant>* as_firm() const;
     virtual Consumer<ModelVariant>* as_consumer();
     virtual const Consumer<ModelVariant>* as_consumer() const;
-    inline bool is_firm() const { return type == Type::FIRM; };
-    inline bool is_consumer() const { return type == Type::CONSUMER; };
-    virtual ~EconomicAgent(){};
+    inline bool is_firm() const { return type == Type::FIRM; }
+    inline bool is_consumer() const { return type == Type::CONSUMER; }
+    virtual ~EconomicAgent() {}
     virtual void iterate_consumption_and_production() = 0;
     virtual void iterate_expectation() = 0;
     virtual void iterate_purchase() = 0;
     virtual void iterate_investment() = 0;
     Storage<ModelVariant>* find_input_storage(const std::string& sector_name) const;
     void remove_storage(Storage<ModelVariant>* storage);
+    inline Model<ModelVariant>* model() const { return sector->model(); }
     virtual inline std::string id() const { return sector->id() + ":" + region->id(); }
 #ifdef DEBUG
     virtual void print_details() const = 0;

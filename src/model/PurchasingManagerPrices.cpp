@@ -19,12 +19,15 @@
 */
 
 #include "model/PurchasingManagerPrices.h"
-#include <fstream>
+#include <cstddef>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <stdexcept>
 #include "model/BusinessConnection.h"
-#include "model/Consumer.h"
-#include "model/Model.h"
 #include "model/Storage.h"
 #include "optimization.h"
+#include "run.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
@@ -123,8 +126,8 @@ inline FloatType PurchasingManagerPrices<ModelVariant>::partial_use_scaled_use()
 
 template<class ModelVariant>
 void PurchasingManagerPrices<ModelVariant>::calc_desired_purchase(const OptimizerData<ModelVariant>* data) {
-    Quantity S_shortage = data->transport_flow_deficit * storage->sector->model->delta_t()
-                          + (storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity());
+    Quantity S_shortage =
+        data->transport_flow_deficit * model()->delta_t() + (storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity());
     FlowQuantity maximal_possible_purchase = FlowQuantity(0.0);
     for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
         FlowQuantity D_r_max = FlowQuantity(unscaled_D_r(data->upper_bounds[r], data->business_connections[r]));
@@ -187,12 +190,12 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
             purchase += D_r;
         }
         FloatType partial_correction = 0;
-        if (storage->sector->model->parameters().cost_correction) {
+        if (model()->parameters().cost_correction) {
             FloatType correction = purchase - to_float(storage->initial_used_flow_U_star().get_quantity());
             if (correction < 0) {
-                partial_correction = to_float(storage->sector->model->parameters().transport_penalty_small);
+                partial_correction = to_float(model()->parameters().transport_penalty_small);
             } else {
-                partial_correction = to_float(storage->sector->model->parameters().transport_penalty_large);
+                partial_correction = to_float(model()->parameters().transport_penalty_large);
             }
             costs -= std::abs(partial_correction * correction);
         }
@@ -225,10 +228,15 @@ FloatType PurchasingManagerPrices<ModelVariant>::expected_average_price_E_n_r(Fl
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
+
+    // Here should be something like X_expected = xi_min * X_expected; with xi_min is the mininum passage on the business connections
+    X_expected = business_connection->get_minimum_passage() * X_expected;
+    // X = business_connection->get_minimum_passage() * X;
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
     assert(Z_last <= X);
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
     FloatType X_new = D_r + ratio_X_expected_to_X * (X - Z_last);
+    // X_new = business_connection->get_minimum_passage() * X_new;
     assert(X_new >= 0.0);
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity())) {
@@ -271,6 +279,8 @@ FloatType PurchasingManagerPrices<ModelVariant>::n_r(FloatType D_r, const Busine
     X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());
     X_expected = to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());
 
+    X_expected = business_connection->get_minimum_passage() * X_expected;
+
     FloatType E_n_r = expected_average_price_E_n_r(D_r, business_connection);  // expected average price for D_r
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
 
@@ -303,6 +313,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_expected_average_price_E_n
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
+    X_expected = business_connection->get_minimum_passage() * X_expected;
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
     FloatType X_new = D_r + ratio_X_expected_to_X * (X - Z_last);
@@ -329,7 +340,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::calc_n_co(FloatType n_bar_min,
     FloatType n_co =
         estimate_marginal_production_costs(business_connection, to_float(business_connection->seller->communicated_parameters().production_X.get_quantity()),
                                            business_connection->seller->communicated_parameters().possible_production_X_hat.get_price_float());
-    if (storage->sector->model->parameters().maximal_decrease_reservation_price_limited_by_markup) {
+    if (model()->parameters().maximal_decrease_reservation_price_limited_by_markup) {
         FloatType n_crit = n_bar_min - to_float(storage->sector->parameters().initial_markup) * D_r_min;
         n_co = std::max(n_co, n_crit);
     }
@@ -343,6 +354,7 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_n_r(FloatType D_r, const B
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
+    X_expected = business_connection->get_minimum_passage() * X_expected;
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
     FloatType grad_E_n_r = grad_expected_average_price_E_n_r(D_r, business_connection);  // expected gradient of average price for D_r
@@ -374,12 +386,12 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_n_r(FloatType D_r, const B
 template<class ModelVariant>
 FloatType PurchasingManagerPrices<ModelVariant>::transport_penalty(FloatType D_r, const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType target = 0.0;
-    if (storage->sector->model->parameters().deviation_penalty) {
+    if (model()->parameters().deviation_penalty) {
         target = to_float(business_connection->last_demand_request_D(this).get_quantity());
     } else {
         target = to_float(business_connection->initial_flow_Z_star().get_quantity());
     }
-    if (storage->sector->model->parameters().quadratic_transport_penalty) {
+    if (model()->parameters().quadratic_transport_penalty) {
         FloatType marg_penalty = 0.0;
         if (D_r < target) {
             marg_penalty = -to_float(storage->sector->parameters().initial_markup);
@@ -388,16 +400,15 @@ FloatType PurchasingManagerPrices<ModelVariant>::transport_penalty(FloatType D_r
         } else {
             marg_penalty = 0.0;
         }
-        if (storage->sector->model->parameters().relative_transport_penalty) {
+        if (model()->parameters().relative_transport_penalty) {
             if (target > FlowQuantity::precision) {
-                return (D_r - target)
-                       * ((D_r - target) * to_float(storage->sector->model->parameters().transport_penalty_large) / (target * target) / 2.0 + marg_penalty);
+                return (D_r - target) * ((D_r - target) * to_float(model()->parameters().transport_penalty_large) / (target * target) / 2.0 + marg_penalty);
             }
-            return D_r * D_r * to_float(storage->sector->model->parameters().transport_penalty_large / 2.0 + Price(marg_penalty));
+            return D_r * D_r * to_float(model()->parameters().transport_penalty_large / 2.0 + Price(marg_penalty));
         }
-        return (D_r - target) * ((D_r - target) * to_float(storage->sector->model->parameters().transport_penalty_large) / 2.0 + marg_penalty);
+        return (D_r - target) * ((D_r - target) * to_float(model()->parameters().transport_penalty_large) / 2.0 + marg_penalty);
     }
-    if (storage->sector->model->parameters().relative_transport_penalty) {
+    if (model()->parameters().relative_transport_penalty) {
         return partial_D_r_transport_penalty(D_r, business_connection) * (D_r - target) / target;
     }
     return partial_D_r_transport_penalty(D_r, business_connection) * (D_r - target);
@@ -407,12 +418,12 @@ template<class ModelVariant>
 FloatType PurchasingManagerPrices<ModelVariant>::partial_D_r_transport_penalty(FloatType D_r,
                                                                                const BusinessConnection<ModelVariant>* business_connection) const {
     FloatType target = 0.0;
-    if (storage->sector->model->parameters().deviation_penalty) {
+    if (model()->parameters().deviation_penalty) {
         target = to_float(business_connection->last_demand_request_D(this).get_quantity());
     } else {
         target = to_float(business_connection->initial_flow_Z_star().get_quantity());
     }
-    if (storage->sector->model->parameters().quadratic_transport_penalty) {
+    if (model()->parameters().quadratic_transport_penalty) {
         FloatType marg_penalty = 0.0;
         if (D_r < target) {
             marg_penalty = -to_float(storage->sector->parameters().initial_markup);
@@ -421,32 +432,30 @@ FloatType PurchasingManagerPrices<ModelVariant>::partial_D_r_transport_penalty(F
         } else {
             marg_penalty = 0.0;
         }
-        if (storage->sector->model->parameters().relative_transport_penalty) {
+        if (model()->parameters().relative_transport_penalty) {
             if (target > FlowQuantity::precision) {
-                return (D_r - target) * to_float(storage->sector->model->parameters().transport_penalty_large) / (target * target) + marg_penalty;
+                return (D_r - target) * to_float(model()->parameters().transport_penalty_large) / (target * target) + marg_penalty;
             }
-            return D_r * to_float(storage->sector->model->parameters().transport_penalty_large) + marg_penalty;
+            return D_r * to_float(model()->parameters().transport_penalty_large) + marg_penalty;
         }
-        return (D_r - target) * to_float(storage->sector->model->parameters().transport_penalty_large) + marg_penalty;
+        return (D_r - target) * to_float(model()->parameters().transport_penalty_large) + marg_penalty;
     }
-    if (storage->sector->model->parameters().relative_transport_penalty) {
+    if (model()->parameters().relative_transport_penalty) {
         if (D_r < target) {
-            return -to_float(storage->sector->model->parameters().transport_penalty_small) / target;
+            return -to_float(model()->parameters().transport_penalty_small) / target;
         }
         if (D_r > target) {
-            return to_float(storage->sector->model->parameters().transport_penalty_large) / target;
+            return to_float(model()->parameters().transport_penalty_large) / target;
         }
-        return (to_float(storage->sector->model->parameters().transport_penalty_large) - to_float(storage->sector->model->parameters().transport_penalty_small))
-               / 2.0 / target;
+        return (to_float(model()->parameters().transport_penalty_large) - to_float(model()->parameters().transport_penalty_small)) / 2.0 / target;
     }
     if (D_r < target) {
-        return -to_float(storage->sector->model->parameters().transport_penalty_small);
+        return -to_float(model()->parameters().transport_penalty_small);
     }
     if (D_r > target) {
-        return to_float(storage->sector->model->parameters().transport_penalty_large);
+        return to_float(model()->parameters().transport_penalty_large);
     }
-    return (to_float(storage->sector->model->parameters().transport_penalty_large) - to_float(storage->sector->model->parameters().transport_penalty_small))
-           / 2.0;
+    return (to_float(model()->parameters().transport_penalty_large) - to_float(model()->parameters().transport_penalty_small)) / 2.0;
 }
 
 template<class ModelVariant>
@@ -573,7 +582,7 @@ void PurchasingManagerPrices<ModelVariant>::optimize_purchase(std::vector<FloatT
     const unsigned int dimensions_optimization_problem = data_p.business_connections.size();
     nlopt::result result = nlopt::SUCCESS;
     try {
-        nlopt::opt opt(static_cast<nlopt::algorithm>(storage->sector->model->parameters().optimization_algorithm), dimensions_optimization_problem);
+        nlopt::opt opt(static_cast<nlopt::algorithm>(model()->parameters().optimization_algorithm), dimensions_optimization_problem);
 
         std::vector<FloatType> xtol_abs(data_p.business_connections.size());
         for (unsigned int i = 0; i < data_p.business_connections.size(); ++i) {
@@ -599,16 +608,18 @@ void PurchasingManagerPrices<ModelVariant>::optimize_purchase(std::vector<FloatT
         opt.set_xtol_abs(xtol_abs);
         opt.set_lower_bounds(data_p.lower_bounds);
         opt.set_upper_bounds(data_p.upper_bounds);
-        opt.set_maxeval(storage->sector->model->parameters().optimization_maxiter);
-        opt.set_maxtime(storage->sector->model->parameters().optimization_timeout);  // timeout given in sec
-        result = opt.optimize(demand_requests_D_p, optimized_value_);                // note: optimized_value_is value of objective function
+        opt.set_maxeval(model()->parameters().optimization_maxiter);
+        opt.set_maxtime(model()->parameters().optimization_timeout);   // timeout given in sec
+        result = opt.optimize(demand_requests_D_p, optimized_value_);  // note: optimized_value_is value of objective function
         optimized_value_ = unscaled_objective(optimized_value_);
 
     } catch (const nlopt::roundoff_limited& exc) {
 #define IGNORE_ROUNDOFFLIMITED
 #ifndef IGNORE_ROUNDOFFLIMITED
-        ONLY_DEBUG(print_distribution(&demand_requests_D_p[0], &data_p, false));
-        Acclimate::Run<ModelVariant>::instance()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, nullptr, storage->economic_agent);
+#ifdef DEBUG
+        print_distribution(&demand_requests_D_p[0], &data_p, false);
+#endif
+        model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, nullptr, storage->economic_agent);
 #ifdef OPTIMIZATION_PROBLEMS_FATAL
         error("optimization is roundoff limited (for " << data_p.business_connections.size() << " inputs)");
 #else
@@ -617,8 +628,10 @@ void PurchasingManagerPrices<ModelVariant>::optimize_purchase(std::vector<FloatT
 #endif
 #if !(defined(DEBUG) && defined(OPTIMIZATION_PROBLEMS_FATAL))
     } catch (const std::exception& exc) {
-        ONLY_DEBUG(print_distribution(&demand_requests_D_p[0], &data_p, false));
-        Acclimate::Run<ModelVariant>::instance()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
+#ifdef DEBUG
+        print_distribution(&demand_requests_D_p[0], &data_p, false);
+#endif
+        model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
 #ifdef OPTIMIZATION_PROBLEMS_FATAL
         error("optimization failed, " << exc.what() << " (for " << data_p.business_connections.size() << " inputs)");
 #else
@@ -627,8 +640,10 @@ void PurchasingManagerPrices<ModelVariant>::optimize_purchase(std::vector<FloatT
 #endif
     }
     if (result < nlopt::SUCCESS) {
-        ONLY_DEBUG(print_distribution(&demand_requests_D_p[0], &data_p, false));
-        Acclimate::Run<ModelVariant>::instance()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
+#ifdef DEBUG
+        print_distribution(&demand_requests_D_p[0], &data_p, false);
+#endif
+        model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
 #ifndef OPTIMIZATION_PROBLEMS_FATAL
         if (result == nlopt::INVALID_ARGS) {
 #endif
@@ -639,8 +654,10 @@ void PurchasingManagerPrices<ModelVariant>::optimize_purchase(std::vector<FloatT
         }
 #endif
     } else if (result == nlopt::MAXTIME_REACHED) {
-        ONLY_DEBUG(print_distribution(&demand_requests_D_p[0], &data_p, false));
-        Acclimate::Run<ModelVariant>::instance()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, nullptr, storage->economic_agent);
+#ifdef DEBUG
+        print_distribution(&demand_requests_D_p[0], &data_p, false);
+#endif
+        model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, nullptr, storage->economic_agent);
 #ifdef OPTIMIZATION_PROBLEMS_FATAL
         error("optimization timed out (for " << data_p.business_connections.size() << " inputs)");
 #else
@@ -658,7 +675,9 @@ void PurchasingManagerPrices<ModelVariant>::calc_optimization_parameters(std::ve
                                                                          OptimizerData<ModelVariant>& data_p) const {
     if (storage->desired_used_flow_U_tilde().get_quantity() <= 0.0) {
         warning("desired_used_flow_U_tilde is zero : no purchase");
-        zero_connections_p = business_connections;
+        for (const auto& bc : business_connections) {
+            zero_connections_p.push_back(bc.get());
+        }
         return;
     }
     demand_requests_D_p.reserve(business_connections.size());
@@ -673,7 +692,7 @@ void PurchasingManagerPrices<ModelVariant>::calc_optimization_parameters(std::ve
     FloatType total_initial_value = 0.0;
     for (const auto& bc : business_connections) {
         if (bc->seller->communicated_parameters().possible_production_X_hat.get_quantity() <= 0.0) {
-            zero_connections_p.push_back(bc);
+            zero_connections_p.push_back(bc.get());
         } else {  // this supplier can deliver a non-zero amount
             // assumption, we cannot crowd out other purchasers given that our maximum offer price is n_max, calculate analytical approximation for maximal
             // deliverable amount of purchaser X_max(n_max) and consider boundary conditions
@@ -682,24 +701,26 @@ void PurchasingManagerPrices<ModelVariant>::calc_optimization_parameters(std::ve
             const FloatType X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
 #endif
             const FloatType Z_last = to_float(bc->last_shipment_Z().get_quantity());
-            const FloatType X_expected = to_float(bc->seller->communicated_parameters().expected_production_X.get_quantity());  // wo expectation X_expected = X
+            const FloatType X_expected =
+                bc->get_minimum_passage()
+                * to_float(bc->seller->communicated_parameters().expected_production_X.get_quantity());  // wo expectation X_expected = X
             const FloatType ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
-            const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc));
+            const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
             assert(X_max <= X_hat);
             const FloatType lower_limit = 0.0;
             const FloatType upper_limit = X_max - ratio_X_expected_to_X * (X - Z_last);
             // in expected_average_price_E_n_r may happen, but it could also be the case that the optimizer does not respect D_r in [D_r_min,D_r_max]
             if (upper_limit > 0.0) {
                 const FloatType initial_value = std::min(upper_limit, std::max(lower_limit, ratio_X_expected_to_X * Z_last));
-                data_p.business_connections.push_back(bc);
-                data_p.lower_bounds.push_back(scaled_D_r(lower_limit, bc));
-                data_p.upper_bounds.push_back(scaled_D_r(upper_limit, bc));
-                demand_requests_D_p.push_back(scaled_D_r(initial_value, bc));
+                data_p.business_connections.push_back(bc.get());
+                data_p.lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
+                data_p.upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
+                demand_requests_D_p.push_back(scaled_D_r(initial_value, bc.get()));
                 total_upper_limit += upper_limit;
                 total_initial_value += initial_value;
                 max_possible_demand_quantity += upper_limit;
             } else {
-                zero_connections_p.push_back(bc);
+                zero_connections_p.push_back(bc.get());
             }
         }
     }
@@ -711,6 +732,9 @@ const FlowQuantity PurchasingManagerPrices<ModelVariant>::calc_analytical_approx
 }
 
 #ifdef DEBUG
+#define PRINT_ROW1(a, b) "      " << std::setw(14) << a << " = " << std::setw(14) << b << '\n'
+#define PRINT_ROW2(a, b, c) "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n"
+
 template<class ModelVariant>
 void PurchasingManagerPrices<ModelVariant>::print_distribution(const FloatType demand_requests_D_p[],
                                                                const OptimizerData<ModelVariant>* data,
@@ -719,7 +743,7 @@ void PurchasingManagerPrices<ModelVariant>::print_distribution(const FloatType d
     {
         std::vector<FloatType> demand_requests_D(data->business_connections.size());
         std::copy(demand_requests_D_p, demand_requests_D_p + data->business_connections.size(), std::begin(demand_requests_D));
-        std::cout << Acclimate::instance()->timeinfo() << ", " << id() << ": demand distribution for " << data->business_connections.size() << " inputs :\n";
+        std::cout << model()->run()->timeinfo() << ", " << id() << ": demand distribution for " << data->business_connections.size() << " inputs :\n";
         FloatType purchasing_quantity = 0.0;
         FloatType purchasing_value = 0.0;
         FloatType initial_sum = 0.0;
@@ -769,9 +793,8 @@ void PurchasingManagerPrices<ModelVariant>::print_distribution(const FloatType d
             initial_sum += to_float(data->business_connections[r]->initial_flow_Z_star().get_quantity());
         }
         FloatType use = purchasing_quantity;
-        FloatType S_shortage =
-            to_float(data->transport_flow_deficit)
-            + to_float((storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity()) / storage->sector->model->delta_t());
+        FloatType S_shortage = to_float(data->transport_flow_deficit)
+                               + to_float((storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity()) / model()->delta_t());
         FloatType n_r_bar = (purchasing_quantity > 0.0) ? purchasing_value / purchasing_quantity : 0.0;
         std::cout << "      Storage :\n"
                   << PRINT_ROW1("av. n_r", Price(n_r_bar)) << PRINT_ROW1("S", storage->content_S().get_quantity())

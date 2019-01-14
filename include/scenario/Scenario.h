@@ -21,34 +21,37 @@
 #ifndef ACCLIMATE_SCENARIO_H
 #define ACCLIMATE_SCENARIO_H
 
+#include <string>
 #include "model/Consumer.h"
 #include "model/Firm.h"
 #include "model/Model.h"
 #include "settingsnode.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 class Scenario {
   protected:
+    settings::SettingsNode scenario_node;
     const settings::SettingsNode& settings;
-    const Model<ModelVariant>* model;
+    Model<ModelVariant>* const model_m;
     void set_firm_property(Firm<ModelVariant>* firm, const settings::SettingsNode& node, const bool reset);
     void set_consumer_property(Consumer<ModelVariant>* consumer, const settings::SettingsNode& node, const bool reset);
+    void set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, const bool reset);
     void apply_target(const settings::SettingsNode& node, const bool reset);
-    Time start_time = Time(0.0);
-    Time stop_time = Time(0.0);
 
   public:
-    Scenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
-    virtual ~Scenario(){};
-    virtual Time start();
-    virtual void end(){};
-    virtual bool is_first_timestep() const { return model->timestep() == 0; };
-    virtual bool is_last_timestep() const { return model->time() >= stop_time; };
+    Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
+    virtual ~Scenario() {}
+    virtual Time start() { return Time(0.0); }  // TODO eliminate return type
+    virtual void end() {}
+    virtual bool is_first_timestep() const { return model()->timestep() == 0; }
+    virtual bool is_last_timestep() const { return model()->time() >= model()->stop_time(); }
     virtual bool iterate();
-    virtual std::string calendar_str() const { return "standard"; };
+    virtual std::string calendar_str() const { return "standard"; }
     virtual std::string time_units_str() const;
+    inline Model<ModelVariant>* model() const { return model_m; }
     virtual inline std::string id() const { return "SCENARIO"; }
 };
 }  // namespace acclimate

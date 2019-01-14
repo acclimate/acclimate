@@ -20,7 +20,7 @@
 
 #include "model/PurchasingManagerBasic.h"
 #include "model/BusinessConnection.h"
-#include "variants/ModelVariants.h"
+#include "variants/VariantBasic.h"
 
 namespace acclimate {
 

@@ -21,6 +21,8 @@
 #ifndef ACCLIMATE_VARIANTBASIC_H
 #define ACCLIMATE_VARIANTBASIC_H
 
+#ifdef VARIANT_BASIC
+
 #include "variants/Variant.h"
 
 namespace acclimate {
@@ -43,5 +45,7 @@ class VariantBasic : public Variant {
 #include "model/CapacityManager.h"
 #include "model/PurchasingManagerBasic.h"
 #include "model/SalesManagerBasic.h"
+
+#endif
 
 #endif

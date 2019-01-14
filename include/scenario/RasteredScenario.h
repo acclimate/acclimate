@@ -21,8 +21,12 @@
 #ifndef ACCLIMATE_RASTEREDSCENARIO_H
 #define ACCLIMATE_RASTEREDSCENARIO_H
 
+#include <memory>
+#include <string>
+#include <vector>
 #include "scenario/ExternalScenario.h"
 #include "scenario/RasteredData.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -39,16 +43,16 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     };
 
   protected:
-    using ExternalScenario<ModelVariant>::id;
     using ExternalScenario<ModelVariant>::forcing;
     using ExternalScenario<ModelVariant>::model;
     using ExternalScenario<ModelVariant>::next_time;
+    using ExternalScenario<ModelVariant>::scenario_node;
     using ExternalScenario<ModelVariant>::settings;
 
     std::unique_ptr<RasteredData<int>> iso_raster;
     std::unique_ptr<RasteredData<FloatType>> proxy;
     std::vector<RegionInfo> region_forcings;
-    FloatType total_current_proxy_sum_;
+    FloatType total_current_proxy_sum_ = 0;
 
     virtual RegionForcingType new_region_forcing(Region<ModelVariant>* region) const = 0;
     virtual void set_region_forcing(Region<ModelVariant>* region, const RegionForcingType& forcing, FloatType proxy_sum) const = 0;
@@ -65,12 +69,13 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     void iterate_first_timestep() override;
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
-    RasteredScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
 
   public:
-    virtual ~RasteredScenario(){};
+    using ExternalScenario<ModelVariant>::id;
+    virtual ~RasteredScenario() {}
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
-    inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; };
+    inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; }
 };
 }  // namespace acclimate
 

@@ -19,7 +19,6 @@ function(add_system_paths)
   set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${LIBRARY_PATH} ${LD_LIBRARY_PATH} PARENT_SCOPE)
 endfunction()
 
-
 function(include_custom_library NAME HEADER_FILE)
   include(FindPackageHandleStandardArgs)
   find_path(${NAME}_INCLUDE_DIR NAMES ${HEADER_FILE})

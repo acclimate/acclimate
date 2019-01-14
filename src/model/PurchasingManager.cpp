@@ -19,11 +19,8 @@
 */
 
 #include "model/PurchasingManager.h"
-#include "model/BusinessConnection.h"
-#include "model/EconomicAgent.h"
-#include "model/Model.h"
-#include "model/SalesManager.h"
-#include "model/Sector.h"
+#include <algorithm>
+#include <iomanip>
 #include "model/Storage.h"
 #include "variants/ModelVariants.h"
 
@@ -39,12 +36,12 @@ void PurchasingManager<ModelVariant>::iterate_consumption_and_production() {
 
 template<class ModelVariant>
 bool PurchasingManager<ModelVariant>::remove_business_connection(const BusinessConnection<ModelVariant>* business_connection) {
-    for (auto it = business_connections.begin(); it != business_connections.end(); ++it) {
-        if (*it == business_connection) {
-            business_connections.erase(it);
-            break;
-        }
+    auto it = std::find_if(business_connections.begin(), business_connections.end(),
+                           [business_connection](const std::shared_ptr<BusinessConnection<ModelVariant>>& it) { return it.get() == business_connection; });
+    if (it == std::end(business_connections)) {
+        error("Business connection " << business_connection->id() << " not found");
     }
+    business_connections.erase(it);
     if (business_connections.empty()) {
         storage->economic_agent->remove_storage(storage);
         return true;
@@ -112,6 +109,13 @@ template<class ModelVariant>
 void PurchasingManager<ModelVariant>::subtract_initial_demand_D_star(const Demand& demand_D_p) {
     assertstep(INITIALIZATION);
     demand_D_ -= demand_D_p;
+}
+
+template<class ModelVariant>
+PurchasingManager<ModelVariant>::~PurchasingManager() {
+    for (auto& business_connection : business_connections) {
+        business_connection->invalidate_buyer();
+    }
 }
 
 #ifdef DEBUG

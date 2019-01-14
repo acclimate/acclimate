@@ -21,18 +21,19 @@
 #ifndef ACCLIMATE_NETCDFOUTPUT_H
 #define ACCLIMATE_NETCDFOUTPUT_H
 
+#include <cstddef>
+#include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 #include "netcdf_headers.h"
 #include "output/ArrayOutput.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 class Model;
-template<class ModelVariant>
-class Region;
-template<class ModelVariant>
-class Sector;
 template<class ModelVariant>
 class Scenario;
 

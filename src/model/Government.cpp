@@ -19,10 +19,7 @@
 */
 
 #include "model/Government.h"
-#include "model/Firm.h"
-#include "model/Model.h"
-#include "model/Region.h"
-#include "model/SalesManagerPrices.h"
+#include "run.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
@@ -34,7 +31,7 @@ template<class ModelVariant>
 void Government<ModelVariant>::collect_tax() {
     assertstep(EXPECTATION);
     for (const auto& ps : taxed_firms) {
-        budget_ += ps.first->sales_manager->get_tax() * region->model->delta_t();
+        budget_ += ps.first->sales_manager->get_tax() * model()->delta_t();
     }
 }
 
@@ -56,7 +53,7 @@ template<class ModelVariant>
 void Government<ModelVariant>::define_tax(const std::string& sector, const Ratio& tax_ratio_p) {
     assertstep(SCENARIO);
     info("Defining tax on " << sector << ":" << region->id() << " (" << tax_ratio_p << ")");
-    Firm<ModelVariant>* ps = region->model->find_firm(sector, region->id());
+    Firm<ModelVariant>* ps = model()->find_firm(sector, region->id());
     if (ps != nullptr) {
         taxed_firms[ps] = tax_ratio_p;
     }

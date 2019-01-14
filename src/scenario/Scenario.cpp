@@ -19,28 +19,21 @@
 */
 
 #include "scenario/Scenario.h"
+#include <random>
+#include <utility>
 #include "model/EconomicAgent.h"
 #include "model/Region.h"
 #include "model/Sector.h"
+#include "run.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-Scenario<ModelVariant>::Scenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p) : model(model_p), settings(settings_p) {
+Scenario<ModelVariant>::Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p)
+    : model_m(model_p), scenario_node(scenario_node_p), settings(settings_p) {
     srand(0);
-}
-
-template<class ModelVariant>
-Time Scenario<ModelVariant>::start() {
-    if (settings["scenario"].has("start")) {
-        start_time = settings["scenario"]["start"].template as<Time>();
-    }
-    stop_time = settings["scenario"]["stop"].template as<Time>();
-    if (settings["scenario"].has("seed")) {
-        srand(settings["scenario"]["seed"].template as<unsigned int>());
-    }
-    return start_time;
 }
 
 template<class ModelVariant>
@@ -68,6 +61,17 @@ void Scenario<ModelVariant>::set_consumer_property(Consumer<ModelVariant>* consu
 }
 
 template<class ModelVariant>
+void Scenario<ModelVariant>::set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, const bool reset) {
+    for (const auto& it_map : node.as_map()) {
+        const std::string& name = it_map.first;
+        const settings::SettingsNode& it = it_map.second;
+        if (name == "passage") {
+            location->set_forcing_nu(reset ? -1. : it.as<Forcing>());
+        }
+    }
+}
+
+template<class ModelVariant>
 void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, const bool reset) {
     for (const auto& targets : node.as_sequence()) {
         for (const auto& target : targets.as_map()) {
@@ -76,16 +80,16 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
             if (type == "firm") {
                 if (it.has("sector")) {
                     if (it.has("region")) {
-                        Firm<ModelVariant>* firm = model->find_firm(it["sector"].template as<std::string>(), it["region"].template as<std::string>());
+                        Firm<ModelVariant>* firm = model()->find_firm(it["sector"].template as<std::string>(), it["region"].template as<std::string>());
                         if (firm) {
                             set_firm_property(firm, it, reset);
                         } else {
                             error("Firm " << it["sector"].template as<std::string>() << ":" << it["region"].template as<std::string>() << " not found");
                         }
                     } else {
-                        Sector<ModelVariant>* sector = model->find_sector(it["sector"].template as<std::string>());
+                        Sector<ModelVariant>* sector = model()->find_sector(it["sector"].template as<std::string>());
                         if (sector) {
-                            for (auto& p : sector->firms_N) {
+                            for (auto& p : sector->firms) {
                                 set_firm_property(p, it, reset);
                             }
                         } else {
@@ -94,7 +98,7 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                     }
                 } else {
                     if (it.has("region")) {
-                        Region<ModelVariant>* region = model->find_region(it["region"].template as<std::string>());
+                        Region<ModelVariant>* region = model()->find_region(it["region"].template as<std::string>());
                         if (region) {
                             for (auto& ea : region->economic_agents) {
                                 if (ea->type == EconomicAgent<ModelVariant>::Type::FIRM) {
@@ -105,8 +109,8 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                             error("Region " << it["region"].template as<std::string>() << " not found");
                         }
                     } else {
-                        for (auto& s : model->sectors_C) {
-                            for (auto& p : s->firms_N) {
+                        for (auto& s : model()->sectors) {
+                            for (auto& p : s->firms) {
                                 set_firm_property(p, it, reset);
                             }
                         }
@@ -114,19 +118,28 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
                 }
             } else if (type == "consumer") {
                 if (it.has("region")) {
-                    Consumer<ModelVariant>* consumer = model->find_consumer(it["region"].template as<std::string>());
+                    Consumer<ModelVariant>* consumer = model()->find_consumer(it["region"].template as<std::string>());
                     if (consumer) {
                         set_consumer_property(consumer, it, reset);
                     } else {
                         error("Consumer " << it["region"].template as<std::string>() << " not found");
                     }
                 } else {
-                    for (auto& r : model->regions_R) {
+                    for (auto& r : model()->regions) {
                         for (auto& ea : r->economic_agents) {
                             if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
                                 set_consumer_property(ea->as_consumer(), it, reset);
                             }
                         }
+                    }
+                }
+            } else if (type == "sea") {
+                if (it.has("sea_route")) {
+                    GeoLocation<ModelVariant>* location = model()->find_location(it["sea_route"].template as<std::string>());
+                    if (location) {
+                        set_location_property(location, it, reset);
+                    } else {
+                        error("Sea route " << it["sea_route"].template as<std::string>() << " not found");
                     }
                 }
             }
@@ -136,18 +149,14 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, co
 
 template<class ModelVariant>
 bool Scenario<ModelVariant>::iterate() {
-    if (model->time() > stop_time) {
-        return false;
-    }
-
-    for (const auto& event : settings["scenario"]["events"].as_sequence()) {
+    for (const auto& event : scenario_node["events"].as_sequence()) {
         const std::string& type = event["type"].template as<std::string>();
         if (type == "shock") {
             const Time from = event["from"].template as<Time>();
             const Time to = event["to"].template as<Time>();
-            if (model->time() >= from && model->time() <= to) {
+            if (model()->time() >= from && model()->time() <= to) {
                 apply_target(event["targets"], false);
-            } else if (model->time() == to + model->delta_t()) {
+            } else if (model()->time() == to + model()->delta_t()) {
                 apply_target(event["targets"], true);
             }
         }
@@ -157,8 +166,8 @@ bool Scenario<ModelVariant>::iterate() {
 
 template<class ModelVariant>
 std::string Scenario<ModelVariant>::time_units_str() const {
-    if (settings["scenario"].has("baseyear")) {
-        return std::string("days since ") + std::to_string(settings["scenario"]["baseyear"].template as<unsigned int>()) + "-1-1";
+    if (scenario_node.has("baseyear")) {
+        return std::string("days since ") + std::to_string(scenario_node["baseyear"].template as<unsigned int>()) + "-1-1";
     }
     return "days since 0-1-1";
 }

@@ -1,6 +1,6 @@
 /*
   Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
+  Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
 
@@ -18,27 +18,10 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_SALESMANAGERDEMAND_H
-#define ACCLIMATE_SALESMANAGERDEMAND_H
+#ifndef ACCLIMATE_INFO_H
+#define ACCLIMATE_INFO_H
 
-#include "model/SalesManager.h"
-#include "types.h"
-
-namespace acclimate {
-
-template<class ModelVariant>
-class Firm;
-
-template<class ModelVariant>
-class SalesManagerDemand : public SalesManager<ModelVariant> {
-  public:
-    using SalesManager<ModelVariant>::sum_demand_requests_D;
-    using SalesManager<ModelVariant>::business_connections;
-
-  public:
-    explicit SalesManagerDemand(Firm<ModelVariant>* firm_p);
-    void distribute(const Flow& production_X) override;
-};
-}  // namespace acclimate
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 #endif

@@ -20,16 +20,18 @@
 
 #include "scenario/Flooding.h"
 #include <algorithm>
+#include <string>
+#include "run.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : RasteredScenario<ModelVariant, FloatType>(settings_p, model_p) {
-    const auto& scenario_node = settings_p["scenario"];
-    if (scenario_node.has("sectors")) {
-        for (const auto& sector_node : scenario_node["sectors"].as_sequence()) {
+Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p)
+    : RasteredScenario<ModelVariant, FloatType>(settings_p, scenario_node_p, model_p) {
+    if (scenario_node_p.has("sectors")) {
+        for (const auto& sector_node : scenario_node_p["sectors"].as_sequence()) {
             const auto& sector_name = sector_node.as<std::string>();
             const auto& sector = model_p->find_sector(sector_name);
             if (!sector) {
@@ -42,11 +44,13 @@ Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, const
 
 template<class ModelVariant>
 FloatType Flooding<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
+    UNUSED(region);
     return 0.0;
 }
 
 template<class ModelVariant>
 void Flooding<ModelVariant>::reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const {
+    UNUSED(region);
     forcing = 0.0;
 }
 
@@ -54,19 +58,17 @@ template<class ModelVariant>
 void Flooding<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, FloatType proxy_sum) const {
     for (auto& it : region->economic_agents) {
         if (it->is_firm()) {
-            if (sectors.empty() || std::find(sectors.begin(), sectors.end(), it->as_firm()->sector->index()) != sectors.end())
+            if (sectors.empty() || std::find(sectors.begin(), sectors.end(), it->as_firm()->sector->index()) != sectors.end()) {
                 it->forcing(1.0 - forcing / proxy_sum);
+            }
         }
     }
 }
 
 template<class ModelVariant>
-void Flooding<ModelVariant>::add_cell_forcing(FloatType x,
-                                              FloatType y,
-                                              FloatType proxy_value,
-                                              FloatType cell_forcing,
-                                              const Region<ModelVariant>* region,
-                                              FloatType& region_forcing) const {
+void Flooding<ModelVariant>::add_cell_forcing(
+    FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const {
+    UNUSED(region);
     UNUSED(x);
     UNUSED(y);
     region_forcing += cell_forcing * proxy_value;

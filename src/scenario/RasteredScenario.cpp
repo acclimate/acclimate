@@ -19,17 +19,19 @@
 */
 
 #include "scenario/RasteredScenario.h"
-#include <sstream>
-
-#include "scenario/ExternalForcing.h"
+#include <cstddef>
+#include "run.h"
 #include "scenario/RasteredTimeData.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant, class RegionForcingType>
-RasteredScenario<ModelVariant, RegionForcingType>::RasteredScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : ExternalScenario<ModelVariant>(settings_p, model_p) {}
+RasteredScenario<ModelVariant, RegionForcingType>::RasteredScenario(const settings::SettingsNode& settings_p,
+                                                                    settings::SettingsNode scenario_node_p,
+                                                                    Model<ModelVariant>* const model_p)
+    : ExternalScenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
 
 template<class ModelVariant, class RegionForcingType>
 ExternalForcing* RasteredScenario<ModelVariant, RegionForcingType>::read_forcing_file(const std::string& filename, const std::string& variable_name) {
@@ -44,16 +46,15 @@ ExternalForcing* RasteredScenario<ModelVariant, RegionForcingType>::read_forcing
 
 template<class ModelVariant, class RegionForcingType>
 void RasteredScenario<ModelVariant, RegionForcingType>::internal_start() {
-    const settings::SettingsNode& scenario_node = settings["scenario"];
-
+    const settings::SettingsNode& iso_node = scenario_node["isoraster"];
 
     // open iso raster
     {
-        const std::string& variable = scenario_node["isoraster"]["variable"].as<std::string>("iso");
-        const std::string& filename = scenario_node["isoraster"]["file"].as<std::string>();
+        const std::string& variable = iso_node["variable"].as<std::string>("iso");
+        const std::string& filename = iso_node["file"].as<std::string>();
         iso_raster.reset(new RasteredData<int>(filename, variable));
         std::unique_ptr<netCDF::NcFile> file(new netCDF::NcFile(filename, netCDF::NcFile::read));
-        const std::string& index_name = scenario_node["isoraster"]["index"].as<std::string>("index");
+        const std::string& index_name = iso_node["index"].as<std::string>("index");
         netCDF::NcVar index_var = file->getVar(index_name);
         if (index_var.isNull()) {
             error("Cannot find variable '" << index_name << "' in '" << filename << "'");
@@ -63,7 +64,7 @@ void RasteredScenario<ModelVariant, RegionForcingType>::internal_start() {
         std::vector<const char*> index_val(index_size);
         index_var.getVar(&index_val[0]);
         for (const auto& r : index_val) {
-            const auto region = model->find_region(r);
+            const auto region = model()->find_region(r);
             region_forcings.emplace_back(RegionInfo{
                 region,                     // region
                 0,                          // proxy_sum
@@ -72,10 +73,11 @@ void RasteredScenario<ModelVariant, RegionForcingType>::internal_start() {
         }
     }
 
+    const settings::SettingsNode& proxy_node = scenario_node["proxy"];
     // open proxy data
     {
-        const std::string& variable = scenario_node["proxy"]["variable"].as<std::string>();
-        const std::string& filename = scenario_node["proxy"]["file"].as<std::string>();
+        const std::string& variable = proxy_node["variable"].as<std::string>();
+        const std::string& filename = proxy_node["file"].as<std::string>();
         proxy.reset(new RasteredData<FloatType>(filename, variable));
     }
 
@@ -100,10 +102,9 @@ void RasteredScenario<ModelVariant, RegionForcingType>::iterate_first_timestep()
         }
     }
 #ifdef DEBUG
-        for (auto& r : region_forcings) {
-            if (r.region) {
-                info(r.region->id() << ": proxy sum: " << r.proxy_sum);
-            }
+    for (auto& r : region_forcings) {
+        if (r.region) {
+            info(r.region->id() << ": proxy sum: " << r.proxy_sum);
         }
     }
     info("Total proxy sum: " << total_proxy_sum << " (" << total_proxy_sum_all << ")");

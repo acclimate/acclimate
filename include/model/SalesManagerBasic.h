@@ -22,11 +22,12 @@
 #define ACCLIMATE_SALESMANAGERBASIC_H
 
 #include "model/SalesManager.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class BusinessConnection;
+class Firm;
 
 template<class ModelVariant>
 class SalesManagerBasic : public SalesManager<ModelVariant> {

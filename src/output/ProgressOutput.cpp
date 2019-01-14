@@ -20,9 +20,10 @@
 
 #include "output/ProgressOutput.h"
 #include <iostream>
+#include <string>
+#include <utility>
 #include "model/Model.h"
 #include "model/Sector.h"
-#include "scenario/Scenario.h"
 #include "variants/ModelVariants.h"
 #ifdef USE_TQDM
 #pragma GCC diagnostic push
@@ -38,8 +39,8 @@ template<class ModelVariant>
 ProgressOutput<ModelVariant>::ProgressOutput(const settings::SettingsNode& settings_p,
                                              Model<ModelVariant>* model_p,
                                              Scenario<ModelVariant>* scenario_p,
-                                             const settings::SettingsNode& output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, output_node_p) {}
+                                             settings::SettingsNode output_node_p)
+    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
 
 template<class ModelVariant>
 void ProgressOutput<ModelVariant>::initialize() {
@@ -47,6 +48,7 @@ void ProgressOutput<ModelVariant>::initialize() {
     tqdm::Params p;
     p.ascii = "";
     p.f = stdout;
+    p.miniters = 1;
     total = output_node["total"].template as<int>();
     it.reset(new tqdm::RangeTqdm<int>(tqdm::RangeIterator<int>(total), tqdm::RangeIterator<int>(total, total), p));
 #else
@@ -68,6 +70,7 @@ void ProgressOutput<ModelVariant>::checkpoint_resume() {
     tqdm::Params p;
     p.ascii = "";
     p.f = stdout;
+    p.miniters = 1;
     it.reset(new tqdm::RangeTqdm<int>(tqdm::RangeIterator<int>(total), tqdm::RangeIterator<int>(total, total), p));
 #endif
 }
@@ -84,6 +87,7 @@ void ProgressOutput<ModelVariant>::internal_iterate_end() {
 #ifdef USE_TQDM
     if (!it->ended()) {
         ++(*it);
+        std::cout << std::flush;
     }
 #endif
 }

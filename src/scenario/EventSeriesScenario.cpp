@@ -20,20 +20,21 @@
 
 #include "scenario/EventSeriesScenario.h"
 
-#include <sstream>
-
-#include "model/Firm.h"
+#include <memory>
+#include "model/Model.h"
+#include "model/Sector.h"
+#include "run.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-EventSeriesScenario<ModelVariant>::EventSeriesScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : ExternalScenario<ModelVariant>(settings_p, model_p) {}
+EventSeriesScenario<ModelVariant>::EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p)
+    : ExternalScenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
 
 template<class ModelVariant>
 ExternalForcing* EventSeriesScenario<ModelVariant>::read_forcing_file(const std::string& filename, const std::string& variable_name) {
-    return new EventForcing(filename, variable_name, model);
+    return new EventForcing(filename, variable_name, model());
 }
 
 template<class ModelVariant>
@@ -69,12 +70,12 @@ EventSeriesScenario<ModelVariant>::EventForcing::EventForcing(const std::string&
     for (const auto& sector_name : sectors) {
         Sector<ModelVariant>* sector = model->find_sector(sector_name);
         if (!sector) {
-            error("sector '" + std::string(sector_name) + "' not found");
+            error_("sector '" + std::string(sector_name) + "' not found");
         }
         for (const auto& region_name : regions) {
             Firm<ModelVariant>* firm = model->find_firm(sector, region_name);
             if (!firm) {
-                warning("firm '" + std::string(sector_name) + ":" + std::string(region_name) + "' not found");
+                warning_("firm '" + std::string(sector_name) + ":" + std::string(region_name) + "' not found");
             }
             firms.push_back(firm);
             forcings.push_back(1.0);

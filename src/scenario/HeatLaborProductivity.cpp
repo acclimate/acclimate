@@ -20,22 +20,27 @@
 
 #include "scenario/HeatLaborProductivity.h"
 
-#include <settingsnode.h>
+#include <algorithm>
+#include <cstddef>
+#include <string>
+#include "model/EconomicAgent.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-HeatLaborProductivity<ModelVariant>::HeatLaborProductivity(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : RasteredScenario<ModelVariant, HeatLaborProductivity<ModelVariant>::RegionForcingType>(settings_p, model_p) {}
+HeatLaborProductivity<ModelVariant>::HeatLaborProductivity(const settings::SettingsNode& settings_p,
+                                                           settings::SettingsNode scenario_node_p,
+                                                           Model<ModelVariant>* const model_p)
+    : RasteredScenario<ModelVariant, HeatLaborProductivity<ModelVariant>::RegionForcingType>(settings_p, scenario_node_p, model_p) {}
 
 template<class ModelVariant>
 typename HeatLaborProductivity<ModelVariant>::RegionForcingType HeatLaborProductivity<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
     if (region) {
         return std::vector<FloatType>(region->economic_agents.size(), 0.0);
-    } else {
-        return std::vector<FloatType>();
     }
+    return std::vector<FloatType>();
 }
 
 template<class ModelVariant>

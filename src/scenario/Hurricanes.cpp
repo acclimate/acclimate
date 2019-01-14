@@ -19,23 +19,27 @@
 */
 
 #include "scenario/Hurricanes.h"
+#include "model/EconomicAgent.h"
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-Hurricanes<ModelVariant>::Hurricanes(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p)
-    : RasteredScenario<ModelVariant, FloatType>(settings_p, model_p) {
-    threshold = settings_p["scenario"]["forcing"]["threshold"].as<double>();
+Hurricanes<ModelVariant>::Hurricanes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p)
+    : RasteredScenario<ModelVariant, FloatType>(settings_p, scenario_node_p, model_p) {
+    threshold = scenario_node_p["forcing"]["threshold"].as<double>();
 }
 
 template<class ModelVariant>
 FloatType Hurricanes<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
+    UNUSED(region);
     return 0.0;
 }
 
 template<class ModelVariant>
 void Hurricanes<ModelVariant>::reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const {
+    UNUSED(region);
     forcing = 0.0;
 }
 
@@ -49,12 +53,9 @@ void Hurricanes<ModelVariant>::set_region_forcing(Region<ModelVariant>* region, 
 }
 
 template<class ModelVariant>
-void Hurricanes<ModelVariant>::add_cell_forcing(FloatType x,
-                                                FloatType y,
-                                                FloatType proxy_value,
-                                                FloatType cell_forcing,
-                                                const Region<ModelVariant>* region,
-                                                FloatType& region_forcing) const {
+void Hurricanes<ModelVariant>::add_cell_forcing(
+    FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const {
+    UNUSED(region);
     UNUSED(x);
     UNUSED(y);
     region_forcing += cell_forcing > threshold ? proxy_value : 0.0;

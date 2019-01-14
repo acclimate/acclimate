@@ -18,31 +18,29 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_DIRECTPOPULATION_H
-#define ACCLIMATE_DIRECTPOPULATION_H
-
-#include "scenario/RasteredScenario.h"
-#include "types.h"
+#include "model/GeoLocation.h"
+#include <algorithm>
+#include "model/GeoConnection.h"
+#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Model;
-template<class ModelVariant>
-class Region;
+GeoLocation<ModelVariant>::GeoLocation(Model<ModelVariant>* const model_m, TransportDelay delay_p, GeoLocation<ModelVariant>::Type type_p, std::string id_p)
+    : GeoEntity<ModelVariant>(model_m, delay_p, GeoEntity<ModelVariant>::Type::LOCATION), type(type_p), id_m(id_p) {}
 
 template<class ModelVariant>
-class DirectPopulation : public RasteredScenario<ModelVariant, FloatType> {
-  protected:
-    FloatType new_region_forcing(Region<ModelVariant>* region) const override;
-    void set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, FloatType proxy_sum) const override;
-    void reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const override;
-    void add_cell_forcing(
-        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const override;
+void GeoLocation<ModelVariant>::remove_connection(const GeoConnection<ModelVariant>* connection) {
+    auto it = std::find_if(connections.begin(), connections.end(),
+                           [connection](const std::shared_ptr<GeoConnection<ModelVariant>>& it) { return it.get() == connection; });
+    connections.erase(it);
+}
+template<class ModelVariant>
+GeoLocation<ModelVariant>::~GeoLocation() {
+    for (auto& connection : connections) {
+        connection->invalidate_location(this);
+    }
+}
 
-  public:
-    DirectPopulation(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
-};
+INSTANTIATE_BASIC(GeoLocation);
 }  // namespace acclimate
-
-#endif

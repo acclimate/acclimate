@@ -19,10 +19,12 @@
 */
 
 #include "output/ConsoleOutput.h"
-#include "model/Model.h"
-#include "model/Region.h"
-#include "model/Sector.h"
-#include "scenario/Scenario.h"
+#include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <utility>
+#include "settingsnode.h"
 #include "variants/ModelVariants.h"
 #include "version.h"
 
@@ -52,38 +54,44 @@ void ConsoleOutput<ModelVariant>::initialize() {
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_threads) {
-    *out << "Start time " << asctime(timestamp) << "Version " << ACCLIMATE_VERSION << "\n"
-         << "Max " << max_threads << " threads" << std::endl;
+    *out << "Start time " << std::asctime(timestamp)
+         << "\n"
+            "Version "
+         << ACCLIMATE_VERSION
+         << "\n"
+            "Max "
+         << max_threads << " threads" << std::endl;
 }
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_write_footer(tm* duration) {
-    *out << "\n\nDuration " << mktime(duration) << "s";
+    *out << "\n\nDuration " << std::mktime(duration) << "s";
 }
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_write_settings() {
-    *out << '\n';
-    *out << settings;
-    *out << '\n';
+    *out << '\n' << settings << '\n';
 }
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_start() {
-    *out << "Starting";
-    *out << '\n' << '\n' << "Iteration time " << model->time();
+    *out << "Starting"
+            "\n\n"
+            "Iteration time "
+         << model()->time();
     out->flush();
 }
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_iterate_begin() {
-    *out << '\n' << '\n' << "Iteration time " << (model->time() + Time(1));
+    *out << "\n\n"
+         << "Iteration time " << (model()->time() + Time(1));
     out->flush();
 }
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_end() {
-    *out << '\n' << '\n' << "Ended" << '\n';
+    *out << "\n\nEnded\n";
     out->flush();
 }
 
@@ -118,7 +126,7 @@ void ConsoleOutput<ModelVariant>::internal_start_target(const hstring& name) {
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_end_target() {
-    stack--;
+    --stack;
 }
 
 INSTANTIATE_BASIC(ConsoleOutput);

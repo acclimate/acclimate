@@ -19,10 +19,8 @@
 */
 
 #include "model/CapacityManager.h"
-#include "model/EconomicAgent.h"
-#include "model/Firm.h"
-#include "model/Model.h"
 #include "model/Storage.h"
+#include "run.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {

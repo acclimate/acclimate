@@ -21,15 +21,18 @@
 #ifndef ACCLIMATE_GOVERNMENT_H
 #define ACCLIMATE_GOVERNMENT_H
 
+#include <string>
 #include <unordered_map>
-#include "acclimate.h"
+#include "types.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Region;
-template<class ModelVariant>
 class Firm;
+template<class ModelVariant>
+class Model;
+template<class ModelVariant>
+class Region;
 
 template<class ModelVariant>
 class Government {
@@ -43,7 +46,7 @@ class Government {
     std::unordered_map<Firm<ModelVariant>*, Ratio> taxed_firms;
 
   public:
-    inline const Value& budget() const { return budget_; };
+    inline const Value& budget() const { return budget_; }
 
   protected:
     void collect_tax();
@@ -57,6 +60,7 @@ class Government {
     void iterate_purchase();
     void iterate_investment();
     void define_tax(const std::string& sector, const Ratio& tax_ratio_p);
+    inline Model<ModelVariant>* model() const { return region->model(); }
     inline std::string id() const { return "GOVM:" + region->id(); }
 };
 }  // namespace acclimate

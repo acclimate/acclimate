@@ -18,43 +18,40 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "model/Infrastructure.h"
+#include "model/GeoEntity.h"
 #include <algorithm>
-#include "model/TransportChainLink.h"
+#include <cstddef>
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-Infrastructure<ModelVariant>::Infrastructure(const Distance& distance_p)
-    : GeographicEntity<ModelVariant>(GeographicEntity<ModelVariant>::Type::INFRASTRUCTURE), distance(distance_p) {
-    forcing_nu = 1;
-}
+GeoEntity<ModelVariant>::GeoEntity(Model<ModelVariant>* const model_p, TransportDelay delay_p, Type type_p)
+    : model_m(model_p), delay(delay_p), type_m(type_p) {}
 
 template<class ModelVariant>
-void Infrastructure<ModelVariant>::set_forcing_nu(const Forcing& forcing_nu_p) {
+void GeoEntity<ModelVariant>::set_forcing_nu(Forcing forcing_nu_p) {
     for (std::size_t i = 0; i < transport_chain_links.size(); ++i) {
         transport_chain_links[i]->set_forcing_nu(forcing_nu_p);
     }
-    forcing_nu = forcing_nu_p;
 }
 
 template<class ModelVariant>
-inline Infrastructure<ModelVariant>* Infrastructure<ModelVariant>::as_infrastructure() {
-    return this;
+GeoEntity<ModelVariant>::~GeoEntity() {
+    for (auto& link : transport_chain_links) {
+        link->unregister_geoentity();
+    }
 }
 
 template<class ModelVariant>
-inline const Infrastructure<ModelVariant>* Infrastructure<ModelVariant>::as_infrastructure() const {
-    return this;
-}
-
-template<class ModelVariant>
-void Infrastructure<ModelVariant>::remove_transport_chain_link(TransportChainLink<ModelVariant>* transport_chain_link) {
+void GeoEntity<ModelVariant>::remove_transport_chain_link(TransportChainLink<ModelVariant>* transport_chain_link) {
     auto it = std::find_if(transport_chain_links.begin(), transport_chain_links.end(),
                            [transport_chain_link](const TransportChainLink<ModelVariant>* it) { return it == transport_chain_link; });
+    if (it == std::end(transport_chain_links)) {
+        error("Transport chain link " << transport_chain_link->id() << " not found");
+    }
     transport_chain_links.erase(it);
 }
 
-INSTANTIATE_BASIC(Infrastructure);
+INSTANTIATE_BASIC(GeoEntity);
 }  // namespace acclimate

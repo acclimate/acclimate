@@ -21,7 +21,10 @@
 #ifndef ACCLIMATE_SECTOR_H
 #define ACCLIMATE_SECTOR_H
 
-#include "acclimate.h"
+#include <string>
+#include <vector>
+#include "run.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -32,37 +35,73 @@ class Firm;
 
 template<class ModelVariant>
 class Sector {
+    friend class Model<ModelVariant>;
+
+  public:
+    enum class TransportType { AVIATION, IMMEDIATE, ROADSEA };
+    static TransportType map_transport_type(const settings::hstring& transport_type) {
+        switch (transport_type) {
+            case settings::hstring::hash("aviation"):
+                return TransportType::AVIATION;
+            case settings::hstring::hash("immediate"):
+                return TransportType::IMMEDIATE;
+            case settings::hstring::hash("roadsea"):
+                return TransportType::ROADSEA;
+            default:
+                error_("Unknown transport type " << transport_type);
+        }
+    }
+    static const char* unmap_transport_type(TransportType transport_type) {
+        switch (transport_type) {
+            case TransportType::AVIATION:
+                return "aviation";
+            case TransportType::IMMEDIATE:
+                return "immediate";
+            case TransportType::ROADSEA:
+                return "roadsea";
+            default:
+                error_("Unkown transport type");
+        }
+    }
+
   protected:
-    const IntType index_;
-    const std::string id_;
+    const IntType index_m;
+    const std::string id_m;
     Demand total_demand_D_ = Demand(0.0);
     OpenMPLock total_demand_D_lock;
-    Flow total_production_X_ = Flow(0.0);
+    Flow total_production_X_m = Flow(0.0);
     OpenMPLock total_production_X_lock;
-    Flow last_total_production_X_ = Flow(0.0);
-    typename ModelVariant::SectorParameters parameters_;
+    Flow last_total_production_X_m = Flow(0.0);
+    typename ModelVariant::SectorParameters parameters_m;
+    Model<ModelVariant>* const model_m;
+    Sector(Model<ModelVariant>* model_p,
+           std::string name_p,
+           const IntType index_p,
+           const Ratio& upper_storage_limit_omega_p,
+           const Time& initial_storage_fill_factor_psi_p,
+           TransportType transport_type_p);
 
   public:
     inline const Demand& total_demand_D() const {
         assertstepnot(PURCHASE);
         return total_demand_D_;
-    };
-    inline const Demand& last_total_production_X() const { return last_total_production_X_; };
+    }
+    inline const Demand& last_total_production_X() const { return last_total_production_X_m; }
     inline const Demand& total_production_X() const {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return total_production_X_;
-    };
-    inline const typename ModelVariant::SectorParameters& parameters() const { return parameters_; };
+        return total_production_X_m;
+    }
+    inline const typename ModelVariant::SectorParameters& parameters() const { return parameters_m; }
     inline typename ModelVariant::SectorParameters& parameters_writable() {
         assertstep(INITIALIZATION);
-        return parameters_;
-    };
+        return parameters_m;
+    }
 
   public:
     const Ratio upper_storage_limit_omega;
     const Time initial_storage_fill_factor_psi;
-    std::vector<Firm<ModelVariant>*> firms_N;
-    Model<ModelVariant>* const model;
+    const TransportType transport_type;
+    std::vector<Firm<ModelVariant>*> firms;
 
   public:
     Sector(Model<ModelVariant>* model_p,
@@ -76,8 +115,9 @@ class Sector {
     void subtract_initial_production_X(const Flow& production_X);
     void iterate_consumption_and_production();
     void remove_firm(Firm<ModelVariant>* firm);
-    inline IntType index() const { return index_; };
-    inline const std::string& id() const { return id_; };
+    inline IntType index() const { return index_m; }
+    inline Model<ModelVariant>* model() const { return model_m; }
+    inline const std::string& id() const { return id_m; }
 };
 }  // namespace acclimate
 #endif

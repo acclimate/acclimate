@@ -18,30 +18,29 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "model/SalesManagerDemand.h"
-#include "model/Firm.h"
-#include "variants/VariantDemand.h"
+#include "model/GeoConnection.h"
+#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-SalesManagerDemand<ModelVariant>::SalesManagerDemand(Firm<ModelVariant>* firm_p) : SalesManager<ModelVariant>(firm_p) {}
+GeoConnection<ModelVariant>::GeoConnection(Model<ModelVariant>* const model_m,
+                                           TransportDelay delay,
+                                           Type type_p,
+                                           const GeoLocation<ModelVariant>* location1_p,
+                                           const GeoLocation<ModelVariant>* location2_p)
+    : GeoEntity<ModelVariant>(model_m, delay, GeoEntity<ModelVariant>::Type::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
 
 template<class ModelVariant>
-void SalesManagerDemand<ModelVariant>::distribute(const Flow& production_X) {
-    if (sum_demand_requests_D().get_quantity() <= 0.0) {
-        for (const auto& bc : business_connections) {
-            bc->push_flow_Z(Flow(0.0));
-        }
+void GeoConnection<ModelVariant>::invalidate_location(const GeoLocation<ModelVariant>* location) {
+    if (location1 == location) {
+        location1 = nullptr;
+    } else if (location2 == location) {
+        location2 = nullptr;
     } else {
-        for (const auto& bc : business_connections) {
-            Ratio zeta = bc->last_demand_request_D() / sum_demand_requests_D();
-            bc->push_flow_Z(round(production_X * zeta));
-        }
+        error("Location not part of this connection or already invalidated");
     }
 }
 
-#ifdef VARIANT_DEMAND
-template class SalesManagerDemand<VariantDemand>;
-#endif
+INSTANTIATE_BASIC(GeoConnection);
 }  // namespace acclimate

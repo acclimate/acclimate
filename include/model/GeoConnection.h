@@ -18,36 +18,33 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_GEOGRAPHICENTITY_H
-#define ACCLIMATE_GEOGRAPHICENTITY_H
+#ifndef ACCLIMATE_GEOCONNECTION_H
+#define ACCLIMATE_GEOCONNECTION_H
 
 #include "acclimate.h"
+#include "model/GeoEntity.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-class Region;
-template<class ModelVariant>
-class Infrastructure;
+class GeoLocation;
 
 template<class ModelVariant>
-class GeographicEntity {
+class GeoConnection : public GeoEntity<ModelVariant> {
   public:
-    enum class Type { REGION, INFRASTRUCTURE };
+    enum class Type { ROAD, AVIATION, SEAROUTE, UNSPECIFIED };
 
   public:
-    std::vector<GeographicEntity<ModelVariant>*> connections;
+    const GeoLocation<ModelVariant>* location1;  // TODO encapsulate
+    const GeoLocation<ModelVariant>* location2;  // TODO encapsulate
     const Type type;
-    virtual Region<ModelVariant>* as_region();
-    virtual Infrastructure<ModelVariant>* as_infrastructure();
-    virtual const Region<ModelVariant>* as_region() const;
-    virtual const Infrastructure<ModelVariant>* as_infrastructure() const;
-
-  protected:
-    explicit GeographicEntity(const GeographicEntity<ModelVariant>::Type& type_p);
-    virtual ~GeographicEntity();
-    void remove_connection(const GeographicEntity<ModelVariant>* geographic_entity);
-    virtual std::string id() const = 0;
+    GeoConnection<ModelVariant>(Model<ModelVariant>* const model_m,
+                                TransportDelay delay,
+                                Type type_p,
+                                const GeoLocation<ModelVariant>* location1_p,
+                                const GeoLocation<ModelVariant>* location2_p);
+    void invalidate_location(const GeoLocation<ModelVariant>* location);
+    std::string id() const override { return (location1 ? location1->id() : "INVALID") + "-" + (location2 ? location2->id() : "INVALID"); }
 };
 }  // namespace acclimate
 

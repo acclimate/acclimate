@@ -21,13 +21,15 @@
 #ifndef ACCLIMATE_EVENTSERIESSCENARIO_H
 #define ACCLIMATE_EVENTSERIESSCENARIO_H
 
+#include <cstddef>
+#include <string>
+#include <vector>
 #include "scenario/ExternalForcing.h"
 #include "scenario/ExternalScenario.h"
+#include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-class Region;
 template<class ModelVariant>
 class Firm;
 
@@ -35,7 +37,6 @@ template<class ModelVariant>
 class EventSeriesScenario : public ExternalScenario<ModelVariant> {
   protected:
     using ExternalScenario<ModelVariant>::forcing;
-    using ExternalScenario<ModelVariant>::model;
 
     class EventForcing : public ExternalForcing {
         friend class EventSeriesScenario<ModelVariant>;
@@ -59,7 +60,9 @@ class EventSeriesScenario : public ExternalScenario<ModelVariant> {
     void read_forcings() override;
 
   public:
-    EventSeriesScenario(const settings::SettingsNode& settings_p, const Model<ModelVariant>* model_p);
+    using ExternalScenario<ModelVariant>::id;
+    using ExternalScenario<ModelVariant>::model;
+    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
 };
 }  // namespace acclimate
 

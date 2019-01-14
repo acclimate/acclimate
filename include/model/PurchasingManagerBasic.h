@@ -26,6 +26,9 @@
 namespace acclimate {
 
 template<class ModelVariant>
+class Storage;
+
+template<class ModelVariant>
 class PurchasingManagerBasic : public PurchasingManager<ModelVariant> {
   public:
     using PurchasingManager<ModelVariant>::business_connections;

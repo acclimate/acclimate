@@ -22,7 +22,9 @@
 #define ACCLIMATE_JSONOUTPUT_H
 
 #include <fstream>
+#include <memory>
 #include "output/Output.h"
+#include "types.h"
 
 namespace acclimate {
 

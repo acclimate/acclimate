@@ -27,14 +27,13 @@ namespace acclimate {
 
 template<class ModelVariant>
 class Region;
-template<class ModelVariant>
-class Scenario;
 
 template<class ModelVariant>
 class Consumer : public EconomicAgent<ModelVariant> {
   public:
     using EconomicAgent<ModelVariant>::id;
     using EconomicAgent<ModelVariant>::input_storages;
+    using EconomicAgent<ModelVariant>::model;
     using EconomicAgent<ModelVariant>::region;
 
   protected:

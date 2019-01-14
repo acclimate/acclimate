@@ -28,7 +28,7 @@ set_default_build_type(Release)
 project(acclimate)
 
 file(GLOB ACCLIMATE_SOURCES src/**/*.cpp)
-set(ACCLIMATE_SOURCES ${ACCLIMATE_SOURCES} src/acclimate.cpp)
+set(ACCLIMATE_SOURCES ${ACCLIMATE_SOURCES} src/acclimate.cpp src/info.cpp src/run.cpp)
 
 option(ACCLIMATE_SHARED_LIBRARY "" OFF)
 if(ACCLIMATE_SHARED_LIBRARY)
@@ -71,8 +71,6 @@ mark_as_advanced(ACCLIMATE_BASED_ON_INT)
 acclimate_include_option(OPTIONS BANKERS_ROUNDING "bankers rounding" ON)
 acclimate_include_option(OPTIONS FLOATING_POINT_EXCEPTIONS "" OFF)
 acclimate_include_option(OPTIONS FATAL_FLOATING_POINT_EXCEPTIONS "" OFF)
-acclimate_include_option(OPTIONS TRANSPORT "" OFF)
-mark_as_advanced(ACCLIMATE_TRANSPORT)
 acclimate_include_option(OPTIONS STRICT_MIN_DERIVATIVE "" OFF)
 acclimate_include_option(OPTIONS CLEANUP_INFO "show additional information about the cleanup (only for Debug)" OFF)
 acclimate_include_option(OPTIONS OPTIMIZATION_WARNINGS "show warnings for optimization (only for Debug)" OFF)
@@ -85,6 +83,8 @@ if(ACCLIMATE_USE_TQDM)
   ExternalProject_Add(tqdm.cpp
     GIT_REPOSITORY https://github.com/swillner/tqdm.cpp
     GIT_TAG "bd7707e"
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
     INSTALL_COMMAND ""
     )
   ExternalProject_Get_Property(tqdm.cpp SOURCE_DIR)
@@ -110,8 +110,8 @@ include_nlopt(acclimate ON "34fd7ce")
 include_netcdf_cxx4(acclimate ON v4.3.0)
 
 include(lib/settingsnode/settingsnode.cmake)
-target_link_libraries(acclimate PRIVATE settingsnode)
-include_yaml_cpp(acclimate ON "yaml-cpp-0.6.1")
+include_settingsnode(acclimate)
+include_yaml_cpp(acclimate ON "yaml-cpp-0.6.2")
 
 include(lib/libmrio/libmrio.cmake)
 target_link_libraries(acclimate PRIVATE libmrio)

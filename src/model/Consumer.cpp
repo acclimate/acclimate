@@ -19,17 +19,19 @@
 */
 
 #include "model/Consumer.h"
+#include <memory>
+#include <vector>
 #include "model/Model.h"
-#include "model/PurchasingManagerPrices.h"
 #include "model/Region.h"
 #include "model/Storage.h"
+#include "types.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
 Consumer<ModelVariant>::Consumer(Region<ModelVariant>* region_p)
-    : EconomicAgent<ModelVariant>(region_p->model->consumption_sector, region_p, EconomicAgent<ModelVariant>::Type::CONSUMER) {}
+    : EconomicAgent<ModelVariant>(region_p->model()->consumption_sector, region_p, EconomicAgent<ModelVariant>::Type::CONSUMER) {}
 
 template<class ModelVariant>
 inline Consumer<ModelVariant>* Consumer<ModelVariant>::as_consumer() {
@@ -82,7 +84,7 @@ void Consumer<ModelVariant>::iterate_consumption_and_production() {
             assert(!isnan(last_reservation_price));
             // price is calculated from last desired used flow
             reservation_price = last_reservation_price;
-            Acclimate::Run<ModelVariant>::instance()->event(EventType::NO_CONSUMPTION, this, nullptr, to_float(last_reservation_price));
+            model()->run()->event(EventType::NO_CONSUMPTION, this, nullptr, to_float(last_reservation_price));
         }
         assert(reservation_price > 0.0);
 
@@ -102,26 +104,6 @@ void Consumer<ModelVariant>::iterate_expectation() {
     assertstep(EXPECTATION);
 }
 
-#ifdef VARIANT_BASIC
-template<>
-void Consumer<VariantBasic>::iterate_purchase() {
-    assertstep(PURCHASE);
-    for (const auto& is : input_storages) {
-        is->purchasing_manager->iterate_purchase();
-    }
-}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-void Consumer<VariantDemand>::iterate_purchase() {
-    assertstep(PURCHASE);
-    for (const auto& is : input_storages) {
-        is->purchasing_manager->iterate_purchase();
-    }
-}
-#endif
-
 template<class ModelVariant>
 void Consumer<ModelVariant>::iterate_purchase() {
     assertstep(PURCHASE);
@@ -130,14 +112,20 @@ void Consumer<ModelVariant>::iterate_purchase() {
     }
 }
 
+#ifdef VARIANT_BASIC
 template<>
 void Consumer<VariantBasic>::iterate_investment() {}
+#endif
 
+#ifdef VARIANT_DEMAND
 template<>
 void Consumer<VariantDemand>::iterate_investment() {}
+#endif
 
+#ifdef VARIANT_PRICES
 template<>
 void Consumer<VariantPrices>::iterate_investment() {}
+#endif
 
 template<class ModelVariant>
 void Consumer<ModelVariant>::iterate_investment() {

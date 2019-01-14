@@ -20,10 +20,6 @@
 
 #include "model/EconomicAgent.h"
 #include <algorithm>
-#include "model/Consumer.h"
-#include "model/Firm.h"
-#include "model/Model.h"
-#include "model/PurchasingManager.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
 #include "variants/ModelVariants.h"
