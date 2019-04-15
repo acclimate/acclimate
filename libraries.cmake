@@ -14,9 +14,14 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 function(add_system_paths)
-  string(REPLACE ":" ";" LIBRARY_PATH $ENV{LIBRARY_PATH})
-  string(REPLACE ":" ";" LD_LIBRARY_PATH $ENV{LD_LIBRARY_PATH})
-  set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${LIBRARY_PATH} ${LD_LIBRARY_PATH} PARENT_SCOPE)
+  if(DEFINED ENV{LIBRARY_PATH})
+    string(REPLACE ":" ";" LIBRARY_PATH $ENV{LIBRARY_PATH})
+    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${LIBRARY_PATH} PARENT_SCOPE)
+  endif()
+  if(DEFINED ENV{LD_LIBRARY_PATH})
+    string(REPLACE ":" ";" LD_LIBRARY_PATH $ENV{LD_LIBRARY_PATH})
+    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${LD_LIBRARY_PATH} PARENT_SCOPE)
+  endif()
 endfunction()
 
 
