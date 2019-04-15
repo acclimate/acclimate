@@ -37,7 +37,7 @@ else()
   add_executable(acclimate ${ACCLIMATE_SOURCES} src/main.cpp)
 endif()
 
-target_include_directories(acclimate PRIVATE include)
+target_include_directories(acclimate PRIVATE include lib/cpp-library)
 target_compile_options(acclimate PRIVATE -std=c++11)
 
 add_doxygen_documentation(doc doc)
@@ -76,21 +76,6 @@ acclimate_include_option(OPTIONS CLEANUP_INFO "show additional information about
 acclimate_include_option(OPTIONS OPTIMIZATION_WARNINGS "show warnings for optimization (only for Debug)" OFF)
 acclimate_include_option(OPTIONS OPTIMIZATION_PROBLEMS_FATAL "make optimization problems fatal (only for Debug)" OFF)
 acclimate_include_option(OPTIONS ENABLE_DMTCP "enable dmtcp checkpointing" OFF)
-acclimate_include_option(OPTIONS USE_TQDM "enable progress output using tqdm.cpp" OFF)
-
-if(ACCLIMATE_USE_TQDM)
-  include(ExternalProject)
-  ExternalProject_Add(tqdm.cpp
-    GIT_REPOSITORY https://github.com/swillner/tqdm.cpp
-    GIT_TAG "bd7707e"
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-    )
-  ExternalProject_Get_Property(tqdm.cpp SOURCE_DIR)
-  target_include_directories(acclimate PRIVATE ${SOURCE_DIR}/include)
-  message(STATUS "Including tqdm.cpp from git")
-endif()
 
 if(ACCLIMATE_ENABLE_DMTCP)
   set_property(TARGET acclimate PROPERTY POSITION_INDEPENDENT_CODE ON)
