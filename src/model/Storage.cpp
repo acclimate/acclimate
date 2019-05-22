@@ -77,7 +77,7 @@ void Storage<VariantPrices>::calc_content_S() {
     auto former_content = content_S_;
     content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * model()->delta_t());
     if (content_S_.get_quantity() <= model()->parameters().min_storage * initial_content_S_star_.get_quantity()) {
-        model()->run()->event(EventType::STORAGE_EMPTY, sector, nullptr, economic_agent);
+        model()->run()->event(EventType::STORAGE_UNDERRUN, sector, nullptr, economic_agent);
         Quantity quantity = model()->parameters().min_storage * initial_content_S_star_.get_quantity();
         content_S_ = Stock(quantity, quantity * former_content.get_price());
     }
@@ -105,7 +105,7 @@ void Storage<ModelVariant>::calc_content_S() {
         content_S_ = maxStock;
     }
     if (content_S_.get_quantity() <= 0.0) {
-        model()->run()->event(EventType::STORAGE_EMPTY, sector, nullptr, economic_agent);
+        model()->run()->event(EventType::STORAGE_UNDERRUN, sector, nullptr, economic_agent);
     }
 }
 
