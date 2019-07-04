@@ -49,7 +49,7 @@ enum class IterationStep {
 
 #define ACCLIMATE_ADD_EVENTS                              \
     ADD_EVENT(NO_CONSUMPTION)                             \
-    ADD_EVENT(STORAGE_EMPTY)                              \
+    ADD_EVENT(STORAGE_UNDERRUN)                           \
     ADD_EVENT(STORAGE_OVERRUN)                            \
     ADD_EVENT(NO_PRODUCTION_SUPPLY_SHORTAGE)              \
     ADD_EVENT(NO_PRODUCTION_DEMAND_QUANTITY_SHORTAGE)     \

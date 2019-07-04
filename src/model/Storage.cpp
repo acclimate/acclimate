@@ -73,10 +73,13 @@ Ratio Storage<ModelVariant>::get_input_share_u() const {
 template<>
 void Storage<VariantPrices>::calc_content_S() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
+    assert(used_flow_U_.get_quantity() * model()->delta_t() <= content_S_.get_quantity() + current_input_flow_I().get_quantity() * model()->delta_t());
+    auto former_content = content_S_;
     content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * model()->delta_t());
-    if (model()->parameters().min_storage > 0.0) {
-        Quantity quantity = std::max(model()->parameters().min_storage * initial_content_S_star_.get_quantity(), content_S_.get_quantity());
-        content_S_ = Stock(quantity, quantity * content_S_.get_price());
+    if (content_S_.get_quantity() <= model()->parameters().min_storage * initial_content_S_star_.get_quantity()) {
+        model()->run()->event(EventType::STORAGE_UNDERRUN, sector, nullptr, economic_agent);
+        Quantity quantity = model()->parameters().min_storage * initial_content_S_star_.get_quantity();
+        content_S_ = Stock(quantity, quantity * former_content.get_price());
     }
     assert(content_S_.get_quantity() >= 0.0);
 
@@ -86,9 +89,6 @@ void Storage<VariantPrices>::calc_content_S() {
         const Price tmp = content_S_.get_price();
         content_S_ = maxStock;
         content_S_.set_price(tmp);
-    }
-    if (content_S_.get_quantity() <= 0.0) {
-        model()->run()->event(EventType::STORAGE_EMPTY, sector, nullptr, economic_agent);
     }
 }
 #endif
@@ -105,7 +105,7 @@ void Storage<ModelVariant>::calc_content_S() {
         content_S_ = maxStock;
     }
     if (content_S_.get_quantity() <= 0.0) {
-        model()->run()->event(EventType::STORAGE_EMPTY, sector, nullptr, economic_agent);
+        model()->run()->event(EventType::STORAGE_UNDERRUN, sector, nullptr, economic_agent);
     }
 }
 
