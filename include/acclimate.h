@@ -28,7 +28,6 @@
 
 namespace acclimate {
 
-
 enum class ModelVariantType {
 #ifdef VARIANT_BASIC
     BASIC,
@@ -41,9 +40,7 @@ enum class ModelVariantType {
 #endif
 };
 
-
 class Acclimate {
-
   protected:
     ModelVariantType variant_m;
     std::shared_ptr<void> run_m;
