@@ -239,6 +239,7 @@ class SettingsNode {
     }
 
     SettingsNode() = default;
+    SettingsNode(SettingsNode&&) = default;
     explicit SettingsNode(std::unique_ptr<Inner> inner_p, const std::string& root = "")
         : path(std::make_shared<Path>(Path{root, -1, nullptr})), inner(std::move(inner_p)) {}
 
