@@ -51,6 +51,7 @@ class Storage {
     Flow used_flow_U_ = Flow(0.0);
     Flow desired_used_flow_U_tilde_ = Flow(0.0);
     OpenMPLock input_flow_I_lock;
+    typename ModelVariant::StorageParameters parameters_;
 
   public:
     const Stock& content_S() const {
@@ -83,6 +84,13 @@ class Storage {
 
   protected:
     void calc_content_S();
+
+  public:
+    inline const typename ModelVariant::StorageParameters& parameters() const { return parameters_; }
+    inline typename ModelVariant::StorageParameters& parameters_writable() {
+        assertstep(INITIALIZATION);
+        return parameters_;
+    }
 
   public:
     Storage(Sector<ModelVariant>* sector_p, EconomicAgent<ModelVariant>* economic_agent_p);

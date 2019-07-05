@@ -31,6 +31,7 @@ class Variant {
     class RegionParameters {};
     class SectorParameters {};
     class AgentParameters {};
+    class StorageParameters {};
 };
 }  // namespace acclimate
 

@@ -153,7 +153,6 @@ Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::st
             get_named_property("sectors", name, "estimated_price_increase_production_extension")
                 .template as<Price>(to_float(sector->parameters_writable().price_increase_production_extension));
         sector->parameters_writable().initial_markup = get_named_property("sectors", name, "initial_markup").template as<Price>();
-        sector->parameters_writable().consumption_price_elasticity = get_named_property("sectors", name, "consumption_price_elasticity").template as<Ratio>();
         sector->parameters_writable().target_storage_refill_time =
             get_named_property("sectors", name, "target_storage_refill_time").template as<FloatType>() * model()->delta_t();
         sector->parameters_writable().target_storage_withdraw_time =
@@ -183,8 +182,9 @@ void ModelInitializer<ModelVariant>::initialize_connection(
     initialize_connection(firm_from, firm_to, flow);
 }
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::initialize_connection(Firm<ModelVariant>* firm_from, EconomicAgent<ModelVariant>* economic_agent_to, const Flow& flow) {
+#ifdef VARIANT_BASIC
+template<>
+void ModelInitializer<VariantBasic>::initialize_connection(Firm<VariantBasic>* firm_from, EconomicAgent<VariantBasic>* economic_agent_to, const Flow& flow) {
     if (model()->no_self_supply() && (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to))) {
         return;
     }
@@ -196,10 +196,10 @@ void ModelInitializer<ModelVariant>::initialize_connection(Firm<ModelVariant>* f
     }
 // use SKIP("...:...->...:..."); to skip connections
 #endif
-    Sector<ModelVariant>* sector_from = firm_from->sector;
-    Storage<ModelVariant>* input_storage = economic_agent_to->find_input_storage(sector_from->id());
+    Sector<VariantBasic>* sector_from = firm_from->sector;
+    Storage<VariantBasic>* input_storage = economic_agent_to->find_input_storage(sector_from->id());
     if (!input_storage) {
-        input_storage = new Storage<ModelVariant>(sector_from, economic_agent_to);
+        input_storage = new Storage<VariantBasic>(sector_from, economic_agent_to);
         economic_agent_to->input_storages.emplace_back(input_storage);
     }
     assert(flow.get_quantity() > 0.0);
@@ -207,7 +207,7 @@ void ModelInitializer<ModelVariant>::initialize_connection(Firm<ModelVariant>* f
     firm_from->add_initial_production_X_star(flow);
 
     auto business_connection =
-        std::make_shared<BusinessConnection<ModelVariant>>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
+        std::make_shared<BusinessConnection<VariantBasic>>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
     firm_from->sales_manager->business_connections.emplace_back(business_connection);
     input_storage->purchasing_manager->business_connections.emplace_back(business_connection);
 
@@ -215,6 +215,82 @@ void ModelInitializer<ModelVariant>::initialize_connection(Firm<ModelVariant>* f
         firm_from->self_supply_connection(business_connection);
     }
 }
+#endif
+
+#ifdef VARIANT_DEMAND
+template<>
+void ModelInitializer<VariantDemand>::initialize_connection(Firm<VariantDemand>* firm_from, EconomicAgent<VariantDemand>* economic_agent_to, const Flow& flow) {
+    if (model()->no_self_supply() && (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to))) {
+        return;
+    }
+#ifdef DEBUG
+#define SKIP(a)                                                    \
+    if (firm_from->id() + "->" + economic_agent_to->id() == (a)) { \
+        warning("skipping " << (a));                               \
+        return;                                                    \
+    }
+// use SKIP("...:...->...:..."); to skip connections
+#endif
+    Sector<VariantDemand>* sector_from = firm_from->sector;
+    Storage<VariantDemand>* input_storage = economic_agent_to->find_input_storage(sector_from->id());
+    if (!input_storage) {
+        input_storage = new Storage<VariantDemand>(sector_from, economic_agent_to);
+        economic_agent_to->input_storages.emplace_back(input_storage);
+    }
+    assert(flow.get_quantity() > 0.0);
+    input_storage->add_initial_flow_Z_star(flow);
+    firm_from->add_initial_production_X_star(flow);
+
+    auto business_connection =
+        std::make_shared<BusinessConnection<VariantDemand>>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
+    firm_from->sales_manager->business_connections.emplace_back(business_connection);
+    input_storage->purchasing_manager->business_connections.emplace_back(business_connection);
+
+    if (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to)) {
+        firm_from->self_supply_connection(business_connection);
+    }
+}
+#endif
+
+#ifdef VARIANT_PRICES
+template<>
+void ModelInitializer<VariantPrices>::initialize_connection(Firm<VariantPrices>* firm_from, EconomicAgent<VariantPrices>* economic_agent_to, const Flow& flow) {
+    if (model()->no_self_supply() && (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to))) {
+        return;
+    }
+#ifdef DEBUG
+#define SKIP(a)                                                    \
+    if (firm_from->id() + "->" + economic_agent_to->id() == (a)) { \
+        warning("skipping " << (a));                               \
+        return;                                                    \
+    }
+// use SKIP("...:...->...:..."); to skip connections
+#endif
+    Sector<VariantPrices>* sector_from = firm_from->sector;
+    Storage<VariantPrices>* input_storage = economic_agent_to->find_input_storage(sector_from->id());
+    if (!input_storage) {
+        input_storage = new Storage<VariantPrices>(sector_from, economic_agent_to);
+        if (economic_agent_to->is_consumer()) {
+            input_storage->parameters_writable().consumption_price_elasticity =
+                get_named_property("consumers", sector_from->id() + "->" + economic_agent_to->region->id(), "consumption_price_elasticity")
+                    .template as<Ratio>();
+        }
+        economic_agent_to->input_storages.emplace_back(input_storage);
+    }
+    assert(flow.get_quantity() > 0.0);
+    input_storage->add_initial_flow_Z_star(flow);
+    firm_from->add_initial_production_X_star(flow);
+
+    auto business_connection =
+        std::make_shared<BusinessConnection<VariantPrices>>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
+    firm_from->sales_manager->business_connections.emplace_back(business_connection);
+    input_storage->purchasing_manager->business_connections.emplace_back(business_connection);
+
+    if (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to)) {
+        firm_from->self_supply_connection(business_connection);
+    }
+}
+#endif
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::clean_network() {
@@ -782,7 +858,6 @@ void ModelInitializer<ModelVariant>::build_artificial_network() {
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::build_agent_network_from_table(const mrio::Table<FloatType, std::size_t>& table, FloatType flow_threshold) {
-
     std::vector<EconomicAgent<ModelVariant>*> economic_agents;
     economic_agents.reserve(table.index_set().size());
 
