@@ -7,8 +7,10 @@ Several code snippets and mini-projects that don't have their own repository yet
 
 - `misc.h` : miscellaneous helpers from various sources
 
+- `netcdftools.h` : netcdf headers and convenience functions
+
 - `progressbar.h` : progressbar on terminals (inspired by `wget` and `[tqdm](https://github.com/tqdm/tqdm)`)
 
-- `nvector.h` : n-dimensional vector
+- `nvector.h` : n-dimensional vector and views to vectors
 
 - `zip-wrapper.h` : convenient wrapper for libzip
