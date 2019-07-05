@@ -64,10 +64,13 @@ class VariantPrices : public Variant {
         Price estimated_price_increase_production_extension = Price(0.0);
         Price initial_markup = Price(0.0);
         Price price_increase_production_extension = Price(0.0);
-        Ratio consumption_price_elasticity = Ratio(0.0);
         Ratio supply_elasticity = Ratio(0.0);
         Time target_storage_refill_time = Time(0.0);
         Time target_storage_withdraw_time = Time(0.0);
+    };
+    class StorageParameters : public Variant::StorageParameters {
+      public:
+        Ratio consumption_price_elasticity = Ratio(0.0);
     };
 };
 }  // namespace acclimate
