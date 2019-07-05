@@ -88,7 +88,7 @@ class ProgressBar {
     }
 
     template<typename... Args>
-    static constexpr bool safe_print(char*& c, std::size_t& buf_remaining, const char* fmt, Args... args) noexcept {
+    static inline bool safe_print(char*& c, std::size_t& buf_remaining, const char* fmt, Args... args) noexcept {
         const auto res = std::snprintf(c, buf_remaining, fmt, args...);  // NOLINT(hicpp-vararg,cppcoreguidelines-pro-type-vararg)
         if (res < 0 || buf_remaining <= static_cast<std::size_t>(res)) {
             return false;
