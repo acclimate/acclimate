@@ -122,7 +122,7 @@ class Type {
     static constexpr int precision_digits = precision_digits_p;
     static constexpr FloatType precision = precision_from_digits(precision_digits_p);
     virtual FloatType get_float() const = 0;
-    friend constexpr std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
+    friend std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
         return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float();
     }
     virtual ~Type() = default;
@@ -188,7 +188,7 @@ class NonRoundedType : public Type<precision_digits_p> {
     inline void set_float(FloatType f) override { t = f; }
 
   public:
-    constexpr FloatType get_float() const override { return t; }
+    FloatType get_float() const override { return t; }
 };
 
 #ifdef BASED_ON_INT
@@ -201,7 +201,7 @@ class RoundedType : public Type<precision_digits_p> {
 
   public:
     using Type<precision_digits_p>::precision;
-    constexpr FloatType get_float() const override { return t * precision; }
+    FloatType get_float() const override { return t * precision; }
 };
 
 #define INCLUDE_ROUNDED_OPS(T)                              \
@@ -412,7 +412,7 @@ class PricedQuantity {
         return *this;
     }
 
-    friend constexpr std::ostream& operator<<(std::ostream& os, const PricedQuantity& op) { return os << op.quantity << " [@" << op.get_price() << "]"; }
+    friend std::ostream& operator<<(std::ostream& os, const PricedQuantity& op) { return os << op.quantity << " [@" << op.get_price() << "]"; }
 
 #ifdef BASED_ON_INT
     friend inline const PricedQuantity& round(const PricedQuantity& flow, bool maybe_negative = false) {
