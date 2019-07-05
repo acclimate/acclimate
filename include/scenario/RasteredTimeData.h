@@ -38,7 +38,7 @@ class RasteredTimeData : public RasteredData<T>, public ExternalForcing {
     using RasteredData<T>::filename;
     using ExternalForcing::time_index;
     using ExternalForcing::variable;
-    void read_data();
+    void read_data() override;
 
   public:
     RasteredTimeData(const std::string& filename_p, const std::string& variable_name);

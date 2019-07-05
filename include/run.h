@@ -104,7 +104,7 @@ class Run {
   public:
     static const std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> event_names;
 
-    Run(settings::SettingsNode settings_p);
+    explicit Run(settings::SettingsNode settings_p);
     ~Run();
     inline IterationStep step() const { return step_m; }
     inline unsigned int time() const { return time_m; }

@@ -32,7 +32,7 @@ namespace acclimate {
 template<class ModelVariant>
 class GeoRoute;
 template<class ModelVariant>
-struct Model;
+class Model;
 template<class ModelVariant>
 class PurchasingManager;
 template<class ModelVariant>

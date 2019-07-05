@@ -25,7 +25,7 @@
 #include <iterator>
 #include <memory>
 #include <string>
-#include "netcdf_headers.h"
+#include "netcdftools.h"
 #include "types.h"
 
 namespace acclimate {
@@ -103,7 +103,7 @@ class RasteredData {
     inline FloatType abs_y_gridsize() const { return t_y_gridsize; }
 
     RasteredData(std::string filename_p, const std::string& variable_name);
-    virtual ~RasteredData() {}
+    virtual ~RasteredData() = default;
     template<typename T2>
     FloatType operator/(const RasteredData<T2>& other) const;
     template<typename T2>

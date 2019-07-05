@@ -36,7 +36,7 @@
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
-#include "netcdf_headers.h"
+#include "netcdftools.h"
 #include "optimization.h"
 #include "run.h"
 #include "variants/ModelVariants.h"
@@ -479,7 +479,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
     file.getVar("type").getVar(&types[0]);
     file.getVar("latitude").getVar(&latitudes[0]);
     file.getVar("longitude").getVar(&longitudes[0]);
-    file.getVar("connections").getVar(&connections.data()[0]);
+    file.getVar("connections").getVar(&connections[0]);
     file.close();
 
     for (std::size_t i = 0; i < input_size; ++i) {
@@ -507,7 +507,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
         auto& p1 = points[i];
         auto l1 = static_cast<GeoLocation<ModelVariant>*>(p1->entity());
         for (std::size_t j = 0; j < i; ++j) {  // assume connections is symmetric
-            if (connections[input_indices[i] * input_size + input_indices[j]]) {
+            if (connections[input_indices[i] * input_size + input_indices[j]] > 0) {
                 auto& p2 = points[j];
                 auto l2 = static_cast<GeoLocation<ModelVariant>*>(p2->entity());
                 FloatType costs;
@@ -524,7 +524,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
                     costs = road_km_costs * distance;
                 }
                 // connections is symmetric -> connection needs to be used twice to make sure it's the same object
-                TemporaryGeoEntity* c = new TemporaryGeoEntity(new GeoConnection<ModelVariant>(model(), delay, type, l1, l2), false);
+                auto c = new TemporaryGeoEntity(new GeoConnection<ModelVariant>(model(), delay, type, l1, l2), false);
                 paths[i * size + j] = Path(costs, p1.get(), p2.get(), c);
                 paths[j * size + i] = Path(costs, p2.get(), p1.get(), c);
                 final_connections.emplace_back(c);

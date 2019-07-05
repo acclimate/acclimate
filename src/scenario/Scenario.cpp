@@ -19,6 +19,7 @@
 */
 
 #include "scenario/Scenario.h"
+#include <memory>
 #include <random>
 #include <utility>
 #include "model/EconomicAgent.h"
@@ -31,13 +32,13 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Scenario<ModelVariant>::Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p)
-    : model_m(model_p), scenario_node(scenario_node_p), settings(settings_p) {
+Scenario<ModelVariant>::Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p)
+    : model_m(model_p), scenario_node(std::move(scenario_node_p)), settings(settings_p) {
     srand(0);
 }
 
 template<class ModelVariant>
-void Scenario<ModelVariant>::set_firm_property(Firm<ModelVariant>* firm, const settings::SettingsNode& node, const bool reset) {
+void Scenario<ModelVariant>::set_firm_property(Firm<ModelVariant>* firm, const settings::SettingsNode& node, bool reset) {
     for (const auto& it_map : node.as_map()) {
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
@@ -50,7 +51,7 @@ void Scenario<ModelVariant>::set_firm_property(Firm<ModelVariant>* firm, const s
 }
 
 template<class ModelVariant>
-void Scenario<ModelVariant>::set_consumer_property(Consumer<ModelVariant>* consumer, const settings::SettingsNode& node, const bool reset) {
+void Scenario<ModelVariant>::set_consumer_property(Consumer<ModelVariant>* consumer, const settings::SettingsNode& node, bool reset) {
     for (const auto& it_map : node.as_map()) {
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
@@ -61,7 +62,7 @@ void Scenario<ModelVariant>::set_consumer_property(Consumer<ModelVariant>* consu
 }
 
 template<class ModelVariant>
-void Scenario<ModelVariant>::set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, const bool reset) {
+void Scenario<ModelVariant>::set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, bool reset) {
     for (const auto& it_map : node.as_map()) {
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
@@ -72,7 +73,7 @@ void Scenario<ModelVariant>::set_location_property(GeoLocation<ModelVariant>* lo
 }
 
 template<class ModelVariant>
-void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, const bool reset) {
+void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, bool reset) {
     for (const auto& targets : node.as_sequence()) {
         for (const auto& target : targets.as_map()) {
             const std::string& type = target.first;

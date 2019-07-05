@@ -25,9 +25,7 @@
 namespace acclimate {
 
 template<class ModelVariant>
-DirectPopulation<ModelVariant>::DirectPopulation(const settings::SettingsNode& settings_p,
-                                                 settings::SettingsNode scenario_node_p,
-                                                 Model<ModelVariant>* const model_p)
+DirectPopulation<ModelVariant>::DirectPopulation(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p)
     : RasteredScenario<ModelVariant, FloatType>(settings_p, scenario_node_p, model_p) {}
 
 template<class ModelVariant>

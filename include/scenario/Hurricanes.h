@@ -43,7 +43,7 @@ class Hurricanes : public RasteredScenario<ModelVariant, FloatType> {
         FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const override;
 
   public:
-    Hurricanes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
+    Hurricanes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
 };
 }  // namespace acclimate
 

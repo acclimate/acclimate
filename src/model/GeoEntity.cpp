@@ -26,8 +26,7 @@
 namespace acclimate {
 
 template<class ModelVariant>
-GeoEntity<ModelVariant>::GeoEntity(Model<ModelVariant>* const model_p, TransportDelay delay_p, Type type_p)
-    : model_m(model_p), delay(delay_p), type_m(type_p) {}
+GeoEntity<ModelVariant>::GeoEntity(Model<ModelVariant>* model_p, TransportDelay delay_p, Type type_p) : model_m(model_p), delay(delay_p), type_m(type_p) {}
 
 template<class ModelVariant>
 void GeoEntity<ModelVariant>::set_forcing_nu(Forcing forcing_nu_p) {

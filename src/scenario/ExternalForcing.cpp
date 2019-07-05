@@ -42,7 +42,7 @@ int ExternalForcing::next_timestep() {
         return -1;
     }
     read_data();
-    unsigned int day;
+    int day;
     time_variable.getVar({time_index}, {1}, &day);
     time_index++;
     return day;

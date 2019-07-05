@@ -18,9 +18,9 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "model/GeoPoint.h"
 #include <cmath>
 #include <utility>
-#include "model/GeoPoint.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {

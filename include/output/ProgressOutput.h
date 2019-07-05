@@ -26,7 +26,7 @@
 
 namespace progressbar {
 class ProgressBar;
-}
+}  // namespace progressbar
 
 namespace acclimate {
 

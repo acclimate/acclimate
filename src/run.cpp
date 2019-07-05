@@ -65,7 +65,7 @@ Run<ModelVariant>::Run(settings::SettingsNode settings_p) : settings_m(std::move
 
     Scenario<ModelVariant>* scenario;  // TODO put in scope below!
     for (auto scenario_node : settings_m["scenarios"].as_sequence()) {
-        const std::string& type = scenario_node["type"].as<std::string>();
+        const std::string& type = scenario_node["type"].template as<std::string>();
         if (type == "events") {
             scenario = new Scenario<ModelVariant>(settings_m, scenario_node, model);
         } else if (type == "taxes") {

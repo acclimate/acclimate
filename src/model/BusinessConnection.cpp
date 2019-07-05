@@ -63,7 +63,6 @@ BusinessConnection<ModelVariant>::BusinessConnection(typename ModelVariant::Purc
     }
 }
 
-
 #ifdef VARIANT_DEMAND
 template<>
 const Ratio& BusinessConnection<VariantDemand>::demand_fulfill_history() const {

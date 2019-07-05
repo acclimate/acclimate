@@ -76,7 +76,7 @@ class Model {
     inline Model<ModelVariant>* model() { return this; }
 
   protected:
-    Model(Run<ModelVariant>* const run_p);
+    explicit Model(Run<ModelVariant>* run_p);
     Time start_time_ = Time(0.0);
     Time stop_time_ = Time(0.0);
 

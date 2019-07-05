@@ -31,7 +31,7 @@ ArrayOutput<ModelVariant>::ArrayOutput(const settings::SettingsNode& settings_p,
                                        Model<ModelVariant>* model_p,
                                        Scenario<ModelVariant>* scenario_p,
                                        settings::SettingsNode output_node_p,
-                                       const bool over_time_p)
+                                       bool over_time_p)
     : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)), over_time(over_time_p) {
     include_events = false;
 }

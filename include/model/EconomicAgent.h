@@ -79,7 +79,7 @@ class EconomicAgent {
     virtual const Consumer<ModelVariant>* as_consumer() const;
     inline bool is_firm() const { return type == Type::FIRM; }
     inline bool is_consumer() const { return type == Type::CONSUMER; }
-    virtual ~EconomicAgent() {}
+    virtual ~EconomicAgent() = default;
     virtual void iterate_consumption_and_production() = 0;
     virtual void iterate_expectation() = 0;
     virtual void iterate_purchase() = 0;

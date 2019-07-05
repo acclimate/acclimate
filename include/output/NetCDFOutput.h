@@ -26,7 +26,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "netcdf_headers.h"
+#include "netcdftools.h"
 #include "output/ArrayOutput.h"
 #include "types.h"
 
@@ -86,7 +86,7 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
                  Model<ModelVariant>* model_p,
                  Scenario<ModelVariant>* scenario_p,
                  settings::SettingsNode output_node_p);
-    ~NetCDFOutput();
+    ~NetCDFOutput() override;
     void initialize() override;
     void flush() override;
     void checkpoint_stop() override;

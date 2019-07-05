@@ -36,14 +36,14 @@ class Scenario {
     settings::SettingsNode scenario_node;
     const settings::SettingsNode& settings;
     Model<ModelVariant>* const model_m;
-    void set_firm_property(Firm<ModelVariant>* firm, const settings::SettingsNode& node, const bool reset);
-    void set_consumer_property(Consumer<ModelVariant>* consumer, const settings::SettingsNode& node, const bool reset);
-    void set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, const bool reset);
-    void apply_target(const settings::SettingsNode& node, const bool reset);
+    void set_firm_property(Firm<ModelVariant>* firm, const settings::SettingsNode& node, bool reset);
+    void set_consumer_property(Consumer<ModelVariant>* consumer, const settings::SettingsNode& node, bool reset);
+    void set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, bool reset);
+    void apply_target(const settings::SettingsNode& node, bool reset);
 
   public:
-    Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
-    virtual ~Scenario() {}
+    Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
+    virtual ~Scenario() = default;
     virtual Time start() { return Time(0.0); }  // TODO eliminate return type
     virtual void end() {}
     virtual bool is_first_timestep() const { return model()->timestep() == 0; }

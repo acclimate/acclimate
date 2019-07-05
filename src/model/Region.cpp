@@ -33,9 +33,6 @@ Region<ModelVariant>::Region(Model<ModelVariant>* model_p, std::string id_p, con
     : GeoLocation<ModelVariant>(model_p, 0, GeoLocation<ModelVariant>::Type::REGION, std::move(id_p)), index_m(index_p) {}
 
 template<class ModelVariant>
-Region<ModelVariant>::~Region() {}
-
-template<class ModelVariant>
 void Region<ModelVariant>::add_export_Z(const Flow& export_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     export_flow_Z_lock.call([&]() { export_flow_Z_[model()->current_register()] += export_flow_Z_p; });

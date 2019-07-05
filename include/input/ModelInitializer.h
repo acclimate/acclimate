@@ -30,7 +30,7 @@
 namespace mrio {
 template<typename ValueType, typename IndexType>
 class Table;
-}
+}  // namespace mrio
 
 namespace acclimate {
 
@@ -60,17 +60,17 @@ class ModelInitializer {
         TemporaryGeoEntity(GeoEntity<ModelVariant>* entity_p, bool used_p) : entity_m(entity_p), used(used_p) {}
         ~TemporaryGeoEntity() {
             if (used) {
-                entity_m.release();
+                (void)entity_m.release();
             }
         }
     };
     class Path {
       protected:
-        FloatType costs_m;
+        FloatType costs_m = 0;
         std::vector<TemporaryGeoEntity*> points_m;
 
       public:
-        Path() : costs_m(0) {}
+        Path() = default;
         Path(FloatType costs_p, TemporaryGeoEntity* p1, TemporaryGeoEntity* p2, TemporaryGeoEntity* connection)
             : costs_m(costs_p), points_m({p1, connection, p2}) {}
         inline FloatType costs() const { return costs_m; }
@@ -93,6 +93,7 @@ class ModelInitializer {
             return res;
         }
     };
+
   private:
     settings::SettingsNode get_firm_property(const std::string& sector_name, const std::string& region_name, const std::string& property_name) const;
     settings::SettingsNode get_named_property(const std::string& tag_name, const std::string& node_name, const std::string& property_name) const;

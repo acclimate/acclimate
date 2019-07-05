@@ -37,7 +37,7 @@ class Region;
 template<class ModelVariant>
 class Government {
   public:
-    Region<ModelVariant>* const region;
+    const Region<ModelVariant>* region;
 
   protected:
     Value budget_;

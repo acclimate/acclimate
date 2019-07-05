@@ -27,6 +27,7 @@
 #include <vector>
 #include "model/GeoLocation.h"
 #include "model/GeoRoute.h"
+#include "model/Government.h"
 #include "run.h"
 #include "types.h"
 
@@ -34,8 +35,6 @@ namespace acclimate {
 
 template<class ModelVariant>
 class EconomicAgent;
-template<class ModelVariant>
-class Government;
 template<class ModelVariant>
 class Infrastructure;
 template<class ModelVariant>
@@ -64,7 +63,7 @@ class Region : public GeoLocation<ModelVariant> {
             return (p.first << 3) | (static_cast<IntType>(p.second));
         }
     };
-    Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p);
+    Region(Model<ModelVariant>* model_p, std::string id_p, IntType index_p);
     void iterate_consumption_and_production_variant();
     void iterate_expectation_variant();
     void iterate_purchase_variant();
@@ -107,7 +106,7 @@ class Region : public GeoLocation<ModelVariant> {
         assertstep(INITIALIZATION);
         return parameters_m;
     }
-    ~Region();
+    ~Region() override = default;
     inline IntType index() const { return index_m; };
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);

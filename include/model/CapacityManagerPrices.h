@@ -42,8 +42,8 @@ class CapacityManagerPrices : public CapacityManager<ModelVariant> {
     const Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs) const;
 
   public:
-    CapacityManagerPrices(Firm<ModelVariant>*, Ratio);
-    ~CapacityManagerPrices() = default;
+    CapacityManagerPrices(Firm<ModelVariant>* firm_p, Ratio possible_overcapacity_ratio_beta_p);
+    ~CapacityManagerPrices() override = default;
     const Flow get_possible_production_X_hat() const override;
     const Flow estimate_possible_production_X_hat() const;
     const Flow calc_production_X() override;

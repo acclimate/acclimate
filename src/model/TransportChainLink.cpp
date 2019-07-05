@@ -58,7 +58,7 @@ template<class ModelVariant>
 void TransportChainLink<ModelVariant>::push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     Flow flow_to_push = Flow(0.0);
-    if (transport_queue.size() > 0) {
+    if (!transport_queue.empty()) {
         auto front_flow_Z = transport_queue[pos];
         transport_queue[pos] = AnnotatedFlow(flow_Z, initial_flow_Z_star);
         pos = (pos + 1) % transport_queue.size();

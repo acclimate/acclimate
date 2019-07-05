@@ -30,7 +30,7 @@
 
 namespace settings {
 class SettingsNode;
-}
+}  // namespace settings
 
 namespace acclimate {
 
@@ -55,8 +55,10 @@ class ArrayOutput : public Output<ModelVariant> {
     struct Variable {
         std::vector<FloatType> data;
         std::vector<std::size_t> shape;  // without time
-        std::size_t size;                // without time
-        void* meta;
+        std::size_t size = 0;            // without time
+        void* meta = nullptr;
+        Variable(std::vector<FloatType> data_p, std::vector<std::size_t> shape_p, std::size_t size_p, void* meta_p)
+            : data(std::move(data_p)), shape(std::move(shape_p)), size(size_p), meta(meta_p) {}
     };
     struct Event {
         std::size_t time = 0;
@@ -71,9 +73,11 @@ class ArrayOutput : public Output<ModelVariant> {
   protected:
     struct Target {
         hstring name;
-        std::size_t index;
+        std::size_t index = 0;
         Sector<ModelVariant>* sector;
         Region<ModelVariant>* region;
+        Target(hstring name_p, std::size_t index_p, Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p)
+            : name(std::move(name_p)), index(index_p), sector(sector_p), region(region_p) {}
     };
     std::size_t sectors_size = 0;
     std::size_t regions_size = 0;
@@ -90,7 +94,7 @@ class ArrayOutput : public Output<ModelVariant> {
     void internal_start_target(const hstring& name, Region<ModelVariant>* region) override;
     void internal_start_target(const hstring& name) override;
     void internal_end_target() override;
-    virtual void internal_iterate_begin() override;
+    void internal_iterate_begin() override;
     inline std::size_t current_index() const;
     inline Variable& create_variable(const hstring& path, const hstring& name, const hstring& suffix);
     virtual void create_variable_meta(Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
@@ -109,15 +113,15 @@ class ArrayOutput : public Output<ModelVariant> {
                 Model<ModelVariant>* model_p,
                 Scenario<ModelVariant>* scenario_p,
                 settings::SettingsNode output_node_p,
-                const bool over_time_p = true);
-    virtual ~ArrayOutput() {}
+                bool over_time_p = true);
+    ~ArrayOutput() override = default;
     void event(EventType type,
                const Sector<ModelVariant>* sector_from,
                const Region<ModelVariant>* region_from,
                const Sector<ModelVariant>* sector_to,
                const Region<ModelVariant>* region_to,
                FloatType value) override;
-    virtual void initialize() override;
+    void initialize() override;
     const typename ArrayOutput<ModelVariant>::Variable& get_variable(const hstring& fullname) const;
     const std::vector<Event>& get_events() const { return events; }
 };

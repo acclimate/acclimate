@@ -46,8 +46,8 @@ class GeoLocation : public GeoEntity<ModelVariant> {
     std::vector<std::shared_ptr<GeoConnection<ModelVariant>>> connections;
     const Type type;
 
-    GeoLocation(Model<ModelVariant>* const model_m, TransportDelay delay_p, Type type_p, std::string id_p);
-    virtual ~GeoLocation();
+    GeoLocation(Model<ModelVariant>* model_m, TransportDelay delay_p, Type type_p, std::string id_p);
+    ~GeoLocation() override;
     virtual inline Region<ModelVariant>* as_region() {
         assert(type == Type::REGION);
         return nullptr;
@@ -58,7 +58,7 @@ class GeoLocation : public GeoEntity<ModelVariant> {
     }
     void set_centroid(std::unique_ptr<GeoPoint>& centroid_p) {
         assertstep(INITIALIZATION);
-        return centroid_m.reset(centroid_p.release());
+        centroid_m = std::move(centroid_p);
     }
     const GeoPoint* centroid() const { return centroid_m.get(); }
     void remove_connection(const GeoConnection<ModelVariant>* connection);

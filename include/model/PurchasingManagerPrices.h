@@ -22,8 +22,8 @@
 #define ACCLIMATE_PURCHASINGMANAGERPRICES_H
 
 #include <vector>
-#include "run.h"
 #include "model/PurchasingManager.h"
+#include "run.h"
 #include "types.h"
 
 namespace acclimate {
@@ -39,11 +39,11 @@ class Storage;
 
 template<class ModelVariant>
 struct OptimizerData {
-    const PurchasingManagerPrices<ModelVariant>* purchasing_manager;
+    const PurchasingManagerPrices<ModelVariant>* purchasing_manager = nullptr;
     std::vector<BusinessConnection<ModelVariant>*> business_connections;
     std::vector<FloatType> upper_bounds;
     std::vector<FloatType> lower_bounds;
-    FloatType last_upper_bound;
+    FloatType last_upper_bound = 0;
     FlowQuantity transport_flow_deficit = FlowQuantity(0.0);
 };
 
@@ -92,11 +92,11 @@ class PurchasingManagerPrices : public PurchasingManager<ModelVariant> {
         return total_transport_penalty_;
     }
     explicit PurchasingManagerPrices(Storage<ModelVariant>* storage_p);
-    virtual ~PurchasingManagerPrices() {}
+    ~PurchasingManagerPrices() override = default;
     void calc_optimization_parameters(std::vector<FloatType>& demand_requests_D_p,
                                       std::vector<BusinessConnection<ModelVariant>*>& zero_connections_p,
                                       OptimizerData<ModelVariant>& data_p) const;
-    virtual void iterate_purchase() override;
+    void iterate_purchase() override;
     void add_initial_demand_D_star(const Demand& demand_D_p) override;
     void subtract_initial_demand_D_star(const Demand& demand_D_p) override;
 

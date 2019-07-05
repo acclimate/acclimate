@@ -75,8 +75,8 @@ class Sector {
     typename ModelVariant::SectorParameters parameters_m;
     Model<ModelVariant>* const model_m;
     Sector(Model<ModelVariant>* model_p,
-           std::string name_p,
-           const IntType index_p,
+           std::string id_p,
+           IntType index_p,
            const Ratio& upper_storage_limit_omega_p,
            const Time& initial_storage_fill_factor_psi_p,
            TransportType transport_type_p);
@@ -106,7 +106,7 @@ class Sector {
   public:
     Sector(Model<ModelVariant>* model_p,
            std::string id_p,
-           const IntType index_p,
+           IntType index_p,
            const Ratio& upper_storage_limit_omega_p,
            const Time& initial_storage_fill_factor_psi_p);
     void add_demand_request_D(const Demand& demand_request_D);

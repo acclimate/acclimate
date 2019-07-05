@@ -54,7 +54,7 @@ class exception : public std::runtime_error {
 class OpenMPLock {
   protected:
 #ifdef _OPENMP
-    omp_lock_t lock;
+    omp_lock_t lock = {};
 #endif
   public:
     OpenMPLock() {
@@ -112,7 +112,7 @@ inline FloatType to_float(T&& a) {
 template<int precision_digits_p>
 class Type {
   protected:
-    static constexpr FloatType precision_from_digits(const unsigned char precision_digits_p_) {
+    static constexpr FloatType precision_from_digits(const unsigned char precision_digits_p_) noexcept {
         return precision_digits_p_ == 0 ? 1 : 0.1 * precision_from_digits(precision_digits_p_ - 1);
     }
     virtual void set_float(FloatType f) = 0;
@@ -125,7 +125,7 @@ class Type {
     friend std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
         return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float();
     }
-    virtual ~Type() {}
+    virtual ~Type() = default;
 };
 
 #define INCLUDE_STANDARD_OPS(T)                                                                                          \
@@ -184,7 +184,7 @@ class Type {
 template<int precision_digits_p>
 class NonRoundedType : public Type<precision_digits_p> {
   protected:
-    FloatType t;
+    FloatType t = 0;
     inline void set_float(FloatType f) override { t = f; }
 
   public:
@@ -196,7 +196,7 @@ class NonRoundedType : public Type<precision_digits_p> {
 template<int precision_digits_p>
 class RoundedType : public Type<precision_digits_p> {
   protected:
-    IntType t;
+    IntType t = 0;
     inline void set_float(FloatType f) override { t = iround(f / precision); }
 
   public:
@@ -304,7 +304,8 @@ class PricedQuantity {
             typeassert(value >= 0.0);
         }
     }
-    PricedQuantity(const Q& quantity_p, const bool maybe_negative = false) : PricedQuantity(quantity_p, quantity_p * Price(1.0), maybe_negative) {}
+    PricedQuantity(const Q& quantity_p, const bool maybe_negative = false)  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+        : PricedQuantity(quantity_p, quantity_p * Price(1.0), maybe_negative) {}
     explicit PricedQuantity(FloatType quantity_p) : PricedQuantity(Q(quantity_p), Q(quantity_p) * Price(1.0)) {}
     PricedQuantity(const Q& quantity_p, const Price& price_p, const bool maybe_negative = false)
         : PricedQuantity(quantity_p, quantity_p * price_p, maybe_negative) {}
@@ -323,19 +324,17 @@ class PricedQuantity {
     const Price get_price() const {
         if (quantity <= 0.0) {
             return Price::quiet_NaN();
-        } else {
-            Price price(value / quantity);
-            return round(price);
         }
+        Price price(value / quantity);
+        return round(price);
     }
     FloatType get_price_float() const {
         if (quantity <= 0.0) {
             return std::numeric_limits<FloatType>::quiet_NaN();
-        } else {
-            FloatType price(to_float(value) / to_float(quantity));
-            typeassert(price >= 0.0);
-            return price;
         }
+        FloatType price(to_float(value) / to_float(quantity));
+        typeassert(price >= 0.0);
+        return price;
     }
 
     void set_price(const Price& price) {
@@ -440,9 +439,8 @@ class PricedQuantity {
     friend const PricedQuantity absdiff(const PricedQuantity& a, const PricedQuantity& b) {
         if (a.quantity < b.quantity) {
             return b - a;
-        } else {
-            return a - b;
         }
+        return a - b;
     }
 };
 

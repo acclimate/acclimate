@@ -24,11 +24,8 @@
 namespace acclimate {
 
 template<class ModelVariant>
-GeoConnection<ModelVariant>::GeoConnection(Model<ModelVariant>* const model_m,
-                                           TransportDelay delay,
-                                           Type type_p,
-                                           const GeoLocation<ModelVariant>* location1_p,
-                                           const GeoLocation<ModelVariant>* location2_p)
+GeoConnection<ModelVariant>::GeoConnection(
+    Model<ModelVariant>* model_m, TransportDelay delay, Type type_p, const GeoLocation<ModelVariant>* location1_p, const GeoLocation<ModelVariant>* location2_p)
     : GeoEntity<ModelVariant>(model_m, delay, GeoEntity<ModelVariant>::Type::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
 
 template<class ModelVariant>

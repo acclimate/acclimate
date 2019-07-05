@@ -55,7 +55,7 @@ class ExternalScenario : public Scenario<ModelVariant> {
 
     bool next_forcing_file();
     std::string fill_template(const std::string& in) const;
-    ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
+    ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
 
     virtual void internal_start() {}
     virtual void internal_iterate_start() {}
@@ -68,7 +68,7 @@ class ExternalScenario : public Scenario<ModelVariant> {
     using Scenario<ModelVariant>::id;
     using Scenario<ModelVariant>::model;
     using Scenario<ModelVariant>::is_first_timestep;
-    virtual ~ExternalScenario() {}
+    ~ExternalScenario() override = default;
     bool iterate() override;
     Time start() override;
     void end() override;

@@ -23,16 +23,14 @@
 #include "model/EconomicAgent.h"
 #include "model/Region.h"
 #include "model/Sector.h"
-#include "netcdf_headers.h"
+#include "netcdftools.h"
 #include "scenario/ExternalForcing.h"
 #include "variants/ModelVariants.h"
 
 namespace acclimate {
 
 template<class ModelVariant>
-ExternalScenario<ModelVariant>::ExternalScenario(const settings::SettingsNode& settings_p,
-                                                 settings::SettingsNode scenario_node_p,
-                                                 Model<ModelVariant>* const model_p)
+ExternalScenario<ModelVariant>::ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p)
     : Scenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
 
 template<class ModelVariant>

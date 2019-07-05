@@ -28,7 +28,7 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Taxes<ModelVariant>::Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p)
+Taxes<ModelVariant>::Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p)
     : Scenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
 
 #ifdef VARIANT_BASIC

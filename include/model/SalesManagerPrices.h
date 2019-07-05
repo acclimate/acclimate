@@ -88,7 +88,7 @@ class SalesManagerPrices : public SalesManager<ModelVariant> {
 
   public:
     explicit SalesManagerPrices(Firm<ModelVariant>* firm_p);
-    ~SalesManagerPrices() = default;
+    ~SalesManagerPrices() override = default;
 
     void distribute(const Flow& _) override;
     void initialize();

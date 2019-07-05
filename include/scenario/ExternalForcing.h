@@ -23,7 +23,7 @@
 
 #include <memory>
 #include <string>
-#include "netcdf_headers.h"
+#include "netcdftools.h"
 #include "scenario/RasteredData.h"
 #include "types.h"
 
@@ -41,7 +41,7 @@ class ExternalForcing {
 
   public:
     ExternalForcing(std::string filename_p, const std::string& variable_name);
-    virtual ~ExternalForcing() {}
+    virtual ~ExternalForcing() = default;
     int next_timestep();
     const std::string calendar_str() const;
     const std::string time_units_str() const;

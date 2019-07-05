@@ -20,6 +20,7 @@
 
 #include "model/GeoLocation.h"
 #include <algorithm>
+#include <memory>
 #include "model/GeoConnection.h"
 #include "variants/ModelVariants.h"
 
@@ -27,7 +28,7 @@ namespace acclimate {
 
 template<class ModelVariant>
 GeoLocation<ModelVariant>::GeoLocation(Model<ModelVariant>* const model_m, TransportDelay delay_p, GeoLocation<ModelVariant>::Type type_p, std::string id_p)
-    : GeoEntity<ModelVariant>(model_m, delay_p, GeoEntity<ModelVariant>::Type::LOCATION), type(type_p), id_m(id_p) {}
+    : GeoEntity<ModelVariant>(model_m, delay_p, GeoEntity<ModelVariant>::Type::LOCATION), type(type_p), id_m(std::move(id_p)) {}
 
 template<class ModelVariant>
 void GeoLocation<ModelVariant>::remove_connection(const GeoConnection<ModelVariant>* connection) {

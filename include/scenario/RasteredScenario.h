@@ -69,11 +69,11 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     void iterate_first_timestep() override;
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
-    RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
+    RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
 
   public:
     using ExternalScenario<ModelVariant>::id;
-    virtual ~RasteredScenario() {}
+    ~RasteredScenario() override = default;
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
     inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; }
 };

@@ -28,7 +28,7 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p)
+Flooding<ModelVariant>::Flooding(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p)
     : RasteredScenario<ModelVariant, FloatType>(settings_p, scenario_node_p, model_p) {
     if (scenario_node_p.has("sectors")) {
         for (const auto& sector_node : scenario_node_p["sectors"].as_sequence()) {

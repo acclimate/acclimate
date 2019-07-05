@@ -26,7 +26,7 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Hurricanes<ModelVariant>::Hurricanes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p)
+Hurricanes<ModelVariant>::Hurricanes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p)
     : RasteredScenario<ModelVariant, FloatType>(settings_p, scenario_node_p, model_p) {
     threshold = scenario_node_p["forcing"]["threshold"].as<double>();
 }

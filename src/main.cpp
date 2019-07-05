@@ -95,14 +95,13 @@ int main(int argc, char* argv[]) {
                 std::cin >> std::noskipws;
                 acclimate::Acclimate acclimate(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(std::cin))));
                 return acclimate.run();
-            } else {
-                std::ifstream settings_file(arg);
-                if (!settings_file) {
-                    throw std::runtime_error("Cannot open " + arg);
-                }
-                acclimate::Acclimate acclimate(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(settings_file))));
-                return acclimate.run();
             }
+            std::ifstream settings_file(arg);
+            if (!settings_file) {
+                throw std::runtime_error("Cannot open " + arg);
+            }
+            acclimate::Acclimate acclimate(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(settings_file))));
+            return acclimate.run();
 #ifndef DEBUG
         } catch (std::runtime_error& ex) {
             std::cerr << ex.what() << std::endl;

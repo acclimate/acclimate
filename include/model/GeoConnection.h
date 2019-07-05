@@ -38,7 +38,7 @@ class GeoConnection : public GeoEntity<ModelVariant> {
     const GeoLocation<ModelVariant>* location1;  // TODO encapsulate
     const GeoLocation<ModelVariant>* location2;  // TODO encapsulate
     const Type type;
-    GeoConnection<ModelVariant>(Model<ModelVariant>* const model_m,
+    GeoConnection<ModelVariant>(Model<ModelVariant>* model_m,
                                 TransportDelay delay,
                                 Type type_p,
                                 const GeoLocation<ModelVariant>* location1_p,

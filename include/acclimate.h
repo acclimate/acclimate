@@ -49,7 +49,7 @@ class Acclimate {
     std::shared_ptr<void> run_m;
 
   public:
-    Acclimate(settings::SettingsNode settings_p);
+    explicit Acclimate(settings::SettingsNode settings_p);
 
     inline const ModelVariantType& variant() const { return variant_m; }
     int run();

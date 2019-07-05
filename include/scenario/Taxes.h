@@ -35,7 +35,7 @@ class Taxes : public Scenario<ModelVariant> {
     using Scenario<ModelVariant>::settings;
 
   public:
-    Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
+    Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
     Time start() override;
     bool iterate() override;
 };

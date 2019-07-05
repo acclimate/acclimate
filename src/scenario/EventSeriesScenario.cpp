@@ -29,7 +29,9 @@
 namespace acclimate {
 
 template<class ModelVariant>
-EventSeriesScenario<ModelVariant>::EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p)
+EventSeriesScenario<ModelVariant>::EventSeriesScenario(const settings::SettingsNode& settings_p,
+                                                       settings::SettingsNode scenario_node_p,
+                                                       Model<ModelVariant>* model_p)
     : ExternalScenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
 
 template<class ModelVariant>

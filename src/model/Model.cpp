@@ -38,7 +38,7 @@ Model<ModelVariant>::Model(Run<ModelVariant>* const run_p)
 
 template<class ModelVariant>
 Region<ModelVariant>* Model<ModelVariant>::add_region(std::string name) {
-    Region<ModelVariant>* region = new Region<ModelVariant>(this, name, regions.size());
+    auto region = new Region<ModelVariant>(this, name, regions.size());
     regions.emplace_back(region);
     return region;
 }
@@ -48,8 +48,7 @@ Sector<ModelVariant>* Model<ModelVariant>::add_sector(std::string name,
                                                       const Ratio& upper_storage_limit_omega_p,
                                                       const Time& initial_storage_fill_factor_psi_p,
                                                       typename Sector<ModelVariant>::TransportType transport_type_p) {
-    Sector<ModelVariant>* sector =
-        new Sector<ModelVariant>(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
+    auto sector = new Sector<ModelVariant>(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
     sectors.emplace_back(sector);
     return sector;
 }
