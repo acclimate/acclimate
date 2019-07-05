@@ -25,8 +25,8 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
 #if _MSC_VER || __INTEL_COMPILER
-#pragma warning(push)
-#pragma warning(disable : 858)
+#pragma warning push
+#pragma warning disable : 858
 #endif
 
 #include <ncDim.h>
@@ -37,7 +37,7 @@
 #include <netcdf>
 
 #if _MSC_VER || __INTEL_COMPILER
-#pragma warning(pop)
+#pragma warning pop
 #endif
 
 #pragma GCC diagnostic pop
