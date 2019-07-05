@@ -174,7 +174,7 @@ class Parser {
     }
 
   public:
-    Parser(std::istream& stream, char delimiter_ = ',') : in(stream), delimiter(delimiter_) {}
+    explicit Parser(std::istream& stream, char delimiter_ = ',') : in(stream), delimiter(delimiter_) {}
 
     iterator begin() { return iterator(*this, 0); }
     iterator end() { return iterator(*this, -1); }

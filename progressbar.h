@@ -18,11 +18,11 @@
 #ifndef PROGRESSBAR_H
 #define PROGRESSBAR_H
 
-#include <stdarg.h>
 #include <unistd.h>
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <mutex>
@@ -35,8 +35,6 @@
 #include <sys/ioctl.h>
 #endif
 
-#define PROGRESSBAR_TERMINAL_CLEAR_TO_EOL "\x1b[K"
-
 namespace progressbar {
 
 class ProgressBar {
@@ -45,6 +43,7 @@ class ProgressBar {
     std::vector<char> buf;
     bool is_tty;
     bool closed = false;
+    bool subbar;
     std::mutex mutex_m;
     std::atomic<std::size_t> current;
     std::size_t reprint_next = 1;
@@ -57,13 +56,15 @@ class ProgressBar {
     std::FILE* out;
 
     void update(std::size_t n) noexcept {
-        current += n;
+#ifndef PROGRESSBAR_SILENT
+        current = std::min(current + n, total);
         if (current >= reprint_next) {
             std::lock_guard<std::mutex> guard(mutex_m);
             if (!closed) {
                 recalc_and_print();
             }
         }
+#endif
     }
 
     void recalc_and_print(bool force = false) noexcept {
@@ -86,11 +87,19 @@ class ProgressBar {
         }
     }
 
-    inline static bool safe_print(char*& c, std::size_t& buf_remaining, const char* fmt, ...) noexcept {
-        va_list args;
-        va_start(args, fmt);
-        int res = vsnprintf(c, buf_remaining, fmt, args);
-        va_end(args);
+    template<typename... Args>
+    static constexpr bool safe_print(char*& c, std::size_t& buf_remaining, const char* fmt, Args... args) noexcept {
+        const auto res = std::snprintf(c, buf_remaining, fmt, args...);  // NOLINT(hicpp-vararg,cppcoreguidelines-pro-type-vararg)
+        if (res < 0 || buf_remaining <= static_cast<std::size_t>(res)) {
+            return false;
+        }
+        buf_remaining -= res;
+        c += res;
+        return true;
+    }
+
+    static inline bool safe_print(char*& c, std::size_t& buf_remaining, const char* str) noexcept {
+        const auto res = std::snprintf(c, buf_remaining, "%s", str);  // NOLINT(hicpp-vararg,cppcoreguidelines-pro-type-vararg)
         if (res < 0 || buf_remaining <= static_cast<std::size_t>(res)) {
             return false;
         }
@@ -203,15 +212,15 @@ class ProgressBar {
         }
     }
 
-    void print_bar(float freq, ticks runtime, ticks etr, bool etr_known) noexcept {
+    inline void print_bar(float freq, ticks runtime, ticks etr, bool etr_known) noexcept {
         if (is_tty) {
 #ifdef _WINDOWS
             CONSOLE_SCREEN_BUFFER_INFO c;
             GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &c);
             buf.resize(c.srWindow.Right - c.srWindow.Left);
 #else
-            winsize w;
-            if (ioctl(fileno(out), TIOCGWINSZ, &w) >= 0) {
+            winsize w = {};
+            if (ioctl(fileno(out), TIOCGWINSZ, &w) >= 0) {  // NOLINT(hicpp-vararg,cppcoreguidelines-pro-type-vararg)
                 buf.resize(w.ws_col);
             } else {
                 buf.resize(80);
@@ -220,47 +229,54 @@ class ProgressBar {
         }
         print_to_buf(freq, runtime, etr, etr_known);
         if (is_tty) {
-            fputc('\r', out);
+            fputc(GO_TO_BOL, out);
         }
         fputs(&buf[0], out);
         if (!is_tty) {
-            fputc('\n', out);
+            fputc(ENDL, out);
         }
         fflush(out);
     }
 
   public:
+    static constexpr const char ENDL = '\n';
+    static constexpr const char GO_TO_BOL = '\r';
+    static constexpr const char* CLEAR_TO_EOL = "\x1b[K";
+    static constexpr const char* GO_UP = "\x1b[F";
+
     const std::size_t total;
     std::string description;
-    float smoothing = 0.3;
+    float smoothing = 0.75;
     char bar_open = '[';
     char bar_close = ']';
     char bar_done = '=';
     char bar_cur = '>';
     char bar_left = ' ';
 
-    ProgressBar(std::size_t total_p, std::string description_p = "", std::FILE* out_p = stdout, std::size_t min_reprint_time_ms = 100) noexcept
+    explicit ProgressBar(
+        std::size_t total_p, std::string description_p = "", bool subbar_p = false, std::FILE* out_p = stdout, std::size_t min_reprint_time_ms = 100) noexcept
         : min_reprint_time(std::chrono::steady_clock::duration(std::chrono::milliseconds(min_reprint_time_ms)).count()),
           out(out_p),
           total(total_p),
+          subbar(subbar_p),
+          current(0),
           description(std::move(description_p)) {
         std::lock_guard<std::mutex> guard(mutex_m);
         start_time = std::chrono::steady_clock::now();
         eta_from_time = start_time;
         last_reprint_time = start_time;
-        current = 0;
-        is_tty = isatty(fileno(out));
+        is_tty = isatty(fileno(out)) != 0;
         if (!is_tty) {
             buf.resize(65);
         }
+#ifndef PROGRESSBAR_SILENT
+        if (subbar) {
+            fputc(ENDL, out);
+        }
         print_bar(0, 0, 0, false);
+#endif
     }
     ~ProgressBar() noexcept { close(); }
-
-    inline ProgressBar& operator++(int) noexcept {
-        update(1);
-        return *this;
-    }
 
     inline ProgressBar& operator++() noexcept {
         update(1);
@@ -268,10 +284,11 @@ class ProgressBar {
     }
 
     inline void operator+=(std::size_t n) noexcept { update(n); }
-    inline void operator=(std::size_t n) noexcept {
+    inline ProgressBar& operator=(std::size_t n) noexcept {
         if (n > current) {
             update(n - current);
         }
+        return *this;
     }
 
     void reset_eta() noexcept {
@@ -280,28 +297,38 @@ class ProgressBar {
         eta_from_time = std::chrono::steady_clock::now();
     }
 
-    void close() noexcept {
+    void close(bool remove = false) noexcept {
         std::lock_guard<std::mutex> guard(mutex_m);
         if (!closed) {
             auto total_duration = (std::chrono::steady_clock::now() - start_time).count();
             auto freq = current * std::chrono::steady_clock::period::den / static_cast<float>(total_duration * std::chrono::steady_clock::period::num);
             current = total;
-            print_bar(freq, total_duration, 0, true);
-            if (is_tty) {
-                fputc('\n', out);
+#ifndef PROGRESSBAR_SILENT
+            if (remove && is_tty) {
+                fputc(GO_TO_BOL, out);
+                fputs(CLEAR_TO_EOL, out);
+                if (subbar) {
+                    fputs(GO_UP, out);
+                }
+            } else {
+                print_bar(freq, total_duration, 0, true);
+                if (is_tty) {
+                    fputc(ENDL, out);
+                }
             }
+#endif
             closed = true;
         }
     }
 
-    void println(const std::string& s) noexcept {
+    void println(const std::string& s = "") noexcept {
         std::lock_guard<std::mutex> guard(mutex_m);
         if (is_tty && !closed) {
-            fputc('\r', out);
-            fputs(PROGRESSBAR_TERMINAL_CLEAR_TO_EOL, out);
+            fputc(GO_TO_BOL, out);
+            fputs(CLEAR_TO_EOL, out);
         }
         fputs(s.c_str(), out);
-        fputc('\n', out);
+        fputc(ENDL, out);
         if (!closed) {
             recalc_and_print(true);
         }

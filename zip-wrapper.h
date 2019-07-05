@@ -27,7 +27,7 @@
 namespace libzip {
 class exception : public std::runtime_error {
   public:
-    exception(const std::string& msg) : std::runtime_error(msg){};
+    explicit exception(const std::string& msg) : std::runtime_error(msg){};
 };
 
 class streambuf : public std::streambuf {
@@ -36,7 +36,7 @@ class streambuf : public std::streambuf {
     std::vector<char> buffer;
 
   public:
-    streambuf(zip_file* file, std::size_t buffer_size = 4096) : m(file), buffer(buffer_size) {
+    explicit streambuf(zip_file* file, std::size_t buffer_size = 4096) : m(file), buffer(buffer_size) {
         char* end = &buffer[0] + buffer_size;
         setg(end, end, end);
     }
@@ -68,8 +68,8 @@ class ifstream : public std::istream {
     zip_file* m;
 
   public:
-    ifstream(zip_file* file) : m(file), std::istream(new streambuf(file)){};
-    ifstream(ifstream&& other) : std::istream(std::move(other)), m(other.m){};
+    explicit ifstream(zip_file* file) : m(file), std::istream(new streambuf(file)){};
+    ifstream(ifstream&& other) = default;
     virtual ~ifstream() {
         delete rdbuf();
         zip_fclose(m);
@@ -83,7 +83,7 @@ class Archive {
     zip* m;
 
   public:
-    Archive(const std::string& filename) {
+    explicit Archive(const std::string& filename) {
         int err;
         m = zip_open(filename.c_str(), 0, &err);
         if (!m) {
@@ -110,6 +110,6 @@ class Archive {
         return ifstream(file);
     }
 };
-}
+}  // namespace libzip
 
 #endif

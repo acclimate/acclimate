@@ -1,6 +1,6 @@
+#include "progressbar.h"
 #include <iostream>
 #include <thread>
-#include "progressbar.h"
 
 int main() {
     const std::size_t n = 1000;

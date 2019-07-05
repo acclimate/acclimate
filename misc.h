@@ -34,7 +34,7 @@ struct count_value {
 //
 template<typename F>
 struct ScopeExit {
-    ScopeExit(F f) : f(f) {}
+    explicit ScopeExit(F f) : f(f) {}
     ~ScopeExit() { f(); }
     F f;
 };
@@ -95,7 +95,7 @@ class ContainerBundle {
   public:
     using iterator = IteratorBundle<typename Args::iterator...>;
     using iter_coll = std::tuple<typename Args::iterator...>;
-    ContainerBundle(typename std::add_pointer<Args>::type... args) : dat{args...}, bg{args->begin()...}, nd{args->end()...} {}
+    explicit ContainerBundle(typename std::add_pointer<Args>::type... args) : dat{args...}, bg{args->begin()...}, nd{args->end()...} {}
     ~ContainerBundle() = default;
     ContainerBundle(const ContainerBundle&) = delete;
     ContainerBundle(ContainerBundle&&) = default;
@@ -166,7 +166,7 @@ struct ostream_tuple_helper<0> {
         return os;
     }
 };
-}
+}  // namespace details
 
 template<typename... Args>
 std::ostream& operator<<(std::ostream& os, const std::tuple<Args...>& t) {
