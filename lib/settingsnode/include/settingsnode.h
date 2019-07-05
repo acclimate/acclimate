@@ -18,10 +18,13 @@
 #ifndef SETTINGSNODE_H
 #define SETTINGSNODE_H
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
+#include <vector>
 #include "settingsnode/inner.h"
 
 namespace settings {
@@ -39,15 +42,15 @@ class hstring {
   protected:
     const base_type str_m;
     const hash_type hash_m;
-    hstring(const base_type& str_p, hash_type hash_p) : str_m(str_p), hash_m(hash_p){};
+    hstring(base_type str_p, hash_type hash_p) : str_m(std::move(str_p)), hash_m(hash_p){};
 
   public:
-    static constexpr hash_type hash(const char* str, hash_type prev = 5381) { return *str ? hash(str + 1, prev * 33 + *str) : prev; }
+    static constexpr hash_type hash(const char* str, hash_type prev = 5381) { return *str != '\0' ? hash(str + 1, prev * 33 + *str) : prev; }
     static hstring null() { return hstring("", 0); }
     explicit hstring(const base_type& str_p) : str_m(str_p), hash_m(hash(str_p.c_str())){};
-    operator hash_type() const { return hash_m; }
-    operator const base_type&() const { return str_m; }
-    hash_type operator^(hash_type other) const { return hash_m * 5381 * 5381 + other; }
+    constexpr operator hash_type() const { return hash_m; }        // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    constexpr operator const base_type&() const { return str_m; }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    constexpr hash_type operator^(hash_type other) const { return hash_m * 5381 * 5381 + other; }
     friend std::ostream& operator<<(std::ostream& lhs, const hstring& rhs) { return lhs << rhs.str_m; }
 };
 
@@ -60,11 +63,11 @@ class SettingsNode {
     };
     std::shared_ptr<Path> path;
     std::shared_ptr<Inner> inner;
-    SettingsNode(Inner* inner_p, const std::shared_ptr<Path>& path_p) : inner(inner_p), path(path_p){};
+    SettingsNode(Inner* inner_p, std::shared_ptr<Path> path_p) : inner(inner_p), path(std::move(path_p)){};
 
     template<class T, class S = void>
     struct enable_if_type {
-        typedef S type;
+        using type = S;
     };
     template<typename T, typename enable = void>
     struct basetype {
@@ -106,7 +109,7 @@ class SettingsNode {
         const std::shared_ptr<Path> path;
         std::unique_ptr<Inner::map_iterator> begin_m;
         std::unique_ptr<Inner::map_iterator> end_m;
-        Map(Inner::map_iterator* begin_p, Inner::map_iterator* end_p, const std::shared_ptr<Path>& path_p) : begin_m(begin_p), end_m(end_p), path(path_p){};
+        Map(Inner::map_iterator* begin_p, Inner::map_iterator* end_p, std::shared_ptr<Path> path_p) : begin_m(begin_p), end_m(end_p), path(std::move(path_p)){};
 
       public:
         class iterator {
@@ -126,8 +129,8 @@ class SettingsNode {
             bool operator==(const iterator& rhs) const { return it->equals(rhs.it); }
             bool operator!=(const iterator& rhs) const { return !it->equals(rhs.it); }
         };
-        iterator begin() const { return iterator(begin_m.get(), path); }
-        iterator end() const { return iterator(end_m.get(), path); }
+        iterator begin() const { return {begin_m.get(), path}; }
+        iterator end() const { return {end_m.get(), path}; }
     };
 
     class Sequence {
@@ -137,8 +140,8 @@ class SettingsNode {
         const std::shared_ptr<Path> path;
         std::unique_ptr<Inner::sequence_iterator> begin_m;
         std::unique_ptr<Inner::sequence_iterator> end_m;
-        Sequence(Inner::sequence_iterator* begin_p, Inner::sequence_iterator* end_p, const std::shared_ptr<Path>& path_p)
-            : begin_m(begin_p), end_m(end_p), path(path_p){};
+        Sequence(Inner::sequence_iterator* begin_p, Inner::sequence_iterator* end_p, std::shared_ptr<Path> path_p)
+            : begin_m(begin_p), end_m(end_p), path(std::move(path_p)){};
 
       public:
         class iterator {
@@ -159,18 +162,18 @@ class SettingsNode {
             bool operator==(const iterator& rhs) const { return it->equals(rhs.it); }
             bool operator!=(const iterator& rhs) const { return !it->equals(rhs.it); }
         };
-        iterator begin() const { return iterator(begin_m.get(), path); }
-        iterator end() const { return iterator(end_m.get(), path); }
+        iterator begin() const { return {begin_m.get(), path}; }
+        iterator end() const { return {end_m.get(), path}; }
     };
 
     std::string get_path() const {
-        std::string result = "";
+        std::string result;
         const std::shared_ptr<Path>* current = &path;
         while (*current) {
             if ((*current)->index >= 0) {
-                result = "[" + std::to_string((*current)->index) + "]" + result;
+                result.insert(0, "[" + std::to_string((*current)->index) + "]");
             } else {
-                result = "/" + (*current)->name + result;
+                result.insert(0, "/" + (*current)->name);
             }
             current = &(*current)->parent;
         }
@@ -192,6 +195,14 @@ class SettingsNode {
         const auto& it = inner->as_map();
         return Map(it.first, it.second, path);
     }
+    template<typename T>
+    std::unordered_map<std::string, T> to_map() const {
+        const auto map = as_map();
+        std::unordered_map<std::string, T> res;
+        std::transform(std::begin(map), std::end(map), std::inserter(res, std::end(res)),
+                       [](const std::pair<std::string, SettingsNode> p) { return std::make_pair(p.first, p.second.as<T>()); });
+        return res;
+    }
     SettingsNode::Sequence as_sequence() const {
         check();
         if (!inner->is_sequence()) {
@@ -199,6 +210,13 @@ class SettingsNode {
         }
         const auto& it = inner->as_sequence();
         return Sequence(it.first, it.second, path);
+    }
+    template<typename T>
+    std::vector<T> to_vector() const {
+        const auto sequence = as_sequence();
+        std::vector<T> res;
+        std::transform(std::begin(sequence), std::end(sequence), std::back_inserter(res), [](const SettingsNode n) { return n.as<T>(); });
+        return res;
     }
 
     inline SettingsNode operator[](const char* key) const {
@@ -220,8 +238,8 @@ class SettingsNode {
         return T(as_inner<typename basetype<T>::type>(fallback));
     }
 
-    SettingsNode(){};
-    SettingsNode(std::unique_ptr<Inner> inner_p, const std::string& root = "")
+    SettingsNode() = default;
+    explicit SettingsNode(std::unique_ptr<Inner> inner_p, const std::string& root = "")
         : path(std::make_shared<Path>(Path{root, -1, nullptr})), inner(std::move(inner_p)) {}
 
     SettingsNode& operator=(const SettingsNode& rhs) {
@@ -368,5 +386,23 @@ inline std::string SettingsNode::as_inner<std::string>() const {
 }
 
 }  // namespace settings
+
+template<>
+struct std::iterator_traits<settings::SettingsNode::Map::iterator> {
+    using value_type = std::pair<std::string, settings::SettingsNode>;
+    using difference_type = void;
+    using pointer = void;
+    using reference = std::pair<std::string, settings::SettingsNode>;
+    using iterator_category = std::forward_iterator_tag;
+};
+
+template<>
+struct std::iterator_traits<settings::SettingsNode::Sequence::iterator> {
+    using value_type = settings::SettingsNode;
+    using difference_type = void;
+    using pointer = void;
+    using reference = settings::SettingsNode;
+    using iterator_category = std::forward_iterator_tag;
+};
 
 #endif
