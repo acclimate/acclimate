@@ -58,8 +58,8 @@ class Table {
                                 const I& last_index);
 
   public:
-    Table(){};
-    Table(const IndexSet<I>& index_set_p, const T default_value_p = std::numeric_limits<T>::signaling_NaN()) : index_set_(index_set_p) {
+    Table() = default;
+    explicit Table(const IndexSet<I>& index_set_p, const T default_value_p = std::numeric_limits<T>::signaling_NaN()) : index_set_(index_set_p) {
         data.resize(index_set_.size() * index_set_.size(), default_value_p);
     };
     inline const IndexSet<I>& index_set() const { return index_set_; };

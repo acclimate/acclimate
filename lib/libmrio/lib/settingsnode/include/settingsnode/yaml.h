@@ -42,8 +42,8 @@ class YAML : public Inner {
     inline Inner* get(const char* key) const override { return new YAML{node[key]}; }
     inline Inner* get(const std::string& key) const override { return new YAML{node[key]}; }
     inline bool empty() const override { return !node; }
-    inline bool has(const char* key) const override { return node[key]; }
-    inline bool has(const std::string& key) const override { return node[key]; }
+    inline bool has(const char* key) const override { return node[key] != nullptr; }
+    inline bool has(const std::string& key) const override { return node[key] != nullptr; }
     inline bool is_map() const override { return node.IsMap(); }
     inline bool is_scalar() const override { return node.IsScalar(); }
     inline bool is_sequence() const override { return node.IsSequence(); }
@@ -54,13 +54,13 @@ class YAML : public Inner {
 
       protected:
         YAMLlib::Node::const_iterator it;
-        explicit map_iterator(const YAMLlib::Node::const_iterator it_p) : it(it_p){};
+        explicit map_iterator(YAMLlib::Node::const_iterator it_p) : it(std::move(it_p)){};
 
       public:
         void next() override { ++it; }
         std::string name() const override { return (*it).first.as<std::string>(); }
         Inner* value() const override { return new YAML((*it).second); }
-        bool equals(const Inner::map_iterator* rhs) const override { return it == static_cast<const map_iterator*>(rhs)->it; }
+        bool equals(const Inner::map_iterator* rhs) const override { return it == dynamic_cast<const map_iterator*>(rhs)->it; }
     };
 
     std::pair<Inner::map_iterator*, Inner::map_iterator*> as_map() const override {
@@ -72,12 +72,12 @@ class YAML : public Inner {
 
       protected:
         YAMLlib::Node::const_iterator it;
-        explicit sequence_iterator(const YAMLlib::Node::const_iterator it_p) : it(it_p){};
+        explicit sequence_iterator(YAMLlib::Node::const_iterator it_p) : it(std::move(it_p)){};
 
       public:
         void next() override { ++it; }
         Inner* value() const override { return new YAML(*it); }
-        bool equals(const Inner::sequence_iterator* rhs) const override { return it == static_cast<const sequence_iterator*>(rhs)->it; }
+        bool equals(const Inner::sequence_iterator* rhs) const override { return it == dynamic_cast<const sequence_iterator*>(rhs)->it; }
     };
 
     std::pair<Inner::sequence_iterator*, Inner::sequence_iterator*> as_sequence() const override {
@@ -85,7 +85,7 @@ class YAML : public Inner {
     }
 
   public:
-    explicit YAML(YAMLlib::Node node_p) : node(std::move(node_p)){}
+    explicit YAML(const YAMLlib::Node& node_p) : node(node_p) {}  // YAMLlib::Node does not support move
     explicit YAML(std::istream& stream) : node(YAMLlib::Load(stream)) {}
 };
 

@@ -27,28 +27,21 @@
 
 namespace csv {
 class Parser;
-}
-namespace mrio {
-template<typename I>
-class IndexPart;
-}
-namespace mrio {
-template<typename I>
-class Region;
-}
-namespace mrio {
-template<typename I>
-class Sector;
-}
-namespace mrio {
-template<typename T, typename I>
-class Table;
-}
+}  // namespace csv
 namespace settings {
 class SettingsNode;
-}
+}  // namespace settings
 
 namespace mrio {
+
+template<typename I>
+class IndexPart;
+template<typename I>
+class Region;
+template<typename I>
+class Sector;
+template<typename T, typename I>
+class Table;
 
 template<typename T, typename I>
 class Disaggregation {
@@ -82,7 +75,7 @@ class Disaggregation {
         I size[4];
 
       public:
-        ProxyData(const I& size1) : dim(1) {
+        explicit ProxyData(const I& size1) : dim(1) {
             size[0] = size1;
             data.resize(size1, std::numeric_limits<T>::quiet_NaN());
         };
@@ -141,8 +134,8 @@ class Disaggregation {
     void read_proxy_file(const std::string& filename, int d, I year);
 
   public:
-    Disaggregation(const Table<T, I>* basetable_p);
-    virtual ~Disaggregation(){};
+    explicit Disaggregation(const Table<T, I>* basetable_p);
+    virtual ~Disaggregation() = default;
     void refine();
     void initialize(const settings::SettingsNode& settings);
     const Table<T, I>& refined_table() const { return *table; }

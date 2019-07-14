@@ -44,15 +44,15 @@ class IndexPart {
   protected:
     I total_index_;  ///< index on all sector/region levels
     I level_index_;  ///< index on current level
-    IndexPart(const std::string& name_p, const I& total_index_p, const I& level_index_p)
-        : name(name_p), total_index_(total_index_p), level_index_(level_index_p){};
+    IndexPart(std::string name_p, const I& total_index_p, const I& level_index_p)
+        : name(std::move(name_p)), total_index_(total_index_p), level_index_(level_index_p){};
 
   public:
     const std::string name;
-    operator I() const { return total_index_; };
+    operator I() const { return total_index_; };  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
     const I& total_index() const { return total_index_; };
     const I& level_index() const { return level_index_; };
-    virtual ~IndexPart(){};
+    virtual ~IndexPart() = default;
 };
 
 template<typename I>
@@ -106,7 +106,7 @@ class SuperSector : public Sector<I> {
     SuperSector<I>* as_super() override { return this; };
     const SuperSector<I>* as_super() const override { return this; };
     const SuperSector<I>* parent() const override { return nullptr; };
-    bool has_sub() const override { return sub_.size() > 0; };
+    bool has_sub() const override { return !sub_.empty(); };
 };
 
 template<typename I>
@@ -156,7 +156,7 @@ class SuperRegion : public Region<I> {
     SuperRegion<I>* as_super() override { return this; };
     const SuperRegion<I>* as_super() const override { return this; };
     const SuperRegion<I>* parent() const override { return nullptr; };
-    bool has_sub() const override { return sub_.size() > 0; };
+    bool has_sub() const override { return !sub_.empty(); };
 };
 
 template<typename I>
