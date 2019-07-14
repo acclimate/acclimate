@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 include(cmake/helpers.cmake)
@@ -38,7 +38,7 @@ else()
 endif()
 
 target_include_directories(acclimate PRIVATE include lib/cpp-library)
-target_compile_options(acclimate PRIVATE -std=c++11)
+set_property(TARGET acclimate PROPERTY CXX_STANDARD 11)
 
 add_doxygen_documentation(doc doc)
 set_ccache_use()
@@ -79,12 +79,17 @@ acclimate_include_option(OPTIONS ENABLE_DMTCP "enable dmtcp checkpointing" OFF)
 
 if(ACCLIMATE_ENABLE_DMTCP)
   set_property(TARGET acclimate PROPERTY POSITION_INDEPENDENT_CODE ON)
+  if(ACCLIMATE_PARALLELIZATION)
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+      set_property(TARGET acclimate APPEND_STRING PROPERTY LINK_FLAGS " -qopenmp-link=static")
+    endif()
+  endif()
 endif()
 string(REPLACE ";" ", " ACCLIMATE_OPTIONS "${ACCLIMATE_OPTIONS}")
 target_compile_definitions(acclimate PRIVATE ACCLIMATE_OPTIONS="${ACCLIMATE_OPTIONS}")
 
-acclimate_include_option(VARIANTS VARIANT_BASIC "include acclimate version 'basic'" ON)
-acclimate_include_option(VARIANTS VARIANT_DEMAND "include acclimate version 'demand'" ON)
+acclimate_include_option(VARIANTS VARIANT_BASIC "include acclimate version 'basic'" OFF)
+acclimate_include_option(VARIANTS VARIANT_DEMAND "include acclimate version 'demand'" OFF)
 acclimate_include_option(VARIANTS VARIANT_PRICES "include acclimate version 'prices'" ON)
 
 string(REPLACE ";" ", " ACCLIMATE_VARIANTS "${ACCLIMATE_VARIANTS}")
