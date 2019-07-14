@@ -53,7 +53,7 @@ class Inner {
         virtual std::string name() const = 0;
         virtual Inner* value() const = 0;
         virtual bool equals(const map_iterator* rhs) const = 0;
-        virtual ~map_iterator() {}
+        virtual ~map_iterator() = default;
     };
     virtual std::pair<map_iterator*, map_iterator*> as_map() const = 0;
 
@@ -62,12 +62,12 @@ class Inner {
         virtual void next() = 0;
         virtual Inner* value() const = 0;
         virtual bool equals(const sequence_iterator* rhs) const = 0;
-        virtual ~sequence_iterator() {}
+        virtual ~sequence_iterator() = default;
     };
     virtual std::pair<sequence_iterator*, sequence_iterator*> as_sequence() const = 0;
 
   public:
-    virtual ~Inner() {}
+    virtual ~Inner() = default;
 };
 
 }  // namespace settings
