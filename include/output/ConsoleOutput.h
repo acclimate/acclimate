@@ -42,7 +42,7 @@ class ConsoleOutput : public Output<ModelVariant> {
   public:
     using Output<ModelVariant>::output_node;
     using Output<ModelVariant>::model;
-    using Output<ModelVariant>::settings;
+    using Output<ModelVariant>::settings_string;
 
   private:
     unsigned char stack;

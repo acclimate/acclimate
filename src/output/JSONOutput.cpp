@@ -80,7 +80,7 @@ void JSONOutput<ModelVariant>::internal_write_footer(tm* duration) {
 
 template<class ModelVariant>
 void JSONOutput<ModelVariant>::internal_write_settings() {
-    *out << "    \"settings\": '" << settings
+    *out << "    \"settings\": '" << settings_string
          << "'\n},\n"
             "\"data\": {\n";
 }

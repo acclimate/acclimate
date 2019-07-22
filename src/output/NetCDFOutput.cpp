@@ -130,9 +130,7 @@ void NetCDFOutput<ModelVariant>::internal_write_footer(tm* duration) {
 
 template<class ModelVariant>
 void NetCDFOutput<ModelVariant>::internal_write_settings() {
-    std::ostringstream ss;
-    ss << settings;
-    file->putAtt("settings", ss.str());
+    file->putAtt("settings", settings_string.c_str());
 }
 
 template<class ModelVariant>

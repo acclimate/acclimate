@@ -42,7 +42,6 @@ class DamageOutput : public Output<ModelVariant> {
   public:
     using Output<ModelVariant>::output_node;
     using Output<ModelVariant>::model;
-    using Output<ModelVariant>::settings;
 
   private:
     FlowQuantity damage;

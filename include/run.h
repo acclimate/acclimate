@@ -86,15 +86,12 @@ class Run {
     friend class Acclimate;
 
   protected:
-    static std::unique_ptr<Run> instance_m;
     std::unique_ptr<Model<ModelVariant>> model_m;
     std::vector<std::unique_ptr<Scenario<ModelVariant>>> scenarios_m;
     std::vector<std::unique_ptr<Output<ModelVariant>>> outputs_m;
     unsigned int time_m = 0;
     std::size_t duration_m = 0;
     IterationStep step_m = IterationStep::INITIALIZATION;
-    settings::SettingsNode settings_m;
-    int run_result = -1;
     bool has_run = false;
 
     static void initialize();
@@ -104,7 +101,7 @@ class Run {
   public:
     static const std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> event_names;
 
-    explicit Run(settings::SettingsNode settings_p);
+    explicit Run(const settings::SettingsNode& settings);
     ~Run();
     inline IterationStep step() const { return step_m; }
     inline unsigned int time() const { return time_m; }

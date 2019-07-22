@@ -70,7 +70,7 @@ void ConsoleOutput<ModelVariant>::internal_write_footer(tm* duration) {
 
 template<class ModelVariant>
 void ConsoleOutput<ModelVariant>::internal_write_settings() {
-    *out << '\n' << settings << '\n';
+    *out << '\n' << settings_string << '\n';
 }
 
 template<class ModelVariant>

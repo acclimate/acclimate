@@ -42,7 +42,7 @@ class JSONOutput : public Output<ModelVariant> {
   public:
     using Output<ModelVariant>::output_node;
     using Output<ModelVariant>::model;
-    using Output<ModelVariant>::settings;
+    using Output<ModelVariant>::settings_string;
 
   protected:
     std::ostream* out = nullptr;

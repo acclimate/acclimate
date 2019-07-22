@@ -43,7 +43,7 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     using Output<ModelVariant>::id;
     using Output<ModelVariant>::model;
     using Output<ModelVariant>::output_node;
-    using Output<ModelVariant>::settings;
+    using Output<ModelVariant>::settings_string;
     using Output<ModelVariant>::scenario;
 
   protected:

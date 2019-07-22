@@ -44,7 +44,7 @@ class GnuplotOutput : public Output<ModelVariant> {
     using Output<ModelVariant>::id;
     using Output<ModelVariant>::model;
     using Output<ModelVariant>::output_node;
-    using Output<ModelVariant>::settings;
+    using Output<ModelVariant>::settings_string;
 
   private:
     std::ofstream file;

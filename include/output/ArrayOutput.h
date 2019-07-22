@@ -50,7 +50,6 @@ class ArrayOutput : public Output<ModelVariant> {
     using Output<ModelVariant>::model;
     using Output<ModelVariant>::output_node;
     using Output<ModelVariant>::scenario;
-    using Output<ModelVariant>::settings;
 
     struct Variable {
         std::vector<FloatType> data;

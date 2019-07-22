@@ -67,12 +67,12 @@ void HistogramOutput<ModelVariant>::internal_write_footer(tm* duration) {
 template<class ModelVariant>
 void HistogramOutput<ModelVariant>::internal_write_settings() {
     std::stringstream ss;
-    ss << settings;
+    ss << settings_string;
     ss.flush();
     ss.seekg(0);
     std::string line;
     file << "# Settings:\n";
-    while (getline(ss, line)) {
+    while (std::getline(ss, line)) {
         file << "# " << line << "\n";
     }
     file << "#\n";

@@ -43,7 +43,6 @@ class ProgressOutput : public Output<ModelVariant> {
     using Output<ModelVariant>::id;
     using Output<ModelVariant>::model;
     using Output<ModelVariant>::output_node;
-    using Output<ModelVariant>::settings;
 
   protected:
     std::unique_ptr<progressbar::ProgressBar> bar;

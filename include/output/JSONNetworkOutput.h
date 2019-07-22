@@ -37,7 +37,6 @@ class JSONNetworkOutput : public Output<ModelVariant> {
   public:
     using Output<ModelVariant>::output_node;
     using Output<ModelVariant>::model;
-    using Output<ModelVariant>::settings;
 
   protected:
     TimeStep timestep = 0;

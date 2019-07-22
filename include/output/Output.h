@@ -76,7 +76,7 @@ class Output {
     inline void internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix = hstring::null());
 
   protected:
-    const settings::SettingsNode& settings;
+    std::string settings_string;
     settings::SettingsNode output_node;
     Model<ModelVariant>* const model_m;
     std::time_t start_time;

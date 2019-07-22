@@ -42,12 +42,15 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Output<ModelVariant>::Output(const settings::SettingsNode& settings_p,
+Output<ModelVariant>::Output(const settings::SettingsNode& settings,
                              Model<ModelVariant>* model_p,
                              Scenario<ModelVariant>* scenario_p,
                              settings::SettingsNode output_node_p)
-    : settings(settings_p), model_m(model_p), scenario(scenario_p), output_node(std::move(output_node_p)) {
+    : model_m(model_p), scenario(scenario_p), output_node(std::move(output_node_p)) {
     start_time = 0;
+    std::ostringstream ss;
+    ss << settings;
+    settings_string = ss.str();
 }
 
 template<class ModelVariant>

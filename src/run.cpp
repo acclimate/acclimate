@@ -51,11 +51,11 @@
 namespace acclimate {
 
 template<class ModelVariant>
-Run<ModelVariant>::Run(settings::SettingsNode settings_p) : settings_m(std::move(settings_p)) {
+Run<ModelVariant>::Run(const settings::SettingsNode& settings) {
     step(IterationStep::INITIALIZATION);
     auto model = new Model<ModelVariant>(this);
     {
-        ModelInitializer<ModelVariant> model_initializer(model, settings_m);
+        ModelInitializer<ModelVariant> model_initializer(model, settings);
         model_initializer.initialize();
 #ifdef DEBUG
         model_initializer.print_network_characteristics();
@@ -64,49 +64,49 @@ Run<ModelVariant>::Run(settings::SettingsNode settings_p) : settings_m(std::move
     }
 
     Scenario<ModelVariant>* scenario;  // TODO put in scope below!
-    for (auto scenario_node : settings_m["scenarios"].as_sequence()) {
+    for (auto scenario_node : settings["scenarios"].as_sequence()) {
         const std::string& type = scenario_node["type"].template as<std::string>();
         if (type == "events") {
-            scenario = new Scenario<ModelVariant>(settings_m, scenario_node, model);
+            scenario = new Scenario<ModelVariant>(settings, scenario_node, model);
         } else if (type == "taxes") {
-            scenario = new Taxes<ModelVariant>(settings_m, scenario_node, model);
+            scenario = new Taxes<ModelVariant>(settings, scenario_node, model);
         } else if (type == "flooding") {
-            scenario = new Flooding<ModelVariant>(settings_m, scenario_node, model);
+            scenario = new Flooding<ModelVariant>(settings, scenario_node, model);
         } else if (type == "hurricanes") {
-            scenario = new Hurricanes<ModelVariant>(settings_m, scenario_node, model);
+            scenario = new Hurricanes<ModelVariant>(settings, scenario_node, model);
         } else if (type == "direct_population") {
-            scenario = new DirectPopulation<ModelVariant>(settings_m, scenario_node, model);
+            scenario = new DirectPopulation<ModelVariant>(settings, scenario_node, model);
         } else if (type == "heat_labor_productivity") {
-            scenario = new HeatLaborProductivity<ModelVariant>(settings_m, scenario_node, model);
+            scenario = new HeatLaborProductivity<ModelVariant>(settings, scenario_node, model);
         } else if (type == "event_series") {
-            scenario = new EventSeriesScenario<ModelVariant>(settings_m, scenario_node, model);
+            scenario = new EventSeriesScenario<ModelVariant>(settings, scenario_node, model);
         } else {
             error_("Unknown scenario type '" << type << "'");
         }
         scenarios_m.emplace_back(scenario);
     }
 
-    for (const auto& node : settings_m["outputs"].as_sequence()) {
+    for (const auto& node : settings["outputs"].as_sequence()) {
         Output<ModelVariant>* output;
         const std::string& type = node["format"].template as<std::string>();
         if (type == "console") {
-            output = new ConsoleOutput<ModelVariant>(settings_m, model, scenario, node);
+            output = new ConsoleOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "json") {
-            output = new JSONOutput<ModelVariant>(settings_m, model, scenario, node);
+            output = new JSONOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "json_network") {
-            output = new JSONNetworkOutput<ModelVariant>(settings_m, model, scenario, node);
+            output = new JSONNetworkOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "netcdf") {
-            output = new NetCDFOutput<ModelVariant>(settings_m, model, scenario, node);
+            output = new NetCDFOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "histogram") {
-            output = new HistogramOutput<ModelVariant>(settings_m, model, scenario, node);
+            output = new HistogramOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "gnuplot") {
-            output = new GnuplotOutput<ModelVariant>(settings_m, model, scenario, node);
+            output = new GnuplotOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "damage") {
-            output = new DamageOutput<ModelVariant>(settings_m, model, scenario, node);
+            output = new DamageOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "array") {
-            output = new ArrayOutput<ModelVariant>(settings_m, model, scenario, node);
+            output = new ArrayOutput<ModelVariant>(settings, model, scenario, node);
         } else if (type == "progress") {
-            output = new ProgressOutput<ModelVariant>(settings_m, model, scenario, node);
+            output = new ProgressOutput<ModelVariant>(settings, model, scenario, node);
         } else {
             error_("Unknown output format '" << type << "'");
         }
