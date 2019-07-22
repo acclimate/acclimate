@@ -233,7 +233,7 @@ void ModelInitializer<VariantDemand>::initialize_connection(Firm<VariantDemand>*
 #endif
     Sector<VariantDemand>* sector_from = firm_from->sector;
     Storage<VariantDemand>* input_storage = economic_agent_to->find_input_storage(sector_from->id());
-    if (!input_storage) {
+    if (input_storage == nullptr) {
         input_storage = new Storage<VariantDemand>(sector_from, economic_agent_to);
         economic_agent_to->input_storages.emplace_back(input_storage);
     }
@@ -268,7 +268,7 @@ void ModelInitializer<VariantPrices>::initialize_connection(Firm<VariantPrices>*
 #endif
     Sector<VariantPrices>* sector_from = firm_from->sector;
     Storage<VariantPrices>* input_storage = economic_agent_to->find_input_storage(sector_from->id());
-    if (!input_storage) {
+    if (input_storage == nullptr) {
         input_storage = new Storage<VariantPrices>(sector_from, economic_agent_to);
         if (economic_agent_to->is_consumer()) {
             input_storage->parameters_writable().consumption_price_elasticity =
