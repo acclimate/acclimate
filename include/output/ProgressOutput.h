@@ -58,6 +58,7 @@ class ProgressOutput : public Output<ModelVariant> {
                    settings::SettingsNode output_node_p);
     void initialize() override;
     void checkpoint_resume() override;
+    void checkpoint_stop() override;
 };
 }  // namespace acclimate
 

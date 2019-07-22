@@ -43,8 +43,15 @@ void ProgressOutput<ModelVariant>::initialize() {
 }
 
 template<class ModelVariant>
+void ProgressOutput<ModelVariant>::checkpoint_stop() {
+    bar->println("     [ Checkpointing ]", false);
+    bar->abort();
+}
+
+template<class ModelVariant>
 void ProgressOutput<ModelVariant>::checkpoint_resume() {
     bar->reset_eta();
+    bar->resume();
 }
 
 template<class ModelVariant>

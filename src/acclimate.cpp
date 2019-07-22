@@ -31,8 +31,7 @@
 namespace acclimate {
 
 #ifdef FLOATING_POINT_EXCEPTIONS
-static void handle_fpe_error(int sig) {
-    UNUSED(sig);
+void handle_fpe_error(int /* signal */) {
     int exceptions = fetestexcept(FE_ALL_EXCEPT);
     feclearexcept(FE_ALL_EXCEPT);
     if (exceptions == 0) {

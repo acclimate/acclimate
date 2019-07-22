@@ -19,10 +19,12 @@
 */
 
 #include "run.h"
+#include <unistd.h>
 #include <chrono>
 #include <utility>
 #ifdef ENABLE_DMTCP
 #include <dmtcp.h>
+#include <csignal>
 #include <thread>
 #endif
 #ifdef _OPENMP
@@ -50,9 +52,29 @@
 
 namespace acclimate {
 
+static bool instantiated = false;
+static volatile bool checkpoint_scheduled = false;
+
+#ifdef ENABLE_DMTCP
+void handle_sigterm(int /* signal */) { checkpoint_scheduled = true; }
+#endif
+
 template<class ModelVariant>
 Run<ModelVariant>::Run(const settings::SettingsNode& settings) {
     step(IterationStep::INITIALIZATION);
+
+#ifdef ENABLE_DMTCP
+    if (dmtcp_is_enabled()) {
+        if (instantiated) {
+            error_("Only one run instance supported when checkpointing");
+        }
+        std::signal(SIGTERM, handle_sigterm);
+        close(10);
+        close(11);
+    }
+#endif
+    instantiated = true;
+
     auto model = new Model<ModelVariant>(this);
     {
         ModelInitializer<ModelVariant> model_initializer(model, settings);
@@ -120,6 +142,7 @@ int Run<ModelVariant>::run() {
     if (has_run) {
         error_("model has already run");
     }
+    has_run = true;
 
     info_("Starting model run on max. " << thread_count() << " threads");
 
@@ -135,58 +158,12 @@ int Run<ModelVariant>::run() {
     time_m = 0;
 
     step(IterationStep::SCENARIO);
-#ifdef ENABLE_DMTCP
-    auto dmtcp_timer = std::chrono::system_clock::now();
-    if (settings_m.has("checkpoint")) {
-        if (!dmtcp_is_enabled()) {
-            error_("dmtcp is not enabled");
-        }
-    }
-#else
-    if (settings_m.has("checkpoint")) {
-        error_("dmtcp is not available in this binary");
-    }
-#endif
     auto t0 = std::chrono::high_resolution_clock::now();
 
     while (!model_m->done()) {
         for (const auto& scenario : scenarios_m) {
             scenario->iterate();
         }
-#ifdef ENABLE_DMTCP
-        if (settings_m.has("checkpoint")) {
-            if (settings_m["checkpoint"].template as<int>()
-                < std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - dmtcp_timer).count()) {
-                if (!dmtcp_is_enabled()) {
-                    error_("dmtcp is not enabled");
-                }
-                std::size_t original_generation = dmtcp_get_generation();
-                info_("Writing checkpoint");
-                for (const auto& output : outputs_m) {
-                    output->checkpoint_stop();
-                }
-                int retval = dmtcp_checkpoint();
-                if (retval == DMTCP_AFTER_CHECKPOINT) {
-                    do {
-                        std::this_thread::sleep_for(std::chrono::seconds(1));
-                    } while (dmtcp_get_generation() == original_generation);
-                    run_result = 7;
-                    return run_result;
-                } else if (retval == DMTCP_AFTER_RESTART) {
-                    info_("Resuming from checkpoint");
-                    dmtcp_timer = std::chrono::system_clock::now();
-                    t0 = std::chrono::high_resolution_clock::now();
-                    for (const auto& output : outputs_m) {
-                        output->checkpoint_resume();
-                    }
-                } else if (retval == DMTCP_NOT_PRESENT) {
-                    error_("dmtcp not present");
-                } else {
-                    error_("unknown dmtcp result " << retval);
-                }
-            }
-        }
-#endif
         info_("Iteration started");
 
         model_m->switch_registers();
@@ -219,17 +196,46 @@ int Run<ModelVariant>::run() {
         t0 = t2;
 #endif
 
+#ifdef ENABLE_DMTCP
+        if (checkpoint_scheduled) {
+            info_("Writing checkpoint");
+            std::size_t original_generation = dmtcp_get_generation();
+            for (const auto& output : outputs_m) {
+                output->checkpoint_stop();
+            }
+            int retval = dmtcp_checkpoint();
+            switch (retval) {
+                case DMTCP_AFTER_CHECKPOINT:
+                    do {
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                    } while (dmtcp_get_generation() == original_generation);
+                    return 7;
+                case DMTCP_AFTER_RESTART:
+                    checkpoint_scheduled = false;
+                    info_("Resuming from checkpoint");
+                    t0 = std::chrono::high_resolution_clock::now();
+                    for (const auto& output : outputs_m) {
+                        output->checkpoint_resume();
+                    }
+                    break;
+                case DMTCP_NOT_PRESENT:
+                    error_("dmtcp not present");
+                default:
+                    error_("unknown dmtcp result " << retval);
+            }
+        }
+#endif
+
         step(IterationStep::SCENARIO);
         model_m->tick();
         ++time_m;
     }
-    run_result = 0;
-    return run_result;
+    return 0;
 }
 
 template<class ModelVariant>
 Run<ModelVariant>::~Run() {
-    if (has_run && run_result == 0) {
+    if (!checkpoint_scheduled) {
         for (auto& scenario : scenarios_m) {
             scenario->end();
         }
@@ -240,6 +246,7 @@ Run<ModelVariant>::~Run() {
     outputs_m.clear();
     scenarios_m.clear();
     model_m.reset();
+    instantiated = false;
 }
 
 template<class ModelVariant>
