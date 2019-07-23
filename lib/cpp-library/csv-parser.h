@@ -135,8 +135,8 @@ class Parser {
         };
 
       public:
-        iterator begin() { return iterator(p, 0); }
-        iterator end() { return iterator(p, -1); }
+        iterator begin() { return {p, 0}; }
+        iterator end() { return {p, -1}; }
     };
 
     class iterator {
@@ -176,8 +176,8 @@ class Parser {
   public:
     explicit Parser(std::istream& stream, char delimiter_ = ',') : in(stream), delimiter(delimiter_) {}
 
-    iterator begin() { return iterator(*this, 0); }
-    iterator end() { return iterator(*this, -1); }
+    iterator begin() { return {*this, 0}; }
+    iterator end() { return {*this, -1}; }
 
     inline long row() const { return row_; }
     inline long col() const { return col_; }
@@ -228,14 +228,14 @@ class Parser {
                 if (in.eof()) {
                     if (quoted) {
                         throw unclosed_quotes(row_, col_);
-                    } else {
-                        throw file_end(row_, col_);
                     }
+                    throw file_end(row_, col_);
                 }
                 c = in.get();
                 if ((c == '\n' || c == '\r') && !quoted) {
                     break;
-                } else if (c == '"') {
+                }
+                if (c == '"') {
                     if (quoted && in.peek() == '"') {
                         in.get();
                     } else {
@@ -287,7 +287,8 @@ inline void Parser::read<void>() {
         const char c = in.get();
         if (c == delimiter && !quoted) {
             break;
-        } else if (c == '"') {
+        }
+        if (c == '"') {
             if (quoted && in.peek() == '"') {
                 in.get();
             } else {
@@ -303,7 +304,7 @@ inline void Parser::read<void>() {
 template<>
 inline std::string Parser::read<std::string>() {
     begin_read();
-    std::string res = "";
+    std::string res;
     bool quoted = false;
     while (true) {
         if (in.eof()) {
@@ -316,7 +317,8 @@ inline std::string Parser::read<std::string>() {
         const char c = in.get();
         if (c == delimiter && !quoted) {
             break;
-        } else if (c == '"') {
+        }
+        if (c == '"') {
             if (quoted && in.peek() == '"') {
                 res += '"';
                 in.get();
@@ -345,12 +347,12 @@ inline bool Parser::read_skip_whitespace(char& c, bool& quoted) {
         c = in.get();
         if (c == delimiter && !quoted) {
             return false;
-        } else if (c == '"') {
+        }
+        if (c == '"') {
             if (quoted && in.peek() == '"') {
                 return true;
-            } else {
-                quoted = !quoted;
             }
+            quoted = !quoted;
         } else if ((c == '\n' || c == '\r') && !quoted) {
             row_finished = true;
             return false;
@@ -399,12 +401,12 @@ inline typename std::enable_if<std::is_integral<T>::value, T>::type Parser::read
         c = in.get();
         if (c == delimiter && !quoted) {
             break;
-        } else if (c == '"') {
+        }
+        if (c == '"') {
             if (quoted && in.peek() == '"') {
                 throw bad_int_cast(row_, col_);
-            } else {
-                quoted = !quoted;
             }
+            quoted = !quoted;
         } else if ((c == '\n' || c == '\r') && !quoted) {
             row_finished = true;
             break;
@@ -422,9 +424,8 @@ inline typename std::enable_if<std::is_integral<T>::value, T>::type Parser::read
 
     if (negative) {
         return -res;
-    } else {
-        return res;
     }
+    return res;
 }
 
 template<typename T>
@@ -448,7 +449,7 @@ inline typename std::enable_if<std::is_floating_point<T>::value, T>::type Parser
     } else if (c >= '0' && c <= '9') {
         a = c - '0';
     } else if (c == '.') {
-        goto read_after_point;
+        goto read_after_point;  // NOLINT(cppcoreguidelines-avoid-goto,hicpp-avoid-goto)
     } else {
         throw bad_float_cast(row_, col_);
     }
@@ -465,21 +466,21 @@ inline typename std::enable_if<std::is_floating_point<T>::value, T>::type Parser
         c = in.get();
         if (c == delimiter && !quoted) {
             break;
-        } else if (c == '"') {
+        }
+        if (c == '"') {
             if (quoted && in.peek() == '"') {
                 throw bad_float_cast(row_, col_);
-            } else {
-                quoted = !quoted;
             }
+            quoted = !quoted;
         } else if ((c == '\n' || c == '\r') && !quoted) {
             row_finished = true;
             break;
         } else if (c >= '0' && c <= '9') {
             a = 10.0 * a + (c - '0');
         } else if (c == '.') {
-            goto read_after_point;
+            goto read_after_point;  // NOLINT(cppcoreguidelines-avoid-goto,hicpp-avoid-goto)
         } else if (c == 'e' || c == 'E') {
-            goto read_exponent;
+            goto read_exponent;  // NOLINT(cppcoreguidelines-avoid-goto,hicpp-avoid-goto)
         } else if (c == ' ' || c == '\t') {
             if (read_skip_whitespace(c, quoted)) {
                 throw bad_float_cast(row_, col_);
@@ -492,9 +493,8 @@ inline typename std::enable_if<std::is_floating_point<T>::value, T>::type Parser
 
     if (negative) {
         return -a;
-    } else {
-        return a;
     }
+    return a;
 
 read_after_point:
     while (true) {
@@ -508,12 +508,12 @@ read_after_point:
         c = in.get();
         if (c == delimiter && !quoted) {
             break;
-        } else if (c == '"') {
+        }
+        if (c == '"') {
             if (quoted && in.peek() == '"') {
                 throw bad_float_cast(row_, col_);
-            } else {
-                quoted = !quoted;
             }
+            quoted = !quoted;
         } else if ((c == '\n' || c == '\r') && !quoted) {
             row_finished = true;
             break;
@@ -521,7 +521,7 @@ read_after_point:
             b = 10.0 * b + (c - '0');
             scale *= 10.0;
         } else if (c == 'e' || c == 'E') {
-            goto read_exponent;
+            goto read_exponent;  // NOLINT(cppcoreguidelines-avoid-goto,hicpp-avoid-goto)
         } else if (c == ' ' || c == '\t') {
             if (read_skip_whitespace(c, quoted)) {
                 throw bad_float_cast(row_, col_);
@@ -534,9 +534,8 @@ read_after_point:
 
     if (negative) {
         return -(a + b / scale);
-    } else {
-        return a + b / scale;
     }
+    return a + b / scale;
 
 read_exponent:
     bool e_negative = false;
@@ -560,12 +559,12 @@ read_exponent:
         c = in.get();
         if (c == delimiter && !quoted) {
             break;
-        } else if (c == '"') {
+        }
+        if (c == '"') {
             if (quoted && in.peek() == '"') {
                 throw bad_float_cast(row_, col_);
-            } else {
-                quoted = !quoted;
             }
+            quoted = !quoted;
         } else if ((c == '\n' || c == '\r') && !quoted) {
             row_finished = true;
             break;
@@ -589,9 +588,8 @@ read_exponent:
     const double res = e_negative ? ((a + b / scale) / e_scale) : (a * e_scale + b * e_scale / scale);
     if (negative) {
         return -res;
-    } else {
-        return res;
     }
+    return res;
 }
 
 template<>
@@ -606,7 +604,7 @@ inline ColumnType Parser::read<ColumnType>() {
     }
 
     if (c == '.') {
-        goto read_after_point;
+        goto read_after_point;  // NOLINT(cppcoreguidelines-avoid-goto,hicpp-avoid-goto)
     }
 
     // read before point:
@@ -622,7 +620,8 @@ inline ColumnType Parser::read<ColumnType>() {
         c = in.get();
         if (c == delimiter && !quoted) {
             break;
-        } else if (c == '"') {
+        }
+        if (c == '"') {
             if (quoted && in.peek() == '"') {
                 res = ColumnType::STRING;
             } else {
@@ -634,9 +633,9 @@ inline ColumnType Parser::read<ColumnType>() {
         } else if (c >= '0' && c <= '9') {
             // skip
         } else if (c == '.' && res == ColumnType::INTEGER) {
-            goto read_after_point;
+            goto read_after_point;  // NOLINT(cppcoreguidelines-avoid-goto,hicpp-avoid-goto)
         } else if ((c == 'e' || c == 'E') && res == ColumnType::INTEGER) {
-            goto read_exponent;
+            goto read_exponent;  // NOLINT(cppcoreguidelines-avoid-goto,hicpp-avoid-goto)
         } else if (c == ' ' || c == '\t') {
             if (read_skip_whitespace(c, quoted)) {
                 res = ColumnType::STRING;
@@ -661,7 +660,8 @@ read_after_point:
         c = in.get();
         if (c == delimiter && !quoted) {
             break;
-        } else if (c == '"') {
+        }
+        if (c == '"') {
             if (quoted && in.peek() == '"') {
                 res = ColumnType::STRING;
             } else {
@@ -673,7 +673,7 @@ read_after_point:
         } else if (c >= '0' && c <= '9') {
             // skip
         } else if ((c == 'e' || c == 'E') && res == ColumnType::FLOAT) {
-            goto read_exponent;
+            goto read_exponent;  // NOLINT(cppcoreguidelines-avoid-goto,hicpp-avoid-goto)
         } else if (c == ' ' || c == '\t') {
             if (read_skip_whitespace(c, quoted)) {
                 res = ColumnType::STRING;
@@ -698,7 +698,8 @@ read_exponent:
         c = in.get();
         if (c == delimiter && !quoted) {
             break;
-        } else if (c == '"') {
+        }
+        if (c == '"') {
             if (quoted && in.peek() == '"') {
                 res = ColumnType::STRING;
             } else {
