@@ -39,7 +39,8 @@ namespace progressbar {
 
 class ProgressBar {
   protected:
-    using ticks = std::chrono::steady_clock::rep;
+    using clock = std::chrono::system_clock;
+    using ticks = clock::rep;
     std::vector<char> buf;
     bool is_tty;
     bool closed = false;
@@ -47,11 +48,11 @@ class ProgressBar {
     std::mutex mutex_m;
     std::atomic<std::size_t> current;
     std::size_t reprint_next = 1;
-    std::chrono::time_point<std::chrono::steady_clock> start_time;
+    std::chrono::time_point<clock> start_time;
     std::size_t eta_from_iter = 0;
-    std::chrono::time_point<std::chrono::steady_clock> eta_from_time;
+    std::chrono::time_point<clock> eta_from_time;
     std::size_t last_reprint_iter = 0;
-    std::chrono::time_point<std::chrono::steady_clock> last_reprint_time;
+    std::chrono::time_point<clock> last_reprint_time;
     const ticks min_reprint_time;
 #ifndef PROGRESSBAR_SILENT
     std::FILE* out;
@@ -106,14 +107,14 @@ class ProgressBar {
     }
 
     void recalc_and_print(bool force = false) noexcept {
-        auto now = std::chrono::steady_clock::now();
+        auto now = clock::now();
         auto duration = (now - last_reprint_time).count();
         reprint_next = current + (current - last_reprint_iter) * min_reprint_time / std::max(duration, min_reprint_time) + 1;
         if (duration >= min_reprint_time || force) {
-            auto freq = std::chrono::steady_clock::period::den
+            auto freq = clock::period::den
                         * ((1 - smoothing) * (current - last_reprint_iter) / static_cast<float>(duration)
                            + smoothing * (current - eta_from_iter) / static_cast<float>((now - eta_from_time).count()))
-                        / std::chrono::steady_clock::period::num;
+                        / clock::period::num;
             ticks etr = 0;
             if (current != eta_from_iter) {
                 etr = std::lrint((total - current)
@@ -150,7 +151,7 @@ class ProgressBar {
     }
 
     inline static bool safe_print_duration(char*& c, std::size_t& buf_remaining, ticks t) noexcept {
-        auto dur = std::chrono::steady_clock::duration(t);
+        auto dur = clock::duration(t);
         auto d = std::chrono::duration_cast<std::chrono::duration<ticks, std::ratio<3600 * 24>>>(dur);
         auto h = std::chrono::duration_cast<std::chrono::hours>(dur -= d);
         auto m = std::chrono::duration_cast<std::chrono::minutes>(dur -= h);
@@ -293,7 +294,7 @@ class ProgressBar {
 
     explicit ProgressBar(
         std::size_t total_p, std::string description_p = "", bool subbar_p = false, std::FILE* out_p = stdout, std::size_t min_reprint_time_ms = 100) noexcept
-        : min_reprint_time(std::chrono::steady_clock::duration(std::chrono::milliseconds(min_reprint_time_ms)).count()),
+        : min_reprint_time(clock::duration(std::chrono::milliseconds(min_reprint_time_ms)).count()),
 #ifndef PROGRESSBAR_SILENT
           out(out_p),
 #endif
@@ -302,7 +303,7 @@ class ProgressBar {
           current(0),
           description(std::move(description_p)) {
         std::lock_guard<std::mutex> guard(mutex_m);
-        start_time = std::chrono::steady_clock::now();
+        start_time = clock::now();
         eta_from_time = start_time;
         last_reprint_time = start_time;
         is_tty = isatty(fileno(out_p)) != 0;
@@ -332,7 +333,7 @@ class ProgressBar {
     inline void reset_eta() noexcept {
         std::lock_guard<std::mutex> guard(mutex_m);
         eta_from_iter = current;
-        eta_from_time = std::chrono::steady_clock::now();
+        eta_from_time = clock::now();
     }
 
     inline void close(bool remove = false) noexcept {
@@ -340,8 +341,8 @@ class ProgressBar {
             return;
         }
         std::lock_guard<std::mutex> guard(mutex_m);
-        auto total_duration = (std::chrono::steady_clock::now() - start_time).count();
-        auto freq = current * std::chrono::steady_clock::period::den / static_cast<float>(total_duration * std::chrono::steady_clock::period::num);
+        auto total_duration = (clock::now() - start_time).count();
+        auto freq = current * clock::period::den / static_cast<float>(total_duration * clock::period::num);
         current = total;
         if (remove && is_tty) {
             control_goto_bol();
