@@ -55,10 +55,9 @@ ModelInitializer<ModelVariant>::ModelInitializer(Model<ModelVariant>* model_p, c
 }
 
 template<class ModelVariant>
-settings::SettingsNode ModelInitializer<ModelVariant>::get_named_property(const std::string& tag_name,
+settings::SettingsNode ModelInitializer<ModelVariant>::get_named_property(const settings::SettingsNode& node_settings,
                                                                           const std::string& node_name,
                                                                           const std::string& property_name) const {
-    const settings::SettingsNode& node_settings = settings[tag_name];
     if (node_settings.has(node_name) && node_settings[node_name].has(property_name)) {
         return node_settings[node_name][property_name];
     }
@@ -112,10 +111,12 @@ template<>
 Sector<VariantBasic>* ModelInitializer<VariantBasic>::add_sector(const std::string& name) {
     Sector<VariantBasic>* sector = model()->find_sector(name);
     if (sector == nullptr) {
+        const settings::SettingsNode& sectors_node = settings["sectors"];
+        sectors_node.require();
         sector =
-            model()->add_sector(name, get_named_property("sectors", name, "upper_storage_limit").template as<Ratio>(),
-                                get_named_property("sectors", name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t(),
-                                Sector<VariantBasic>::map_transport_type(get_named_property("sectors", name, "transport").template as<settings::hstring>()));
+            model()->add_sector(name, get_named_property(sectors_node, name, "upper_storage_limit").template as<Ratio>(),
+                                get_named_property(sectors_node, name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t(),
+                                Sector<VariantBasic>::map_transport_type(get_named_property(sectors_node, name, "transport").template as<settings::hstring>()));
     }
     return sector;
 }
@@ -126,12 +127,14 @@ template<>
 Sector<VariantDemand>* ModelInitializer<VariantDemand>::add_sector(const std::string& name) {
     Sector<VariantDemand>* sector = model()->find_sector(name);
     if (sector == nullptr) {
-        sector =
-            model()->add_sector(name, get_named_property("sectors", name, "upper_storage_limit").template as<Ratio>(),
-                                get_named_property("sectors", name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t(),
-                                Sector<VariantDemand>::map_transport_type(get_named_property("sectors", name, "transport").template as<settings::hstring>()));
+        const settings::SettingsNode& sectors_node = settings["sectors"];
+        sectors_node.require();
+        sector = model()->add_sector(
+            name, get_named_property(sectors_node, name, "upper_storage_limit").template as<Ratio>(),
+            get_named_property(sectors_node, name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t(),
+            Sector<VariantDemand>::map_transport_type(get_named_property(sectors_node, name, "transport").template as<settings::hstring>()));
         sector->parameters_writable().storage_refill_enforcement_gamma =
-            get_named_property("sectors", name, "storage_refill_enforcement").template as<FloatType>() * model()->delta_t();
+            get_named_property(sectors_node, name, "storage_refill_enforcement").template as<FloatType>() * model()->delta_t();
     }
     return sector;
 }
@@ -142,21 +145,23 @@ template<>
 Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::string& name) {
     Sector<VariantPrices>* sector = model()->find_sector(name);
     if (sector == nullptr) {
-        sector =
-            model()->add_sector(name, get_named_property("sectors", name, "upper_storage_limit").template as<Ratio>(),
-                                get_named_property("sectors", name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t(),
-                                Sector<VariantPrices>::map_transport_type(get_named_property("sectors", name, "transport").template as<settings::hstring>()));
-        sector->parameters_writable().supply_elasticity = get_named_property("sectors", name, "supply_elasticity").template as<Ratio>();
+        const settings::SettingsNode& sectors_node = settings["sectors"];
+        sectors_node.require();
+        sector = model()->add_sector(
+            name, get_named_property(sectors_node, name, "upper_storage_limit").template as<Ratio>(),
+            get_named_property(sectors_node, name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t(),
+            Sector<VariantPrices>::map_transport_type(get_named_property(sectors_node, name, "transport").template as<settings::hstring>()));
+        sector->parameters_writable().supply_elasticity = get_named_property(sectors_node, name, "supply_elasticity").template as<Ratio>();
         sector->parameters_writable().price_increase_production_extension =
-            get_named_property("sectors", name, "price_increase_production_extension").template as<Price>();
+            get_named_property(sectors_node, name, "price_increase_production_extension").template as<Price>();
         sector->parameters_writable().estimated_price_increase_production_extension =
-            get_named_property("sectors", name, "estimated_price_increase_production_extension")
+            get_named_property(sectors_node, name, "estimated_price_increase_production_extension")
                 .template as<Price>(to_float(sector->parameters_writable().price_increase_production_extension));
-        sector->parameters_writable().initial_markup = get_named_property("sectors", name, "initial_markup").template as<Price>();
+        sector->parameters_writable().initial_markup = get_named_property(sectors_node, name, "initial_markup").template as<Price>();
         sector->parameters_writable().target_storage_refill_time =
-            get_named_property("sectors", name, "target_storage_refill_time").template as<FloatType>() * model()->delta_t();
+            get_named_property(sectors_node, name, "target_storage_refill_time").template as<FloatType>() * model()->delta_t();
         sector->parameters_writable().target_storage_withdraw_time =
-            get_named_property("sectors", name, "target_storage_withdraw_time").template as<FloatType>() * model()->delta_t();
+            get_named_property(sectors_node, name, "target_storage_withdraw_time").template as<FloatType>() * model()->delta_t();
     }
     return sector;
 }
@@ -271,8 +276,10 @@ void ModelInitializer<VariantPrices>::initialize_connection(Firm<VariantPrices>*
     if (input_storage == nullptr) {
         input_storage = new Storage<VariantPrices>(sector_from, economic_agent_to);
         if (economic_agent_to->is_consumer()) {
+            const settings::SettingsNode& consumers_node = settings["consumers"];
+            consumers_node.require();
             input_storage->parameters_writable().consumption_price_elasticity =
-                get_named_property("consumers", sector_from->id() + "->" + economic_agent_to->region->id(), "consumption_price_elasticity")
+                get_named_property(consumers_node, sector_from->id() + "->" + economic_agent_to->region->id(), "consumption_price_elasticity")
                     .template as<Ratio>();
         }
         economic_agent_to->input_storages.emplace_back(input_storage);

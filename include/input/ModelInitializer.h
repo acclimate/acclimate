@@ -96,7 +96,7 @@ class ModelInitializer {
 
   private:
     settings::SettingsNode get_firm_property(const std::string& sector_name, const std::string& region_name, const std::string& property_name) const;
-    settings::SettingsNode get_named_property(const std::string& tag_name, const std::string& node_name, const std::string& property_name) const;
+    settings::SettingsNode get_named_property(const settings::SettingsNode& node_settings, const std::string& node_name, const std::string& property_name) const;
 
   protected:
     Model<ModelVariant>* const model_m;
