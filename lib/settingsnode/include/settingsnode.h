@@ -186,6 +186,7 @@ class SettingsNode {
     inline bool is_map() const { return inner && inner->is_map(); }
     inline bool has(const char* key) const { return inner && inner->has(key); }
     inline bool has(const std::string& key) const { return inner && inner->has(key); }
+    inline void require() const { check(); }
 
     SettingsNode::Map as_map() const {
         check();
