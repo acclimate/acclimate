@@ -65,10 +65,12 @@ void Model<ModelVariant>::start() {
             }
         }
     }
+#ifdef _OPENMP
     std::random_device rd;
     std::mt19937 g(rd());
     std::shuffle(std::begin(economic_agents), std::end(economic_agents), g);
     std::shuffle(std::begin(purchasing_managers), std::end(purchasing_managers), g);
+#endif
 }
 
 template<class ModelVariant>
@@ -121,10 +123,12 @@ void Model<ModelVariant>::iterate_purchase() {
         auto t2 = std::chrono::high_resolution_clock::now();
         p.second = (t2 - t1).count();
     }
+#ifdef _OPENMP
     std::sort(std::begin(purchasing_managers), std::end(purchasing_managers),
               [](const std::pair<PurchasingManager<ModelVariant>*, std::size_t>& a, const std::pair<PurchasingManager<ModelVariant>*, std::size_t>& b) {
                   return b.second > a.second;
               });
+#endif
 }
 
 template<class ModelVariant>
