@@ -48,12 +48,18 @@ void CapacityManagerPrices<ModelVariant>::print_inputs() const {
 #endif
 
 template<class ModelVariant>
-const Flow CapacityManagerPrices<ModelVariant>::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs) const {
+const Flow CapacityManagerPrices<ModelVariant>::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
+    assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     Price unit_commodity_costs = Price(0.0);
 
     for (auto& input_storage : firm->input_storages) {
-        Flow possible_use_U_hat = input_storage->get_possible_use_U_hat();
+        Flow possible_use_U_hat(0.0);
+        if (estimate) {
+            possible_use_U_hat = input_storage->estimate_possible_use_U_hat();
+        } else {
+            possible_use_U_hat = input_storage->get_possible_use_U_hat();
+        }
         if (consider_transport_in_production_costs) {
             Flow transport_flow = input_storage->purchasing_manager->get_transport_flow();
             unit_commodity_costs += (possible_use_U_hat + transport_flow).get_price() * input_storage->get_technology_coefficient_a();
@@ -78,14 +84,14 @@ template<class ModelVariant>
 const Flow CapacityManagerPrices<ModelVariant>::get_possible_production_X_hat() const {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     bool consider_transport_in_production_costs = false;
-    return get_possible_production_X_hat_intern(consider_transport_in_production_costs);
+    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false);
 }
 
 template<class ModelVariant>
 const Flow CapacityManagerPrices<ModelVariant>::estimate_possible_production_X_hat() const {
     assertstep(EXPECTATION);
     bool consider_transport_in_production_costs = true;
-    return get_possible_production_X_hat_intern(consider_transport_in_production_costs);
+    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true);
 }
 
 template<class ModelVariant>

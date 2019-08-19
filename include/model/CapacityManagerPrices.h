@@ -39,7 +39,7 @@ class CapacityManagerPrices : public CapacityManager<ModelVariant> {
     using CapacityManager<ModelVariant>::possible_overcapacity_ratio_beta;
 
   private:
-    const Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs) const;
+    const Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const;
 
   public:
     CapacityManagerPrices(Firm<ModelVariant>* firm_p, Ratio possible_overcapacity_ratio_beta_p);

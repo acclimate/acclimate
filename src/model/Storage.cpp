@@ -43,9 +43,15 @@ void Storage<ModelVariant>::iterate_consumption_and_production() {
 }
 
 template<class ModelVariant>
-const Flow Storage<ModelVariant>::get_possible_use_U_hat() const {
-    assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
+const Flow Storage<ModelVariant>::estimate_possible_use_U_hat() const {
+    assertstep(EXPECTATION);
     return content_S_ / model()->delta_t() + current_input_flow_I();
+}
+
+template<class ModelVariant>
+const Flow Storage<ModelVariant>::get_possible_use_U_hat() const {
+    assertstep(CONSUMPTION_AND_PRODUCTION);
+    return content_S_ / model()->delta_t() + next_input_flow_I();
 }
 
 template<class ModelVariant>
@@ -109,14 +115,12 @@ void Storage<ModelVariant>::calc_content_S() {
     }
 }
 
-// calculates used content from storage
 template<class ModelVariant>
 void Storage<ModelVariant>::use_content_S(const Flow& used_flow_U_current) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     used_flow_U_ = used_flow_U_current;
 }
 
-// calculates used content from storage
 template<class ModelVariant>
 void Storage<ModelVariant>::set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p) {
     if (economic_agent->is_consumer()) {
@@ -128,7 +132,6 @@ void Storage<ModelVariant>::set_desired_used_flow_U_tilde(const Flow& desired_us
     desired_used_flow_U_tilde_ = desired_used_flow_U_tilde_p;
 }
 
-// push flow_Z to input_flow_I
 template<class ModelVariant>
 void Storage<ModelVariant>::push_flow_Z(const Flow& flow_Z) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -137,7 +140,7 @@ void Storage<ModelVariant>::push_flow_Z(const Flow& flow_Z) {
 
 template<class ModelVariant>
 const Flow& Storage<ModelVariant>::next_input_flow_I() const {
-    assertstep(UNDEFINED);
+    assertstep(EXPECTATION);
     return input_flow_I_[model()->current_register()];
 }
 
