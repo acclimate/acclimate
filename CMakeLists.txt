@@ -99,12 +99,12 @@ include_nlopt(acclimate ON "34fd7ce")
 
 include_netcdf_cxx4(acclimate ON v4.3.0)
 
-include(lib/settingsnode/settingsnode.cmake)
-include_settingsnode(acclimate)
-include_yaml_cpp(acclimate ON "yaml-cpp-0.6.2")
-
 include(lib/libmrio/libmrio.cmake)
 target_link_libraries(acclimate PRIVATE libmrio)
 mark_as_advanced(LIBMRIO_WITH_NETCDF)
+
+include(lib/settingsnode/settingsnode.cmake)
+include_settingsnode(acclimate)
+include_yaml_cpp(acclimate ON "yaml-cpp-0.6.2")
 
 add_cpp_tools(acclimate)
