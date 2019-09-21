@@ -76,6 +76,7 @@ acclimate_include_option(OPTIONS CLEANUP_INFO "show additional information about
 acclimate_include_option(OPTIONS OPTIMIZATION_WARNINGS "show warnings for optimization (only for Debug)" OFF)
 acclimate_include_option(OPTIONS OPTIMIZATION_PROBLEMS_FATAL "make optimization problems fatal (only for Debug)" OFF)
 acclimate_include_option(OPTIONS ENABLE_DMTCP "enable dmtcp checkpointing" OFF)
+acclimate_include_option(OPTIONS USE_MIN_PASSAGE_IN_EXPECTATION "enable minimum passage usage in expectation" ON)
 
 if(ACCLIMATE_ENABLE_DMTCP)
   set_property(TARGET acclimate PROPERTY POSITION_INDEPENDENT_CODE ON)

@@ -225,18 +225,17 @@ FloatType PurchasingManagerPrices<ModelVariant>::objective_costs(const FloatType
 template<class ModelVariant>
 FloatType PurchasingManagerPrices<ModelVariant>::expected_average_price_E_n_r(FloatType D_r,
                                                                               const BusinessConnection<ModelVariant>* business_connection) const {
-    FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
+    FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X == X_expected
     FloatType X_expected =
-        to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
+        to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X == X_expected
 
-    // Here should be something like X_expected = xi_min * X_expected; with xi_min is the mininum passage on the business connections
+#ifdef USE_MIN_PASSAGE_IN_EXPECTATION
     X_expected = business_connection->get_minimum_passage() * X_expected;
-    // X = business_connection->get_minimum_passage() * X;
+#endif
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
     assert(Z_last <= X);
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
     FloatType X_new = D_r + ratio_X_expected_to_X * (X - Z_last);
-    // X_new = business_connection->get_minimum_passage() * X_new;
     assert(X_new >= 0.0);
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity())) {
@@ -278,8 +277,9 @@ FloatType PurchasingManagerPrices<ModelVariant>::n_r(FloatType D_r, const Busine
     FloatType X_expected = 0.0;
     X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());
     X_expected = to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());
-
+#ifdef USE_MIN_PASSAGE_IN_EXPECTATION
     X_expected = business_connection->get_minimum_passage() * X_expected;
+#endif
 
     FloatType E_n_r = expected_average_price_E_n_r(D_r, business_connection);  // expected average price for D_r
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
@@ -313,7 +313,9 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_expected_average_price_E_n
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
+#ifdef USE_MIN_PASSAGE_IN_EXPECTATION
     X_expected = business_connection->get_minimum_passage() * X_expected;
+#endif
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
     FloatType X_new = D_r + ratio_X_expected_to_X * (X - Z_last);
@@ -354,7 +356,9 @@ FloatType PurchasingManagerPrices<ModelVariant>::grad_n_r(FloatType D_r, const B
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
+#ifdef USE_MIN_PASSAGE_IN_EXPECTATION
     X_expected = business_connection->get_minimum_passage() * X_expected;
+#endif
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
     Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
     FloatType grad_E_n_r = grad_expected_average_price_E_n_r(D_r, business_connection);  // expected gradient of average price for D_r
@@ -701,9 +705,13 @@ void PurchasingManagerPrices<ModelVariant>::calc_optimization_parameters(std::ve
             const FloatType X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
 #endif
             const FloatType Z_last = to_float(bc->last_shipment_Z().get_quantity());
+#ifdef USE_MIN_PASSAGE_IN_EXPECTATION
             const FloatType X_expected =
                 bc->get_minimum_passage()
                 * to_float(bc->seller->communicated_parameters().expected_production_X.get_quantity());  // wo expectation X_expected = X
+#else
+            const FloatType X_expected = to_float(bc->seller->communicated_parameters().expected_production_X.get_quantity());  // wo expectation X_expected = X
+#endif
             const FloatType ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
             const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
             assert(X_max <= X_hat);
