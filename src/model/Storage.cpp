@@ -45,13 +45,13 @@ void Storage<ModelVariant>::iterate_consumption_and_production() {
 template<class ModelVariant>
 const Flow Storage<ModelVariant>::estimate_possible_use_U_hat() const {
     assertstep(EXPECTATION);
-    return content_S_ / model()->delta_t() + current_input_flow_I();
+    return content_S_ / model()->delta_t() + next_input_flow_I();
 }
 
 template<class ModelVariant>
 const Flow Storage<ModelVariant>::get_possible_use_U_hat() const {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    return content_S_ / model()->delta_t() + next_input_flow_I();
+    return content_S_ / model()->delta_t() + current_input_flow_I();
 }
 
 template<class ModelVariant>
