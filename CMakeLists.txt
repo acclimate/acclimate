@@ -52,13 +52,15 @@ if(ACCLIMATE_PARALLELIZATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-
 set(ACCLIMATE_OPTIONS "")
 set(ACCLIMATE_VARIANTS "")
 function(acclimate_include_option OPTIONS_NAME NAME DESC STATE)
   option(ACCLIMATE_${NAME} ${DESC} ${STATE})
   if(ACCLIMATE_${NAME})
-    set(ACCLIMATE_${OPTIONS_NAME} ${ACCLIMATE_${OPTIONS_NAME}} ${NAME} PARENT_SCOPE)
+    set(ACCLIMATE_${OPTIONS_NAME}
+        ${ACCLIMATE_${OPTIONS_NAME}} ${NAME}
+        PARENT_SCOPE
+    )
     target_compile_definitions(acclimate PRIVATE ${NAME})
   endif()
 endfunction()
@@ -79,7 +81,11 @@ if(ACCLIMATE_ENABLE_DMTCP)
   set_property(TARGET acclimate PROPERTY POSITION_INDEPENDENT_CODE ON)
   if(ACCLIMATE_PARALLELIZATION)
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-      set_property(TARGET acclimate APPEND_STRING PROPERTY LINK_FLAGS " -qopenmp-link=static")
+      set_property(
+        TARGET acclimate
+        APPEND_STRING
+        PROPERTY LINK_FLAGS " -qopenmp-link=static"
+      )
     endif()
   endif()
 endif()
