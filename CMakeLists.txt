@@ -41,12 +41,9 @@ target_include_directories(acclimate PRIVATE include lib/cpp-library)
 set_property(TARGET acclimate PROPERTY CXX_STANDARD 11)
 
 add_doxygen_documentation(doc doc)
-set_ccache_use()
 set_advanced_cpp_warnings(acclimate)
 set_build_type_specifics(acclimate)
-add_git_version(acclimate
-  FALLBACK_VERSION 3.0.0
-  WITH_DIFF)
+add_git_version(acclimate WITH_DIFF)
 
 option(ACCLIMATE_PARALLELIZATION "" ON)
 if(ACCLIMATE_PARALLELIZATION)
