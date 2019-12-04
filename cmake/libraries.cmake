@@ -54,12 +54,13 @@ function(include_nlopt TARGET DEFAULT GIT_TAG)
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_BUILD_TYPE=Release
         -DNLOPT_CXX=OFF
+        -DNLOPT_FORTRAN=OFF
         -DNLOPT_GUILE=OFF
-        -DNLOPT_LINK_PYTHON=OFF
         -DNLOPT_MATLAB=OFF
         -DNLOPT_OCTAVE=OFF
         -DNLOPT_PYTHON=OFF
         -DNLOPT_SWIG=OFF
+        -DNLOPT_TESTS=OFF
         )
       message(STATUS "Including NLopt from GitHub")
     endif()
@@ -81,7 +82,6 @@ function(include_netcdf_cxx4 TARGET DEFAULT GIT_TAG)
   find_package(NETCDF REQUIRED)
   message(STATUS "NetCDF include directory: ${NETCDF_INCLUDE_DIR}")
   message(STATUS "NetCDF library: ${NETCDF_LIBRARY}")
-  target_link_libraries(${TARGET} PRIVATE netcdf)
   option(INTERNAL_NETCDF_CXX "statically include NetCDF C++4 from GitHub" ${DEFAULT})
   if(INTERNAL_NETCDF_CXX)
     include(ExternalProject)
@@ -111,6 +111,7 @@ function(include_netcdf_cxx4 TARGET DEFAULT GIT_TAG)
     message(STATUS "NetCDF C++4 library: ${NETCDF_CPP4_LIBRARY}")
     target_link_libraries(${TARGET} PRIVATE netcdf_c++4)
   endif()
+  target_link_libraries(${TARGET} PRIVATE netcdf)
 endfunction()
 
 
@@ -124,8 +125,8 @@ function(include_yaml_cpp TARGET DEFAULT GIT_TAG)
         GIT_TAG ${GIT_TAG}
         INSTALL_COMMAND ""
         CMAKE_ARGS
-        -DBUILD_GMOCK=OFF
         -DCMAKE_BUILD_TYPE=Release
+        -DYAML_BUILD_SHARED_LIBS=OFF
         -DYAML_CPP_BUILD_CONTRIB=OFF
         -DYAML_CPP_BUILD_TESTS=OFF
         -DYAML_CPP_BUILD_TOOLS=OFF
