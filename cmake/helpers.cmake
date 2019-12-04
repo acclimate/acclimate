@@ -116,11 +116,16 @@ function(get_depends_properties RESULT_NAME TARGET PROPERTIES)
   foreach(PROPERTY ${PROPERTIES})
     set(RESULT_${PROPERTY})
   endforeach()
-  get_target_property(INTERFACE_LINK_LIBRARIES ${TARGET} INTERFACE_LINK_LIBRARIES)
-  if(INTERFACE_LINK_LIBRARIES)
-    foreach(INTERFACE_LINK_LIBRARY ${INTERFACE_LINK_LIBRARIES})
-      if(TARGET ${INTERFACE_LINK_LIBRARY})
-        get_depends_properties(TMP ${INTERFACE_LINK_LIBRARY} "${PROPERTIES}")
+  get_target_property(TARGET_TYPE ${TARGET} TYPE)
+  if (TARGET_TYPE STREQUAL "EXECUTABLE")
+    get_target_property(LIBRARIES ${TARGET} LINK_LIBRARIES)
+  else ()
+    get_target_property(LIBRARIES ${TARGET} INTERFACE_LINK_LIBRARIES)
+  endif ()
+  if(LIBRARIES)
+    foreach(LIBRARY ${LIBRARIES})
+      if(TARGET ${LIBRARY})
+        get_depends_properties(TMP ${LIBRARY} "${PROPERTIES}")
         foreach(PROPERTY ${PROPERTIES})
           set(RESULT_${PROPERTY} ${RESULT_${PROPERTY}} ${TMP_${PROPERTY}})
         endforeach()
@@ -205,7 +210,9 @@ function(add_on_source TARGET)
 
       if(PER_SOURCEFILE)
         get_target_property(SOURCES ${TARGET} SOURCES)
-        set(COMMANDS)
+        add_custom_target(
+          ${ARGS_NAME}
+          COMMENT "Running ${ARGS_NAME} on ${TARGET}...")
         foreach(FILE ${SOURCES})
           set(LOCAL_ARGS)
           foreach(ARG ${ARGS})
@@ -219,19 +226,14 @@ function(add_on_source TARGET)
           if(FILE)
             file(RELATIVE_PATH FILE ${CMAKE_CURRENT_SOURCE_DIR} ${FILE})
             add_custom_command(
-              OUTPUT ${ARGS_NAME}/${FILE}
+              TARGET ${ARGS_NAME}
               COMMAND ${${ARGS_COMMAND}_PATH} ${LOCAL_ARGS}
               WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
               COMMENT "Running ${ARGS_NAME} on ${FILE}..."
               VERBATIM)
             set_source_files_properties(${ARGS_NAME}/${FILE} PROPERTIES SYMBOLIC TRUE)
-            set(COMMANDS ${COMMANDS} ${ARGS_NAME}/${FILE})
           endif()
         endforeach()
-        add_custom_target(
-          ${ARGS_NAME}
-          DEPENDS ${COMMANDS}
-          COMMENT "Running ${ARGS_NAME} on ${TARGET}...")
       else()
         add_custom_target(
           ${ARGS_NAME}
