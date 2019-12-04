@@ -100,15 +100,22 @@ function(set_build_type_specifics TARGET)
 endfunction()
 
 
-function(set_ccache_use)
+function(set_advanced_options)
   find_program(CCACHE_FOUND ccache)
   if(CCACHE_FOUND)
-    option(USE_CCACHE "Use ccache if available" ON)
+    option(USE_CCACHE "Use ccache" OFF)
     if(USE_CCACHE)
       set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
       set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
     endif()
+    mark_as_advanced(USE_CCACHE)
   endif()
+
+  option(PREFER_STATIC_LINKING "Prefer static linking" OFF)
+  if(PREFER_STATIC_LINKING)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_STATIC_LIBRARY_SUFFIX};${CMAKE_SHARED_LIBRARY_SUFFIX}" PARENT_SCOPE)
+  endif()
+  mark_as_advanced(PREFER_STATIC_LINKING)
 endfunction()
 
 
