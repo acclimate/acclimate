@@ -16,18 +16,19 @@
 set(HELPER_MODULES_PATH ${CMAKE_CURRENT_LIST_DIR})
 include(CMakeParseArguments)
 
-
 function(add_doxygen_documentation PATH TARGET)
   find_package(Doxygen)
   if(DOXYGEN_FOUND)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${PATH}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/${PATH}/Doxyfile @ONLY)
-    add_custom_target(${TARGET}
+    add_custom_target(
+      ${TARGET}
       ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/${PATH}/Doxyfile
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Generating documentation..." VERBATIM)
+      COMMENT "Generating documentation..."
+      VERBATIM
+    )
   endif(DOXYGEN_FOUND)
 endfunction()
-
 
 function(set_advanced_cpp_warnings TARGET)
   if(ARGN GREATER 1)
@@ -40,42 +41,44 @@ function(set_advanced_cpp_warnings TARGET)
   endif()
 endfunction()
 
-
 function(set_default_build_type BUILD_TYPE)
   if(${CMAKE_VERSION} VERSION_GREATER "3.8.0")
     cmake_policy(SET CMP0069 NEW) # for INTERPROCEDURAL_OPTIMIZATION
   endif()
   if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE ${BUILD_TYPE} CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel Profile." FORCE)
+    set(CMAKE_BUILD_TYPE
+        ${BUILD_TYPE}
+        CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel Profile." FORCE
+    )
   endif()
   set(CMAKE_CXX_FLAGS_PROFILE
-    "-pg"
-    CACHE STRING "Flags used by the compiler during profile builds."
-    FORCE)
+      "-pg"
+      CACHE STRING "Flags used by the compiler during profile builds." FORCE
+  )
   set(CMAKE_C_FLAGS_PROFILE
-    "-pg"
-    CACHE STRING "Flags used by the compiler during profile builds."
-    FORCE)
+      "-pg"
+      CACHE STRING "Flags used by the compiler during profile builds." FORCE
+  )
   set(CMAKE_EXE_LINKER_FLAGS_PROFILE
-    "-pg"
-    CACHE STRING "Flags used by the linker during profile builds."
-    FORCE)
+      "-pg"
+      CACHE STRING "Flags used by the linker during profile builds." FORCE
+  )
   set(CMAKE_Fortran_FLAGS_PROFILE
-    "-pg"
-    CACHE STRING "Flags used by the compiler during profile builds."
-    FORCE)
+      "-pg"
+      CACHE STRING "Flags used by the compiler during profile builds." FORCE
+  )
   set(CMAKE_MODULE_LINKER_FLAGS_PROFILE
-    "-pg"
-    CACHE STRING "Flags used by the linker during profile builds."
-    FORCE)
+      "-pg"
+      CACHE STRING "Flags used by the linker during profile builds." FORCE
+  )
   set(CMAKE_SHARED_LINKER_FLAGS_PROFILE
-    "-pg"
-    CACHE STRING "Flags used by the linker during profile builds."
-    FORCE)
+      "-pg"
+      CACHE STRING "Flags used by the linker during profile builds." FORCE
+  )
   set(CMAKE_STATIC_LINKER_FLAGS_PROFILE
-    "-pg"
-    CACHE STRING "Flags used by the linker during profile builds."
-    FORCE)
+      "-pg"
+      CACHE STRING "Flags used by the linker during profile builds." FORCE
+  )
   mark_as_advanced(
     CMAKE_CXX_FLAGS_PROFILE
     CMAKE_C_FLAGS_PROFILE
@@ -83,12 +86,16 @@ function(set_default_build_type BUILD_TYPE)
     CMAKE_Fortran_FLAGS_PROFILE
     CMAKE_MODULE_LINKER_FLAGS_PROFILE
     CMAKE_SHARED_LINKER_FLAGS_PROFILE
-    CMAKE_STATIC_LINKER_FLAGS_PROFILE)
+    CMAKE_STATIC_LINKER_FLAGS_PROFILE
+  )
 endfunction()
 
-
 function(set_build_type_specifics TARGET)
-  if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel" OR CMAKE_BUILD_TYPE STREQUAL "Profile")
+  if(CMAKE_BUILD_TYPE STREQUAL "Release"
+     OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"
+     OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"
+     OR CMAKE_BUILD_TYPE STREQUAL "Profile"
+  )
     if(${CMAKE_VERSION} VERSION_GREATER "3.8.0")
       message(STATUS "Enabling interprocedural optimization")
       set_property(TARGET ${TARGET} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -98,7 +105,6 @@ function(set_build_type_specifics TARGET)
     target_compile_definitions(${TARGET} PRIVATE DEBUG)
   endif()
 endfunction()
-
 
 function(set_advanced_options)
   find_program(CCACHE_FOUND ccache)
@@ -113,22 +119,24 @@ function(set_advanced_options)
 
   option(PREFER_STATIC_LINKING "Prefer static linking" OFF)
   if(PREFER_STATIC_LINKING)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_STATIC_LIBRARY_SUFFIX};${CMAKE_SHARED_LIBRARY_SUFFIX}" PARENT_SCOPE)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES
+        "${CMAKE_STATIC_LIBRARY_SUFFIX};${CMAKE_SHARED_LIBRARY_SUFFIX}"
+        PARENT_SCOPE
+    )
   endif()
   mark_as_advanced(PREFER_STATIC_LINKING)
 endfunction()
-
 
 function(get_depends_properties RESULT_NAME TARGET PROPERTIES)
   foreach(PROPERTY ${PROPERTIES})
     set(RESULT_${PROPERTY})
   endforeach()
   get_target_property(TARGET_TYPE ${TARGET} TYPE)
-  if (TARGET_TYPE STREQUAL "EXECUTABLE")
+  if(TARGET_TYPE STREQUAL "EXECUTABLE")
     get_target_property(LIBRARIES ${TARGET} LINK_LIBRARIES)
-  else ()
+  else()
     get_target_property(LIBRARIES ${TARGET} INTERFACE_LINK_LIBRARIES)
-  endif ()
+  endif()
   if(LIBRARIES)
     foreach(LIBRARY ${LIBRARIES})
       if(TARGET ${LIBRARY})
@@ -144,10 +152,12 @@ function(get_depends_properties RESULT_NAME TARGET PROPERTIES)
     if(TMP)
       set(RESULT_${PROPERTY} ${RESULT_${PROPERTY}} ${TMP})
     endif()
-    set(${RESULT_NAME}_${PROPERTY} ${RESULT_${PROPERTY}} PARENT_SCOPE)
+    set(${RESULT_NAME}_${PROPERTY}
+        ${RESULT_${PROPERTY}}
+        PARENT_SCOPE
+    )
   endforeach()
 endfunction()
-
 
 function(get_all_include_directories RESULT_NAME TARGET)
   get_depends_properties(RESULT ${TARGET} "INTERFACE_INCLUDE_DIRECTORIES;INTERFACE_SYSTEM_INCLUDE_DIRECTORIES")
@@ -159,9 +169,11 @@ function(get_all_include_directories RESULT_NAME TARGET)
   if(RESULT)
     list(REMOVE_DUPLICATES RESULT)
   endif()
-  set(${RESULT_NAME} ${RESULT} PARENT_SCOPE)
+  set(${RESULT_NAME}
+      ${RESULT}
+      PARENT_SCOPE
+  )
 endfunction()
-
 
 function(get_all_compile_definitions RESULT_NAME TARGET)
   get_depends_properties(RESULT ${TARGET} "INTERFACE_COMPILE_DEFINITIONS")
@@ -173,9 +185,11 @@ function(get_all_compile_definitions RESULT_NAME TARGET)
   if(RESULT)
     list(REMOVE_DUPLICATES RESULT)
   endif()
-  set(${RESULT_NAME} ${RESULT} PARENT_SCOPE)
+  set(${RESULT_NAME}
+      ${RESULT}
+      PARENT_SCOPE
+  )
 endfunction()
-
 
 function(add_on_source TARGET)
   cmake_parse_arguments(ARGS "" "COMMAND;NAME" "ARGUMENTS" ${ARGN})
@@ -217,9 +231,7 @@ function(add_on_source TARGET)
 
       if(PER_SOURCEFILE)
         get_target_property(SOURCES ${TARGET} SOURCES)
-        add_custom_target(
-          ${ARGS_NAME}
-          COMMENT "Running ${ARGS_NAME} on ${TARGET}...")
+        add_custom_target(${ARGS_NAME} COMMENT "Running ${ARGS_NAME} on ${TARGET}...")
         foreach(FILE ${SOURCES})
           set(LOCAL_ARGS)
           foreach(ARG ${ARGS})
@@ -237,7 +249,8 @@ function(add_on_source TARGET)
               COMMAND ${${ARGS_COMMAND}_PATH} ${LOCAL_ARGS}
               WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
               COMMENT "Running ${ARGS_NAME} on ${FILE}..."
-              VERBATIM)
+              VERBATIM
+            )
             set_source_files_properties(${ARGS_NAME}/${FILE} PROPERTIES SYMBOLIC TRUE)
           endif()
         endforeach()
@@ -247,73 +260,92 @@ function(add_on_source TARGET)
           COMMAND ${${ARGS_COMMAND}_PATH} ${ARGS}
           WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
           COMMENT "Running ${ARGS_NAME} on ${TARGET}..."
-          VERBATIM)
+          VERBATIM
+        )
       endif()
     endif()
   endif()
 endfunction()
 
-
 function(add_cpp_tools TARGET)
   set(CPP_TARGETS)
 
-  add_on_source(${TARGET}
+  add_on_source(
+    ${TARGET}
     NAME ${TARGET}_clang_format
     COMMAND clang-format
-    ARGUMENTS -i --style=file ALL_SOURCEFILES)
+    ARGUMENTS -i --style=file ALL_SOURCEFILES
+  )
   if(TARGET ${TARGET}_clang_format)
     set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_clang_format)
   endif()
 
-  add_on_source(${TARGET}
+  add_on_source(
+    ${TARGET}
     NAME ${TARGET}_clang_tidy
     COMMAND clang-tidy
-    ARGUMENTS -quiet SOURCEFILE -- -std=c++11 INCLUDES DEFINITIONS)
+    ARGUMENTS -quiet SOURCEFILE -- -std=c++11 INCLUDES DEFINITIONS
+  )
   if(TARGET ${TARGET}_clang_tidy)
     set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_clang_tidy)
 
-    add_on_source(${TARGET}
+    add_on_source(
+      ${TARGET}
       NAME ${TARGET}_clang_tidy_fix
       COMMAND clang-tidy
-      ARGUMENTS -quiet -fix -format-style=file SOURCEFILE -- -std=c++11 INCLUDES DEFINITIONS)
+      ARGUMENTS -quiet
+                -fix
+                -format-style=file
+                SOURCEFILE
+                --
+                -std=c++11
+                INCLUDES
+                DEFINITIONS
+    )
   endif()
 
-  add_on_source(${TARGET}
+  add_on_source(
+    ${TARGET}
     NAME ${TARGET}_cppcheck
     COMMAND cppcheck
-    ARGUMENTS INCLUDES DEFINITIONS --quiet --template=gcc --enable=all ALL_SOURCEFILES)
+    ARGUMENTS INCLUDES DEFINITIONS --quiet --template=gcc --enable=all ALL_SOURCEFILES
+  )
   if(TARGET ${TARGET}_cppcheck)
     set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_cppcheck)
   endif()
 
-  add_on_source(${TARGET}
+  add_on_source(
+    ${TARGET}
     NAME ${TARGET}_cppclean
     COMMAND cppclean
-    ARGUMENTS INCLUDES SOURCEFILE)
+    ARGUMENTS INCLUDES SOURCEFILE
+  )
 
-  add_on_source(${TARGET}
+  add_on_source(
+    ${TARGET}
     NAME ${TARGET}_vera
     COMMAND vera++
-    ARGUMENTS --warning --no-duplicate --show-rule ALL_SOURCEFILES)
+    ARGUMENTS --warning --no-duplicate --show-rule ALL_SOURCEFILES
+  )
   if(TARGET ${TARGET}_vera)
     set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_vera)
   endif()
 
   get_target_property(INCLUDE_DIRECTORIES ${TARGET} INCLUDE_DIRECTORIES)
-  add_on_source(${TARGET}
+  add_on_source(
+    ${TARGET}
     NAME ${TARGET}_flint
     COMMAND flint++
-    ARGUMENTS -v -r ALL_SOURCEFILES ${INCLUDE_DIRECTORIES})
+    ARGUMENTS -v -r ALL_SOURCEFILES ${INCLUDE_DIRECTORIES}
+  )
   if(TARGET ${TARGET}_flint)
     set(CPP_TARGETS ${CPP_TARGETS} ${TARGET}_flint)
   endif()
 
   if(CPP_TARGETS)
-    add_custom_target(${TARGET}_cpp_tools
-      DEPENDS ${CPP_TARGETS})
+    add_custom_target(${TARGET}_cpp_tools DEPENDS ${CPP_TARGETS})
   endif()
 endfunction()
-
 
 function(add_git_version TARGET)
   cmake_parse_arguments(ARGS "WITH_DIFF" "FALLBACK_VERSION;DPREFIX;DIFF_VAR" "" ${ARGN})
@@ -325,10 +357,9 @@ function(add_git_version TARGET)
     string(TOUPPER ${ARGS_DPREFIX} ARGS_DPREFIX)
   endif()
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/git_version/version.h
-    "#ifndef ${ARGS_DPREFIX}_VERSION_H\n"
-    "#define ${ARGS_DPREFIX}_VERSION_H\n"
-    "#define ${ARGS_DPREFIX}_VERSION \"${ARGS_FALLBACK_VERSION}\"\n"
-    "#endif")
+       "#ifndef ${ARGS_DPREFIX}_VERSION_H\n" "#define ${ARGS_DPREFIX}_VERSION_H\n"
+       "#define ${ARGS_DPREFIX}_VERSION \"${ARGS_FALLBACK_VERSION}\"\n" "#endif"
+  )
   target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/git_version)
   if(NOT ARGS_DIFF_VAR)
     string(TOLOWER ${ARGS_DPREFIX}_git_diff ARGS_DIFF_VAR)
@@ -338,34 +369,30 @@ function(add_git_version TARGET)
     mark_as_advanced(HAVE_GIT)
     if(HAVE_GIT)
 
-      add_custom_target(${TARGET}_version ALL
-        COMMAND ${CMAKE_COMMAND}
-        -DARGS_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-        -DARGS_DIFF_VAR=${ARGS_DIFF_VAR}
-        -DARGS_DPREFIX=${ARGS_DPREFIX}
-        -DARGS_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-        -DARGS_WITH_DIFF=${ARGS_WITH_DIFF}
-        -P ${HELPER_MODULES_PATH}/git_version.cmake)
+      add_custom_target(
+        ${TARGET}_version ALL
+        COMMAND
+          ${CMAKE_COMMAND} -DARGS_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR} -DARGS_DIFF_VAR=${ARGS_DIFF_VAR}
+          -DARGS_DPREFIX=${ARGS_DPREFIX} -DARGS_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+          -DARGS_WITH_DIFF=${ARGS_WITH_DIFF} -P ${HELPER_MODULES_PATH}/git_version.cmake
+      )
 
-      set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/git_version/version.h
-        PROPERTIES GENERATED TRUE
-        HEADER_FILE_ONLY TRUE)
+      set_source_files_properties(
+        ${CMAKE_CURRENT_BINARY_DIR}/git_version/version.h PROPERTIES GENERATED TRUE HEADER_FILE_ONLY TRUE
+      )
 
       add_dependencies(${TARGET} ${TARGET}_version)
 
       if(ARGS_WITH_DIFF)
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/git_version/diff.cpp
-          "const char* ${ARGS_DIFF_VAR} = \"UNKNOWN\";\n")
-        set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/git_version/diff.cpp
-          PROPERTIES GENERATED TRUE)
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/git_version/diff.cpp "const char* ${ARGS_DIFF_VAR} = \"UNKNOWN\";\n")
+        set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/git_version/diff.cpp PROPERTIES GENERATED TRUE)
       endif()
 
     endif()
   endif()
   if(ARGS_WITH_DIFF)
     if(NOT HAVE_GIT)
-      file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/git_version/diff.cpp
-        "const char* ${ARGS_DIFF_VAR} = \"\";\n")
+      file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/git_version/diff.cpp "const char* ${ARGS_DIFF_VAR} = \"\";\n")
     endif()
     target_sources(${TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/git_version/diff.cpp)
   endif()

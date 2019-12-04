@@ -17,39 +17,42 @@ execute_process(
   COMMAND git describe --tags --dirty --always
   WORKING_DIRECTORY ${ARGS_SOURCE_DIR}
   OUTPUT_VARIABLE GIT_OUTPUT
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 string(REGEX REPLACE "^v([0-9]+\\.[0-9]+)\\.(0-)?([0-9]*)((-.+)?)$" "\\1.\\3\\4" GIT_VERSION "${GIT_OUTPUT}")
-set(VERSION_FILE
-  "#ifndef ${ARGS_DPREFIX}_VERSION_H"
-  "#define ${ARGS_DPREFIX}_VERSION_H"
-  "#define ${ARGS_DPREFIX}_VERSION \"${GIT_VERSION}\"")
+set(VERSION_FILE "#ifndef ${ARGS_DPREFIX}_VERSION_H" "#define ${ARGS_DPREFIX}_VERSION_H"
+                 "#define ${ARGS_DPREFIX}_VERSION \"${GIT_VERSION}\""
+)
 
 if(ARGS_WITH_DIFF)
   execute_process(
     COMMAND git diff HEAD --no-color
     WORKING_DIRECTORY ${ARGS_SOURCE_DIR}
     OUTPUT_VARIABLE GIT_DIFF
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
   if(GIT_DIFF)
     string(MD5 GIT_DIFF_HASH "${GIT_DIFF}")
     string(SUBSTRING "${GIT_DIFF_HASH}" 0 12 GIT_DIFF_HASH)
     set(${ARGS_DPREFIX}_DIFF GIT_DIFF)
     set(${ARGS_DPREFIX}_DIFF_HASH GIT_DIFF_HASH)
     file(WRITE ${ARGS_BINARY_DIR}/git_version/diff.cpp.new
-      "const char* ${ARGS_DIFF_VAR} = R\"${GIT_DIFF_HASH}(${GIT_DIFF})${GIT_DIFF_HASH}\";\n")
+         "const char* ${ARGS_DIFF_VAR} = R\"${GIT_DIFF_HASH}(${GIT_DIFF})${GIT_DIFF_HASH}\";\n"
+    )
     set(VERSION_FILE ${VERSION_FILE} "#define ${ARGS_DPREFIX}_HAS_DIFF")
   else()
-    file(WRITE ${ARGS_BINARY_DIR}/git_version/diff.cpp.new
-      "const char* ${ARGS_DIFF_VAR} = \"\";\n")
+    file(WRITE ${ARGS_BINARY_DIR}/git_version/diff.cpp.new "const char* ${ARGS_DIFF_VAR} = \"\";\n")
   endif()
   execute_process(
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${ARGS_BINARY_DIR}/git_version/diff.cpp.new ${ARGS_BINARY_DIR}/git_version/diff.cpp)
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${ARGS_BINARY_DIR}/git_version/diff.cpp.new
+            ${ARGS_BINARY_DIR}/git_version/diff.cpp
+  )
 endif()
 
 set(VERSION_FILE ${VERSION_FILE} "#endif")
 string(REPLACE ";" "\n" VERSION_FILE "${VERSION_FILE}")
 file(WRITE ${ARGS_BINARY_DIR}/git_version/version.h.new ${VERSION_FILE})
 execute_process(
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  ${ARGS_BINARY_DIR}/git_version/version.h.new ${ARGS_BINARY_DIR}/git_version/version.h)
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${ARGS_BINARY_DIR}/git_version/version.h.new
+          ${ARGS_BINARY_DIR}/git_version/version.h
+)

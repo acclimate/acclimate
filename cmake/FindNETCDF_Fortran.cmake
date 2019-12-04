@@ -10,8 +10,8 @@ find_package_handle_standard_args(NETCDF_Fortran DEFAULT_MSG NETCDF_Fortran_INCL
 
 mark_as_advanced(NETCDF_Fortran_INCLUDE_DIR NETCDF_Fortran_LIBRARY)
 
-set(NETCDF_Fortran_LIBRARIES ${NETCDF_Fortran_LIBRARY} )
-set(NETCDF_Fortran_INCLUDE_DIRS ${NETCDF_Fortran_INCLUDE_DIR} )
+set(NETCDF_Fortran_LIBRARIES ${NETCDF_Fortran_LIBRARY})
+set(NETCDF_Fortran_INCLUDE_DIRS ${NETCDF_Fortran_INCLUDE_DIR})
 
 if(NETCDF_Fortran_FOUND AND NOT TARGET netcdff)
   add_library(netcdff UNKNOWN IMPORTED)

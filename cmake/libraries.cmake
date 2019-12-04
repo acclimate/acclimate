@@ -16,11 +16,17 @@
 function(add_system_paths)
   if(DEFINED ENV{LIBRARY_PATH})
     string(REPLACE ":" ";" LIBRARY_PATH $ENV{LIBRARY_PATH})
-    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${LIBRARY_PATH} PARENT_SCOPE)
+    set(CMAKE_LIBRARY_PATH
+        ${CMAKE_LIBRARY_PATH} ${LIBRARY_PATH}
+        PARENT_SCOPE
+    )
   endif()
   if(DEFINED ENV{LD_LIBRARY_PATH})
     string(REPLACE ":" ";" LD_LIBRARY_PATH $ENV{LD_LIBRARY_PATH})
-    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${LD_LIBRARY_PATH} PARENT_SCOPE)
+    set(CMAKE_LIBRARY_PATH
+        ${CMAKE_LIBRARY_PATH} ${LD_LIBRARY_PATH}
+        PARENT_SCOPE
+    )
   endif()
 endfunction()
 
@@ -40,35 +46,36 @@ function(include_custom_library NAME HEADER_FILE)
   endif()
 endfunction()
 
-
 function(include_nlopt TARGET DEFAULT GIT_TAG)
   option(INTERNAL_NLOPT "statically include NLopt from GitHub" ${DEFAULT})
   if(INTERNAL_NLOPT)
     include(ExternalProject)
     if(NOT TARGET nlopt)
-      ExternalProject_Add(nlopt
+      externalproject_add(
+        nlopt
         GIT_REPOSITORY https://github.com/stevengj/nlopt.git
         GIT_TAG ${GIT_TAG}
         INSTALL_COMMAND ""
-        CMAKE_ARGS
-        -DBUILD_SHARED_LIBS=OFF
-        -DCMAKE_BUILD_TYPE=Release
-        -DNLOPT_CXX=OFF
-        -DNLOPT_FORTRAN=OFF
-        -DNLOPT_GUILE=OFF
-        -DNLOPT_MATLAB=OFF
-        -DNLOPT_OCTAVE=OFF
-        -DNLOPT_PYTHON=OFF
-        -DNLOPT_SWIG=OFF
-        -DNLOPT_TESTS=OFF
-        )
+        CMAKE_ARGS -DBUILD_SHARED_LIBS=OFF
+                   -DCMAKE_BUILD_TYPE=Release
+                   -DNLOPT_CXX=OFF
+                   -DNLOPT_FORTRAN=OFF
+                   -DNLOPT_GUILE=OFF
+                   -DNLOPT_MATLAB=OFF
+                   -DNLOPT_OCTAVE=OFF
+                   -DNLOPT_PYTHON=OFF
+                   -DNLOPT_SWIG=OFF
+                   -DNLOPT_TESTS=OFF
+      )
       message(STATUS "Including NLopt from GitHub")
     endif()
-    ExternalProject_Get_Property(nlopt SOURCE_DIR)
-    ExternalProject_Get_Property(nlopt BINARY_DIR)
+    externalproject_get_property(nlopt SOURCE_DIR)
+    externalproject_get_property(nlopt BINARY_DIR)
     include_directories(${BINARY_DIR}/src/api)
     add_dependencies(${TARGET} nlopt)
-    target_link_libraries(${TARGET} PRIVATE ${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}nlopt${CMAKE_STATIC_LIBRARY_SUFFIX})
+    target_link_libraries(
+      ${TARGET} PRIVATE ${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}nlopt${CMAKE_STATIC_LIBRARY_SUFFIX}
+    )
   else()
     find_package(NLOPT REQUIRED)
     message(STATUS "NLopt include directory: ${NLOPT_INCLUDE_DIR}")
@@ -76,7 +83,6 @@ function(include_nlopt TARGET DEFAULT GIT_TAG)
     target_link_libraries(${TARGET} PRIVATE nlopt)
   endif()
 endfunction()
-
 
 function(include_netcdf_cxx4 TARGET DEFAULT GIT_TAG)
   find_package(NETCDF REQUIRED)
@@ -87,24 +93,23 @@ function(include_netcdf_cxx4 TARGET DEFAULT GIT_TAG)
     include(ExternalProject)
     if(NOT TARGET netcdf_c++4)
       string(REPLACE ";" "$<SEMICOLON>" CMAKE_LIBRARY_PATH_STR "${CMAKE_LIBRARY_PATH}")
-      ExternalProject_Add(netcdf_c++4
+      externalproject_add(
+        netcdf_c++4
         GIT_REPOSITORY https://github.com/Unidata/netcdf-cxx4
         GIT_TAG ${GIT_TAG}
         INSTALL_COMMAND ""
-        CMAKE_ARGS
-        -DBUILD_SHARED_LIBS=OFF
-        -DBUILD_TESTING=OFF
-        -DCMAKE_BUILD_TYPE=Release
-        -DNCXX_ENABLE_TESTS=OFF
-        -DCMAKE_LIBRARY_PATH=${CMAKE_LIBRARY_PATH_STR}
-        )
+        CMAKE_ARGS -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DNCXX_ENABLE_TESTS=OFF
+                   -DCMAKE_LIBRARY_PATH=${CMAKE_LIBRARY_PATH_STR}
+      )
       message(STATUS "Including NetCDF C++4 from GitHub")
     endif()
-    ExternalProject_Get_Property(netcdf_c++4 SOURCE_DIR)
-    ExternalProject_Get_Property(netcdf_c++4 BINARY_DIR)
+    externalproject_get_property(netcdf_c++4 SOURCE_DIR)
+    externalproject_get_property(netcdf_c++4 BINARY_DIR)
     include_directories(${SOURCE_DIR}/cxx4)
     add_dependencies(${TARGET} netcdf_c++4)
-    target_link_libraries(${TARGET} PRIVATE ${BINARY_DIR}/cxx4/${CMAKE_STATIC_LIBRARY_PREFIX}netcdf-cxx4${CMAKE_STATIC_LIBRARY_SUFFIX})
+    target_link_libraries(
+      ${TARGET} PRIVATE ${BINARY_DIR}/cxx4/${CMAKE_STATIC_LIBRARY_PREFIX}netcdf-cxx4${CMAKE_STATIC_LIBRARY_SUFFIX}
+    )
   else()
     find_package(NETCDF_CPP4 REQUIRED)
     message(STATUS "NetCDF C++4 include directory: ${NETCDF_CPP4_INCLUDE_DIR}")
@@ -114,30 +119,28 @@ function(include_netcdf_cxx4 TARGET DEFAULT GIT_TAG)
   target_link_libraries(${TARGET} PRIVATE netcdf)
 endfunction()
 
-
 function(include_yaml_cpp TARGET DEFAULT GIT_TAG)
   option(INTERNAL_YAML_CPP "statically include yaml-cpp from GitHub" ${DEFAULT})
   if(INTERNAL_YAML_CPP)
     include(ExternalProject)
     if(NOT TARGET yaml-cpp)
-      ExternalProject_Add(yaml-cpp
+      externalproject_add(
+        yaml-cpp
         GIT_REPOSITORY https://github.com/jbeder/yaml-cpp
         GIT_TAG ${GIT_TAG}
         INSTALL_COMMAND ""
-        CMAKE_ARGS
-        -DCMAKE_BUILD_TYPE=Release
-        -DYAML_BUILD_SHARED_LIBS=OFF
-        -DYAML_CPP_BUILD_CONTRIB=OFF
-        -DYAML_CPP_BUILD_TESTS=OFF
-        -DYAML_CPP_BUILD_TOOLS=OFF
-        )
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release -DYAML_BUILD_SHARED_LIBS=OFF -DYAML_CPP_BUILD_CONTRIB=OFF
+                   -DYAML_CPP_BUILD_TESTS=OFF -DYAML_CPP_BUILD_TOOLS=OFF
+      )
       message(STATUS "Including yaml-cpp from GitHub")
     endif()
-    ExternalProject_Get_Property(yaml-cpp SOURCE_DIR)
-    ExternalProject_Get_Property(yaml-cpp BINARY_DIR)
+    externalproject_get_property(yaml-cpp SOURCE_DIR)
+    externalproject_get_property(yaml-cpp BINARY_DIR)
     include_directories(${SOURCE_DIR}/include)
     add_dependencies(${TARGET} yaml-cpp)
-    target_link_libraries(${TARGET} PRIVATE ${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}yaml-cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
+    target_link_libraries(
+      ${TARGET} PRIVATE ${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}yaml-cpp${CMAKE_STATIC_LIBRARY_SUFFIX}
+    )
   else()
     find_package(YAML_CPP REQUIRED)
     message(STATUS "yaml-cpp include directory: ${YAML_CPP_INCLUDE_DIR}")
