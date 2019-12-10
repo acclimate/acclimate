@@ -894,13 +894,13 @@ void ModelInitializer::build_transport_network() {
 }
 
 void ModelInitializer::initialize() {
-    pre_initialize_variant();
+    pre_initialize();
     build_agent_network();
     clean_network();
-    post_initialize_variant();
+    post_initialize();
 }
 
-void ModelInitializer::pre_initialize_variant() {
+void ModelInitializer::pre_initialize() {
     const settings::SettingsNode& parameters = settings["model"];
     model()->parameters_writable().transport_penalty_small = parameters["transport_penalty_small"].as<Price>();
     model()->parameters_writable().transport_penalty_large = parameters["transport_penalty_large"].as<Price>();
@@ -958,7 +958,7 @@ void ModelInitializer::pre_initialize_variant() {
     }
 }
 
-void ModelInitializer::post_initialize_variant() {
+void ModelInitializer::post_initialize() {
     // initialize price dependent members of each capacity manager, which can only be calculated after the whole network has been initialized
     for (auto& sector : model()->sectors) {
         for (auto& firm : sector->firms) {

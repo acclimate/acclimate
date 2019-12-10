@@ -120,7 +120,7 @@ void Output::write_firm_parameters(const Firm* p, const settings::SettingsNode& 
                 internal_write_value(name, p->capacity_manager->get_possible_production_capacity_p_hat());
                 break;
             default:
-                if (!write_firm_parameter_variant(p, name)) {
+                if (!write_firm_parameter(p, name)) {
                     write_economic_agent_parameter(p, name);  // ignore unknown parameters
                 }
                 break;
@@ -137,7 +137,7 @@ void Output::write_firm_parameters(const Firm* p, const settings::SettingsNode& 
     }
 }
 
-bool Output::write_firm_parameter_variant(const Firm* p, const hstring& name) {
+bool Output::write_firm_parameter(const Firm* p, const hstring& name) {
     switch (name) {
         case hstring::hash("offer_price"):
             internal_write_value(name, p->sales_manager->communicated_parameters().production_X.get_price());
@@ -227,7 +227,7 @@ void Output::write_consumer_parameters(const Consumer* c, const settings::Settin
                 internal_write_value(name, c->forcing());
                 break;
             default:
-                if (!write_consumer_parameter_variant(c, name)) {
+                if (!write_consumer_parameter(c, name)) {
                     write_economic_agent_parameter(c, name);  // ignore unknown parameters
                 }
                 break;
@@ -238,7 +238,7 @@ void Output::write_consumer_parameters(const Consumer* c, const settings::Settin
     }
 }
 
-bool Output::write_consumer_parameter_variant(const Consumer* c, const hstring& name) {
+bool Output::write_consumer_parameter(const Consumer* c, const hstring& name) {
     UNUSED(c);
     UNUSED(name);
     return false;
@@ -273,7 +273,7 @@ void Output::write_input_storage_parameters(const Storage* s, const settings::Se
                 internal_write_value(name, s->purchasing_manager->business_connections.size());
                 break;
             default:
-                if (!write_input_storage_parameter_variant(s, name)) {
+                if (!write_input_storage_parameter(s, name)) {
                     parameter_not_found(name);
                 }
                 break;
@@ -281,7 +281,7 @@ void Output::write_input_storage_parameters(const Storage* s, const settings::Se
     }
 }
 
-bool Output::write_input_storage_parameter_variant(const Storage* s, const hstring& name) {
+bool Output::write_input_storage_parameter(const Storage* s, const hstring& name) {
     switch (name) {
         case hstring::hash("optimized_value"):
             internal_write_value(name, s->purchasing_manager->optimized_value());
@@ -361,7 +361,7 @@ void Output::write_connection_parameters(const BusinessConnection* b, const sett
                 internal_write_value(name, b->get_flow_deficit());
                 break;
             default:
-                if (!write_connection_parameter_variant(b, name)) {
+                if (!write_connection_parameter(b, name)) {
                     parameter_not_found(name);
                 }
                 break;
@@ -369,7 +369,7 @@ void Output::write_connection_parameters(const BusinessConnection* b, const sett
     }
 }
 
-bool Output::write_connection_parameter_variant(const BusinessConnection* b, const hstring& name) {
+bool Output::write_connection_parameter(const BusinessConnection* b, const hstring& name) {
     UNUSED(b);
     UNUSED(name);
     return false;
@@ -515,7 +515,7 @@ void Output::write_region_parameters(const Region* region, const settings::Setti
             }
                 break;
             default:
-                if (!write_region_parameter_variant(region, name)) {
+                if (!write_region_parameter(region, name)) {
                     parameter_not_found(name);
                 }
                 break;
@@ -523,7 +523,7 @@ void Output::write_region_parameters(const Region* region, const settings::Setti
     }
 }
 
-bool Output::write_region_parameter_variant(const Region* region, const hstring& name) {
+bool Output::write_region_parameter(const Region* region, const hstring& name) {
     UNUSED(region);
     UNUSED(name);
     return false;
@@ -537,7 +537,7 @@ void Output::write_sector_parameters(const Sector* sector, const settings::Setti
                 internal_write_value(name, sector->total_production_X());
                 break;
             default:
-                if (!write_sector_parameter_variant(sector, name)) {
+                if (!write_sector_parameter(sector, name)) {
                     parameter_not_found(name);
                 }
                 break;
@@ -545,7 +545,7 @@ void Output::write_sector_parameters(const Sector* sector, const settings::Setti
     }
 }
 
-bool Output::write_sector_parameter_variant(const Sector* sector, const hstring& name) {
+bool Output::write_sector_parameter(const Sector* sector, const hstring& name) {
     switch (name) {
         case hstring::hash("total_demand"):
             internal_write_value(name, sector->total_demand_D());

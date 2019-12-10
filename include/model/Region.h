@@ -63,10 +63,6 @@ class Region : public GeoLocation {
     };
 
     Region(Model* model_p, std::string id_p, IntType index_p);
-    void iterate_consumption_and_production_variant();
-    void iterate_expectation_variant();
-    void iterate_purchase_variant();
-    void iterate_investment_variant();
 
   public:
     std::vector<std::unique_ptr<EconomicAgent>> economic_agents;

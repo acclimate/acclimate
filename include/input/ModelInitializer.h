@@ -125,8 +125,8 @@ class ModelInitializer {
                                const Flow& flow);
     void initialize_connection(Firm* firm_from, EconomicAgent* economic_agent_to, const Flow& flow);
     void clean_network();
-    void pre_initialize_variant();
-    void post_initialize_variant();
+    void pre_initialize();
+    void post_initialize();
     void build_agent_network();
     void build_agent_network_from_table(const mrio::Table<FloatType, std::size_t>& table, FloatType flow_threshold);
     void build_artificial_network();

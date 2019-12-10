@@ -51,23 +51,23 @@ class Storage;
 
 class Output {
   private:
-    bool write_connection_parameter_variant(const BusinessConnection* b, const settings::hstring& name);
+    bool write_connection_parameter(const BusinessConnection* b, const settings::hstring& name);
     void write_connection_parameters(const BusinessConnection* b, const settings::SettingsNode& it);
-    bool write_consumer_parameter_variant(const Consumer* c, const settings::hstring& name);
+    bool write_consumer_parameter(const Consumer* c, const settings::hstring& name);
     void write_consumer_parameters(const Consumer* c, const settings::SettingsNode& it);
     void write_consumption_connections(const Firm* p, const settings::SettingsNode& it);
     bool write_economic_agent_parameter(const EconomicAgent* p, const settings::hstring& name);
     void write_ingoing_connections(const Storage* s, const settings::SettingsNode& it);
     void write_input_storages(const EconomicAgent* ea, const settings::SettingsNode& it);
     void write_input_storage_parameters(const Storage* s, const settings::SettingsNode& it);
-    bool write_input_storage_parameter_variant(const Storage* s, const settings::hstring& name);
+    bool write_input_storage_parameter(const Storage* s, const settings::hstring& name);
     void write_outgoing_connections(const Firm* p, const settings::SettingsNode& it);
     void write_firm_parameters(const Firm* p, const settings::SettingsNode& it);
-    bool write_firm_parameter_variant(const Firm* p, const settings::hstring& name);
+    bool write_firm_parameter(const Firm* p, const settings::hstring& name);
     void write_region_parameters(const Region* region, const settings::SettingsNode& it);
-    bool write_region_parameter_variant(const Region* region, const settings::hstring& name);
+    bool write_region_parameter(const Region* region, const settings::hstring& name);
     void write_sector_parameters(const Sector* sector, const settings::SettingsNode& parameters);
-    bool write_sector_parameter_variant(const Sector* sector, const settings::hstring& name);
+    bool write_sector_parameter(const Sector* sector, const settings::hstring& name);
     inline void internal_write_value(const hstring& name, const Stock& v);
     inline void internal_write_value(const hstring& name, const Flow& v);
     inline void internal_write_value(const hstring& name, FloatType v);

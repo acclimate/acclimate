@@ -60,10 +60,6 @@ void Region::iterate_consumption_and_production() {
     export_flow_Z_[model()->other_register()] = Flow(0.0);
     import_flow_Z_[model()->other_register()] = Flow(0.0);
     consumption_flow_Y_[model()->other_register()] = Flow(0.0);
-    iterate_consumption_and_production_variant();
-}
-
-void Region::iterate_consumption_and_production_variant() {
     if (government_m) {
         government_m->iterate_consumption_and_production();
     }
@@ -71,10 +67,6 @@ void Region::iterate_consumption_and_production_variant() {
 
 void Region::iterate_expectation() {
     assertstep(EXPECTATION);
-    iterate_expectation_variant();
-}
-
-void Region::iterate_expectation_variant() {
     if (government_m) {
         government_m->iterate_expectation();
     }
@@ -82,10 +74,6 @@ void Region::iterate_expectation_variant() {
 
 void Region::iterate_purchase() {
     assertstep(PURCHASE);
-    iterate_purchase_variant();
-}
-
-void Region::iterate_purchase_variant() {
     if (government_m) {
         government_m->iterate_purchase();
     }
@@ -93,10 +81,6 @@ void Region::iterate_purchase_variant() {
 
 void Region::iterate_investment() {
     assertstep(INVESTMENT);
-    iterate_investment_variant();
-}
-
-void Region::iterate_investment_variant() {
     if (government_m) {
         government_m->iterate_investment();
     }

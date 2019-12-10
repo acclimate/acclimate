@@ -57,7 +57,6 @@ endif()
 
 
 set(ACCLIMATE_OPTIONS "")
-set(ACCLIMATE_VARIANTS "")
 function(acclimate_include_option OPTIONS_NAME NAME DESC STATE)
   option(ACCLIMATE_${NAME} ${DESC} ${STATE})
   if(ACCLIMATE_${NAME})
