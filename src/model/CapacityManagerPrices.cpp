@@ -30,7 +30,7 @@
 namespace acclimate {
 
 CapacityManagerPrices::CapacityManagerPrices(Firm* firm_p, Ratio possible_overcapacity_ratio_beta_p)
-    : CapacityManager(firm_p, possible_overcapacity_ratio_beta_p) {}
+        : CapacityManager(firm_p, possible_overcapacity_ratio_beta_p) {}
 
 #ifdef DEBUG
 
@@ -44,13 +44,15 @@ void CapacityManagerPrices::print_inputs() const {
 
                     << "  n_hat= " << std::setw(11) << possible_use_U_hat.get_price()
 
-                    << "  n_hat*a= " << std::setw(11) << (possible_use_U_hat.get_price() * is->get_technology_coefficient_a()));
+                    << "  n_hat*a= " << std::setw(11)
+                    << (possible_use_U_hat.get_price() * is->get_technology_coefficient_a()));
     }
 }
+
 #endif
 
-
-const Flow CapacityManagerPrices::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
+const Flow CapacityManagerPrices::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs,
+                                                                       bool estimate) const {
     assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     Price unit_commodity_costs = Price(0.0);
@@ -64,7 +66,8 @@ const Flow CapacityManagerPrices::get_possible_production_X_hat_intern(bool cons
         }
         if (consider_transport_in_production_costs) {
             Flow transport_flow = input_storage->purchasing_manager->get_transport_flow();
-            unit_commodity_costs += (possible_use_U_hat + transport_flow).get_price() * input_storage->get_technology_coefficient_a();
+            unit_commodity_costs +=
+                    (possible_use_U_hat + transport_flow).get_price() * input_storage->get_technology_coefficient_a();
         } else {
             unit_commodity_costs += possible_use_U_hat.get_price() * input_storage->get_technology_coefficient_a();
         }
@@ -77,11 +80,11 @@ const Flow CapacityManagerPrices::get_possible_production_X_hat_intern(bool cons
     Flow result = round(firm->initial_production_X_star() * possible_production_capacity_p_hat);
     // note: if result.get_quantity() == 0.0 price is NAN
     if (result.get_quantity() > 0.0) {
-        result.set_price(round(unit_commodity_costs + firm->sales_manager->get_initial_unit_variable_production_costs()));
+        result.set_price(
+                round(unit_commodity_costs + firm->sales_manager->get_initial_unit_variable_production_costs()));
     }
     return result;
 }
-
 
 const Flow CapacityManagerPrices::get_possible_production_X_hat() const {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -89,13 +92,11 @@ const Flow CapacityManagerPrices::get_possible_production_X_hat() const {
     return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false);
 }
 
-
 const Flow CapacityManagerPrices::estimate_possible_production_X_hat() const {
     assertstep(EXPECTATION);
     bool consider_transport_in_production_costs = true;
     return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true);
 }
-
 
 const Flow CapacityManagerPrices::calc_production_X() {
     assertstep(CONSUMPTION_AND_PRODUCTION);

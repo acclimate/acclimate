@@ -31,12 +31,14 @@
 #include "types.h"
 #include "variants/VariantPrices.h"
 
-
 namespace acclimate {
 
 class EconomicAgent;
+
 class Government;
+
 class Infrastructure;
+
 class Model;
 
 class Region : public GeoLocation {
@@ -59,6 +61,7 @@ class Region : public GeoLocation {
             return (p.first << 3) | (static_cast<IntType>(p.second));
         }
     };
+
     Region(Model* model_p, std::string id_p, IntType index_p);
     void iterate_consumption_and_production_variant();
     void iterate_expectation_variant();
@@ -80,9 +83,12 @@ class Region : public GeoLocation {
     void set_government(Government* government_p);
     Government* government();
     Government const* government() const;
+
     inline const typename VariantPrices::RegionParameters& parameters() const { return parameters_m; }
+
     const typename VariantPrices::RegionParameters& parameters_writable() const;
     ~Region() override = default;
+
     inline IntType index() const { return index_m; };
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);

@@ -29,7 +29,9 @@ class GeoLocation;
 
 class GeoConnection : public GeoEntity {
   public:
-    enum class Type { ROAD, AVIATION, SEAROUTE, UNSPECIFIED };
+    enum class Type {
+        ROAD, AVIATION, SEAROUTE, UNSPECIFIED
+    };
 
   public:
     const GeoLocation* location1;  // TODO encapsulate

@@ -32,7 +32,7 @@ ArrayOutput::ArrayOutput(const settings::SettingsNode& settings_p,
                          Scenario* scenario_p,
                          settings::SettingsNode output_node_p,
                          bool over_time_p)
-    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)), over_time(over_time_p) {
+        : Output(settings_p, model_p, scenario_p, std::move(output_node_p)), over_time(over_time_p) {
     include_events = false;
 }
 
@@ -45,7 +45,7 @@ void ArrayOutput::initialize() {
 inline typename ArrayOutput::Variable& ArrayOutput::create_variable(const hstring& path,
                                                                     const hstring& name,
                                                                     const hstring& suffix) {
-    const auto key = suffix ^ name ^ path;
+    const auto key = suffix ^name ^path;
     auto it = variables.find(key);
     if (it == variables.end()) {
         std::size_t size = 1;
@@ -84,7 +84,8 @@ inline std::size_t ArrayOutput::current_index() const {
 }
 
 void ArrayOutput::internal_start_target(const hstring& name, Sector* sector, Region* region) {
-    stack.emplace_back(Target{name, current_index() * regions_size * sectors_size + sector->index() * regions_size + region->index(), sector, region});
+    stack.emplace_back(Target{name, current_index() * regions_size * sectors_size + sector->index() * regions_size +
+                                    region->index(), sector, region});
 }
 
 void ArrayOutput::internal_start_target(const hstring& name, Sector* sector) {
@@ -122,11 +123,11 @@ const typename ArrayOutput::Variable& ArrayOutput::get_variable(const hstring& f
 }
 
 void ArrayOutput::event(EventType type,
-                                      const Sector* sector_from,
-                                      const Region* region_from,
-                                      const Sector* sector_to,
-                                      const Region* region_to,
-                                      FloatType value) {
+                        const Sector* sector_from,
+                        const Region* region_from,
+                        const Sector* sector_to,
+                        const Region* region_to,
+                        FloatType value) {
     if (include_events) {
         Event event_struct;
         event_struct.time = model()->timestep();

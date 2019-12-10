@@ -27,6 +27,7 @@
 namespace acclimate {
 
 class BusinessConnection;
+
 class Firm;
 
 struct SupplyParameters {
@@ -56,7 +57,8 @@ class SalesManagerPrices : public SalesManager {
     Ratio tax_ = Ratio(0.0);
     struct {
         typename std::vector<std::shared_ptr<BusinessConnection>>::iterator connection_not_served_completely;
-        Price price_cheapest_buyer_accepted_in_optimization = Price(0.0);  // Price of cheapest connection, that has been considered in the profit optimization
+        Price price_cheapest_buyer_accepted_in_optimization = Price(
+                0.0);  // Price of cheapest connection, that has been considered in the profit optimization
         Flow flow_not_served_completely = Flow(0.0);
     } supply_distribution_scenario;  // to distribute production among demand requests
 
@@ -80,16 +82,19 @@ class SalesManagerPrices : public SalesManager {
     const Flow calc_production_X();
     const FlowValue calc_production_extension_penalty_P(const FlowQuantity& production_quantity_X) const;
     const Price calc_marginal_production_extension_penalty(const FlowQuantity& production_quantity_X) const;
-    const Price calc_marginal_production_costs(const FlowQuantity& production_quantity_X, const Price& unit_production_costs_n_c) const;
+    const Price calc_marginal_production_costs(const FlowQuantity& production_quantity_X,
+                                               const Price& unit_production_costs_n_c) const;
 
   private:
     std::tuple<Flow, Price> calc_supply_distribution_scenario(const Flow& possible_production_X_hat_p);
     std::tuple<Flow, Price> calc_expected_supply_distribution_scenario(const Flow& possible_production_X_hat_p);
-    const Price calc_marginal_production_costs_plus_markup(const FlowQuantity& production_quantity_X, const Price& unit_production_costs_n_c) const;
+    const Price calc_marginal_production_costs_plus_markup(const FlowQuantity& production_quantity_X,
+                                                           const Price& unit_production_costs_n_c) const;
     const FlowValue calc_total_production_costs(const Flow& production_X, const Price& unit_production_costs_n_c) const;
     const FlowQuantity analytic_solution_in_production_extension(const Price& unit_production_costs_n_c,
                                                                  const Price& price_demand_request_not_served_completely) const;
-    const FlowValue calc_additional_revenue_expectation(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const;
+    const FlowValue
+    calc_additional_revenue_expectation(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const;
     const Price calc_marginal_revenue_curve(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const;
     const Price goal_fkt_marginal_costs_minus_marginal_revenue(const FlowQuantity& production_quantity_X_p,
                                                                const Price& unit_production_costs_n_c,
@@ -105,8 +110,9 @@ class SalesManagerPrices : public SalesManager {
                                              const Price& precision_p) const;
 #ifdef DEBUG
     void print_parameters() const;
-    void print_connections(typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
-                           typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const;
+    void print_connections(
+            typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
+            typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const;
 #endif
 };
 }  // namespace acclimate

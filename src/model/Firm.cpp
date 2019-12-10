@@ -35,9 +35,9 @@
 namespace acclimate {
 
 Firm::Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
-    : EconomicAgent(sector_p, region_p, EconomicAgent::Type::FIRM),
-      capacity_manager(new typename VariantPrices::CapacityManagerType(this, possible_overcapacity_ratio_beta_p)),
-      sales_manager(new typename VariantPrices::SalesManagerType(this)) {}
+        : EconomicAgent(sector_p, region_p, EconomicAgent::Type::FIRM),
+          capacity_manager(new typename VariantPrices::CapacityManagerType(this, possible_overcapacity_ratio_beta_p)),
+          sales_manager(new typename VariantPrices::SalesManagerType(this)) {}
 
 inline Firm* Firm::as_firm() {
     return this;
@@ -73,7 +73,8 @@ void Firm::iterate_expectation() {
     sales_manager->iterate_expectation();
     for (const auto& is : input_storages) {
         const FlowQuantity& desired_production =
-            std::max(sales_manager->communicated_parameters().expected_production_X.get_quantity(), sales_manager->sum_demand_requests_D().get_quantity());
+                std::max(sales_manager->communicated_parameters().expected_production_X.get_quantity(),
+                         sales_manager->sum_demand_requests_D().get_quantity());
         is->set_desired_used_flow_U_tilde(round(desired_production * is->get_technology_coefficient_a()));
     }
 }
@@ -124,6 +125,7 @@ void Firm::iterate_investment() {
 }
 
 #ifdef DEBUG
+
 void Firm::print_details() const {
     info(id() << ": X_star= " << initial_production_X_star_.get_quantity() << ":");
     for (auto it = input_storages.begin(); it != input_storages.end(); ++it) {
@@ -131,6 +133,7 @@ void Firm::print_details() const {
     }
     sales_manager->print_details();
 }
+
 #endif
 
 const Flow Firm::maximal_production_beta_X_star() const {
@@ -150,14 +153,16 @@ FloatType Firm::maximal_production_quantity_beta_X_star_float() const {
 }
 
 const FlowQuantity Firm::forced_maximal_production_quantity_lambda_beta_X_star() const {
-    return round(initial_production_X_star_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
+    return round(initial_production_X_star_.get_quantity() *
+                 (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
 }
 
 FloatType Firm::forced_maximal_production_quantity_lambda_beta_X_star_float() const {
-    return to_float(initial_production_X_star_.get_quantity()) * (capacity_manager->possible_overcapacity_ratio_beta * forcing_);
+    return to_float(initial_production_X_star_.get_quantity()) *
+           (capacity_manager->possible_overcapacity_ratio_beta * forcing_);
 }
 
-const BusinessConnection *Firm::self_supply_connection() const {
+const BusinessConnection* Firm::self_supply_connection() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     return self_supply_connection_.get();
 }
@@ -167,7 +172,7 @@ void Firm::self_supply_connection(std::shared_ptr<BusinessConnection> self_suppl
     self_supply_connection_ = self_supply_connection_p;
 }
 
-const Flow &Firm::production_X() const {
+const Flow& Firm::production_X() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     return production_X_;
 }

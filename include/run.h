@@ -65,14 +65,21 @@ enum class IterationStep {
     ADD_EVENT(OPTIMIZER_FAILURE)
 
 #define ADD_EVENT(e) e,
-enum class EventType : unsigned char { ACCLIMATE_ADD_EVENTS };
+enum class EventType : unsigned char {
+    ACCLIMATE_ADD_EVENTS
+};
 #undef ADD_EVENT
 
 class Model;
+
 class Scenario;
+
 class Output;
+
 class Region;
+
 class Sector;
+
 class EconomicAgent;
 
 class Run {
@@ -89,6 +96,7 @@ class Run {
 
     static void initialize();
     int run();
+
     inline void step(const IterationStep& step_p) { step_m = step_p; }
 
   public:
@@ -96,15 +104,22 @@ class Run {
 
     explicit Run(const settings::SettingsNode& settings);
     ~Run();
+
     inline IterationStep step() const { return step_m; }
+
     inline unsigned int time() const { return time_m; }
+
     inline const std::size_t& duration() const { return duration_m; }
+
     unsigned int thread_count() const;
 #ifdef DEBUG
     std::string timeinfo() const;
 #endif
+
     inline const Model* model() { return model_m.get(); }
+
     inline const Output* output(const IntType i) { return outputs_m[i].get(); }
+
     void event(EventType type,
                const Sector* sector_from,
                const Region* region_from,

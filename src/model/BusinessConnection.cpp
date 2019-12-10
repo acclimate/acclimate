@@ -34,20 +34,21 @@ namespace acclimate {
 BusinessConnection::BusinessConnection(typename VariantPrices::PurchasingManagerType* buyer_p,
                                        typename VariantPrices::SalesManagerType* seller_p,
                                        const Flow& initial_flow_Z_star_p)
-    : buyer(buyer_p),
-      demand_fulfill_history_(1.0),
-      initial_flow_Z_star_(initial_flow_Z_star_p),
-      last_delivery_Z_(initial_flow_Z_star_p),
-      last_demand_request_D_(initial_flow_Z_star_p),
-      seller(seller_p),
-      transport_costs(0.0),
-      last_shipment_Z_(initial_flow_Z_star_p),
-      time_(seller_p->model()->time()) {
+        : buyer(buyer_p),
+          demand_fulfill_history_(1.0),
+          initial_flow_Z_star_(initial_flow_Z_star_p),
+          last_delivery_Z_(initial_flow_Z_star_p),
+          last_demand_request_D_(initial_flow_Z_star_p),
+          seller(seller_p),
+          transport_costs(0.0),
+          last_shipment_Z_(initial_flow_Z_star_p),
+          time_(seller_p->model()->time()) {
     if (seller->firm->sector->transport_type == Sector::TransportType::IMMEDIATE
         || buyer->storage->economic_agent->region == seller->firm->region) {
         first_transport_link.reset(new TransportChainLink(this, 0, initial_flow_Z_star_p, nullptr));
     } else {
-        const auto& route = seller->firm->region->find_path_to(buyer->storage->economic_agent->region, seller->firm->sector->transport_type);
+        const auto& route = seller->firm->region->find_path_to(buyer->storage->economic_agent->region,
+                                                               seller->firm->sector->transport_type);
         assert(route.path.size() > 0);
         TransportChainLink* link;
         for (std::size_t i = 0; i < route.path.size(); ++i) {
@@ -62,7 +63,6 @@ BusinessConnection::BusinessConnection(typename VariantPrices::PurchasingManager
         }
     }
 }
-
 
 FloatType BusinessConnection::get_minimum_passage() const {
     TransportChainLink* link = first_transport_link.get();
@@ -81,11 +81,9 @@ FloatType BusinessConnection::get_minimum_passage() const {
     return minimum_passage;
 }
 
-
 bool BusinessConnection::get_domestic() const {
     return (buyer->storage->economic_agent->region == seller->firm->region);
 }
-
 
 void BusinessConnection::push_flow_Z(const Flow& flow_Z) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -95,7 +93,6 @@ void BusinessConnection::push_flow_Z(const Flow& flow_Z) {
         seller->firm->region->add_export_Z(last_shipment_Z_);
     }
 }
-
 
 TransportDelay BusinessConnection::get_transport_delay_tau() const {
     TransportChainLink* link = first_transport_link.get();
@@ -107,7 +104,6 @@ TransportDelay BusinessConnection::get_transport_delay_tau() const {
     return res;
 }
 
-
 void BusinessConnection::deliver_flow_Z(const Flow& flow_Z) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     buyer->storage->push_flow_Z(flow_Z);
@@ -116,7 +112,6 @@ void BusinessConnection::deliver_flow_Z(const Flow& flow_Z) {
         buyer->storage->economic_agent->region->add_import_Z(flow_Z);
     }
 }
-
 
 std::size_t BusinessConnection::get_id(const TransportChainLink* transport_chain_link) const {
     std::size_t id = 0;
@@ -130,13 +125,11 @@ std::size_t BusinessConnection::get_id(const TransportChainLink* transport_chain
     return id;
 }
 
-
 void BusinessConnection::send_demand_request_D(const Demand& demand_request_D) {
     assertstep(PURCHASE);
     last_demand_request_D_ = round(demand_request_D);
     seller->add_demand_request_D(last_demand_request_D_);
 }
-
 
 const Flow BusinessConnection::get_flow_mean() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
@@ -151,7 +144,6 @@ const Flow BusinessConnection::get_flow_mean() const {
     return round(res / Ratio(delay));
 }
 
-
 const FlowQuantity BusinessConnection::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
@@ -163,12 +155,10 @@ const FlowQuantity BusinessConnection::get_flow_deficit() const {
     return round(res);
 }
 
-
 const Flow BusinessConnection::get_total_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     return round(get_transport_flow() + last_delivery_Z_);
 }
-
 
 const Flow BusinessConnection::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
@@ -181,7 +171,6 @@ const Flow BusinessConnection::get_transport_flow() const {
     return round(res);
 }
 
-
 const Flow BusinessConnection::get_disequilibrium() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
@@ -192,7 +181,6 @@ const Flow BusinessConnection::get_disequilibrium() const {
     }
     return round(res, true);
 }
-
 
 FloatType BusinessConnection::get_stddeviation() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
@@ -205,7 +193,7 @@ FloatType BusinessConnection::get_stddeviation() const {
     return res;
 }
 
-Model *BusinessConnection::model() const {
+Model* BusinessConnection::model() const {
     return buyer->model();
 }
 
@@ -213,7 +201,7 @@ std::string BusinessConnection::id() const {
     return (seller ? seller->id() : "INVALID") + "->" + (buyer ? buyer->storage->economic_agent->id() : "INVALID");
 }
 
-const Flow &BusinessConnection::last_shipment_Z(const SalesManager *const caller) const {
+const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller) const {
 #ifdef DEBUG
     if (caller != seller) {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
@@ -224,7 +212,7 @@ const Flow &BusinessConnection::last_shipment_Z(const SalesManager *const caller
     return last_shipment_Z_;
 }
 
-const Flow &BusinessConnection::last_delivery_Z(const SalesManager *const caller) const {
+const Flow& BusinessConnection::last_delivery_Z(const SalesManager* const caller) const {
 #ifdef DEBUG
     if (caller != seller) {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
@@ -235,7 +223,7 @@ const Flow &BusinessConnection::last_delivery_Z(const SalesManager *const caller
     return last_delivery_Z_;
 }
 
-const Demand &BusinessConnection::last_demand_request_D(const PurchasingManager *const caller) const {
+const Demand& BusinessConnection::last_demand_request_D(const PurchasingManager* const caller) const {
 #ifdef DEBUG
     if (caller != buyer) {
         assertstepnot(PURCHASE);
@@ -246,7 +234,7 @@ const Demand &BusinessConnection::last_demand_request_D(const PurchasingManager 
     return last_demand_request_D_;
 }
 
-void BusinessConnection::initial_flow_Z_star(const Flow &new_initial_flow_Z_star) {
+void BusinessConnection::initial_flow_Z_star(const Flow& new_initial_flow_Z_star) {
     assertstep(INVESTMENT);
     initial_flow_Z_star_ = new_initial_flow_Z_star;
 }

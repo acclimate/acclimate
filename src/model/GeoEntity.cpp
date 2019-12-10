@@ -26,7 +26,8 @@
 
 namespace acclimate {
 
-GeoEntity::GeoEntity(Model* model_p, TransportDelay delay_p, Type type_p) : model_m(model_p), delay(delay_p), type_m(type_p) {}
+GeoEntity::GeoEntity(Model* model_p, TransportDelay delay_p, Type type_p) : model_m(model_p), delay(delay_p),
+                                                                            type_m(type_p) {}
 
 void GeoEntity::set_forcing_nu(Forcing forcing_nu_p) {
     for (std::size_t i = 0; i < transport_chain_links.size(); ++i) {

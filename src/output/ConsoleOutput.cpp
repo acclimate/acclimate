@@ -32,16 +32,14 @@
 
 namespace acclimate {
 
-
 ConsoleOutput::ConsoleOutput(const settings::SettingsNode& settings_p,
                              Model* model_p,
                              Scenario* scenario_p,
                              settings::SettingsNode output_node_p)
-    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {
+        : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {
     stack = 0;
     out = nullptr;
 }
-
 
 void ConsoleOutput::initialize() {
     if (!output_node.has("file")) {
@@ -54,7 +52,6 @@ void ConsoleOutput::initialize() {
     }
 }
 
-
 void ConsoleOutput::internal_write_header(tm* timestamp, int max_threads) {
     *out << "Start time " << std::asctime(timestamp)
          << "\n"
@@ -65,16 +62,13 @@ void ConsoleOutput::internal_write_header(tm* timestamp, int max_threads) {
          << max_threads << " threads" << std::endl;
 }
 
-
 void ConsoleOutput::internal_write_footer(tm* duration) {
     *out << "\n\nDuration " << std::mktime(duration) << "s";
 }
 
-
 void ConsoleOutput::internal_write_settings() {
     *out << '\n' << settings_string << '\n';
 }
-
 
 void ConsoleOutput::internal_start() {
     *out << "Starting"
@@ -84,48 +78,40 @@ void ConsoleOutput::internal_start() {
     out->flush();
 }
 
-
 void ConsoleOutput::internal_iterate_begin() {
     *out << "\n\n"
          << "Iteration time " << (model()->time() + Time(1));
     out->flush();
 }
 
-
 void ConsoleOutput::internal_end() {
     *out << "\n\nEnded\n";
     out->flush();
 }
 
-
 void ConsoleOutput::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     *out << std::setprecision(15) << "\t" << name << suffix << "=" << v;
 }
-
 
 void ConsoleOutput::internal_start_target(const hstring& name, Sector* sector, Region* region) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << " " << sector->id() << "," << region->id() << ":";
 }
 
-
 void ConsoleOutput::internal_start_target(const hstring& name, Sector* sector) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << " " << sector->id() << ":";
 }
-
 
 void ConsoleOutput::internal_start_target(const hstring& name, Region* region) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << " " << region->id() << ":";
 }
 
-
 void ConsoleOutput::internal_start_target(const hstring& name) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << ":";
 }
-
 
 void ConsoleOutput::internal_end_target() {
     --stack;

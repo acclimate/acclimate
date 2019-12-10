@@ -33,7 +33,7 @@
 namespace acclimate {
 
 Region::Region(Model* model_p, std::string id_p, const IntType index_p)
-    : GeoLocation(model_p, 0, GeoLocation::Type::REGION, std::move(id_p)), index_m(index_p) {}
+        : GeoLocation(model_p, 0, GeoLocation::Type::REGION, std::move(id_p)), index_m(index_p) {}
 
 void Region::add_export_Z(const Flow& export_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -51,7 +51,8 @@ void Region::add_consumption_flow_Y(const Flow& consumption_flow_Y_p) {
 }
 
 Flow Region::get_gdp() const {
-    return consumption_flow_Y_[model()->current_register()] + export_flow_Z_[model()->current_register()] - import_flow_Z_[model()->current_register()];
+    return consumption_flow_Y_[model()->current_register()] + export_flow_Z_[model()->current_register()] -
+           import_flow_Z_[model()->current_register()];
 }
 
 void Region::iterate_consumption_and_production() {
@@ -105,7 +106,8 @@ const GeoRoute& Region::find_path_to(Region* region,
                                      typename Sector::TransportType transport_type) const {
     const auto& it = routes.find(std::make_pair(region->index(), transport_type));
     if (it == std::end(routes)) {
-        error("No transport data from " << id() << " to " << region->id() << " via " << Sector::unmap_transport_type(transport_type));
+        error("No transport data from " << id() << " to " << region->id() << " via "
+                                        << Sector::unmap_transport_type(transport_type));
     }
     return it->second;
 }
@@ -121,27 +123,29 @@ inline const Region* Region::as_region() const {
 void Region::remove_economic_agent(EconomicAgent* economic_agent) {
     economic_agents_lock.call([&]() {
         auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
-                               [economic_agent](const std::unique_ptr<EconomicAgent>& it) { return it.get() == economic_agent; });
+                               [economic_agent](const std::unique_ptr<EconomicAgent>& it) {
+                                   return it.get() == economic_agent;
+                               });
         economic_agents.erase(it);
     });
 }
 
-const Flow &Region::consumption_C() const {
+const Flow& Region::consumption_C() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     return consumption_flow_Y_[model()->current_register()];
 }
 
-const Flow &Region::import_flow_Z() const {
+const Flow& Region::import_flow_Z() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     return import_flow_Z_[model()->current_register()];
 }
 
-const Flow &Region::export_flow_Z() const {
+const Flow& Region::export_flow_Z() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     return export_flow_Z_[model()->current_register()];
 }
 
-void Region::set_government(Government *government_p) {
+void Region::set_government(Government* government_p) {
     assertstep(INITIALIZATION);
 #ifdef DEBUG
     if (government_m) {
@@ -151,15 +155,15 @@ void Region::set_government(Government *government_p) {
     government_m.reset(government_p);
 }
 
-Government *Region::government() {
+Government* Region::government() {
     return government_m.get();
 }
 
-Government const *Region::government() const {
+Government const* Region::government() const {
     return government_m.get();
 }
 
-const typename VariantPrices::RegionParameters &Region::parameters_writable() const {
+const typename VariantPrices::RegionParameters& Region::parameters_writable() const {
     assertstep(INITIALIZATION);
     return parameters_m;
 }

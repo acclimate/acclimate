@@ -40,7 +40,9 @@ void PurchasingManager::iterate_consumption_and_production() {
 
 bool PurchasingManager::remove_business_connection(const BusinessConnection* business_connection) {
     auto it = std::find_if(business_connections.begin(), business_connections.end(),
-                           [business_connection](const std::shared_ptr<BusinessConnection>& it) { return it.get() == business_connection; });
+                           [business_connection](const std::shared_ptr<BusinessConnection>& it) {
+                               return it.get() == business_connection;
+                           });
     if (it == std::end(business_connections)) {
         error("Business connection " << business_connection->id() << " not found");
     }
@@ -124,7 +126,7 @@ const Demand& PurchasingManager::demand_D(const EconomicAgent* const caller) con
     return demand_D_;
 }
 
-const Demand &PurchasingManager::initial_demand_D_star() const {
+const Demand& PurchasingManager::initial_demand_D_star() const {
     return storage->initial_input_flow_I_star();
 }
 
@@ -137,13 +139,16 @@ std::string PurchasingManager::id() const {
 }
 
 #ifdef DEBUG
+
 void PurchasingManager::print_details() const {
     info(business_connections.size() << " inputs:  I_star= " << storage->initial_input_flow_I_star().get_quantity());
     for (const auto& bc : business_connections) {
-        info("    " << bc->id() << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity() << "  X_star= " << std::setw(11)
+        info("    " << bc->id() << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity()
+                    << "  X_star= " << std::setw(11)
                     << bc->seller->firm->initial_production_X_star().get_quantity());
     }
 }
+
 #endif
 
 }  // namespace acclimate

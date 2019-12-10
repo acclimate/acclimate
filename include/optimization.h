@@ -24,7 +24,9 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wswitch-enum"
+
 #include <nlopt.hpp>
+
 #pragma GCC diagnostic pop
 
 #endif

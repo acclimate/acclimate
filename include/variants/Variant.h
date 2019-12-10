@@ -27,11 +27,20 @@ namespace acclimate {
 
 class Variant {
   public:
-    class ModelParameters {};
-    class RegionParameters {};
-    class SectorParameters {};
-    class AgentParameters {};
-    class StorageParameters {};
+    class ModelParameters {
+    };
+
+    class RegionParameters {
+    };
+
+    class SectorParameters {
+    };
+
+    class AgentParameters {
+    };
+
+    class StorageParameters {
+    };
 };
 }  // namespace acclimate
 

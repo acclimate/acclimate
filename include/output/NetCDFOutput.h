@@ -32,6 +32,7 @@
 namespace acclimate {
 
 class Model;
+
 class Scenario;
 
 class NetCDFOutput : public ArrayOutput {
@@ -74,7 +75,8 @@ class NetCDFOutput : public ArrayOutput {
     void internal_start() override;
     void internal_end() override;
     netCDF::NcGroup& create_group(const hstring& name);
-    void create_variable_meta(typename ArrayOutput::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) override;
+    void create_variable_meta(typename ArrayOutput::Variable& v, const hstring& path, const hstring& name,
+                              const hstring& suffix) override;
     bool internal_handle_event(typename ArrayOutput::Event& event) override;
 
   public:

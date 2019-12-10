@@ -29,9 +29,13 @@
 namespace acclimate {
 
 class GeoRoute;
+
 class Model;
+
 class PurchasingManager;
+
 class SalesManager;
+
 class TransportChainLink;
 
 class BusinessConnection {
@@ -53,14 +57,21 @@ class BusinessConnection {
     BusinessConnection(typename VariantPrices::PurchasingManagerType* buyer_p,
                        typename VariantPrices::SalesManagerType* seller_p,
                        const Flow& initial_flow_Z_star_p);
+
     inline const Time& time() const { return time_; }
+
     inline void time(const Time& time_p) { time_ = time_p; }
+
     const Flow& last_shipment_Z(const SalesManager* const caller = nullptr) const;
     const Flow& last_delivery_Z(const SalesManager* const caller = nullptr) const;
     const Demand& last_demand_request_D(const PurchasingManager* const caller = nullptr) const;
+
     inline const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; }
+
     void initial_flow_Z_star(const Flow& new_initial_flow_Z_star);
+
     inline void invalidate_buyer() { buyer = nullptr; }
+
     inline void invalidate_seller() { seller = nullptr; }
 
     std::size_t get_id(const TransportChainLink* transport_chain_link) const;

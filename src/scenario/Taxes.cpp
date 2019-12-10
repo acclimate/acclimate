@@ -29,7 +29,7 @@
 namespace acclimate {
 
 Taxes::Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-    : Scenario(settings_p, scenario_node_p, model_p) {}
+        : Scenario(settings_p, scenario_node_p, model_p) {}
 
 Time Taxes::start() {
     for (auto& region : model()->regions) {
@@ -48,7 +48,8 @@ bool Taxes::iterate() {
         const Time full_tax = tax["full_tax"].as<Time>();
         if (model()->time() >= start_tax - model()->delta_t() && model()->time() <= full_tax - model()->delta_t()) {
             const Ratio tax_ratio =
-                tax["tax_ratio"].as<Ratio>() * (model()->time() + 2 * model()->delta_t() - start_tax) / (full_tax + model()->delta_t() - start_tax);
+                    tax["tax_ratio"].as<Ratio>() * (model()->time() + 2 * model()->delta_t() - start_tax) /
+                    (full_tax + model()->delta_t() - start_tax);
             const std::string& sector = tax["sector"].as<std::string>();
             if (tax.has("region") && tax["region"].as<std::string>() != "ALL") {
                 Region* region = model()->find_region(tax["region"].as<std::string>());

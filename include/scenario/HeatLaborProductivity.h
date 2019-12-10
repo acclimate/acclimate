@@ -27,7 +27,9 @@
 namespace acclimate {
 
 class Model;
+
 class Region;
+
 using HeatLaborProductivityRegionForcingType = std::vector<FloatType>;
 
 class HeatLaborProductivity : public RasteredScenario<HeatLaborProductivityRegionForcingType> {
@@ -44,7 +46,8 @@ class HeatLaborProductivity : public RasteredScenario<HeatLaborProductivityRegio
                           RegionForcingType& region_forcing) const override;
 
   public:
-    HeatLaborProductivity(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    HeatLaborProductivity(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p,
+                          Model* model_p);
 };
 }  // namespace acclimate
 

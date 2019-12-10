@@ -29,7 +29,9 @@
 namespace acclimate {
 
 class BusinessConnection;
+
 class Firm;
+
 class Model;
 
 class SalesManager {

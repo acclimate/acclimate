@@ -28,10 +28,8 @@
 
 namespace acclimate {
 
-
 CapacityManager::CapacityManager(Firm* firm_p, const Ratio& possible_overcapacity_ratio_beta_p)
-    : firm(firm_p), possible_overcapacity_ratio_beta(possible_overcapacity_ratio_beta_p) {}
-
+        : firm(firm_p), possible_overcapacity_ratio_beta(possible_overcapacity_ratio_beta_p) {}
 
 const Flow CapacityManager::get_possible_production_X_hat() const {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -49,21 +47,17 @@ const Flow CapacityManager::get_possible_production_X_hat() const {
     return round(firm->initial_production_X_star() * possible_production_capacity_p_hat);
 }
 
-
 Ratio CapacityManager::get_production_capacity_p() const {
     return firm->production_X() / firm->initial_production_X_star();
 }
-
 
 Ratio CapacityManager::get_desired_production_capacity_p_tilde() const {
     return desired_production_X_tilde_ / firm->initial_production_X_star();
 }
 
-
 Ratio CapacityManager::get_possible_production_capacity_p_hat() const {
     return possible_production_X_hat_ / firm->initial_production_X_star();
 }
-
 
 void CapacityManager::calc_possible_and_desired_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -71,14 +65,13 @@ void CapacityManager::calc_possible_and_desired_production() {
     desired_production_X_tilde_ = firm->sales_manager->sum_demand_requests_D();
 }
 
-
 const Flow CapacityManager::calc_production_X() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     calc_possible_and_desired_production();
     return std::min(possible_production_X_hat_, desired_production_X_tilde_);
 }
 
-Model *CapacityManager::model() const {
+Model* CapacityManager::model() const {
     return firm->model();
 }
 

@@ -23,7 +23,6 @@
 
 #include <string>
 #include <unordered_map>
-#include "model/GeoEntity.h"
 #include "settingsnode.h"
 #include "types.h"
 
@@ -35,10 +34,17 @@ class Table;
 namespace acclimate {
 
 class Consumer;
+
 class EconomicAgent;
+
+class GeoEntity;
+
 class Model;
+
 class Firm;
+
 class Region;
+
 class Sector;
 
 class ModelInitializer {
@@ -49,14 +55,18 @@ class ModelInitializer {
 
       public:
         bool used;
+
         GeoEntity* entity() { return entity_m.get(); }
+
         TemporaryGeoEntity(GeoEntity* entity_p, bool used_p) : entity_m(entity_p), used(used_p) {}
+
         ~TemporaryGeoEntity() {
             if (used) {
-                (void)entity_m.release();
+                (void) entity_m.release();
             }
         }
     };
+
     class Path {
       protected:
         FloatType costs_m = 0;
@@ -64,11 +74,16 @@ class ModelInitializer {
 
       public:
         Path() = default;
+
         Path(FloatType costs_p, TemporaryGeoEntity* p1, TemporaryGeoEntity* p2, TemporaryGeoEntity* connection)
-            : costs_m(costs_p), points_m({p1, connection, p2}) {}
+                : costs_m(costs_p), points_m({p1, connection, p2}) {}
+
         inline FloatType costs() const { return costs_m; }
+
         inline bool empty() const { return points_m.empty(); }
+
         inline const std::vector<TemporaryGeoEntity*>& points() const { return points_m; }
+
         Path operator+(const Path& other) const {
             Path res;
             if (empty()) {
@@ -81,15 +96,18 @@ class ModelInitializer {
                 res.costs_m = costs_m + other.costs_m;
                 res.points_m.assign(std::begin(points_m), std::end(points_m));
                 res.points_m.resize(points_m.size() + other.points_m.size() - 1);
-                std::copy(std::begin(other.points_m), std::end(other.points_m), std::begin(res.points_m) + points_m.size() - 1);
+                std::copy(std::begin(other.points_m), std::end(other.points_m),
+                          std::begin(res.points_m) + points_m.size() - 1);
             }
             return res;
         }
     };
 
   private:
-    settings::SettingsNode get_firm_property(const std::string& sector_name, const std::string& region_name, const std::string& property_name) const;
-    settings::SettingsNode get_named_property(const settings::SettingsNode& node_settings, const std::string& node_name, const std::string& property_name) const;
+    settings::SettingsNode get_firm_property(const std::string& sector_name, const std::string& region_name,
+                                             const std::string& property_name) const;
+    settings::SettingsNode get_named_property(const settings::SettingsNode& node_settings, const std::string& node_name,
+                                              const std::string& property_name) const;
 
   protected:
     Model* const model_m;
@@ -123,7 +141,9 @@ class ModelInitializer {
 #ifdef DEBUG
     void print_network_characteristics() const;
 #endif
+
     inline Model* model() const { return model_m; }
+
     inline std::string id() const { return "MODELINITIALIZER"; }
 };
 }  // namespace acclimate

@@ -28,21 +28,20 @@
 #include "model/Storage.h"
 #include "run.h"
 
-
 namespace acclimate {
 
 TransportChainLink::TransportChainLink(BusinessConnection* business_connection_p,
                                        const TransportDelay& transport_delay_tau,
                                        const Flow& initial_flow_Z_star,
                                        GeoEntity* geo_entity_p)
-    : initial_transport_delay_tau(transport_delay_tau),
-      business_connection(business_connection_p),
-      geo_entity(geo_entity_p),
-      overflow(0.0),
-      initial_flow_quantity(initial_flow_Z_star.get_quantity()),
-      transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
-      pos(0),
-      forcing_nu(-1) {
+        : initial_transport_delay_tau(transport_delay_tau),
+          business_connection(business_connection_p),
+          geo_entity(geo_entity_p),
+          overflow(0.0),
+          initial_flow_quantity(initial_flow_Z_star.get_quantity()),
+          transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
+          pos(0),
+          forcing_nu(-1) {
     if (geo_entity) {
         geo_entity->transport_chain_links.push_back(this);
     }
@@ -69,7 +68,8 @@ void TransportChainLink::push_flow_Z(const Flow& flow_Z, const FlowQuantity& ini
         if (forcing_nu < 0) {
             flow_to_push = overflow + front_flow_Z.current;
         } else {
-            flow_to_push = std::min(overflow + front_flow_Z.current, Flow(forcing_nu * front_flow_Z.initial, front_flow_Z.current.get_price()));
+            flow_to_push = std::min(overflow + front_flow_Z.current,
+                                    Flow(forcing_nu * front_flow_Z.initial, front_flow_Z.current.get_price()));
         }
         overflow = overflow + front_flow_Z.current - flow_to_push;
         if (next_transport_chain_link) {
@@ -119,7 +119,8 @@ FloatType TransportChainLink::get_stddeviation() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     FloatType res = 0.0;
     for (const auto& f : transport_queue) {
-        res += to_float((absdiff(f.current, f.initial)).get_quantity()) * to_float((absdiff(f.current, f.initial)).get_quantity());
+        res += to_float((absdiff(f.current, f.initial)).get_quantity()) *
+               to_float((absdiff(f.current, f.initial)).get_quantity());
     }
     return res;
 }
@@ -139,8 +140,8 @@ Model* TransportChainLink::model() const {
 
 std::string TransportChainLink::id() const {
     return (business_connection->seller ? business_connection->seller->id() : "INVALID") + "-"
-            + std::to_string(business_connection->get_id(this)) + "->"
-            + (business_connection->buyer ? business_connection->buyer->storage->economic_agent->id() : "INVALID");
+           + std::to_string(business_connection->get_id(this)) + "->"
+           + (business_connection->buyer ? business_connection->buyer->storage->economic_agent->id() : "INVALID");
 }
 
 }  // namespace acclimate

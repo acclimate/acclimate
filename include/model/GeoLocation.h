@@ -28,12 +28,16 @@
 namespace acclimate {
 
 class GeoConnection;
+
 class GeoPoint;
+
 class Region;
 
 class GeoLocation : public GeoEntity {
   public:
-    enum class Type { REGION, SEA, PORT };
+    enum class Type {
+        REGION, SEA, PORT
+    };
 
   protected:
     std::unique_ptr<GeoPoint> centroid_m;
@@ -46,17 +50,23 @@ class GeoLocation : public GeoEntity {
 
     GeoLocation(Model* model_m, TransportDelay delay_p, Type type_p, std::string id_p);
     ~GeoLocation() override;
+
     virtual inline Region* as_region() {
         assert(type == Type::REGION);
         return nullptr;
     }
+
     virtual inline const Region* as_region() const {
         assert(type == Type::REGION);
         return nullptr;
     }
+
     void set_centroid(std::unique_ptr<GeoPoint>& centroid_p);
+
     const GeoPoint* centroid() const { return centroid_m.get(); }
+
     void remove_connection(const GeoConnection* connection);
+
     inline std::string id() const override { return id_m; }
 };
 }  // namespace acclimate

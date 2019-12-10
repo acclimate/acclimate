@@ -30,14 +30,23 @@
 namespace acclimate {
 
 using hstring = settings::hstring;
+
 class Scenario;
+
 class BusinessConnection;
+
 class Consumer;
+
 class EconomicAgent;
+
 class Model;
+
 class Firm;
+
 class Region;
+
 class Sector;
+
 class Storage;
 
 class Output {
@@ -63,7 +72,8 @@ class Output {
     inline void internal_write_value(const hstring& name, const Flow& v);
     inline void internal_write_value(const hstring& name, FloatType v);
     template<int precision_digits_p>
-    inline void internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix = hstring::null());
+    inline void internal_write_value(const hstring& name, const Type<precision_digits_p>& v,
+                                     const hstring& suffix = hstring::null());
 
   protected:
     std::string settings_string;
@@ -89,7 +99,8 @@ class Output {
 
   public:
     Scenario* const scenario;
-    Output(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
+    Output(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p,
+           settings::SettingsNode output_node_p);
     virtual void initialize() = 0;
     virtual void event(EventType type,
                        const Sector* sector_from,
@@ -114,11 +125,17 @@ class Output {
     void start();
     void iterate();
     void end();
+
     virtual void flush() {}
+
     virtual void checkpoint_stop() {}
+
     virtual void checkpoint_resume() {}
+
     virtual ~Output() = default;
+
     inline Model* model() const { return model_m; }
+
     virtual inline std::string id() const { return "OUTPUT"; }
 };
 }  // namespace acclimate

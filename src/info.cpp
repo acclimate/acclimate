@@ -41,17 +41,17 @@ const char* acclimate_info = "Version:                " ACCLIMATE_VERSION
                              "Build time:             " __DATE__ " " __TIME__
                              "\n"
                              "Debug:                  "
-#ifdef DEBUG
+                             #ifdef DEBUG
                              "yes"
-#else
+                             #else
                              "no"
-#endif
+                             #endif
                              "\n"
                              "Parallelized:           "
-#ifdef _OPENMP
+                             #ifdef _OPENMP
                              "yes"
-#else
+                             #else
                              "no"
-#endif
+                             #endif
                              "\n"
                              "Enabled options:        " ACCLIMATE_OPTIONS;

@@ -29,8 +29,11 @@
 namespace acclimate {
 
 class BusinessConnection;
+
 class EconomicAgent;
+
 class Model;
+
 class Storage;
 
 class PurchasingManager {

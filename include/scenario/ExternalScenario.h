@@ -56,9 +56,13 @@ class ExternalScenario : public Scenario {
     ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
 
     virtual void internal_start() {}
+
     virtual void internal_iterate_start() {}
+
     virtual bool internal_iterate_end() { return true; }
+
     virtual void iterate_first_timestep() {}
+
     virtual ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) = 0;
     virtual void read_forcings() = 0;
 
@@ -70,7 +74,9 @@ class ExternalScenario : public Scenario {
     bool iterate() override;
     Time start() override;
     void end() override;
+
     std::string calendar_str() const override { return calendar_str_; }
+
     std::string time_units_str() const override { return time_units_str_; }
 };
 }  // namespace acclimate

@@ -26,8 +26,11 @@
 namespace acclimate {
 
 class BusinessConnection;
+
 class EconomicAgent;
+
 class PurchasingManagerPrices;
+
 class Storage;
 
 struct OptimizerData {
@@ -84,11 +87,13 @@ class PurchasingManagerPrices : public PurchasingManager {
     inline FloatType partial_use_scaled_use() const;
     void calc_desired_purchase(const OptimizerData* data);
     FloatType n_r(FloatType D_r, const BusinessConnection* business_connection) const;
-    FloatType estimate_production_extension_penalty(const BusinessConnection* bc, FloatType production_quantity_X) const;
+    FloatType
+    estimate_production_extension_penalty(const BusinessConnection* bc, FloatType production_quantity_X) const;
     FloatType estimate_marginal_production_costs(const BusinessConnection* bc,
                                                  FloatType production_quantity_X,
                                                  FloatType unit_production_costs_n_c) const;
-    FloatType estimate_marginal_production_extension_penalty(const BusinessConnection* bc, FloatType production_quantity_X) const;
+    FloatType
+    estimate_marginal_production_extension_penalty(const BusinessConnection* bc, FloatType production_quantity_X) const;
     FloatType expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const;
     FloatType transport_penalty(FloatType D_r, const BusinessConnection* business_connection) const;
     FloatType calc_n_co(FloatType n_bar_min, FloatType D_r_min, const BusinessConnection* business_connection) const;
@@ -101,7 +106,8 @@ class PurchasingManagerPrices : public PurchasingManager {
     const FlowValue check_D_in_bounds(FlowQuantity& D_r_, OptimizerData& data_p, unsigned int r) const;
 
 #ifdef DEBUG
-    void print_distribution(const FloatType demand_requests_D_p[], const OptimizerData* data, bool connection_details) const;
+    void
+    print_distribution(const FloatType demand_requests_D_p[], const OptimizerData* data, bool connection_details) const;
 #endif
 };
 }  // namespace acclimate

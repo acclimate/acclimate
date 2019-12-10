@@ -59,7 +59,8 @@ class EventSeriesScenario : public ExternalScenario {
   public:
     using ExternalScenario::id;
     using ExternalScenario::model;
-    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p,
+                        Model* model_p);
 };
 }  // namespace acclimate
 

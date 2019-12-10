@@ -27,6 +27,7 @@
 namespace acclimate {
 
 class Model;
+
 class Scenario;
 
 class JSONNetworkOutput : public Output {

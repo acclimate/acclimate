@@ -34,7 +34,7 @@ DamageOutput::DamageOutput(const settings::SettingsNode& settings_p,
                            Model* model_p,
                            Scenario* scenario_p,
                            settings::SettingsNode output_node_p)
-    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)), damage(0.0) {
+        : Output(settings_p, model_p, scenario_p, std::move(output_node_p)), damage(0.0) {
     out = nullptr;
 }
 

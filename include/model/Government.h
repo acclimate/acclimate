@@ -28,7 +28,9 @@
 namespace acclimate {
 
 class Firm;
+
 class Model;
+
 class Region;
 
 class Government {

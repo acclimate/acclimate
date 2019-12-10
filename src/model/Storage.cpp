@@ -31,7 +31,8 @@
 namespace acclimate {
 
 Storage::Storage(Sector* sector_p, EconomicAgent* economic_agent_p)
-    : sector(sector_p), economic_agent(economic_agent_p), purchasing_manager(new typename VariantPrices::PurchasingManagerType(this)) {}
+        : sector(sector_p), economic_agent(economic_agent_p),
+          purchasing_manager(new typename VariantPrices::PurchasingManagerType(this)) {}
 
 void Storage::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -70,7 +71,8 @@ Ratio Storage::get_input_share_u() const {
 
 void Storage::calc_content_S() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    assert(used_flow_U_.get_quantity() * model()->delta_t() <= content_S_.get_quantity() + current_input_flow_I().get_quantity() * model()->delta_t());
+    assert(used_flow_U_.get_quantity() * model()->delta_t() <=
+           content_S_.get_quantity() + current_input_flow_I().get_quantity() * model()->delta_t());
     auto former_content = content_S_;
     content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * model()->delta_t());
     if (content_S_.get_quantity() <= model()->parameters().min_storage * initial_content_S_star_.get_quantity()) {
@@ -82,7 +84,8 @@ void Storage::calc_content_S() {
 
     Stock maxStock = initial_content_S_star_ * forcing_mu_ * sector->upper_storage_limit_omega;
     if (maxStock.get_quantity() < content_S_.get_quantity()) {
-        model()->run()->event(EventType::STORAGE_OVERRUN, sector, nullptr, economic_agent, to_float(content_S_.get_quantity() - maxStock.get_quantity()));
+        model()->run()->event(EventType::STORAGE_OVERRUN, sector, nullptr, economic_agent,
+                              to_float(content_S_.get_quantity() - maxStock.get_quantity()));
         const Price tmp = content_S_.get_price();
         content_S_ = maxStock;
         content_S_.set_price(tmp);
@@ -136,7 +139,8 @@ bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
         input_flow_I_[1] -= flow_Z_star;
         input_flow_I_[2] -= flow_Z_star;
         initial_input_flow_I_star_ -= flow_Z_star;  // = initial_used_flow_U_star
-        initial_content_S_star_ = round(initial_content_S_star_ - flow_Z_star * sector->initial_storage_fill_factor_psi);
+        initial_content_S_star_ = round(
+                initial_content_S_star_ - flow_Z_star * sector->initial_storage_fill_factor_psi);
         content_S_ = round(content_S_ - flow_Z_star * sector->initial_storage_fill_factor_psi);
         purchasing_manager->subtract_initial_demand_D_star(flow_Z_star);
         return false;
@@ -145,7 +149,7 @@ bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
     return true;
 }
 
-Model *Storage::model() const {
+Model* Storage::model() const {
     return sector->model();
 }
 
@@ -153,12 +157,12 @@ std::string Storage::id() const {
     return sector->id() + ":_S_->" + economic_agent->id();
 }
 
-const Stock &Storage::content_S() const {
+const Stock& Storage::content_S() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     return content_S_;
 }
 
-const Flow &Storage::used_flow_U(const EconomicAgent *const caller) const {
+const Flow& Storage::used_flow_U(const EconomicAgent* const caller) const {
 #ifdef DEBUG
     if (caller != economic_agent) {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
@@ -169,7 +173,7 @@ const Flow &Storage::used_flow_U(const EconomicAgent *const caller) const {
     return used_flow_U_;
 }
 
-const Flow &Storage::desired_used_flow_U_tilde(const EconomicAgent *const caller) const {
+const Flow& Storage::desired_used_flow_U_tilde(const EconomicAgent* const caller) const {
     if (caller != economic_agent) {
         assertstepnot(CONSUMPTION_AND_PRODUCTION);
         assertstepnot(EXPECTATION);
@@ -177,7 +181,7 @@ const Flow &Storage::desired_used_flow_U_tilde(const EconomicAgent *const caller
     return desired_used_flow_U_tilde_;
 }
 
-typename VariantPrices::StorageParameters &Storage::parameters_writable() {
+typename VariantPrices::StorageParameters& Storage::parameters_writable() {
     assertstep(INITIALIZATION);
     return parameters_;
 }

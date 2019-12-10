@@ -21,13 +21,14 @@
 #ifndef ACCLIMATE_VARIANTPRICES_H
 #define ACCLIMATE_VARIANTPRICES_H
 
-
 #include "variants/Variant.h"
 
 namespace acclimate {
 
 class PurchasingManagerPrices;
+
 class CapacityManagerPrices;
+
 class SalesManagerPrices;
 
 class VariantPrices : public Variant {
@@ -35,6 +36,7 @@ class VariantPrices : public Variant {
     using PurchasingManagerType = PurchasingManagerPrices;
     using CapacityManagerType = CapacityManagerPrices;
     using SalesManagerType = SalesManagerPrices;
+
     class ModelParameters : public Variant::ModelParameters {
       public:
         Price cheapest_price_range_width = Price(0.0);
@@ -55,6 +57,7 @@ class VariantPrices : public Variant {
         unsigned int optimization_maxiter;  // maximal iteration
         unsigned int optimization_timeout;  // timeout in sec
     };
+
     class SectorParameters : public Variant::SectorParameters {
       public:
         Price estimated_price_increase_production_extension = Price(0.0);
@@ -64,6 +67,7 @@ class VariantPrices : public Variant {
         Time target_storage_refill_time = Time(0.0);
         Time target_storage_withdraw_time = Time(0.0);
     };
+
     class StorageParameters : public Variant::StorageParameters {
       public:
         Ratio consumption_price_elasticity = Ratio(0.0);

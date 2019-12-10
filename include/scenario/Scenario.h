@@ -28,8 +28,11 @@
 namespace acclimate {
 
 class Consumer;
+
 class Firm;
+
 class GeoLocation;
+
 class Model;
 
 class Scenario {
@@ -45,14 +48,20 @@ class Scenario {
   public:
     Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
     virtual ~Scenario() = default;
+
     virtual Time start() { return Time(0.0); }  // TODO eliminate return type
     virtual void end() {}
+
     virtual bool is_first_timestep() const;
     virtual bool is_last_timestep() const;
     virtual bool iterate();
+
     virtual std::string calendar_str() const { return "standard"; }
+
     virtual std::string time_units_str() const;
+
     inline Model* model() const { return model_m; }
+
     virtual inline std::string id() const { return "SCENARIO"; }
 };
 }  // namespace acclimate

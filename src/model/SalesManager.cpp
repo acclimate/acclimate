@@ -62,7 +62,9 @@ const Flow SalesManager::get_transport_flow() const {
 
 bool SalesManager::remove_business_connection(BusinessConnection* business_connection) {
     auto it = std::find_if(business_connections.begin(), business_connections.end(),
-                           [business_connection](const std::shared_ptr<BusinessConnection>& it) { return it.get() == business_connection; });
+                           [business_connection](const std::shared_ptr<BusinessConnection>& it) {
+                               return it.get() == business_connection;
+                           });
     if (it == std::end(business_connections)) {
         error("Business connection " << business_connection->id() << " not found");
     }
@@ -83,15 +85,17 @@ SalesManager::~SalesManager() {
 }
 
 #ifdef DEBUG
+
 void SalesManager::print_details() const {
     info(business_connections.size() << " outputs:");
     for (const auto& bc : business_connections) {
         info("    " << bc->id() << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
     }
 }
+
 #endif
 
-Model *SalesManager::model() const {
+Model* SalesManager::model() const {
     return firm->model();
 }
 
@@ -99,7 +103,7 @@ std::string SalesManager::id() const {
     return firm->id();
 }
 
-const Demand &SalesManager::sum_demand_requests_D() const {
+const Demand& SalesManager::sum_demand_requests_D() const {
     assertstepnot(PURCHASE);
     return sum_demand_requests_D_;
 }

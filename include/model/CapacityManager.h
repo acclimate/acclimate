@@ -27,6 +27,7 @@
 namespace acclimate {
 
 class Firm;
+
 class Model;
 
 class CapacityManager {
@@ -40,6 +41,7 @@ class CapacityManager {
 
   public:
     const Flow& desired_production_X_tilde() const { return desired_production_X_tilde_; }
+
     const Flow& possible_production_X_hat() const { return possible_production_X_hat_; }
 
   protected:

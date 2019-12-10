@@ -29,8 +29,11 @@
 namespace acclimate {
 
 class Model;
+
 class Region;
+
 class Sector;
+
 class Scenario;
 
 class GnuplotOutput : public Output {

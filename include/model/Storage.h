@@ -29,7 +29,9 @@
 namespace acclimate {
 
 class EconomicAgent;
+
 class Model;
+
 class Sector;
 
 class Storage {
@@ -53,11 +55,15 @@ class Storage {
     const Stock& content_S() const;
     const Flow& used_flow_U(const EconomicAgent* const caller = nullptr) const;
     const Flow& desired_used_flow_U_tilde(const EconomicAgent* const caller = nullptr) const;
+
     const Stock& initial_content_S_star() const { return initial_content_S_star_; }
+
     const Flow& initial_input_flow_I_star() const { return initial_input_flow_I_star_; }
+
     const Flow& initial_used_flow_U_star() const {
         return initial_input_flow_I_star_;  // == initial_used_flow_U_star
     }
+
     const Forcing& forcing_mu() const { return forcing_mu_; }
 
   protected:
@@ -65,6 +71,7 @@ class Storage {
 
   public:
     inline const typename VariantPrices::StorageParameters& parameters() const { return parameters_; }
+
     typename VariantPrices::StorageParameters& parameters_writable();
 
   public:

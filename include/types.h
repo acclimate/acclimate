@@ -27,8 +27,11 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+
 #ifdef _OPENMP
+
 #include <omp.h>
+
 #endif
 
 #define UNUSED(x) (void)(x)
@@ -48,6 +51,7 @@ namespace acclimate {
 class exception : public std::runtime_error {
   public:
     explicit exception(const std::string& s) : std::runtime_error(s) {}
+
     explicit exception(const char* s) : std::runtime_error(s) {}
 };
 
@@ -62,11 +66,13 @@ class OpenMPLock {
         omp_init_lock(&lock);
 #endif
     }
+
     ~OpenMPLock() {
 #ifdef _OPENMP
         omp_destroy_lock(&lock);
 #endif
     }
+
     template<typename Func>
     inline void call(const Func& f) {
 #ifdef _OPENMP
@@ -115,6 +121,7 @@ class Type {
     static constexpr FloatType precision_from_digits(const unsigned char precision_digits_p_) noexcept {
         return precision_digits_p_ == 0 ? 1 : 0.1 * precision_from_digits(precision_digits_p_ - 1);
     }
+
     virtual void set_float(FloatType f) = 0;
 
   public:
@@ -122,9 +129,11 @@ class Type {
     static constexpr int precision_digits = precision_digits_p;
     static constexpr FloatType precision = precision_from_digits(precision_digits_p);
     virtual FloatType get_float() const = 0;
+
     friend std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
         return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float();
     }
+
     virtual ~Type() = default;
 };
 
@@ -185,6 +194,7 @@ template<int precision_digits_p>
 class NonRoundedType : public Type<precision_digits_p> {
   protected:
     FloatType t = 0;
+
     inline void set_float(FloatType f) override { t = f; }
 
   public:
@@ -197,10 +207,12 @@ template<int precision_digits_p>
 class RoundedType : public Type<precision_digits_p> {
   protected:
     IntType t = 0;
+
     inline void set_float(FloatType f) override { t = iround(f / precision); }
 
   public:
     using Type<precision_digits_p>::precision;
+
     FloatType get_float() const override { return t * precision; }
 };
 
@@ -224,61 +236,85 @@ using RoundedType = NonRoundedType<precision_digits_p>;
 class Time : public RoundedType<0> {
   public:
     inline bool operator==(const Time& other) const { return t <= other.t && t >= other.t; }
+
     INCLUDE_ROUNDED_OPS(Time);
 };
 
 class Value;
+
 class FlowQuantity;
+
 class Price;
+
 class FlowValue : public NonRoundedType<8> {
   public:
     Value operator*(const Time& other) const;
     FlowQuantity operator/(const Price& other) const;
-    INCLUDE_NONROUNDED_OPS(FlowValue);
+  INCLUDE_NONROUNDED_OPS(FlowValue);
 };
 
 class Quantity;
+
 class Value : public NonRoundedType<8> {
   public:
     Quantity operator/(const Price& other) const;
     FlowValue operator/(const Time& other) const;
-    INCLUDE_NONROUNDED_OPS(Value);
+  INCLUDE_NONROUNDED_OPS(Value);
 };
 
 class PriceGrad;
+
 class FlowQuantity;
+
 class Price : public RoundedType<6> {
   public:
     PriceGrad operator/(const FlowQuantity& other) const;
+
     INCLUDE_ROUNDED_OPS(Price);
 };
 
 class FlowQuantity : public RoundedType<3> {
   public:
     FlowValue operator*(const Price& other) const { return FlowValue(get_float() * other.get_float()); }
-    friend FlowValue operator*(const Price& lhs, const FlowQuantity& rhs) { return FlowValue(lhs.get_float() * rhs.get_float()); }
-    friend Price operator/(const FlowValue& lhs, const FlowQuantity& rhs) { return Price(lhs.get_float() / rhs.get_float()); }
+
+    friend FlowValue operator*(const Price& lhs, const FlowQuantity& rhs) {
+        return FlowValue(lhs.get_float() * rhs.get_float());
+    }
+
+    friend Price operator/(const FlowValue& lhs, const FlowQuantity& rhs) {
+        return Price(lhs.get_float() / rhs.get_float());
+    }
+
     Quantity operator*(const Time& other) const;
+
     INCLUDE_ROUNDED_OPS(FlowQuantity);
 };
 
 class PriceGrad : public NonRoundedType<8> {
   public:
     Price operator*(const FlowQuantity& other) const { return Price(get_float() * other.get_float()); }
+
     INCLUDE_ROUNDED_OPS(PriceGrad);
 };
 
 class Quantity : public RoundedType<3> {
   public:
     Value operator*(const Price& other) const { return Value(get_float() * other.get_float()); }
+
     friend Price operator/(const Value& lhs, const Quantity& rhs) { return Price(lhs.get_float() / rhs.get_float()); }
+
     FlowQuantity operator/(const Time& other) const { return FlowQuantity(get_float() / other.get_float()); }
+
     INCLUDE_ROUNDED_OPS(Quantity);
 };
 
-inline PriceGrad Price::operator/(const FlowQuantity& other) const { return PriceGrad(get_float() / other.get_float()); }
+inline PriceGrad Price::operator/(const FlowQuantity& other) const {
+    return PriceGrad(get_float() / other.get_float());
+}
 
-inline FlowQuantity FlowValue::operator/(const Price& other) const { return FlowQuantity(get_float() / other.get_float()); }
+inline FlowQuantity FlowValue::operator/(const Price& other) const {
+    return FlowQuantity(get_float() / other.get_float());
+}
 
 inline FlowValue Value::operator/(const Time& other) const { return FlowValue(t / other.get_float()); }
 
@@ -293,10 +329,12 @@ class PricedQuantity {
   protected:
     Q quantity;
     V value;
+
     constexpr PricedQuantity() : quantity(0.0), value(0.0) {}
 
   public:
-    PricedQuantity(const Q& quantity_p, const V& value_p, const bool maybe_negative = false) : quantity(quantity_p), value(value_p) {
+    PricedQuantity(const Q& quantity_p, const V& value_p, const bool maybe_negative = false) : quantity(quantity_p),
+                                                                                               value(value_p) {
         typeassert(!isnan(quantity));
         typeassert(!isnan(value));
         if (!maybe_negative) {
@@ -304,11 +342,17 @@ class PricedQuantity {
             typeassert(value >= 0.0);
         }
     }
-    PricedQuantity(const Q& quantity_p, const bool maybe_negative = false)  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-        : PricedQuantity(quantity_p, quantity_p * Price(1.0), maybe_negative) {}
-    constexpr explicit PricedQuantity(FloatType quantity_p) : PricedQuantity(Q(quantity_p), Q(quantity_p) * Price(1.0)) {}
+
+    PricedQuantity(const Q& quantity_p,
+                   const bool maybe_negative = false)  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+            : PricedQuantity(quantity_p, quantity_p * Price(1.0), maybe_negative) {}
+
+    constexpr explicit PricedQuantity(FloatType quantity_p) : PricedQuantity(Q(quantity_p),
+                                                                             Q(quantity_p) * Price(1.0)) {}
+
     constexpr PricedQuantity(const Q& quantity_p, const Price& price_p, const bool maybe_negative = false)
-        : PricedQuantity(quantity_p, quantity_p * price_p, maybe_negative) {}
+            : PricedQuantity(quantity_p, quantity_p * price_p, maybe_negative) {}
+
     PricedQuantity(const PricedQuantity& other) : quantity(other.quantity), value(other.value) {
         if (quantity <= 0.0) {
             value = V(0.0);
@@ -320,7 +364,9 @@ class PricedQuantity {
     }
 
     constexpr const Q& get_quantity() const { return quantity; }
+
     constexpr const V& get_value() const { return value; }
+
     Price get_price() const {
         if (quantity <= 0.0) {
             return Price::quiet_NaN();
@@ -328,6 +374,7 @@ class PricedQuantity {
         Price price(value / quantity);
         return round(price);
     }
+
     FloatType get_price_float() const {
         if (quantity <= 0.0) {
             return std::numeric_limits<FloatType>::quiet_NaN();
@@ -346,30 +393,45 @@ class PricedQuantity {
         }
         typeassert(value >= 0.0);
     }
+
     void set_quantity_keep_value(const Q& quantity_p) {
         quantity = quantity_p;
         typeassert(quantity >= 0);
     }
+
     void set_value(const V& value_p) {
         value = value_p;
         typeassert(value >= 0);
     }
 
-    constexpr PricedQuantity operator+(const PricedQuantity& other) const { return PricedQuantity(quantity + other.quantity, value + other.value, true); }
-    constexpr PricedQuantity operator-(const PricedQuantity& other) const { return PricedQuantity(quantity - other.quantity, value - other.value, true); }
-    constexpr PricedQuantity operator*(const Ratio& other) const { return PricedQuantity(quantity * other, value * other); }
+    constexpr PricedQuantity operator+(const PricedQuantity& other) const {
+        return PricedQuantity(quantity + other.quantity, value + other.value, true);
+    }
+
+    constexpr PricedQuantity operator-(const PricedQuantity& other) const {
+        return PricedQuantity(quantity - other.quantity, value - other.value, true);
+    }
+
+    constexpr PricedQuantity operator*(const Ratio& other) const {
+        return PricedQuantity(quantity * other, value * other);
+    }
+
     PricedQuantity operator/(const Ratio& other) const {
         typeassert(other > 0.0);
         return PricedQuantity(quantity / other, value / other);
     }
+
     Ratio operator/(const PricedQuantity& other) const {
         typeassert(other.quantity > 0.0);
         return Ratio(quantity / other.quantity);
     }
 
     constexpr bool operator<(const PricedQuantity& other) const { return quantity < other.quantity; }
+
     constexpr bool operator<=(const PricedQuantity& other) const { return quantity <= other.quantity; }
+
     constexpr bool operator>(const PricedQuantity& other) const { return quantity > other.quantity; }
+
     constexpr bool operator>=(const PricedQuantity& other) const { return quantity >= other.quantity; }
 
     PricedQuantity& operator=(const PricedQuantity& other) {
@@ -383,6 +445,7 @@ class PricedQuantity {
         typeassert(value >= 0.0);
         return *this;
     }
+
     const PricedQuantity& operator+=(const PricedQuantity& other) {
         quantity += other.quantity;
         value += other.value;
@@ -390,6 +453,7 @@ class PricedQuantity {
         typeassert(value >= 0.0);
         return *this;
     }
+
     const PricedQuantity& operator-=(const PricedQuantity& other) {
         quantity -= other.quantity;
         value -= other.value;
@@ -401,24 +465,30 @@ class PricedQuantity {
         typeassert(value >= 0.0);
         return *this;
     }
+
     const PricedQuantity& add_possibly_negative(const PricedQuantity& other) {
         quantity += other.quantity;
         value += other.value;
         return *this;
     }
+
     const PricedQuantity& subtract_possibly_negative(const PricedQuantity& other) {
         quantity -= other.quantity;
         value -= other.value;
         return *this;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const PricedQuantity& op) { return os << op.quantity << " [@" << op.get_price() << "]"; }
+    friend std::ostream& operator<<(std::ostream& os, const PricedQuantity& op) {
+        return os << op.quantity << " [@" << op.get_price() << "]";
+    }
 
 #ifdef BASED_ON_INT
+
     friend inline const PricedQuantity& round(const PricedQuantity& flow, bool maybe_negative = false) {
         UNUSED(maybe_negative);
         return flow;
     }
+
 #else
     friend const PricedQuantity round(const PricedQuantity& flow, bool maybe_negative = false) {
         if (round(flow.get_quantity()) <= 0.0) {
@@ -463,7 +533,9 @@ class AnnotatedType {
   public:
     Current current;
     Initial initial;
+
     constexpr AnnotatedType(Current current_p, Initial initial_p) : current(current_p), initial(initial_p) {}
+
     constexpr explicit AnnotatedType(Initial initial_p) : current(initial_p), initial(initial_p) {}
 };
 

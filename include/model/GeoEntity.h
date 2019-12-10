@@ -28,11 +28,14 @@
 namespace acclimate {
 
 class Model;
+
 class TransportChainLink;
 
 class GeoEntity {
   public:
-    enum class Type { LOCATION, CONNECTION };
+    enum class Type {
+        LOCATION, CONNECTION
+    };
 
   protected:
     Type type_m;
@@ -44,10 +47,14 @@ class GeoEntity {
 
     GeoEntity(Model* model_p, TransportDelay delay_p, Type type_p);
     virtual ~GeoEntity();
+
     Type type() const { return type_m; }
+
     void set_forcing_nu(Forcing forcing_nu_p);
     void remove_transport_chain_link(TransportChainLink* transport_chain_link);
+
     inline Model* model() const { return model_m; }
+
     virtual std::string id() const = 0;
 };
 }  // namespace acclimate

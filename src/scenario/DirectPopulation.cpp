@@ -26,8 +26,9 @@
 
 namespace acclimate {
 
-DirectPopulation::DirectPopulation(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-    : RasteredScenario<FloatType>(settings_p, scenario_node_p, model_p) {}
+DirectPopulation::DirectPopulation(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p,
+                                   Model* model_p)
+        : RasteredScenario<FloatType>(settings_p, scenario_node_p, model_p) {}
 
 FloatType DirectPopulation::new_region_forcing(Region* region) const {
     UNUSED(region);
@@ -48,7 +49,8 @@ void DirectPopulation::set_region_forcing(Region* region, const FloatType& forci
 }
 
 void DirectPopulation::add_cell_forcing(
-    FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, FloatType& region_forcing) const {
+        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region,
+        FloatType& region_forcing) const {
     UNUSED(region);
     UNUSED(x);
     UNUSED(y);

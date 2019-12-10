@@ -36,7 +36,8 @@
 namespace acclimate {
 
 Model::Model(Run* const run_p)
-    : run_m(run_p), consumption_sector(new Sector(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector::TransportType::IMMEDIATE)) {
+        : run_m(run_p),
+          consumption_sector(new Sector(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector::TransportType::IMMEDIATE)) {
     sectors.emplace_back(consumption_sector);
 }
 
@@ -46,9 +47,9 @@ Region* Model::add_region(std::string name) {
     return region;
 }
 
-Sector *Model::add_sector(std::string name,
-                          const Ratio &upper_storage_limit_omega_p,
-                          const Time &initial_storage_fill_factor_psi_p,
+Sector* Model::add_sector(std::string name,
+                          const Ratio& upper_storage_limit_omega_p,
+                          const Time& initial_storage_fill_factor_psi_p,
                           typename Sector::TransportType transport_type_p) {
     auto sector = new Sector(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p,
                              transport_type_p);
@@ -124,7 +125,8 @@ void Model::iterate_purchase() {
     }
 #ifdef _OPENMP
     std::sort(std::begin(purchasing_managers), std::end(purchasing_managers),
-              [](const std::pair<PurchasingManager*, std::size_t>& a, const std::pair<PurchasingManager*, std::size_t>& b) {
+              [](const std::pair<PurchasingManager*, std::size_t>& a,
+                 const std::pair<PurchasingManager*, std::size_t>& b) {
                   return b.second > a.second;
               });
 #endif
@@ -145,7 +147,8 @@ void Model::iterate_investment() {
 }
 
 Region* Model::find_region(const std::string& name) const {
-    auto it = std::find_if(regions.begin(), regions.end(), [name](const std::unique_ptr<Region>& it) { return it->id() == name; });
+    auto it = std::find_if(regions.begin(), regions.end(),
+                           [name](const std::unique_ptr<Region>& it) { return it->id() == name; });
     if (it == regions.end()) {
         return nullptr;
     }
@@ -153,7 +156,8 @@ Region* Model::find_region(const std::string& name) const {
 }
 
 Sector* Model::find_sector(const std::string& name) const {
-    auto it = std::find_if(sectors.begin(), sectors.end(), [name](const std::unique_ptr<Sector>& it) { return it->id() == name; });
+    auto it = std::find_if(sectors.begin(), sectors.end(),
+                           [name](const std::unique_ptr<Sector>& it) { return it->id() == name; });
     if (it == sectors.end()) {
         return nullptr;
     }
@@ -169,7 +173,8 @@ Firm* Model::find_firm(const std::string& sector_name, const std::string& region
 }
 
 Firm* Model::find_firm(Sector* sector, const std::string& region_name) const {
-    auto it = std::find_if(sector->firms.begin(), sector->firms.end(), [region_name](const Firm* it) { return it->region->id() == region_name; });
+    auto it = std::find_if(sector->firms.begin(), sector->firms.end(),
+                           [region_name](const Firm* it) { return it->region->id() == region_name; });
     if (it == sector->firms.end()) {
         return nullptr;
     }
@@ -178,7 +183,9 @@ Firm* Model::find_firm(Sector* sector, const std::string& region_name) const {
 
 Consumer* Model::find_consumer(Region* region) const {
     auto it = std::find_if(region->economic_agents.begin(), region->economic_agents.end(),
-                           [](const std::unique_ptr<EconomicAgent>& it) { return it->type == EconomicAgent::Type::CONSUMER; });
+                           [](const std::unique_ptr<EconomicAgent>& it) {
+                               return it->type == EconomicAgent::Type::CONSUMER;
+                           });
     if (it == region->economic_agents.end()) {
         return nullptr;
     }
@@ -195,7 +202,8 @@ Consumer* Model::find_consumer(const std::string& region_name) const {
 
 GeoLocation* Model::find_location(const std::string& name) const {
     auto it =
-        std::find_if(other_locations.begin(), other_locations.end(), [name](const std::unique_ptr<GeoLocation>& it) { return it->id() == name; });
+            std::find_if(other_locations.begin(), other_locations.end(),
+                         [name](const std::unique_ptr<GeoLocation>& it) { return it->id() == name; });
     if (it == other_locations.end()) {
         return nullptr;
     }
@@ -213,17 +221,17 @@ void Model::tick() {
     ++timestep_;
 }
 
-void Model::delta_t(const Time &delta_t_p) {
+void Model::delta_t(const Time& delta_t_p) {
     assertstep(INITIALIZATION);
     delta_t_ = delta_t_p;
 }
 
-void Model::start_time(const Time &start_time) {
+void Model::start_time(const Time& start_time) {
     assertstep(INITIALIZATION);
     start_time_ = start_time;
 }
 
-void Model::stop_time(const Time &stop_time) {
+void Model::stop_time(const Time& stop_time) {
     assertstep(INITIALIZATION);
     stop_time_ = stop_time;
 }
@@ -233,7 +241,7 @@ void Model::no_self_supply(bool no_self_supply_p) {
     no_self_supply_ = no_self_supply_p;
 }
 
-typename VariantPrices::ModelParameters &Model::parameters_writable() {
+typename VariantPrices::ModelParameters& Model::parameters_writable() {
     assertstep(INITIALIZATION);
     return parameters_;
 }

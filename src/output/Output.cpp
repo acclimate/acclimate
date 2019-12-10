@@ -45,7 +45,7 @@ Output::Output(const settings::SettingsNode& settings,
                Model* model_p,
                Scenario* scenario_p,
                settings::SettingsNode output_node_p)
-    : model_m(model_p), scenario(scenario_p), output_node(std::move(output_node_p)) {
+        : model_m(model_p), scenario(scenario_p), output_node(std::move(output_node_p)) {
     start_time = 0;
     std::ostringstream ss;
     ss << settings;
@@ -83,7 +83,8 @@ inline void Output::internal_write_value(const hstring& name, const Flow& v) {
 }
 
 template<int precision_digits_p>
-inline void Output::internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix) {
+inline void
+Output::internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix) {
     internal_write_value(name, to_float(v), suffix);
 }
 
@@ -151,7 +152,8 @@ bool Output::write_firm_parameter_variant(const Firm* p, const hstring& name) {
             internal_write_value(name, p->sales_manager->communicated_parameters().possible_production_X_hat);
             break;
         case hstring::hash("unit_production_costs"):
-            internal_write_value(name, p->sales_manager->communicated_parameters().possible_production_X_hat.get_price());
+            internal_write_value(name,
+                                 p->sales_manager->communicated_parameters().possible_production_X_hat.get_price());
             break;
         case hstring::hash("total_production_costs"):
             internal_write_value(name, p->sales_manager->total_production_costs_C());
@@ -168,7 +170,6 @@ bool Output::write_firm_parameter_variant(const Firm* p, const hstring& name) {
     return true;
 }
 
-
 bool Output::write_economic_agent_parameter(const EconomicAgent* p, const hstring& name) {
     switch (name) {
         case hstring::hash("demand"): {
@@ -177,14 +178,16 @@ bool Output::write_economic_agent_parameter(const EconomicAgent* p, const hstrin
                 demand += is->purchasing_manager->demand_D();
             }
             internal_write_value(name, demand);
-        } break;
+        }
+            break;
         case hstring::hash("input_flow"): {
             Flow input_flow = Flow(0.0);
             for (const auto& is : p->input_storages) {
                 input_flow += is->last_input_flow_I();
             }
             internal_write_value(name, input_flow);
-        } break;
+        }
+            break;
         case hstring::hash("used_flow"):
         case hstring::hash("consumption"): {
             Flow used_flow = Flow(0.0);
@@ -192,21 +195,24 @@ bool Output::write_economic_agent_parameter(const EconomicAgent* p, const hstrin
                 used_flow += is->used_flow_U();
             }
             internal_write_value(name, used_flow);
-        } break;
+        }
+            break;
         case hstring::hash("business_connections"): {
             int business_connections = 0;
             for (const auto& is : p->input_storages) {
                 business_connections += is->purchasing_manager->business_connections.size();
             }
             internal_write_value(name, business_connections);
-        } break;
+        }
+            break;
         case hstring::hash("storage"): {
             Stock sum_storage_content = Stock(0.0);
             for (const auto& is : p->input_storages) {
                 sum_storage_content += is->content_S();
             }
             internal_write_value(name, sum_storage_content);
-        } break;
+        }
+            break;
         default:
             return false;
     }
@@ -474,7 +480,8 @@ void Output::write_region_parameters(const Region* region, const settings::Setti
                     internal_write_value(hstring("total_flow"), flows[region_to->index()]);
                     internal_end_target();
                 }
-            } break;
+            }
+                break;
             case hstring::hash("sent_flow"): {
                 std::vector<Flow> flows(model()->regions.size(), Flow(0.0));
                 for (const auto& ea : region->economic_agents) {
@@ -489,7 +496,8 @@ void Output::write_region_parameters(const Region* region, const settings::Setti
                     internal_write_value(hstring("sent_flow"), flows[region_to->index()]);
                     internal_end_target();
                 }
-            } break;
+            }
+                break;
             case hstring::hash("received_flows"): {
                 std::vector<Flow> flows(model()->regions.size(), Flow(0.0));
                 for (const auto& ea : region->economic_agents) {
@@ -504,7 +512,8 @@ void Output::write_region_parameters(const Region* region, const settings::Setti
                     internal_write_value(hstring("received_flow"), flows[region_to->index()]);
                     internal_end_target();
                 }
-            } break;
+            }
+                break;
             default:
                 if (!write_region_parameter_variant(region, name)) {
                     parameter_not_found(name);
@@ -597,13 +606,15 @@ void Output::iterate() {
                                         warning("Sector " << it["sector"].as<std::string>() << " not found");
                                     }
                                 } else {
-                                    const Firm* p = model()->find_firm(it["sector"].as<std::string>(), it["region"].as<std::string>());
+                                    const Firm* p = model()->find_firm(it["sector"].as<std::string>(),
+                                                                       it["region"].as<std::string>());
                                     if (p) {
                                         internal_start_target(hstring("firms"), p->sector, p->region);
                                         write_firm_parameters(p, it);
                                         internal_end_target();
                                     } else {
-                                        warning("Firm " << it["sector"].as<std::string>() << ":" << it["region"].as<std::string>() << " not found");
+                                        warning("Firm " << it["sector"].as<std::string>() << ":"
+                                                        << it["region"].as<std::string>() << " not found");
                                     }
                                 }
                             }
@@ -621,11 +632,13 @@ void Output::iterate() {
                                     write_firm_parameters(p, it);
                                     internal_end_target();
                                 } else {
-                                    warning("Firm " << it["sector"].as<std::string>() << ":" << it["region"].as<std::string>() << " not found");
+                                    warning("Firm " << it["sector"].as<std::string>() << ":"
+                                                    << it["region"].as<std::string>() << " not found");
                                 }
                             }
                         }
-                    } break;
+                    }
+                        break;
 
                     case hstring::hash("consumer"): {
                         if (!it.has("region")) {
@@ -649,7 +662,8 @@ void Output::iterate() {
                                 warning("Consumer " << it["region"].as<std::string>() << " not found");
                             }
                         }
-                    } break;
+                    }
+                        break;
 
                     case hstring::hash("agent"): {
                         for (const auto& region : model()->regions) {
@@ -663,7 +677,8 @@ void Output::iterate() {
                                 internal_end_target();
                             }
                         }
-                    } break;
+                    }
+                        break;
 
                     case hstring::hash("storage"): {
                         for (const auto& region : model()->regions) {
@@ -677,7 +692,8 @@ void Output::iterate() {
                                 internal_end_target();
                             }
                         }
-                    } break;
+                    }
+                        break;
 
                     case hstring::hash("flow"): {
                         for (const auto& sector : model()->sectors) {
@@ -692,7 +708,8 @@ void Output::iterate() {
                                 internal_end_target();
                             }
                         }
-                    } break;
+                    }
+                        break;
 
                     case hstring::hash("region"): {
                         const char* region_name = nullptr;
@@ -705,7 +722,8 @@ void Output::iterate() {
                                 switch (name) {
                                     case hstring::hash("total_current_proxy_sum"):
                                         for (const auto& forcing : static_cast<RasteredScenario<FloatType>*>(scenario)->forcings()) {
-                                            if (forcing.region && ((region_name == nullptr) || forcing.region->id() == region_name)) {
+                                            if (forcing.region &&
+                                                ((region_name == nullptr) || forcing.region->id() == region_name)) {
                                                 internal_start_target(hstring("regions"), forcing.region);
                                                 internal_write_value(name, forcing.forcing);
                                                 internal_end_target();
@@ -722,7 +740,8 @@ void Output::iterate() {
                                 internal_end_target();
                             }
                         }
-                    } break;
+                    }
+                        break;
 
                     case hstring::hash("sector"): {
                         const char* sector_name = nullptr;
@@ -739,7 +758,8 @@ void Output::iterate() {
                                 internal_end_target();
                             }
                         }
-                    } break;
+                    }
+                        break;
 
                     case hstring::hash("meta"): {
                         internal_start_target(hstring("meta"));
@@ -755,7 +775,8 @@ void Output::iterate() {
                             }
                         }
                         internal_end_target();
-                    } break;
+                    }
+                        break;
 
                     default:
                         parameter_not_found(name);
@@ -822,11 +843,11 @@ void Output::internal_start_target(const hstring& name) {
 void Output::internal_end_target() {}
 
 void Output::event(EventType type,
-                                 const Sector* sector_from,
-                                 const Region* region_from,
-                                 const Sector* sector_to,
-                                 const Region* region_to,
-                                 FloatType value) {
+                   const Sector* sector_from,
+                   const Region* region_from,
+                   const Sector* sector_to,
+                   const Region* region_to,
+                   FloatType value) {
     UNUSED(type);
     UNUSED(sector_from);
     UNUSED(region_from);
@@ -836,29 +857,32 @@ void Output::event(EventType type,
 }
 
 void Output::event(EventType type,
-                                 const Sector* sector_from,
-                                 const Region* region_from,
-                                 const EconomicAgent* economic_agent_to,
-                                 FloatType value) {
+                   const Sector* sector_from,
+                   const Region* region_from,
+                   const EconomicAgent* economic_agent_to,
+                   FloatType value) {
     event(type, sector_from, region_from, economic_agent_to == nullptr ? nullptr : economic_agent_to->sector,
           economic_agent_to == nullptr ? nullptr : economic_agent_to->region, value);
 }
 
 void Output::event(EventType type,
-                                 const EconomicAgent* economic_agent_from,
-                                 const EconomicAgent* economic_agent_to,
-                                 FloatType value) {
-    event(type, economic_agent_from == nullptr ? nullptr : economic_agent_from->sector, economic_agent_from == nullptr ? nullptr : economic_agent_from->region,
-          economic_agent_to == nullptr ? nullptr : economic_agent_to->as_firm()->sector, economic_agent_to == nullptr ? nullptr : economic_agent_to->region,
+                   const EconomicAgent* economic_agent_from,
+                   const EconomicAgent* economic_agent_to,
+                   FloatType value) {
+    event(type, economic_agent_from == nullptr ? nullptr : economic_agent_from->sector,
+          economic_agent_from == nullptr ? nullptr : economic_agent_from->region,
+          economic_agent_to == nullptr ? nullptr : economic_agent_to->as_firm()->sector,
+          economic_agent_to == nullptr ? nullptr : economic_agent_to->region,
           value);
 }
 
 void Output::event(EventType type,
-                                 const EconomicAgent* economic_agent_from,
-                                 const Sector* sector_to,
-                                 const Region* region_to,
-                                 FloatType value) {
-    event(type, economic_agent_from == nullptr ? nullptr : economic_agent_from->sector, economic_agent_from == nullptr ? nullptr : economic_agent_from->region,
+                   const EconomicAgent* economic_agent_from,
+                   const Sector* sector_to,
+                   const Region* region_to,
+                   FloatType value) {
+    event(type, economic_agent_from == nullptr ? nullptr : economic_agent_from->sector,
+          economic_agent_from == nullptr ? nullptr : economic_agent_from->region,
           sector_to, region_to, value);
 }
 

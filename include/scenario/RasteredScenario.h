@@ -72,7 +72,9 @@ class RasteredScenario : public ExternalScenario {
   public:
     using ExternalScenario::id;
     ~RasteredScenario() override = default;
+
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
+
     inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; }
 };
 }  // namespace acclimate

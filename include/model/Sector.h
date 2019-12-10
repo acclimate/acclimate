@@ -29,13 +29,16 @@
 namespace acclimate {
 
 class Model;
+
 class Firm;
 
 class Sector {
     friend class Model;
 
   public:
-    enum class TransportType { AVIATION, IMMEDIATE, ROADSEA };
+    enum class TransportType {
+        AVIATION, IMMEDIATE, ROADSEA
+    };
     static TransportType map_transport_type(const settings::hstring& transport_type);
     static const char* unmap_transport_type(TransportType transport_type);
 
@@ -58,9 +61,13 @@ class Sector {
 
   public:
     const Demand& total_demand_D() const;
+
     inline const Demand& last_total_production_X() const { return last_total_production_X_m; }
+
     const Demand& total_production_X() const;
+
     inline const typename VariantPrices::SectorParameters& parameters() const { return parameters_m; }
+
     typename VariantPrices::SectorParameters& parameters_writable();
 
   public:
@@ -81,8 +88,11 @@ class Sector {
     void subtract_initial_production_X(const Flow& production_X);
     void iterate_consumption_and_production();
     void remove_firm(Firm* firm);
+
     inline IntType index() const { return index_m; }
+
     inline Model* model() const { return model_m; }
+
     inline const std::string& id() const { return id_m; }
 };
 }  // namespace acclimate

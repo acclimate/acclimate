@@ -33,8 +33,11 @@ class SettingsNode;
 namespace acclimate {
 
 class Model;
+
 class Region;
+
 class Sector;
+
 class Scenario;
 
 class ArrayOutput : public Output {
@@ -49,9 +52,11 @@ class ArrayOutput : public Output {
         std::vector<std::size_t> shape;  // without time
         std::size_t size = 0;            // without time
         void* meta = nullptr;
+
         Variable(std::vector<FloatType> data_p, std::vector<std::size_t> shape_p, std::size_t size_p, void* meta_p)
-            : data(std::move(data_p)), shape(std::move(shape_p)), size(size_p), meta(meta_p) {}
+                : data(std::move(data_p)), shape(std::move(shape_p)), size(size_p), meta(meta_p) {}
     };
+
     struct Event {
         std::size_t time = 0;
         unsigned char type = 0;
@@ -68,9 +73,11 @@ class ArrayOutput : public Output {
         std::size_t index = 0;
         Sector* sector;
         Region* region;
+
         Target(hstring name_p, std::size_t index_p, Sector* sector_p, Region* region_p)
-            : name(std::move(name_p)), index(index_p), sector(sector_p), region(region_p) {}
+                : name(std::move(name_p)), index(index_p), sector(sector_p), region(region_p) {}
     };
+
     std::size_t sectors_size = 0;
     std::size_t regions_size = 0;
     std::unordered_map<hstring::hash_type, Variable> variables;
@@ -89,12 +96,14 @@ class ArrayOutput : public Output {
     void internal_iterate_begin() override;
     inline std::size_t current_index() const;
     inline Variable& create_variable(const hstring& path, const hstring& name, const hstring& suffix);
+
     virtual void create_variable_meta(Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
         UNUSED(v);
         UNUSED(path);
         UNUSED(name);
         UNUSED(suffix);
     }
+
     virtual bool internal_handle_event(Event& event) {
         UNUSED(event);
         return true;
@@ -115,6 +124,7 @@ class ArrayOutput : public Output {
                FloatType value) override;
     void initialize() override;
     const typename ArrayOutput::Variable& get_variable(const hstring& fullname) const;
+
     const std::vector<Event>& get_events() const { return events; }
 };
 }  // namespace acclimate

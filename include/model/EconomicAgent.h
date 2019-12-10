@@ -30,15 +30,22 @@
 namespace acclimate {
 
 class Consumer;
+
 class Firm;
+
 class Model;
+
 class Region;
+
 class Sector;
+
 class Storage;
 
 class EconomicAgent {
   public:
-    enum class Type { CONSUMER, FIRM };
+    enum class Type {
+        CONSUMER, FIRM
+    };
 
   private:
     typename VariantPrices::AgentParameters parameters_;
@@ -54,6 +61,7 @@ class EconomicAgent {
 
   public:
     inline const typename VariantPrices::AgentParameters& parameters() const { return parameters_; }
+
     typename VariantPrices::AgentParameters const& parameters_writable() const;
 
   protected:
@@ -61,13 +69,17 @@ class EconomicAgent {
 
   public:
     inline const Forcing& forcing() const { return forcing_; }
+
     void forcing(const Forcing& forcing_p);
     virtual Firm* as_firm();
     virtual const Firm* as_firm() const;
     virtual Consumer* as_consumer();
     virtual const Consumer* as_consumer() const;
+
     inline bool is_firm() const { return type == Type::FIRM; }
+
     inline bool is_consumer() const { return type == Type::CONSUMER; }
+
     virtual ~EconomicAgent() = default;
     virtual void iterate_consumption_and_production() = 0;
     virtual void iterate_expectation() = 0;

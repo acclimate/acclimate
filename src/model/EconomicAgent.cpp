@@ -31,7 +31,7 @@
 namespace acclimate {
 
 EconomicAgent::EconomicAgent(Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p)
-    : sector(sector_p), region(region_p), type(type_p) {}
+        : sector(sector_p), region(region_p), type(type_p) {}
 
 inline Firm* EconomicAgent::as_firm() {
     assert(type == Type::FIRM);
@@ -64,12 +64,12 @@ Storage* EconomicAgent::find_input_storage(const std::string& sector_name) const
 
 void EconomicAgent::remove_storage(Storage* storage) {
     auto it =
-        std::find_if(input_storages.begin(), input_storages.end(),
-                [storage](const std::unique_ptr<Storage>& it) { return it.get() == storage; });
+            std::find_if(input_storages.begin(), input_storages.end(),
+                         [storage](const std::unique_ptr<Storage>& it) { return it.get() == storage; });
     input_storages.erase(it);
 }
 
-Model *EconomicAgent::model() const {
+Model* EconomicAgent::model() const {
     return sector->model();
 }
 
@@ -77,12 +77,12 @@ std::string EconomicAgent::id() const {
     return sector->id() + ":" + region->id();
 }
 
-typename VariantPrices::AgentParameters const &EconomicAgent::parameters_writable() const {
+typename VariantPrices::AgentParameters const& EconomicAgent::parameters_writable() const {
     assertstep(INITIALIZATION);
     return parameters_;
 }
 
-void EconomicAgent::forcing(const Forcing &forcing_p) {
+void EconomicAgent::forcing(const Forcing& forcing_p) {
     assertstep(SCENARIO);
     assert(forcing_p >= 0.0);
     forcing_ = forcing_p;

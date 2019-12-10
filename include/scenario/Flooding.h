@@ -28,6 +28,7 @@
 namespace acclimate {
 
 class Model;
+
 class Region;
 
 class Flooding : public RasteredScenario<FloatType> {
@@ -37,7 +38,8 @@ class Flooding : public RasteredScenario<FloatType> {
     void set_region_forcing(Region* region, const FloatType& forcing, FloatType proxy_sum) const override;
     void reset_forcing(Region* region, FloatType& forcing) const override;
     void add_cell_forcing(
-        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, FloatType& region_forcing) const override;
+            FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region,
+            FloatType& region_forcing) const override;
 
   public:
     using RasteredScenario<FloatType>::id;

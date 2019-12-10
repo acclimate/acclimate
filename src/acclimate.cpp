@@ -66,7 +66,7 @@ Acclimate::Acclimate(settings::SettingsNode settings_p) {
     signal(SIGFPE, handle_fpe_error);
     feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);
 #endif
-run_m = std::make_shared<Run>(std::move(settings_p));
+    run_m = std::make_shared<Run>(std::move(settings_p));
 }
 
 int Acclimate::run() {
