@@ -19,16 +19,22 @@
 */
 
 #include "model/TransportChainLink.h"
+#include "model/GeoEntity.h"
+#include "model/BusinessConnection.h"
+#include "model/EconomicAgent.h"
+#include "model/Model.h"
+#include "model/PurchasingManagerPrices.h"
+#include "model/SalesManagerPrices.h"
+#include "model/Storage.h"
 #include "run.h"
-#include "variants/ModelVariants.h"
+
 
 namespace acclimate {
 
-template<class ModelVariant>
-TransportChainLink<ModelVariant>::TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p,
-                                                     const TransportDelay& transport_delay_tau,
-                                                     const Flow& initial_flow_Z_star,
-                                                     GeoEntity<ModelVariant>* geo_entity_p)
+TransportChainLink::TransportChainLink(BusinessConnection* business_connection_p,
+                                       const TransportDelay& transport_delay_tau,
+                                       const Flow& initial_flow_Z_star,
+                                       GeoEntity* geo_entity_p)
     : initial_transport_delay_tau(transport_delay_tau),
       business_connection(business_connection_p),
       geo_entity(geo_entity_p),
@@ -42,20 +48,17 @@ TransportChainLink<ModelVariant>::TransportChainLink(BusinessConnection<ModelVar
     }
 }
 
-template<class ModelVariant>
-TransportChainLink<ModelVariant>::~TransportChainLink() {
+TransportChainLink::~TransportChainLink() {
     if (geo_entity) {
         geo_entity->remove_transport_chain_link(this);
     }
 }
 
-template<class ModelVariant>
-FloatType TransportChainLink<ModelVariant>::get_passage() const {
+FloatType TransportChainLink::get_passage() const {
     return forcing_nu;
 }
 
-template<class ModelVariant>
-void TransportChainLink<ModelVariant>::push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star) {
+void TransportChainLink::push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     Flow flow_to_push = Flow(0.0);
     if (!transport_queue.empty()) {
@@ -89,14 +92,12 @@ void TransportChainLink<ModelVariant>::push_flow_Z(const Flow& flow_Z, const Flo
     }
 }
 
-template<class ModelVariant>
-void TransportChainLink<ModelVariant>::set_forcing_nu(Forcing forcing_nu_p) {
+void TransportChainLink::set_forcing_nu(Forcing forcing_nu_p) {
     assertstep(SCENARIO);
     forcing_nu = forcing_nu_p;
 }
 
-template<class ModelVariant>
-Flow TransportChainLink<ModelVariant>::get_total_flow() const {
+Flow TransportChainLink::get_total_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& f : transport_queue) {
@@ -105,8 +106,7 @@ Flow TransportChainLink<ModelVariant>::get_total_flow() const {
     return res + overflow;
 }
 
-template<class ModelVariant>
-Flow TransportChainLink<ModelVariant>::get_disequilibrium() const {
+Flow TransportChainLink::get_disequilibrium() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& f : transport_queue) {
@@ -115,8 +115,7 @@ Flow TransportChainLink<ModelVariant>::get_disequilibrium() const {
     return res;
 }
 
-template<class ModelVariant>
-FloatType TransportChainLink<ModelVariant>::get_stddeviation() const {
+FloatType TransportChainLink::get_stddeviation() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     FloatType res = 0.0;
     for (const auto& f : transport_queue) {
@@ -125,8 +124,7 @@ FloatType TransportChainLink<ModelVariant>::get_stddeviation() const {
     return res;
 }
 
-template<class ModelVariant>
-FlowQuantity TransportChainLink<ModelVariant>::get_flow_deficit() const {
+FlowQuantity TransportChainLink::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     FlowQuantity res = FlowQuantity(0.0);
     for (const auto& f : transport_queue) {
@@ -135,5 +133,14 @@ FlowQuantity TransportChainLink<ModelVariant>::get_flow_deficit() const {
     return round(res - overflow.get_quantity());
 }
 
-INSTANTIATE_BASIC(TransportChainLink);
+Model* TransportChainLink::model() const {
+    return business_connection->model();
+}
+
+std::string TransportChainLink::id() const {
+    return (business_connection->seller ? business_connection->seller->id() : "INVALID") + "-"
+            + std::to_string(business_connection->get_id(this)) + "->"
+            + (business_connection->buyer ? business_connection->buyer->storage->economic_agent->id() : "INVALID");
+}
+
 }  // namespace acclimate

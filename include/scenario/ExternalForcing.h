@@ -24,7 +24,6 @@
 #include <memory>
 #include <string>
 #include "netcdftools.h"
-#include "scenario/RasteredData.h"
 #include "types.h"
 
 namespace acclimate {

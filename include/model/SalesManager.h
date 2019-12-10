@@ -24,32 +24,28 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "run.h"
-#include "model/BusinessConnection.h"
-#include "model/Firm.h"
-#include "model/Model.h"
 #include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
+class BusinessConnection;
+class Firm;
+class Model;
+
 class SalesManager {
   public:
-    Firm<ModelVariant>* const firm;
-    std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>> business_connections;
+    Firm* const firm;
+    std::vector<std::shared_ptr<BusinessConnection>> business_connections;
 
   protected:
     Demand sum_demand_requests_D_ = Demand(0.0);
     OpenMPLock sum_demand_requests_D_lock;
 
   public:
-    const Demand& sum_demand_requests_D() const {
-        assertstepnot(PURCHASE);
-        return sum_demand_requests_D_;
-    }
+    const Demand& sum_demand_requests_D() const;
 
   public:
-    explicit SalesManager(Firm<ModelVariant>* firm_p);
+    explicit SalesManager(Firm* firm_p);
     virtual ~SalesManager();
     virtual void distribute(const Flow& production_X) = 0;
     virtual void iterate_expectation();
@@ -57,9 +53,9 @@ class SalesManager {
     void add_initial_demand_request_D_star(const Demand& initial_demand_request_D_star);
     void subtract_initial_demand_request_D_star(const Demand& initial_demand_request_D_star);
     const Flow get_transport_flow() const;
-    bool remove_business_connection(BusinessConnection<ModelVariant>* business_connection);
-    inline Model<ModelVariant>* model() const { return firm->model(); }
-    inline std::string id() const { return firm->id(); }
+    bool remove_business_connection(BusinessConnection* business_connection);
+    Model* model() const;
+    std::string id() const;
 #ifdef DEBUG
     void print_details() const;
 #endif

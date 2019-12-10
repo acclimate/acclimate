@@ -20,59 +20,41 @@
 
 #include "model/Firm.h"
 #include <vector>
-#include "model/CapacityManager.h"
+#include "model/CapacityManagerPrices.h"
 #include "model/EconomicAgent.h"
+#include "model/GeoRoute.h"
 #include "model/Model.h"
-#include "model/PurchasingManagerBasic.h"
-#include "model/PurchasingManagerDemand.h"
+#include "model/PurchasingManagerPrices.h"
 #include "model/Region.h"
-#include "model/SalesManagerBasic.h"
-#include "model/SalesManagerDemand.h"
 #include "model/SalesManagerPrices.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
-#include "variants/ModelVariants.h"
+#include "run.h"
+#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-Firm<ModelVariant>::Firm(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
-    : EconomicAgent<ModelVariant>(sector_p, region_p, EconomicAgent<ModelVariant>::Type::FIRM),
-      capacity_manager(new typename ModelVariant::CapacityManagerType(this, possible_overcapacity_ratio_beta_p)),
-      sales_manager(new typename ModelVariant::SalesManagerType(this)) {}
+Firm::Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
+    : EconomicAgent(sector_p, region_p, EconomicAgent::Type::FIRM),
+      capacity_manager(new typename VariantPrices::CapacityManagerType(this, possible_overcapacity_ratio_beta_p)),
+      sales_manager(new typename VariantPrices::SalesManagerType(this)) {}
 
-template<class ModelVariant>
-inline Firm<ModelVariant>* Firm<ModelVariant>::as_firm() {
+inline Firm* Firm::as_firm() {
     return this;
 }
 
-template<class ModelVariant>
-inline const Firm<ModelVariant>* Firm<ModelVariant>::as_firm() const {
+inline const Firm* Firm::as_firm() const {
     return this;
 }
 
-template<class ModelVariant>
-void Firm<ModelVariant>::produce_X() {
+void Firm::produce_X() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     production_X_ = capacity_manager->calc_production_X();
     assert(production_X_.get_quantity() >= 0.0);
     sector->add_production_X(production_X_);
 }
 
-template<class ModelVariant>
-void Firm<ModelVariant>::iterate_consumption_and_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
-    produce_X();
-    for (const auto& is : input_storages) {
-        is->use_content_S(round(production_X_ * is->get_technology_coefficient_a()));
-        is->iterate_consumption_and_production();
-    }
-    sales_manager->distribute(production_X_);
-}
-
-#ifdef VARIANT_PRICES
-template<>
-void Firm<VariantPrices>::iterate_consumption_and_production() {
+void Firm::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     produce_X();
     for (const auto& is : input_storages) {
@@ -85,36 +67,8 @@ void Firm<VariantPrices>::iterate_consumption_and_production() {
     }
     sales_manager->distribute(production_X_);
 }
-#endif
 
-#ifdef VARIANT_BASIC
-template<>
-void Firm<VariantBasic>::iterate_expectation() {
-    assertstep(EXPECTATION);
-    sales_manager->iterate_expectation();
-    for (const auto& is : input_storages) {
-        is->set_desired_used_flow_U_tilde(round(capacity_manager->desired_production_X_tilde() * is->get_technology_coefficient_a()
-                                                * forcing_  // Consider forcing to avoid buying goods that cannot be used when production is limited
-                                                ));
-    }
-}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-void Firm<VariantDemand>::iterate_expectation() {
-    assertstep(EXPECTATION);
-    sales_manager->iterate_expectation();
-    for (const auto& is : input_storages) {
-        is->set_desired_used_flow_U_tilde(round(capacity_manager->desired_production_X_tilde() * is->get_technology_coefficient_a()
-                                                * forcing_  // Consider forcing to avoid buying goods that cannot be used when production is limited
-                                                ));
-    }
-}
-#endif
-
-template<class ModelVariant>
-void Firm<ModelVariant>::iterate_expectation() {
+void Firm::iterate_expectation() {
     assertstep(EXPECTATION);
     sales_manager->iterate_expectation();
     for (const auto& is : input_storages) {
@@ -124,8 +78,7 @@ void Firm<ModelVariant>::iterate_expectation() {
     }
 }
 
-template<class ModelVariant>
-void Firm<ModelVariant>::add_initial_production_X_star(const Flow& initial_production_flow_X_star) {
+void Firm::add_initial_production_X_star(const Flow& initial_production_flow_X_star) {
     assertstep(INITIALIZATION);
     initial_production_X_star_ += initial_production_flow_X_star;
     production_X_ += initial_production_flow_X_star;
@@ -133,8 +86,7 @@ void Firm<ModelVariant>::add_initial_production_X_star(const Flow& initial_produ
     sector->add_initial_production_X(initial_production_flow_X_star);
 }
 
-template<class ModelVariant>
-void Firm<ModelVariant>::subtract_initial_production_X_star(const Flow& initial_production_flow_X_star) {
+void Firm::subtract_initial_production_X_star(const Flow& initial_production_flow_X_star) {
     assertstep(INITIALIZATION);
     initial_production_X_star_ -= initial_production_flow_X_star;
     production_X_ -= initial_production_flow_X_star;
@@ -142,14 +94,12 @@ void Firm<ModelVariant>::subtract_initial_production_X_star(const Flow& initial_
     sector->subtract_initial_production_X(initial_production_flow_X_star);
 }
 
-template<class ModelVariant>
-void Firm<ModelVariant>::add_initial_total_use_U_star(const Flow& initial_use_flow_U_star) {
+void Firm::add_initial_total_use_U_star(const Flow& initial_use_flow_U_star) {
     assertstep(INITIALIZATION);
     initial_total_use_U_star_ += initial_use_flow_U_star;
 }
 
-template<class ModelVariant>
-void Firm<ModelVariant>::subtract_initial_total_use_U_star(const Flow& initial_use_flow_U_star) {
+void Firm::subtract_initial_total_use_U_star(const Flow& initial_use_flow_U_star) {
     assertstep(INITIALIZATION);
     if (initial_total_use_U_star_.get_quantity() > initial_use_flow_U_star.get_quantity()) {
         initial_total_use_U_star_ -= initial_use_flow_U_star;
@@ -158,60 +108,23 @@ void Firm<ModelVariant>::subtract_initial_total_use_U_star(const Flow& initial_u
     }
 }
 
-#ifdef VARIANT_BASIC
-template<>
-void Firm<VariantBasic>::iterate_purchase() {
-    assertstep(PURCHASE);
-    for (const auto& is : input_storages) {
-        is->purchasing_manager->iterate_purchase();
-    }
-}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-void Firm<VariantDemand>::iterate_purchase() {
-    assertstep(PURCHASE);
-    for (const auto& is : input_storages) {
-        is->purchasing_manager->iterate_purchase();
-    }
-}
-#endif
-
-template<class ModelVariant>
-void Firm<ModelVariant>::iterate_purchase() {
+void Firm::iterate_purchase() {
     assertstep(PURCHASE);
     for (const auto& is : input_storages) {
         is->purchasing_manager->iterate_purchase();
     }
 }
 
-#ifdef VARIANT_BASIC
-template<>
-void Firm<VariantBasic>::iterate_investment() {}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-void Firm<VariantDemand>::iterate_investment() {}
-#endif
-
-#ifdef VARIANT_PRICES
-template<>
-void Firm<VariantPrices>::iterate_investment() {}
-#endif
-
-template<class ModelVariant>
-void Firm<ModelVariant>::iterate_investment() {
-    assertstep(INVESTMENT);
-    for (const auto& is : input_storages) {
-        is->purchasing_manager->iterate_investment();
-    }
+void Firm::iterate_investment() {
+    // TODO: why was it doing nothing?
+    // assertstep(INVESTMENT);
+    // for (const auto& is : input_storages) {
+    //     is->purchasing_manager->iterate_investment();
+    // }
 }
 
 #ifdef DEBUG
-template<class ModelVariant>
-void Firm<ModelVariant>::print_details() const {
+void Firm::print_details() const {
     info(id() << ": X_star= " << initial_production_X_star_.get_quantity() << ":");
     for (auto it = input_storages.begin(); it != input_storages.end(); ++it) {
         (*it)->purchasing_manager->print_details();
@@ -220,5 +133,43 @@ void Firm<ModelVariant>::print_details() const {
 }
 #endif
 
-INSTANTIATE_BASIC(Firm);
+const Flow Firm::maximal_production_beta_X_star() const {
+    return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta);
+}
+
+const Flow Firm::forced_maximal_production_lambda_beta_X_star() const {
+    return round(initial_production_X_star_ * forcing_ * capacity_manager->possible_overcapacity_ratio_beta);
+}
+
+const FlowQuantity Firm::maximal_production_quantity_beta_X_star() const {
+    return round(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
+}
+
+FloatType Firm::maximal_production_quantity_beta_X_star_float() const {
+    return to_float(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
+}
+
+const FlowQuantity Firm::forced_maximal_production_quantity_lambda_beta_X_star() const {
+    return round(initial_production_X_star_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
+}
+
+FloatType Firm::forced_maximal_production_quantity_lambda_beta_X_star_float() const {
+    return to_float(initial_production_X_star_.get_quantity()) * (capacity_manager->possible_overcapacity_ratio_beta * forcing_);
+}
+
+const BusinessConnection *Firm::self_supply_connection() const {
+    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    return self_supply_connection_.get();
+}
+
+void Firm::self_supply_connection(std::shared_ptr<BusinessConnection> self_supply_connection_p) {
+    assertstep(INITIALIZATION);
+    self_supply_connection_ = self_supply_connection_p;
+}
+
+const Flow &Firm::production_X() const {
+    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    return production_X_;
+}
+
 }  // namespace acclimate

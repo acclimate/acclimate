@@ -20,28 +20,29 @@
 
 #include "model/Government.h"
 #include "run.h"
-#include "variants/ModelVariants.h"
+
+#include "model/Firm.h"
+#include "model/GeoRoute.h"
+#include "model/Model.h"
+#include "model/Region.h"
+#include "model/SalesManagerPrices.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-Government<ModelVariant>::Government(Region<ModelVariant>* region_p) : region(region_p), budget_(0.0) {}
+Government::Government(Region* region_p) : region(region_p), budget_(0.0) {}
 
-template<class ModelVariant>
-void Government<ModelVariant>::collect_tax() {
+void Government::collect_tax() {
     assertstep(EXPECTATION);
     for (const auto& ps : taxed_firms) {
         budget_ += ps.first->sales_manager->get_tax() * model()->delta_t();
     }
 }
 
-template<class ModelVariant>
-void Government<ModelVariant>::redistribute_tax() {
+void Government::redistribute_tax() {
     assertstep(INVESTMENT);
 }
 
-template<class ModelVariant>
-void Government<ModelVariant>::impose_tax() {
+void Government::impose_tax() {
     assertstep(EXPECTATION);
     for (const auto& ps : taxed_firms) {
         info("Imposing tax on " << ps.first->id() << " (" << ps.second << ")");
@@ -49,38 +50,40 @@ void Government<ModelVariant>::impose_tax() {
     }
 }
 
-template<class ModelVariant>
-void Government<ModelVariant>::define_tax(const std::string& sector, const Ratio& tax_ratio_p) {
+void Government::define_tax(const std::string& sector, const Ratio& tax_ratio_p) {
     assertstep(SCENARIO);
     info("Defining tax on " << sector << ":" << region->id() << " (" << tax_ratio_p << ")");
-    Firm<ModelVariant>* ps = model()->find_firm(sector, region->id());
+    Firm* ps = model()->find_firm(sector, region->id());
     if (ps != nullptr) {
         taxed_firms[ps] = tax_ratio_p;
     }
 }
 
-template<class ModelVariant>
-void Government<ModelVariant>::iterate_consumption_and_production() {
+void Government::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
 }
 
-template<class ModelVariant>
-void Government<ModelVariant>::iterate_expectation() {
+void Government::iterate_expectation() {
     assertstep(EXPECTATION);
     collect_tax();
     impose_tax();
 }
 
-template<class ModelVariant>
-void Government<ModelVariant>::iterate_purchase() {
+void Government::iterate_purchase() {
     assertstep(PURCHASE);
 }
 
-template<class ModelVariant>
-void Government<ModelVariant>::iterate_investment() {
+void Government::iterate_investment() {
     assertstep(INVESTMENT);
     redistribute_tax();
 }
 
-INSTANTIATE_PRICES(Government);
+Model* Government::model() const {
+    return region->model();
+}
+
+std::string Government::id() const {
+    return "GOVM:" + region->id();
+}
+
 }  // namespace acclimate

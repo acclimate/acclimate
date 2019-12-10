@@ -36,15 +36,18 @@
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
+#include "model/TransportChainLink.h"
 #include "netcdftools.h"
 #include "optimization.h"
 #include "run.h"
-#include "variants/ModelVariants.h"
+#include "model/SalesManagerPrices.h"
+#include "model/PurchasingManagerPrices.h"
+
+//#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-ModelInitializer<ModelVariant>::ModelInitializer(Model<ModelVariant>* model_p, const settings::SettingsNode& settings_p)
+ModelInitializer::ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p)
     : model_m(model_p), settings(settings_p) {
     const settings::SettingsNode& parameters = settings["model"];
     const settings::SettingsNode& run = settings["run"];
@@ -54,20 +57,18 @@ ModelInitializer<ModelVariant>::ModelInitializer(Model<ModelVariant>* model_p, c
     model()->no_self_supply(parameters["no_self_supply"].as<bool>());
 }
 
-template<class ModelVariant>
-settings::SettingsNode ModelInitializer<ModelVariant>::get_named_property(const settings::SettingsNode& node_settings,
-                                                                          const std::string& node_name,
-                                                                          const std::string& property_name) const {
+settings::SettingsNode ModelInitializer::get_named_property(const settings::SettingsNode& node_settings,
+                                                            const std::string& node_name,
+                                                            const std::string& property_name) const {
     if (node_settings.has(node_name) && node_settings[node_name].has(property_name)) {
         return node_settings[node_name][property_name];
     }
     return node_settings["ALL"][property_name];
 }
 
-template<class ModelVariant>
-settings::SettingsNode ModelInitializer<ModelVariant>::get_firm_property(const std::string& sector_name,
-                                                                         const std::string& region_name,
-                                                                         const std::string& property_name) const {
+settings::SettingsNode ModelInitializer::get_firm_property(const std::string& sector_name,
+                                                           const std::string& region_name,
+                                                           const std::string& property_name) const {
     const settings::SettingsNode& firm_settings = settings["firms"];
     if (firm_settings.has(sector_name + ":" + region_name) && firm_settings[sector_name + ":" + region_name].has(property_name)) {
         return firm_settings[sector_name + ":" + region_name][property_name];
@@ -81,76 +82,37 @@ settings::SettingsNode ModelInitializer<ModelVariant>::get_firm_property(const s
     return firm_settings["ALL"][property_name];
 }
 
-template<class ModelVariant>
-Firm<ModelVariant>* ModelInitializer<ModelVariant>::add_firm(Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
-    auto firm = new Firm<ModelVariant>(sector, region,
-                                       static_cast<Ratio>(get_firm_property(sector->id(), region->id(), "possible_overcapacity_ratio").template as<double>()));
+Firm* ModelInitializer::add_firm(Sector* sector, Region* region) {
+    auto firm = new Firm(sector, region,
+                         static_cast<Ratio>(get_firm_property(sector->id(), region->id(), "possible_overcapacity_ratio").template as<double>()));
     region->economic_agents.emplace_back(firm);
     sector->firms.push_back(firm);
     return firm;
 }
 
-template<class ModelVariant>
-Consumer<ModelVariant>* ModelInitializer<ModelVariant>::add_consumer(Region<ModelVariant>* region) {
-    auto consumer = new Consumer<ModelVariant>(region);
+Consumer* ModelInitializer::add_consumer(Region* region) {
+    auto consumer = new Consumer(region);
     region->economic_agents.emplace_back(consumer);
     return consumer;
 }
 
-template<class ModelVariant>
-Region<ModelVariant>* ModelInitializer<ModelVariant>::add_region(const std::string& name) {
-    Region<ModelVariant>* region = model()->find_region(name);
+Region* ModelInitializer::add_region(const std::string& name) {
+    Region* region = model()->find_region(name);
     if (region == nullptr) {
         region = model()->add_region(name);
     }
     return region;
 }
 
-#ifdef VARIANT_BASIC
-template<>
-Sector<VariantBasic>* ModelInitializer<VariantBasic>::add_sector(const std::string& name) {
-    Sector<VariantBasic>* sector = model()->find_sector(name);
-    if (sector == nullptr) {
-        const settings::SettingsNode& sectors_node = settings["sectors"];
-        sectors_node.require();
-        sector =
-            model()->add_sector(name, get_named_property(sectors_node, name, "upper_storage_limit").template as<Ratio>(),
-                                get_named_property(sectors_node, name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t(),
-                                Sector<VariantBasic>::map_transport_type(get_named_property(sectors_node, name, "transport").template as<settings::hstring>()));
-    }
-    return sector;
-}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-Sector<VariantDemand>* ModelInitializer<VariantDemand>::add_sector(const std::string& name) {
-    Sector<VariantDemand>* sector = model()->find_sector(name);
+Sector* ModelInitializer::add_sector(const std::string& name) {
+    Sector* sector = model()->find_sector(name);
     if (sector == nullptr) {
         const settings::SettingsNode& sectors_node = settings["sectors"];
         sectors_node.require();
         sector = model()->add_sector(
             name, get_named_property(sectors_node, name, "upper_storage_limit").template as<Ratio>(),
             get_named_property(sectors_node, name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t(),
-            Sector<VariantDemand>::map_transport_type(get_named_property(sectors_node, name, "transport").template as<settings::hstring>()));
-        sector->parameters_writable().storage_refill_enforcement_gamma =
-            get_named_property(sectors_node, name, "storage_refill_enforcement").template as<FloatType>() * model()->delta_t();
-    }
-    return sector;
-}
-#endif
-
-#ifdef VARIANT_PRICES
-template<>
-Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::string& name) {
-    Sector<VariantPrices>* sector = model()->find_sector(name);
-    if (sector == nullptr) {
-        const settings::SettingsNode& sectors_node = settings["sectors"];
-        sectors_node.require();
-        sector = model()->add_sector(
-            name, get_named_property(sectors_node, name, "upper_storage_limit").template as<Ratio>(),
-            get_named_property(sectors_node, name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t(),
-            Sector<VariantPrices>::map_transport_type(get_named_property(sectors_node, name, "transport").template as<settings::hstring>()));
+            Sector::map_transport_type(get_named_property(sectors_node, name, "transport").template as<settings::hstring>()));
         sector->parameters_writable().supply_elasticity = get_named_property(sectors_node, name, "supply_elasticity").template as<Ratio>();
         sector->parameters_writable().price_increase_production_extension =
             get_named_property(sectors_node, name, "price_increase_production_extension").template as<Price>();
@@ -165,19 +127,17 @@ Sector<VariantPrices>* ModelInitializer<VariantPrices>::add_sector(const std::st
     }
     return sector;
 }
-#endif
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::initialize_connection(
-    Sector<ModelVariant>* sector_from, Region<ModelVariant>* region_from, Sector<ModelVariant>* sector_to, Region<ModelVariant>* region_to, const Flow& flow) {
-    Firm<ModelVariant>* firm_from = model()->find_firm(sector_from, region_from->id());
+void ModelInitializer::initialize_connection(
+    Sector* sector_from, Region* region_from, Sector* sector_to, Region* region_to, const Flow& flow) {
+    Firm* firm_from = model()->find_firm(sector_from, region_from->id());
     if (!firm_from) {
         firm_from = add_firm(sector_from, region_from);
         if (!firm_from) {
             return;
         }
     }
-    Firm<ModelVariant>* firm_to = model()->find_firm(sector_to, region_to->id());
+    Firm* firm_to = model()->find_firm(sector_to, region_to->id());
     if (!firm_to) {
         firm_to = add_firm(sector_to, region_to);
         if (!firm_to) {
@@ -187,9 +147,7 @@ void ModelInitializer<ModelVariant>::initialize_connection(
     initialize_connection(firm_from, firm_to, flow);
 }
 
-#ifdef VARIANT_BASIC
-template<>
-void ModelInitializer<VariantBasic>::initialize_connection(Firm<VariantBasic>* firm_from, EconomicAgent<VariantBasic>* economic_agent_to, const Flow& flow) {
+void ModelInitializer::initialize_connection(Firm* firm_from, EconomicAgent* economic_agent_to, const Flow& flow) {
     if (model()->no_self_supply() && (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to))) {
         return;
     }
@@ -201,80 +159,10 @@ void ModelInitializer<VariantBasic>::initialize_connection(Firm<VariantBasic>* f
     }
 // use SKIP("...:...->...:..."); to skip connections
 #endif
-    Sector<VariantBasic>* sector_from = firm_from->sector;
-    Storage<VariantBasic>* input_storage = economic_agent_to->find_input_storage(sector_from->id());
-    if (!input_storage) {
-        input_storage = new Storage<VariantBasic>(sector_from, economic_agent_to);
-        economic_agent_to->input_storages.emplace_back(input_storage);
-    }
-    assert(flow.get_quantity() > 0.0);
-    input_storage->add_initial_flow_Z_star(flow);
-    firm_from->add_initial_production_X_star(flow);
-
-    auto business_connection =
-        std::make_shared<BusinessConnection<VariantBasic>>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
-    firm_from->sales_manager->business_connections.emplace_back(business_connection);
-    input_storage->purchasing_manager->business_connections.emplace_back(business_connection);
-
-    if (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to)) {
-        firm_from->self_supply_connection(business_connection);
-    }
-}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-void ModelInitializer<VariantDemand>::initialize_connection(Firm<VariantDemand>* firm_from, EconomicAgent<VariantDemand>* economic_agent_to, const Flow& flow) {
-    if (model()->no_self_supply() && (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to))) {
-        return;
-    }
-#ifdef DEBUG
-#define SKIP(a)                                                    \
-    if (firm_from->id() + "->" + economic_agent_to->id() == (a)) { \
-        warning("skipping " << (a));                               \
-        return;                                                    \
-    }
-// use SKIP("...:...->...:..."); to skip connections
-#endif
-    Sector<VariantDemand>* sector_from = firm_from->sector;
-    Storage<VariantDemand>* input_storage = economic_agent_to->find_input_storage(sector_from->id());
+    Sector* sector_from = firm_from->sector;
+    Storage* input_storage = economic_agent_to->find_input_storage(sector_from->id());
     if (input_storage == nullptr) {
-        input_storage = new Storage<VariantDemand>(sector_from, economic_agent_to);
-        economic_agent_to->input_storages.emplace_back(input_storage);
-    }
-    assert(flow.get_quantity() > 0.0);
-    input_storage->add_initial_flow_Z_star(flow);
-    firm_from->add_initial_production_X_star(flow);
-
-    auto business_connection =
-        std::make_shared<BusinessConnection<VariantDemand>>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
-    firm_from->sales_manager->business_connections.emplace_back(business_connection);
-    input_storage->purchasing_manager->business_connections.emplace_back(business_connection);
-
-    if (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to)) {
-        firm_from->self_supply_connection(business_connection);
-    }
-}
-#endif
-
-#ifdef VARIANT_PRICES
-template<>
-void ModelInitializer<VariantPrices>::initialize_connection(Firm<VariantPrices>* firm_from, EconomicAgent<VariantPrices>* economic_agent_to, const Flow& flow) {
-    if (model()->no_self_supply() && (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to))) {
-        return;
-    }
-#ifdef DEBUG
-#define SKIP(a)                                                    \
-    if (firm_from->id() + "->" + economic_agent_to->id() == (a)) { \
-        warning("skipping " << (a));                               \
-        return;                                                    \
-    }
-// use SKIP("...:...->...:..."); to skip connections
-#endif
-    Sector<VariantPrices>* sector_from = firm_from->sector;
-    Storage<VariantPrices>* input_storage = economic_agent_to->find_input_storage(sector_from->id());
-    if (input_storage == nullptr) {
-        input_storage = new Storage<VariantPrices>(sector_from, economic_agent_to);
+        input_storage = new Storage(sector_from, economic_agent_to);
         if (economic_agent_to->is_consumer()) {
             const settings::SettingsNode& consumers_node = settings["consumers"];
             consumers_node.require();
@@ -289,7 +177,7 @@ void ModelInitializer<VariantPrices>::initialize_connection(Firm<VariantPrices>*
     firm_from->add_initial_production_X_star(flow);
 
     auto business_connection =
-        std::make_shared<BusinessConnection<VariantPrices>>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
+        std::make_shared<BusinessConnection>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
     firm_from->sales_manager->business_connections.emplace_back(business_connection);
     input_storage->purchasing_manager->business_connections.emplace_back(business_connection);
 
@@ -297,10 +185,9 @@ void ModelInitializer<VariantPrices>::initialize_connection(Firm<VariantPrices>*
         firm_from->self_supply_connection(business_connection);
     }
 }
-#endif
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::clean_network() {
+
+void ModelInitializer::clean_network() {
     int firm_count;
     int consumer_count;
     bool needs_cleaning = true;
@@ -313,8 +200,8 @@ void ModelInitializer<ModelVariant>::clean_network() {
 #endif
         for (auto region = model()->regions.begin(); region != model()->regions.end(); ++region) {
             for (auto economic_agent = (*region)->economic_agents.begin(); economic_agent != (*region)->economic_agents.end();) {
-                if ((*economic_agent)->type == EconomicAgent<ModelVariant>::Type::FIRM) {
-                    Firm<ModelVariant>* firm = (*economic_agent)->as_firm();
+                if ((*economic_agent)->type == EconomicAgent::Type::FIRM) {
+                    Firm* firm = (*economic_agent)->as_firm();
 
                     FlowQuantity input = FlowQuantity(0.0);
                     for (const auto& input_storage : firm->input_storages) {
@@ -365,8 +252,8 @@ void ModelInitializer<ModelVariant>::clean_network() {
                         ++economic_agent;
                         ++firm_count;
                     }
-                } else if ((*economic_agent)->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
-                    Consumer<ModelVariant>* consumer = (*economic_agent)->as_consumer();
+                } else if ((*economic_agent)->type == EconomicAgent::Type::CONSUMER) {
+                    Consumer* consumer = (*economic_agent)->as_consumer();
 
                     if (consumer->input_storages.empty()) {
 #ifdef CLEANUP_INFO
@@ -392,17 +279,16 @@ void ModelInitializer<ModelVariant>::clean_network() {
 }
 
 #ifdef DEBUG
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::print_network_characteristics() const {
+void ModelInitializer::print_network_characteristics() const {
     FloatType average_transport_delay = 0;
     unsigned int region_wo_firm_count = 0;
     for (auto& region : model()->regions) {
         FloatType average_transport_delay_region = 0;
         unsigned int firm_count = 0;
         for (auto& economic_agent : region->economic_agents) {
-            if (economic_agent->type == EconomicAgent<ModelVariant>::Type::FIRM) {
+            if (economic_agent->type == EconomicAgent::Type::FIRM) {
                 FloatType average_tranport_delay_economic_agent = 0;
-                Firm<ModelVariant>* firm = economic_agent->as_firm();
+                Firm* firm = economic_agent->as_firm();
                 for (auto& business_connection : firm->sales_manager->business_connections) {
                     average_tranport_delay_economic_agent += business_connection->get_transport_delay_tau();
                 }
@@ -430,8 +316,7 @@ void ModelInitializer<ModelVariant>::print_network_characteristics() const {
 }
 #endif
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::string& filename) {
+void ModelInitializer::read_transport_network_netcdf(const std::string& filename) {
     const settings::SettingsNode& transport = settings["transport"];
     const auto aviation_speed = transport["aviation_speed"].as<FloatType>();
     const auto road_speed = transport["road_speed"].as<FloatType>();
@@ -490,13 +375,13 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
     file.close();
 
     for (std::size_t i = 0; i < input_size; ++i) {
-        GeoLocation<ModelVariant>* location = nullptr;
+        GeoLocation* location = nullptr;
         if (types[i] == type_region) {
             location = model()->find_region(ids[i]);
         } else if (types[i] == type_port) {
-            location = new GeoLocation<ModelVariant>(model(), port_delay, GeoLocation<ModelVariant>::Type::PORT, ids[i]);
+            location = new GeoLocation(model(), port_delay, GeoLocation::Type::PORT, ids[i]);
         } else if (types[i] == type_sea) {
-            location = new GeoLocation<ModelVariant>(model(), 0, GeoLocation<ModelVariant>::Type::SEA, ids[i]);
+            location = new GeoLocation(model(), 0, GeoLocation::Type::SEA, ids[i]);
         }
         if (location) {
             std::unique_ptr<GeoPoint> centroid(new GeoPoint(longitudes[i], latitudes[i]));
@@ -512,26 +397,26 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
     std::vector<Path> paths(size * size, Path());
     for (std::size_t i = 0; i < size; ++i) {
         auto& p1 = points[i];
-        auto l1 = static_cast<GeoLocation<ModelVariant>*>(p1->entity());
+        auto l1 = static_cast<GeoLocation*>(p1->entity());
         for (std::size_t j = 0; j < i; ++j) {  // assume connections is symmetric
             if (connections[input_indices[i] * input_size + input_indices[j]] > 0) {
                 auto& p2 = points[j];
-                auto l2 = static_cast<GeoLocation<ModelVariant>*>(p2->entity());
+                auto l2 = static_cast<GeoLocation*>(p2->entity());
                 FloatType costs;
                 TransportDelay delay;
-                typename GeoConnection<ModelVariant>::Type type;
+                typename GeoConnection::Type type;
                 const auto distance = l1->centroid()->distance_to(*l2->centroid());
-                if (l1->type == GeoLocation<ModelVariant>::Type::SEA || l2->type == GeoLocation<ModelVariant>::Type::SEA) {
+                if (l1->type == GeoLocation::Type::SEA || l2->type == GeoLocation::Type::SEA) {
                     delay = iround(distance / sea_speed / 24. / to_float(model()->delta_t()));
-                    type = GeoConnection<ModelVariant>::Type::SEAROUTE;
+                    type = GeoConnection::Type::SEAROUTE;
                     costs = sea_km_costs * distance;
                 } else {
                     delay = iround(distance / road_speed / 24. / to_float(model()->delta_t()));
-                    type = GeoConnection<ModelVariant>::Type::ROAD;
+                    type = GeoConnection::Type::ROAD;
                     costs = road_km_costs * distance;
                 }
                 // connections is symmetric -> connection needs to be used twice to make sure it's the same object
-                auto c = new TemporaryGeoEntity(new GeoConnection<ModelVariant>(model(), delay, type, l1, l2), false);
+                auto c = new TemporaryGeoEntity(new GeoConnection(model(), delay, type, l1, l2), false);
                 paths[i * size + j] = Path(costs, p1.get(), p2.get(), c);
                 paths[j * size + i] = Path(costs, p2.get(), p1.get(), c);
                 final_connections.emplace_back(c);
@@ -593,45 +478,45 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
     for (std::size_t i = 0; i < size; ++i) {
         auto& p1 = points[i];
         if (p1->used) {
-            auto l1 = static_cast<GeoLocation<ModelVariant>*>(p1->entity());
-            if (l1->type != GeoLocation<ModelVariant>::Type::REGION) {
+            auto l1 = static_cast<GeoLocation*>(p1->entity());
+            if (l1->type != GeoLocation::Type::REGION) {
                 model()->other_locations.emplace_back(l1);
             }
             for (std::size_t j = 0; j < size; ++j) {
                 auto& p2 = points[j];
                 if (p2->used) {
-                    auto l2 = static_cast<GeoLocation<ModelVariant>*>(p2->entity());
+                    auto l2 = static_cast<GeoLocation*>(p2->entity());
                     auto& path = paths[i * size + j].points();
                     if (!path.empty()) {
                         if (path.size() == 3 && i < j) {  // direct connection, only once per i/j combination
-                            auto c = std::shared_ptr<GeoConnection<ModelVariant>>(static_cast<GeoConnection<ModelVariant>*>(path[1]->entity()));
+                            auto c = std::shared_ptr<GeoConnection>(static_cast<GeoConnection*>(path[1]->entity()));
                             l1->connections.push_back(c);
                             l2->connections.push_back(c);
                         }
-                        if (l1->type == GeoLocation<ModelVariant>::Type::REGION && l2->type == GeoLocation<ModelVariant>::Type::REGION) {
+                        if (l1->type == GeoLocation::Type::REGION && l2->type == GeoLocation::Type::REGION) {
                             // create roadsea route
-                            auto r1 = static_cast<Region<ModelVariant>*>(l1);
-                            auto r2 = static_cast<Region<ModelVariant>*>(l2);
-                            GeoRoute<ModelVariant> route;
+                            auto r1 = static_cast<Region*>(l1);
+                            auto r2 = static_cast<Region*>(l2);
+                            GeoRoute route;
                             route.path.resize(path.size() - 2);
                             for (std::size_t k = 1; k < path.size() - 1; ++k) {
                                 route.path[k - 1] = path[k]->entity();
                             }
-                            r1->routes.emplace(std::make_pair(r2->index(), Sector<ModelVariant>::TransportType::ROADSEA), route);
+                            r1->routes.emplace(std::make_pair(r2->index(), Sector::TransportType::ROADSEA), route);
                         }
                     }
-                    if (l1->type == GeoLocation<ModelVariant>::Type::REGION && l2->type == GeoLocation<ModelVariant>::Type::REGION) {
+                    if (l1->type == GeoLocation::Type::REGION && l2->type == GeoLocation::Type::REGION) {
                         // create aviation route
                         const auto distance = l1->centroid()->distance_to(*l2->centroid());
                         const auto delay = iround(distance / aviation_speed / 24. / to_float(model()->delta_t()));
-                        auto c = std::make_shared<GeoConnection<ModelVariant>>(model(), delay, GeoConnection<ModelVariant>::Type::AVIATION, l1, l2);
+                        auto c = std::make_shared<GeoConnection>(model(), delay, GeoConnection::Type::AVIATION, l1, l2);
                         l1->connections.push_back(c);
                         l2->connections.push_back(c);
-                        auto r1 = static_cast<Region<ModelVariant>*>(l1);
-                        auto r2 = static_cast<Region<ModelVariant>*>(l2);
-                        GeoRoute<ModelVariant> route;
+                        auto r1 = static_cast<Region*>(l1);
+                        auto r2 = static_cast<Region*>(l2);
+                        GeoRoute route;
                         route.path.emplace_back(c.get());
-                        r1->routes.emplace(std::make_pair(r2->index(), Sector<ModelVariant>::TransportType::AVIATION), route);
+                        r1->routes.emplace(std::make_pair(r2->index(), Sector::TransportType::AVIATION), route);
                     }
                 }
             }
@@ -639,8 +524,7 @@ void ModelInitializer<ModelVariant>::read_transport_network_netcdf(const std::st
     }
 }
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::read_centroids_netcdf(const std::string& filename) {
+void ModelInitializer::read_centroids_netcdf(const std::string& filename) {
     {
         netCDF::NcFile file(filename, netCDF::NcFile::read);
 
@@ -659,7 +543,7 @@ void ModelInitializer<ModelVariant>::read_centroids_netcdf(const std::string& fi
         lats_var.getVar(&lats_val[0]);
 
         for (std::size_t i = 0; i < regions_count; ++i) {
-            Region<ModelVariant>* region = model()->find_region(regions_val[i]);
+            Region* region = model()->find_region(regions_val[i]);
             if (region) {
                 std::unique_ptr<GeoPoint> centroid(new GeoPoint(lons_val[i], lats_val[i]));
                 region->set_centroid(centroid);
@@ -686,25 +570,25 @@ void ModelInitializer<ModelVariant>::read_centroids_netcdf(const std::string& fi
             // create roadsea route
             {
                 TransportDelay transport_delay;
-                typename GeoConnection<ModelVariant>::Type type;
+                typename GeoConnection::Type type;
                 if (distance >= threshold_road_transport) {
                     transport_delay = iround(distance / sea_speed / 24. / to_float(model()->delta_t()));
-                    type = GeoConnection<ModelVariant>::Type::SEAROUTE;
+                    type = GeoConnection::Type::SEAROUTE;
                 } else {
                     transport_delay = iround(distance / road_speed / 24. / to_float(model()->delta_t()));
-                    type = GeoConnection<ModelVariant>::Type::ROAD;
+                    type = GeoConnection::Type::ROAD;
                 }
                 if (transport_delay > 0) {
                     --transport_delay;
                 }
-                auto inf = std::make_shared<GeoConnection<ModelVariant>>(model(), transport_delay, type, region_from.get(), region_to.get());
+                auto inf = std::make_shared<GeoConnection>(model(), transport_delay, type, region_from.get(), region_to.get());
                 region_from->connections.push_back(inf);
                 region_to->connections.push_back(inf);
 
-                GeoRoute<ModelVariant> route;
+                GeoRoute route;
                 route.path.emplace_back(inf.get());
-                region_from->routes.emplace(std::make_pair(region_to->index(), Sector<ModelVariant>::TransportType::ROADSEA), route);
-                region_to->routes.emplace(std::make_pair(region_from->index(), Sector<ModelVariant>::TransportType::ROADSEA), route);
+                region_from->routes.emplace(std::make_pair(region_to->index(), Sector::TransportType::ROADSEA), route);
+                region_to->routes.emplace(std::make_pair(region_from->index(), Sector::TransportType::ROADSEA), route);
             }
             // create aviation route
             {
@@ -712,39 +596,37 @@ void ModelInitializer<ModelVariant>::read_centroids_netcdf(const std::string& fi
                 if (transport_delay > 0) {
                     --transport_delay;
                 }
-                auto inf = std::make_shared<GeoConnection<ModelVariant>>(model(), transport_delay, GeoConnection<ModelVariant>::Type::AVIATION,
+                auto inf = std::make_shared<GeoConnection>(model(), transport_delay, GeoConnection::Type::AVIATION,
                                                                          region_from.get(), region_to.get());
                 region_from->connections.push_back(inf);
                 region_to->connections.push_back(inf);
 
-                GeoRoute<ModelVariant> route;
+                GeoRoute route;
                 route.path.emplace_back(inf.get());
-                region_from->routes.emplace(std::make_pair(region_to->index(), Sector<ModelVariant>::TransportType::AVIATION), route);
-                region_to->routes.emplace(std::make_pair(region_from->index(), Sector<ModelVariant>::TransportType::AVIATION), route);
+                region_from->routes.emplace(std::make_pair(region_to->index(), Sector::TransportType::AVIATION), route);
+                region_to->routes.emplace(std::make_pair(region_from->index(), Sector::TransportType::AVIATION), route);
             }
         }
     }
 }
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::create_simple_transport_connection(Region<ModelVariant>* region_from,
-                                                                        Region<ModelVariant>* region_to,
-                                                                        TransportDelay transport_delay) {
-    auto inf = std::make_shared<GeoConnection<ModelVariant>>(model(), transport_delay, GeoConnection<ModelVariant>::Type::UNSPECIFIED, region_from, region_to);
+void ModelInitializer::create_simple_transport_connection(Region* region_from,
+                                                          Region* region_to,
+                                                          TransportDelay transport_delay) {
+    auto inf = std::make_shared<GeoConnection>(model(), transport_delay, GeoConnection::Type::UNSPECIFIED, region_from, region_to);
     region_from->connections.push_back(inf);
     region_to->connections.push_back(inf);
 
-    GeoRoute<ModelVariant> route;
+    GeoRoute route;
     route.path.emplace_back(inf.get());
-    region_from->routes.emplace(std::make_pair(region_to->index(), Sector<ModelVariant>::TransportType::AVIATION), route);
-    region_from->routes.emplace(std::make_pair(region_to->index(), Sector<ModelVariant>::TransportType::ROADSEA), route);
-    region_to->routes.emplace(std::make_pair(region_from->index(), Sector<ModelVariant>::TransportType::AVIATION), route);
-    region_to->routes.emplace(std::make_pair(region_from->index(), Sector<ModelVariant>::TransportType::ROADSEA), route);
+    region_from->routes.emplace(std::make_pair(region_to->index(), Sector::TransportType::AVIATION), route);
+    region_from->routes.emplace(std::make_pair(region_to->index(), Sector::TransportType::ROADSEA), route);
+    region_to->routes.emplace(std::make_pair(region_from->index(), Sector::TransportType::AVIATION), route);
+    region_to->routes.emplace(std::make_pair(region_from->index(), Sector::TransportType::ROADSEA), route);
 }
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::read_transport_times_csv(const std::string& index_filename, const std::string& filename) {
-    std::vector<Region<ModelVariant>*> regions;
+void ModelInitializer::read_transport_times_csv(const std::string& index_filename, const std::string& filename) {
+    std::vector<Region*> regions;
     std::ifstream index_file(index_filename.c_str());
     if (!index_file) {
         error("Could not open index file '" << index_filename << "'");
@@ -768,7 +650,7 @@ void ModelInitializer<ModelVariant>::read_transport_times_csv(const std::string&
             region_name.erase(region_name.size() - 1);
         }
 
-        Region<ModelVariant>* region = model()->find_region(region_name);
+        Region* region = model()->find_region(region_name);
         regions.push_back(region);  // might be == nullptr
         ++index;
     }
@@ -816,8 +698,7 @@ void ModelInitializer<ModelVariant>::read_transport_times_csv(const std::string&
     }
 }
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::build_artificial_network() {
+void ModelInitializer::build_artificial_network() {
     const settings::SettingsNode& network = settings["network"];
     const auto closed = network["closed"].as<bool>(false);
     const auto skewness = network["skewness"].as<unsigned int>();
@@ -830,7 +711,7 @@ void ModelInitializer<ModelVariant>::build_artificial_network() {
     }
     const auto regions_cnt = network["regions"].as<unsigned int>();
     for (std::size_t i = 0; i < regions_cnt; ++i) {
-        Region<ModelVariant>* region = add_region("RG" + std::to_string(i));
+        Region* region = add_region("RG" + std::to_string(i));
         add_consumer(region);
         for (std::size_t i = 0; i < sectors_cnt; ++i) {
             add_firm(model()->sectors[i + 1].get(), region);
@@ -863,17 +744,16 @@ void ModelInitializer<ModelVariant>::build_artificial_network() {
     }
 }
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::build_agent_network_from_table(const mrio::Table<FloatType, std::size_t>& table, FloatType flow_threshold) {
-    std::vector<EconomicAgent<ModelVariant>*> economic_agents;
+void ModelInitializer::build_agent_network_from_table(const mrio::Table<FloatType, std::size_t>& table, FloatType flow_threshold) {
+    std::vector<EconomicAgent*> economic_agents;
     economic_agents.reserve(table.index_set().size());
 
     for (const auto& index : table.index_set().total_indices) {
         const std::string& region_name = index.region->name;
         const std::string& sector_name = index.sector->name;
-        Region<ModelVariant>* region = add_region(region_name);
+        Region* region = add_region(region_name);
         if (sector_name == "FCON") {
-            Consumer<ModelVariant>* consumer = model()->find_consumer(region);
+            Consumer* consumer = model()->find_consumer(region);
             if (!consumer) {
                 consumer = add_consumer(region);
                 economic_agents.push_back(consumer);
@@ -881,8 +761,8 @@ void ModelInitializer<ModelVariant>::build_agent_network_from_table(const mrio::
                 error("Duplicate consumer for region " << region_name);
             }
         } else {
-            Sector<ModelVariant>* sector = add_sector(sector_name);
-            Firm<ModelVariant>* firm = model()->find_firm(sector, region->id());
+            Sector* sector = add_sector(sector_name);
+            Firm* firm = model()->find_firm(sector, region->id());
             if (!firm) {
                 firm = add_firm(sector, region);
                 if (!firm) {
@@ -899,8 +779,8 @@ void ModelInitializer<ModelVariant>::build_agent_network_from_table(const mrio::
     const FlowQuantity daily_flow_threshold = round(FlowQuantity(flow_threshold * time_factor));
     auto d = table.raw_data().begin();
     for (auto& source : economic_agents) {
-        if (source->type == EconomicAgent<ModelVariant>::Type::FIRM) {
-            Firm<ModelVariant>* firm_from = source->as_firm();
+        if (source->type == EconomicAgent::Type::FIRM) {
+            Firm* firm_from = source->as_firm();
             for (auto& target : economic_agents) {
                 const FlowQuantity flow_quantity = round(FlowQuantity(*d) * time_factor);
                 if (flow_quantity > daily_flow_threshold) {
@@ -914,8 +794,7 @@ void ModelInitializer<ModelVariant>::build_agent_network_from_table(const mrio::
     }
 }
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::build_agent_network() {
+void ModelInitializer::build_agent_network() {
     const settings::SettingsNode& network = settings["network"];
     const auto& type = network["type"].as<settings::hstring>();
     switch (type) {
@@ -953,8 +832,7 @@ void ModelInitializer<ModelVariant>::build_agent_network() {
     }
 }
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::build_transport_network() {
+void ModelInitializer::build_transport_network() {
     const settings::SettingsNode& transport = settings["transport"];
     const auto& type = transport["type"].as<settings::hstring>();
     switch (type) {
@@ -983,29 +861,14 @@ void ModelInitializer<ModelVariant>::build_transport_network() {
     }
 }
 
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::initialize() {
+void ModelInitializer::initialize() {
     pre_initialize_variant();
     build_agent_network();
     clean_network();
     post_initialize_variant();
 }
 
-#ifdef VARIANT_BASIC
-template<>
-void ModelInitializer<VariantBasic>::pre_initialize_variant() {}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-void ModelInitializer<VariantDemand>::pre_initialize_variant() {
-    const settings::SettingsNode& parameters = settings["model"];
-    model()->parameters_writable().history_weight = parameters["history_weight"].as<Ratio>();
-}
-#endif
-
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::pre_initialize_variant() {
+void ModelInitializer::pre_initialize_variant() {
     const settings::SettingsNode& parameters = settings["model"];
     model()->parameters_writable().transport_penalty_small = parameters["transport_penalty_small"].as<Price>();
     model()->parameters_writable().transport_penalty_large = parameters["transport_penalty_large"].as<Price>();
@@ -1062,18 +925,7 @@ void ModelInitializer<ModelVariant>::pre_initialize_variant() {
     }
 }
 
-#ifdef VARIANT_BASIC
-template<>
-void ModelInitializer<VariantBasic>::post_initialize_variant() {}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-void ModelInitializer<VariantDemand>::post_initialize_variant() {}
-#endif
-
-template<class ModelVariant>
-void ModelInitializer<ModelVariant>::post_initialize_variant() {
+void ModelInitializer::post_initialize_variant() {
     // initialize price dependent members of each capacity manager, which can only be calculated after the whole network has been initialized
     for (auto& sector : model()->sectors) {
         for (auto& firm : sector->firms) {
@@ -1082,5 +934,4 @@ void ModelInitializer<ModelVariant>::post_initialize_variant() {
     }
 }
 
-INSTANTIATE_BASIC(ModelInitializer);
 }  // namespace acclimate

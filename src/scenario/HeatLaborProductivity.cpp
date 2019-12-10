@@ -24,52 +24,47 @@
 #include <cstddef>
 #include <string>
 #include "model/EconomicAgent.h"
+#include "model/Region.h"
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-HeatLaborProductivity<ModelVariant>::HeatLaborProductivity(const settings::SettingsNode& settings_p,
-                                                           settings::SettingsNode scenario_node_p,
-                                                           Model<ModelVariant>* model_p)
-    : RasteredScenario<ModelVariant, HeatLaborProductivity<ModelVariant>::RegionForcingType>(settings_p, scenario_node_p, model_p) {}
+HeatLaborProductivity::HeatLaborProductivity(const settings::SettingsNode& settings_p,
+                                             settings::SettingsNode scenario_node_p,
+                                             Model* model_p)
+    : RasteredScenario<HeatLaborProductivity::RegionForcingType>(settings_p, scenario_node_p, model_p) {}
 
-template<class ModelVariant>
-typename HeatLaborProductivity<ModelVariant>::RegionForcingType HeatLaborProductivity<ModelVariant>::new_region_forcing(Region<ModelVariant>* region) const {
+typename HeatLaborProductivity::RegionForcingType HeatLaborProductivity::new_region_forcing(Region* region) const {
     if (region) {
         return std::vector<FloatType>(region->economic_agents.size(), 0.0);
     }
     return std::vector<FloatType>();
 }
 
-template<class ModelVariant>
-void HeatLaborProductivity<ModelVariant>::reset_forcing(Region<ModelVariant>* region,
-                                                        typename HeatLaborProductivity<ModelVariant>::RegionForcingType& forcing) const {
+void HeatLaborProductivity::reset_forcing(Region* region,
+                                                        typename HeatLaborProductivity::RegionForcingType& forcing) const {
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
         forcing[i] = 0.0;
     }
 }
 
-template<class ModelVariant>
-void HeatLaborProductivity<ModelVariant>::set_region_forcing(Region<ModelVariant>* region,
-                                                             const HeatLaborProductivity<ModelVariant>::RegionForcingType& forcing,
+void HeatLaborProductivity::set_region_forcing(Region* region,
+                                                             const HeatLaborProductivity::RegionForcingType& forcing,
                                                              FloatType proxy_sum) const {
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
         auto& it = region->economic_agents[i];
-        if (it->type == EconomicAgent<ModelVariant>::Type::FIRM) {
+        if (it->type == EconomicAgent::Type::FIRM) {
             it->forcing(1 - forcing[i] / proxy_sum);
         }
     }
 }
 
-template<class ModelVariant>
-void HeatLaborProductivity<ModelVariant>::add_cell_forcing(FloatType x,
-                                                           FloatType y,
-                                                           FloatType proxy_value,
-                                                           FloatType cell_forcing,
-                                                           const Region<ModelVariant>* region,
-                                                           typename HeatLaborProductivity<ModelVariant>::RegionForcingType& region_forcing) const {
+void HeatLaborProductivity::add_cell_forcing(FloatType x,
+                                             FloatType y,
+                                             FloatType proxy_value,
+                                             FloatType cell_forcing,
+                                             const Region* region,
+                                             typename HeatLaborProductivity::RegionForcingType& region_forcing) const {
     UNUSED(x);
     UNUSED(y);
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
@@ -104,5 +99,4 @@ void HeatLaborProductivity<ModelVariant>::add_cell_forcing(FloatType x,
     }
 }
 
-INSTANTIATE_BASIC(HeatLaborProductivity);
 }  // namespace acclimate

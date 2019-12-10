@@ -24,22 +24,20 @@
 #include <string>
 #include <utility>
 #include "model/Model.h"
+#include "model/Region.h"
 #include "run.h"
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 #include "version.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-GnuplotOutput<ModelVariant>::GnuplotOutput(const settings::SettingsNode& settings_p,
-                                           Model<ModelVariant>* model_p,
-                                           Scenario<ModelVariant>* scenario_p,
-                                           settings::SettingsNode output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
+GnuplotOutput::GnuplotOutput(const settings::SettingsNode& settings_p,
+                             Model* model_p,
+                             Scenario* scenario_p,
+                             settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::initialize() {
+void GnuplotOutput::initialize() {
     if (!output_node.has("file")) {
         error("Output file name not given");
     }
@@ -47,19 +45,16 @@ void GnuplotOutput<ModelVariant>::initialize() {
     file.open(filename.c_str(), std::ofstream::out);
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_threads) {
+void GnuplotOutput::internal_write_header(tm* timestamp, int max_threads) {
     file << "# Start time: " << std::asctime(timestamp) << "# Version: " << ACCLIMATE_VERSION << "\n"
          << "# Max number of threads: " << max_threads << "\n";
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_write_footer(tm* duration) {
+void GnuplotOutput::internal_write_footer(tm* duration) {
     file << "# Duration: " << std::mktime(duration) << "s\n";
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_write_settings() {
+void GnuplotOutput::internal_write_settings() {
     std::stringstream ss;
     ss << settings_string;
     ss.flush();
@@ -72,13 +67,11 @@ void GnuplotOutput<ModelVariant>::internal_write_settings() {
     file << "#\n";
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_end() {
+void GnuplotOutput::internal_end() {
     file.close();
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start() {
+void GnuplotOutput::internal_start() {
     file << "# Sectors:\n# set ytics (";
     for (std::size_t i = 0; i < model()->sectors.size(); ++i) {
         file << "\"" << model()->sectors[i]->id() << "\" " << i;
@@ -98,8 +91,7 @@ void GnuplotOutput<ModelVariant>::internal_start() {
     file << ")\n";
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
+void GnuplotOutput::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     UNUSED(name);
     UNUSED(suffix);
     file << model()->time() << " ";
@@ -119,8 +111,7 @@ void GnuplotOutput<ModelVariant>::internal_write_value(const hstring& name, Floa
     file << v << "\n";
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+void GnuplotOutput::internal_start_target(const hstring& name, Sector* sector, Region* region) {
     UNUSED(name);
     Target t;
     t.sector = sector_index[sector];
@@ -128,8 +119,7 @@ void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Sec
     stack.push_back(t);
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector) {
+void GnuplotOutput::internal_start_target(const hstring& name, Sector* sector) {
     UNUSED(name);
     Target t;
     t.sector = sector_index[sector];
@@ -137,8 +127,7 @@ void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Sec
     stack.push_back(t);
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Region<ModelVariant>* region) {
+void GnuplotOutput::internal_start_target(const hstring& name, Region* region) {
     UNUSED(name);
     Target t;
     t.sector = -1;
@@ -146,8 +135,7 @@ void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name, Reg
     stack.push_back(t);
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name) {
+void GnuplotOutput::internal_start_target(const hstring& name) {
     UNUSED(name);
     Target t;
     t.sector = -1;
@@ -155,10 +143,8 @@ void GnuplotOutput<ModelVariant>::internal_start_target(const hstring& name) {
     stack.push_back(t);
 }
 
-template<class ModelVariant>
-void GnuplotOutput<ModelVariant>::internal_end_target() {
+void GnuplotOutput::internal_end_target() {
     stack.pop_back();
 }
 
-INSTANTIATE_BASIC(GnuplotOutput);
 }  // namespace acclimate

@@ -20,21 +20,22 @@
 
 #include "scenario/RasteredScenario.h"
 #include <cstddef>
+#include "model/Model.h"
+#include "model/Region.h"
 #include "run.h"
 #include "scenario/RasteredTimeData.h"
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant, class RegionForcingType>
-RasteredScenario<ModelVariant, RegionForcingType>::RasteredScenario(const settings::SettingsNode& settings_p,
-                                                                    settings::SettingsNode scenario_node_p,
-                                                                    Model<ModelVariant>* model_p)
-    : ExternalScenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
+template<class RegionForcingType>
+RasteredScenario<RegionForcingType>::RasteredScenario(const settings::SettingsNode& settings_p,
+                                                      settings::SettingsNode scenario_node_p,
+                                                      Model* model_p)
+    : ExternalScenario(settings_p, scenario_node_p, model_p) {}
 
-template<class ModelVariant, class RegionForcingType>
-ExternalForcing* RasteredScenario<ModelVariant, RegionForcingType>::read_forcing_file(const std::string& filename, const std::string& variable_name) {
+template<class RegionForcingType>
+ExternalForcing* RasteredScenario<RegionForcingType>::read_forcing_file(const std::string& filename, const std::string& variable_name) {
     auto result = new RasteredTimeData<FloatType>(filename, variable_name);
     if (!result->is_compatible(*iso_raster)) {
         info("ISO raster size is " << (*iso_raster / *result) << " of forcing");
@@ -44,8 +45,8 @@ ExternalForcing* RasteredScenario<ModelVariant, RegionForcingType>::read_forcing
     return result;
 }
 
-template<class ModelVariant, class RegionForcingType>
-void RasteredScenario<ModelVariant, RegionForcingType>::internal_start() {
+template<class RegionForcingType>
+void RasteredScenario<RegionForcingType>::internal_start() {
     const settings::SettingsNode& iso_node = scenario_node["isoraster"];
 
     // open iso raster
@@ -84,8 +85,8 @@ void RasteredScenario<ModelVariant, RegionForcingType>::internal_start() {
     info("Proxy size is " << (*proxy / *iso_raster) << " of ISO raster");
 }
 
-template<class ModelVariant, class RegionForcingType>
-void RasteredScenario<ModelVariant, RegionForcingType>::iterate_first_timestep() {
+template<class RegionForcingType>
+void RasteredScenario<RegionForcingType>::iterate_first_timestep() {
     FloatType total_proxy_sum = 0.0;
     FloatType total_proxy_sum_all = 0.0;
     for (const auto& x : iso_raster->x) {
@@ -111,8 +112,8 @@ void RasteredScenario<ModelVariant, RegionForcingType>::iterate_first_timestep()
 #endif
 }
 
-template<class ModelVariant, class RegionForcingType>
-void RasteredScenario<ModelVariant, RegionForcingType>::read_forcings() {
+template<class RegionForcingType>
+void RasteredScenario<RegionForcingType>::read_forcings() {
     total_current_proxy_sum_ = 0.0;
     auto forcing_l = static_cast<RasteredTimeData<FloatType>*>(forcing.get());
     FloatType sub_cnt = *proxy / *forcing_l;
@@ -135,8 +136,8 @@ void RasteredScenario<ModelVariant, RegionForcingType>::read_forcings() {
     }
 }
 
-template<class ModelVariant, class RegionForcingType>
-void RasteredScenario<ModelVariant, RegionForcingType>::internal_iterate_start() {
+template<class RegionForcingType>
+void RasteredScenario<RegionForcingType>::internal_iterate_start() {
     for (auto& r : region_forcings) {
         if (r.region) {
             reset_forcing(r.region, r.forcing);
@@ -144,8 +145,8 @@ void RasteredScenario<ModelVariant, RegionForcingType>::internal_iterate_start()
     }
 }
 
-template<class ModelVariant, class RegionForcingType>
-bool RasteredScenario<ModelVariant, RegionForcingType>::internal_iterate_end() {
+template<class RegionForcingType>
+bool RasteredScenario<RegionForcingType>::internal_iterate_end() {
     for (auto& r : region_forcings) {
         if (r.region && r.proxy_sum > 0) {
             set_region_forcing(r.region, r.forcing, r.proxy_sum);
@@ -154,16 +155,6 @@ bool RasteredScenario<ModelVariant, RegionForcingType>::internal_iterate_end() {
     return true;
 }
 
-#ifdef VARIANT_BASIC
-template class RasteredScenario<VariantBasic, FloatType>;
-template class RasteredScenario<VariantBasic, std::vector<FloatType>>;
-#endif
-#ifdef VARIANT_DEMAND
-template class RasteredScenario<VariantDemand, FloatType>;
-template class RasteredScenario<VariantDemand, std::vector<FloatType>>;
-#endif
-#ifdef VARIANT_PRICES
-template class RasteredScenario<VariantPrices, FloatType>;
-template class RasteredScenario<VariantPrices, std::vector<FloatType>>;
-#endif
+template class RasteredScenario<FloatType>;
+template class RasteredScenario<std::vector<FloatType>>;
 }  // namespace acclimate

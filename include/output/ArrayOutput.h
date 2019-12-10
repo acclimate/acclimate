@@ -21,12 +21,10 @@
 #ifndef ACCLIMATE_ARRAYOUTPUT_H
 #define ACCLIMATE_ARRAYOUTPUT_H
 
+#include "output/Output.h"
 #include <cstddef>
 #include <unordered_map>
 #include <vector>
-#include "output/Output.h"
-#include "run.h"
-#include "types.h"
 
 namespace settings {
 class SettingsNode;
@@ -34,22 +32,17 @@ class SettingsNode;
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Region;
-template<class ModelVariant>
 class Sector;
-template<class ModelVariant>
 class Scenario;
 
-template<class ModelVariant>
-class ArrayOutput : public Output<ModelVariant> {
+class ArrayOutput : public Output {
   public:
-    using Output<ModelVariant>::id;
-    using Output<ModelVariant>::model;
-    using Output<ModelVariant>::output_node;
-    using Output<ModelVariant>::scenario;
+    using Output::id;
+    using Output::model;
+    using Output::output_node;
+    using Output::scenario;
 
     struct Variable {
         std::vector<FloatType> data;
@@ -73,9 +66,9 @@ class ArrayOutput : public Output<ModelVariant> {
     struct Target {
         hstring name;
         std::size_t index = 0;
-        Sector<ModelVariant>* sector;
-        Region<ModelVariant>* region;
-        Target(hstring name_p, std::size_t index_p, Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p)
+        Sector* sector;
+        Region* region;
+        Target(hstring name_p, std::size_t index_p, Sector* sector_p, Region* region_p)
             : name(std::move(name_p)), index(index_p), sector(sector_p), region(region_p) {}
     };
     std::size_t sectors_size = 0;
@@ -88,9 +81,9 @@ class ArrayOutput : public Output<ModelVariant> {
 
   protected:
     void internal_write_value(const hstring& name, FloatType v, const hstring& suffix) override;
-    void internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) override;
-    void internal_start_target(const hstring& name, Sector<ModelVariant>* sector) override;
-    void internal_start_target(const hstring& name, Region<ModelVariant>* region) override;
+    void internal_start_target(const hstring& name, Sector* sector, Region* region) override;
+    void internal_start_target(const hstring& name, Sector* sector) override;
+    void internal_start_target(const hstring& name, Region* region) override;
     void internal_start_target(const hstring& name) override;
     void internal_end_target() override;
     void internal_iterate_begin() override;
@@ -109,19 +102,19 @@ class ArrayOutput : public Output<ModelVariant> {
 
   public:
     ArrayOutput(const settings::SettingsNode& settings_p,
-                Model<ModelVariant>* model_p,
-                Scenario<ModelVariant>* scenario_p,
+                Model* model_p,
+                Scenario* scenario_p,
                 settings::SettingsNode output_node_p,
                 bool over_time_p = true);
     ~ArrayOutput() override = default;
     void event(EventType type,
-               const Sector<ModelVariant>* sector_from,
-               const Region<ModelVariant>* region_from,
-               const Sector<ModelVariant>* sector_to,
-               const Region<ModelVariant>* region_to,
+               const Sector* sector_from,
+               const Region* region_from,
+               const Sector* sector_to,
+               const Region* region_to,
                FloatType value) override;
     void initialize() override;
-    const typename ArrayOutput<ModelVariant>::Variable& get_variable(const hstring& fullname) const;
+    const typename ArrayOutput::Variable& get_variable(const hstring& fullname) const;
     const std::vector<Event>& get_events() const { return events; }
 };
 }  // namespace acclimate

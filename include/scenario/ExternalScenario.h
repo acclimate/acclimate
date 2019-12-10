@@ -21,21 +21,19 @@
 #ifndef ACCLIMATE_EXTERNALSCENARIO_H
 #define ACCLIMATE_EXTERNALSCENARIO_H
 
+#include "scenario/Scenario.h"
 #include <memory>
 #include <string>
 #include "scenario/ExternalForcing.h"
-#include "scenario/Scenario.h"
-#include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-class ExternalScenario : public Scenario<ModelVariant> {
+class ExternalScenario : public Scenario {
   protected:
-    using Scenario<ModelVariant>::scenario_node;
-    using Scenario<ModelVariant>::settings;
-    using Scenario<ModelVariant>::set_firm_property;
-    using Scenario<ModelVariant>::set_consumer_property;
+    using Scenario::scenario_node;
+    using Scenario::settings;
+    using Scenario::set_firm_property;
+    using Scenario::set_consumer_property;
 
     std::string forcing_file;
     std::string expression;
@@ -55,7 +53,7 @@ class ExternalScenario : public Scenario<ModelVariant> {
 
     bool next_forcing_file();
     std::string fill_template(const std::string& in) const;
-    ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
+    ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
 
     virtual void internal_start() {}
     virtual void internal_iterate_start() {}
@@ -65,9 +63,9 @@ class ExternalScenario : public Scenario<ModelVariant> {
     virtual void read_forcings() = 0;
 
   public:
-    using Scenario<ModelVariant>::id;
-    using Scenario<ModelVariant>::model;
-    using Scenario<ModelVariant>::is_first_timestep;
+    using Scenario::id;
+    using Scenario::model;
+    using Scenario::is_first_timestep;
     ~ExternalScenario() override = default;
     bool iterate() override;
     Time start() override;

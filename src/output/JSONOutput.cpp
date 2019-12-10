@@ -28,20 +28,17 @@
 #include "model/Sector.h"
 #include "scenario/Scenario.h"
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 #include "version.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-JSONOutput<ModelVariant>::JSONOutput(const settings::SettingsNode& settings_p,
-                                     Model<ModelVariant>* model_p,
-                                     Scenario<ModelVariant>* scenario_p,
-                                     settings::SettingsNode output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
+JSONOutput::JSONOutput(const settings::SettingsNode& settings_p,
+                       Model* model_p,
+                       Scenario* scenario_p,
+                       settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::initialize() {
+void JSONOutput::initialize() {
     if (!output_node.has("file")) {
         out = &std::cout;
     } else {
@@ -52,8 +49,7 @@ void JSONOutput<ModelVariant>::initialize() {
     }
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_threads) {
+void JSONOutput::internal_write_header(tm* timestamp, int max_threads) {
     *out << "{\n"
             "\"info_header\": {\n"
             "    \"start_time\": \""
@@ -68,8 +64,7 @@ void JSONOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_thre
             "},\n";
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_write_footer(tm* duration) {
+void JSONOutput::internal_write_footer(tm* duration) {
     *out << "},\n"
             "\"info_footer\": {\n"
             "    \"duration\": \""
@@ -78,41 +73,34 @@ void JSONOutput<ModelVariant>::internal_write_footer(tm* duration) {
             "}\n";
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_write_settings() {
+void JSONOutput::internal_write_settings() {
     *out << "    \"settings\": '" << settings_string
          << "'\n},\n"
             "\"data\": {\n";
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_iterate_begin() {
+void JSONOutput::internal_iterate_begin() {
     *out << "    \"" << model()->time() << "\": {\n";
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_iterate_end() {
+void JSONOutput::internal_iterate_end() {
     *out << "    },\n";
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_end() {
+void JSONOutput::internal_end() {
     *out << "}\n";
     out->flush();
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
+void JSONOutput::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     *out << "            \"" << name << suffix << "\": " << v << ",\n";
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_end_target() {
+void JSONOutput::internal_end_target() {
     *out << "        },\n";
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+void JSONOutput::internal_start_target(const hstring& name, Sector* sector, Region* region) {
     *out << "        \"" << name
          << "\": {\n"
             "            \"sector\": \""
@@ -122,26 +110,22 @@ void JSONOutput<ModelVariant>::internal_start_target(const hstring& name, Sector
          << region->id() << "\",\n";
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector) {
+void JSONOutput::internal_start_target(const hstring& name, Sector* sector) {
     *out << "        \"" << name
          << "\": {\n"
             "            \"sector\": \""
          << sector->id() << "\",\n";
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_start_target(const hstring& name, Region<ModelVariant>* region) {
+void JSONOutput::internal_start_target(const hstring& name, Region* region) {
     *out << "        \"" << name
          << "\": {\n"
             "            \"region\": \""
          << region->id() << "\",\n";
 }
 
-template<class ModelVariant>
-void JSONOutput<ModelVariant>::internal_start_target(const hstring& name) {
+void JSONOutput::internal_start_target(const hstring& name) {
     *out << "        \"" << name << "\": {\n";
 }
 
-INSTANTIATE_BASIC(JSONOutput);
 }  // namespace acclimate

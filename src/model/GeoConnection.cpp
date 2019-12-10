@@ -19,17 +19,16 @@
 */
 
 #include "model/GeoConnection.h"
-#include "variants/ModelVariants.h"
+#include "model/GeoLocation.h"
+#include "run.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-GeoConnection<ModelVariant>::GeoConnection(
-    Model<ModelVariant>* model_m, TransportDelay delay, Type type_p, const GeoLocation<ModelVariant>* location1_p, const GeoLocation<ModelVariant>* location2_p)
-    : GeoEntity<ModelVariant>(model_m, delay, GeoEntity<ModelVariant>::Type::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
+GeoConnection::GeoConnection(
+    Model* model_m, TransportDelay delay, Type type_p, const GeoLocation* location1_p, const GeoLocation* location2_p)
+    : GeoEntity(model_m, delay, GeoEntity::Type::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
 
-template<class ModelVariant>
-void GeoConnection<ModelVariant>::invalidate_location(const GeoLocation<ModelVariant>* location) {
+void GeoConnection::invalidate_location(const GeoLocation* location) {
     if (location1 == location) {
         location1 = nullptr;
     } else if (location2 == location) {
@@ -39,5 +38,8 @@ void GeoConnection<ModelVariant>::invalidate_location(const GeoLocation<ModelVar
     }
 }
 
-INSTANTIATE_BASIC(GeoConnection);
+std::string GeoConnection::id() const {
+    return (location1 ? location1->id() : "INVALID") + "-" + (location2 ? location2->id() : "INVALID");
+}
+
 }  // namespace acclimate

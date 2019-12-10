@@ -21,30 +21,26 @@
 #ifndef ACCLIMATE_NETCDFOUTPUT_H
 #define ACCLIMATE_NETCDFOUTPUT_H
 
+#include "output/ArrayOutput.h"
 #include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include "netcdftools.h"
-#include "output/ArrayOutput.h"
-#include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Scenario;
 
-template<class ModelVariant>
-class NetCDFOutput : public ArrayOutput<ModelVariant> {
+class NetCDFOutput : public ArrayOutput {
   public:
-    using Output<ModelVariant>::id;
-    using Output<ModelVariant>::model;
-    using Output<ModelVariant>::output_node;
-    using Output<ModelVariant>::settings_string;
-    using Output<ModelVariant>::scenario;
+    using Output::id;
+    using Output::model;
+    using Output::output_node;
+    using Output::settings_string;
+    using Output::scenario;
 
   protected:
     struct VariableMeta {
@@ -52,11 +48,11 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
         std::vector<std::size_t> sizes;
         netCDF::NcVar nc_var;
     };
-    using ArrayOutput<ModelVariant>::regions_size;
-    using ArrayOutput<ModelVariant>::sectors_size;
-    using ArrayOutput<ModelVariant>::variables;
-    using ArrayOutput<ModelVariant>::stack;
-    using ArrayOutput<ModelVariant>::include_events;
+    using ArrayOutput::regions_size;
+    using ArrayOutput::sectors_size;
+    using ArrayOutput::variables;
+    using ArrayOutput::stack;
+    using ArrayOutput::include_events;
     netCDF::NcDim dim_time;
     netCDF::NcDim dim_sector;
     netCDF::NcDim dim_region;
@@ -78,13 +74,13 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     void internal_start() override;
     void internal_end() override;
     netCDF::NcGroup& create_group(const hstring& name);
-    void create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) override;
-    bool internal_handle_event(typename ArrayOutput<ModelVariant>::Event& event) override;
+    void create_variable_meta(typename ArrayOutput::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) override;
+    bool internal_handle_event(typename ArrayOutput::Event& event) override;
 
   public:
     NetCDFOutput(const settings::SettingsNode& settings_p,
-                 Model<ModelVariant>* model_p,
-                 Scenario<ModelVariant>* scenario_p,
+                 Model* model_p,
+                 Scenario* scenario_p,
                  settings::SettingsNode output_node_p);
     ~NetCDFOutput() override;
     void initialize() override;

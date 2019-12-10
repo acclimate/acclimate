@@ -23,46 +23,21 @@
 
 #include <string>
 #include <vector>
-#include "run.h"
 #include "types.h"
+#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Firm;
 
-template<class ModelVariant>
 class Sector {
-    friend class Model<ModelVariant>;
+    friend class Model;
 
   public:
     enum class TransportType { AVIATION, IMMEDIATE, ROADSEA };
-    static TransportType map_transport_type(const settings::hstring& transport_type) {
-        switch (transport_type) {
-            case settings::hstring::hash("aviation"):
-                return TransportType::AVIATION;
-            case settings::hstring::hash("immediate"):
-                return TransportType::IMMEDIATE;
-            case settings::hstring::hash("roadsea"):
-                return TransportType::ROADSEA;
-            default:
-                error_("Unknown transport type " << transport_type);
-        }
-    }
-    static const char* unmap_transport_type(TransportType transport_type) {
-        switch (transport_type) {
-            case TransportType::AVIATION:
-                return "aviation";
-            case TransportType::IMMEDIATE:
-                return "immediate";
-            case TransportType::ROADSEA:
-                return "roadsea";
-            default:
-                error_("Unkown transport type");
-        }
-    }
+    static TransportType map_transport_type(const settings::hstring& transport_type);
+    static const char* unmap_transport_type(TransportType transport_type);
 
   protected:
     const IntType index_m;
@@ -72,9 +47,9 @@ class Sector {
     Flow total_production_X_m = Flow(0.0);
     OpenMPLock total_production_X_lock;
     Flow last_total_production_X_m = Flow(0.0);
-    typename ModelVariant::SectorParameters parameters_m;
-    Model<ModelVariant>* const model_m;
-    Sector(Model<ModelVariant>* model_p,
+    typename VariantPrices::SectorParameters parameters_m;
+    Model* const model_m;
+    Sector(Model* model_p,
            std::string id_p,
            IntType index_p,
            const Ratio& upper_storage_limit_omega_p,
@@ -82,29 +57,20 @@ class Sector {
            TransportType transport_type_p);
 
   public:
-    inline const Demand& total_demand_D() const {
-        assertstepnot(PURCHASE);
-        return total_demand_D_;
-    }
+    const Demand& total_demand_D() const;
     inline const Demand& last_total_production_X() const { return last_total_production_X_m; }
-    inline const Demand& total_production_X() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return total_production_X_m;
-    }
-    inline const typename ModelVariant::SectorParameters& parameters() const { return parameters_m; }
-    inline typename ModelVariant::SectorParameters& parameters_writable() {
-        assertstep(INITIALIZATION);
-        return parameters_m;
-    }
+    const Demand& total_production_X() const;
+    inline const typename VariantPrices::SectorParameters& parameters() const { return parameters_m; }
+    typename VariantPrices::SectorParameters& parameters_writable();
 
   public:
     const Ratio upper_storage_limit_omega;
     const Time initial_storage_fill_factor_psi;
     const TransportType transport_type;
-    std::vector<Firm<ModelVariant>*> firms;
+    std::vector<Firm*> firms;
 
   public:
-    Sector(Model<ModelVariant>* model_p,
+    Sector(Model* model_p,
            std::string id_p,
            IntType index_p,
            const Ratio& upper_storage_limit_omega_p,
@@ -114,10 +80,11 @@ class Sector {
     void add_initial_production_X(const Flow& production_X);
     void subtract_initial_production_X(const Flow& production_X);
     void iterate_consumption_and_production();
-    void remove_firm(Firm<ModelVariant>* firm);
+    void remove_firm(Firm* firm);
     inline IntType index() const { return index_m; }
-    inline Model<ModelVariant>* model() const { return model_m; }
+    inline Model* model() const { return model_m; }
     inline const std::string& id() const { return id_m; }
 };
 }  // namespace acclimate
+
 #endif

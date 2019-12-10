@@ -34,30 +34,23 @@ class Table;
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Consumer;
-template<class ModelVariant>
 class EconomicAgent;
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Firm;
-template<class ModelVariant>
 class Region;
-template<class ModelVariant>
 class Sector;
 
-template<class ModelVariant>
 class ModelInitializer {
   protected:
     class TemporaryGeoEntity {
       protected:
-        std::unique_ptr<GeoEntity<ModelVariant>> entity_m;
+        std::unique_ptr<GeoEntity> entity_m;
 
       public:
         bool used;
-        GeoEntity<ModelVariant>* entity() { return entity_m.get(); }
-        TemporaryGeoEntity(GeoEntity<ModelVariant>* entity_p, bool used_p) : entity_m(entity_p), used(used_p) {}
+        GeoEntity* entity() { return entity_m.get(); }
+        TemporaryGeoEntity(GeoEntity* entity_p, bool used_p) : entity_m(entity_p), used(used_p) {}
         ~TemporaryGeoEntity() {
             if (used) {
                 (void)entity_m.release();
@@ -99,20 +92,20 @@ class ModelInitializer {
     settings::SettingsNode get_named_property(const settings::SettingsNode& node_settings, const std::string& node_name, const std::string& property_name) const;
 
   protected:
-    Model<ModelVariant>* const model_m;
+    Model* const model_m;
     const settings::SettingsNode& settings;
 
-    Sector<ModelVariant>* add_sector(const std::string& name);
-    Region<ModelVariant>* add_region(const std::string& name);
-    Firm<ModelVariant>* add_firm(Sector<ModelVariant>* sector, Region<ModelVariant>* region);
-    Consumer<ModelVariant>* add_consumer(Region<ModelVariant>* region);
-    void create_simple_transport_connection(Region<ModelVariant>* region_from, Region<ModelVariant>* region_to, TransportDelay transport_delay);
-    void initialize_connection(Sector<ModelVariant>* sector_from,
-                               Region<ModelVariant>* region_from,
-                               Sector<ModelVariant>* sector_to,
-                               Region<ModelVariant>* region_to,
+    Sector* add_sector(const std::string& name);
+    Region* add_region(const std::string& name);
+    Firm* add_firm(Sector* sector, Region* region);
+    Consumer* add_consumer(Region* region);
+    void create_simple_transport_connection(Region* region_from, Region* region_to, TransportDelay transport_delay);
+    void initialize_connection(Sector* sector_from,
+                               Region* region_from,
+                               Sector* sector_to,
+                               Region* region_to,
                                const Flow& flow);
-    void initialize_connection(Firm<ModelVariant>* firm_from, EconomicAgent<ModelVariant>* economic_agent_to, const Flow& flow);
+    void initialize_connection(Firm* firm_from, EconomicAgent* economic_agent_to, const Flow& flow);
     void clean_network();
     void pre_initialize_variant();
     void post_initialize_variant();
@@ -125,12 +118,12 @@ class ModelInitializer {
     void read_transport_network_netcdf(const std::string& filename);
 
   public:
-    ModelInitializer(Model<ModelVariant>* model_p, const settings::SettingsNode& settings_p);
+    ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p);
     void initialize();
 #ifdef DEBUG
     void print_network_characteristics() const;
 #endif
-    inline Model<ModelVariant>* model() const { return model_m; }
+    inline Model* model() const { return model_m; }
     inline std::string id() const { return "MODELINITIALIZER"; }
 };
 }  // namespace acclimate

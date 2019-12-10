@@ -21,20 +21,19 @@
 #include "scenario/ExternalScenario.h"
 #include <cstring>
 #include "model/EconomicAgent.h"
+#include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "netcdftools.h"
 #include "scenario/ExternalForcing.h"
-#include "variants/ModelVariants.h"
+#include "run.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-ExternalScenario<ModelVariant>::ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p)
-    : Scenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
+ExternalScenario::ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
+    : Scenario(settings_p, scenario_node_p, model_p) {}
 
-template<class ModelVariant>
-std::string ExternalScenario<ModelVariant>::fill_template(const std::string& in) const {
+std::string ExternalScenario::fill_template(const std::string& in) const {
     const char* beg_mark = "[[";
     const char* end_mark = "]]";
     std::ostringstream ss;
@@ -75,8 +74,7 @@ static unsigned int get_ref_year(const std::string& time_str) {
     error_("Forcing file has invalid time units");
 }
 
-template<class ModelVariant>
-bool ExternalScenario<ModelVariant>::next_forcing_file() {
+bool ExternalScenario::next_forcing_file() {
     if (file_index > file_index_to) {
         forcing.reset();
         return false;
@@ -122,8 +120,7 @@ bool ExternalScenario<ModelVariant>::next_forcing_file() {
     return true;
 }
 
-template<class ModelVariant>
-Time ExternalScenario<ModelVariant>::start() {
+Time ExternalScenario::start() {
     if (model()->stop_time() > Time(0.0)) {
         stop_time_known = true;
     } else {
@@ -157,16 +154,14 @@ Time ExternalScenario<ModelVariant>::start() {
     return model()->start_time();
 }
 
-template<class ModelVariant>
-void ExternalScenario<ModelVariant>::end() {
+void ExternalScenario::end() {
     forcing.reset();
     if (remove_afterwards) {
         remove(forcing_file.c_str());
     }
 }
 
-template<class ModelVariant>
-bool ExternalScenario<ModelVariant>::iterate() {
+bool ExternalScenario::iterate() {
     if (stop_time_known && model()->time() > model()->stop_time()) {
         return false;
     }
@@ -190,5 +185,4 @@ bool ExternalScenario<ModelVariant>::iterate() {
     return internal_iterate_end();
 }
 
-INSTANTIATE_BASIC(ExternalScenario);
 }  // namespace acclimate

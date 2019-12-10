@@ -21,24 +21,20 @@
 #ifndef ACCLIMATE_VARIANTPRICES_H
 #define ACCLIMATE_VARIANTPRICES_H
 
-#ifdef VARIANT_PRICES
 
 #include "variants/Variant.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class PurchasingManagerPrices;
-template<class ModelVariant>
 class CapacityManagerPrices;
-template<class ModelVariant>
 class SalesManagerPrices;
 
 class VariantPrices : public Variant {
   public:
-    using PurchasingManagerType = PurchasingManagerPrices<VariantPrices>;
-    using CapacityManagerType = CapacityManagerPrices<VariantPrices>;
-    using SalesManagerType = SalesManagerPrices<VariantPrices>;
+    using PurchasingManagerType = PurchasingManagerPrices;
+    using CapacityManagerType = CapacityManagerPrices;
+    using SalesManagerType = SalesManagerPrices;
     class ModelParameters : public Variant::ModelParameters {
       public:
         Price cheapest_price_range_width = Price(0.0);
@@ -75,10 +71,8 @@ class VariantPrices : public Variant {
 };
 }  // namespace acclimate
 
-#include "model/CapacityManagerPrices.h"
-#include "model/PurchasingManagerPrices.h"
-#include "model/SalesManagerPrices.h"
-
-#endif
+//#include "model/CapacityManagerPrices.h"
+//#include "model/PurchasingManagerPrices.h"
+//#include "model/SalesManagerPrices.h"
 
 #endif

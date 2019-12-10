@@ -18,20 +18,22 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "model/SalesManagerPrices.h"
 #include <algorithm>
 #include <iostream>
+#include "model/BusinessConnection.h"
+#include "model/CapacityManagerPrices.h"
 #include "model/Firm.h"
+#include "model/Model.h"
+#include "model/PurchasingManagerPrices.h"
+#include "model/SalesManagerPrices.h"
+#include "model/Storage.h"
 #include "run.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-SalesManagerPrices<ModelVariant>::SalesManagerPrices(Firm<ModelVariant>* firm_p) : SalesManager<ModelVariant>(firm_p) {}
+SalesManagerPrices::SalesManagerPrices(Firm* firm_p) : SalesManager(firm_p) {}
 
-template<class ModelVariant>
-const Flow SalesManagerPrices<ModelVariant>::calc_production_X() {
+const Flow SalesManagerPrices::calc_production_X() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     assert(!business_connections.empty());
     sum_demand_requests_D_ = round(sum_demand_requests_D_);
@@ -39,8 +41,8 @@ const Flow SalesManagerPrices<ModelVariant>::calc_production_X() {
     // sort all incoming connections by price (descending), then by quantity (descending)
     std::sort(
         business_connections.begin(), business_connections.end(),
-        [](const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection_1,
-           const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection_2) {
+        [](const std::shared_ptr<BusinessConnection>& business_connection_1,
+           const std::shared_ptr<BusinessConnection>& business_connection_2) {
             if (business_connection_1->last_demand_request_D().get_quantity() <= 0.0 && business_connection_2->last_demand_request_D().get_quantity() > 0.0) {
                 // we want to store empty demand requests at the end of the business connections
                 return false;
@@ -73,8 +75,7 @@ const Flow SalesManagerPrices<ModelVariant>::calc_production_X() {
     return communicated_parameters_.production_X;
 }
 
-template<class ModelVariant>
-void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
+void SalesManagerPrices::distribute(const Flow& _) {
     UNUSED(_);
     assertstep(CONSUMPTION_AND_PRODUCTION);
     assert(!business_connections.empty());
@@ -190,13 +191,12 @@ void SalesManagerPrices<ModelVariant>::distribute(const Flow& _) {
     }
 }
 
-template<class ModelVariant>
-std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_supply_distribution_scenario(const Flow& possible_production_X_hat_p) {
+std::tuple<Flow, Price> SalesManagerPrices::calc_supply_distribution_scenario(const Flow& possible_production_X_hat_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
 
     // find first (in order) connection with zero demand
     auto first_zero_connection = std::find_if(business_connections.begin(), business_connections.end(),
-                                              [](const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection) {
+                                              [](const std::shared_ptr<BusinessConnection>& business_connection) {
                                                   return business_connection->last_demand_request_D().get_quantity() <= 0.0;
                                               });
 
@@ -364,12 +364,11 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_supply_distributi
     return std::make_tuple(production_X, offer_price_n_bar);
 }
 
-template<class ModelVariant>
-std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_distribution_scenario(const Flow& possible_production_X_hat_p) {
+std::tuple<Flow, Price> SalesManagerPrices::calc_expected_supply_distribution_scenario(const Flow& possible_production_X_hat_p) {
     assertstep(EXPECTATION);
     // find first (in order) connection with zero demand
     auto first_zero_connection = std::find_if(business_connections.begin(), business_connections.end(),
-                                              [](const std::shared_ptr<BusinessConnection<ModelVariant>>& business_connection) {
+                                              [](const std::shared_ptr<BusinessConnection>& business_connection) {
                                                   return business_connection->last_demand_request_D().get_quantity() <= 0.0;
                                               });
 
@@ -555,8 +554,7 @@ std::tuple<Flow, Price> SalesManagerPrices<ModelVariant>::calc_expected_supply_d
     return std::make_tuple(expected_production_X, offer_price_n_bar);
 }
 
-template<class ModelVariant>
-void SalesManagerPrices<ModelVariant>::iterate_expectation() {
+void SalesManagerPrices::iterate_expectation() {
     assertstep(EXPECTATION);
     estimated_possible_production_X_hat_ = firm->capacity_manager->estimate_possible_production_X_hat();
     if (estimated_possible_production_X_hat_.get_quantity() > 0.0) {
@@ -568,18 +566,15 @@ void SalesManagerPrices<ModelVariant>::iterate_expectation() {
     sum_demand_requests_D_ = Flow(0.0);
 }
 
-template<class ModelVariant>
-inline const Price SalesManagerPrices<ModelVariant>::get_initial_unit_variable_production_costs() const {
+inline const Price SalesManagerPrices::get_initial_unit_variable_production_costs() const {
     return std::max(Price(0.0), Price(1.0) - (initial_unit_commodity_costs + get_initial_markup()));
 }
 
-template<class ModelVariant>
-inline const Price SalesManagerPrices<ModelVariant>::get_initial_markup() const {
+inline const Price SalesManagerPrices::get_initial_markup() const {
     return std::min(Price(1.0) - initial_unit_commodity_costs, firm->sector->parameters().initial_markup);
 }
 
-template<class ModelVariant>
-void SalesManagerPrices<ModelVariant>::initialize() {
+void SalesManagerPrices::initialize() {
     assertstep(INITIALIZATION);
     initial_unit_commodity_costs = Price(0.0);
     for (auto input_storage = firm->input_storages.begin(); input_storage != firm->input_storages.end(); ++input_storage) {
@@ -592,8 +587,7 @@ void SalesManagerPrices<ModelVariant>::initialize() {
     estimated_possible_production_X_hat_.set_price(initial_unit_commodity_costs + get_initial_unit_variable_production_costs());
 }
 
-template<class ModelVariant>
-const FlowValue SalesManagerPrices<ModelVariant>::calc_total_production_costs(const Flow& production_X, const Price& unit_production_costs_n_c) const {
+const FlowValue SalesManagerPrices::calc_total_production_costs(const Flow& production_X, const Price& unit_production_costs_n_c) const {
     const FlowQuantity& production_quantity_X = production_X.get_quantity();
     assert(production_quantity_X >= 0.0);
     assert(!isnan(unit_production_costs_n_c));
@@ -604,8 +598,7 @@ const FlowValue SalesManagerPrices<ModelVariant>::calc_total_production_costs(co
     return production_quantity_X * unit_production_costs_n_c + calc_production_extension_penalty_P(production_quantity_X);
 }
 
-template<class ModelVariant>
-const FlowValue SalesManagerPrices<ModelVariant>::calc_production_extension_penalty_P(const FlowQuantity& production_quantity_X) const {
+const FlowValue SalesManagerPrices::calc_production_extension_penalty_P(const FlowQuantity& production_quantity_X) const {
     assert(production_quantity_X >= 0.0);
     if (production_quantity_X <= firm->forced_initial_production_quantity_lambda_X_star()) {  // not in production extension
         return FlowValue(0.0);
@@ -623,8 +616,7 @@ const FlowValue SalesManagerPrices<ModelVariant>::calc_production_extension_pena
     // maximal penalty per unit: price_increase_production_extension / 2 * (possible_overcapacity_ratio - 1)^2 / possible_overcapacity_ratio
 }
 
-template<class ModelVariant>
-const Price SalesManagerPrices<ModelVariant>::calc_marginal_production_extension_penalty(const FlowQuantity& production_quantity_X) const {
+const Price SalesManagerPrices::calc_marginal_production_extension_penalty(const FlowQuantity& production_quantity_X) const {
     assert(production_quantity_X >= 0.0);
     if (production_quantity_X <= firm->forced_initial_production_quantity_lambda_X_star()) {  // not in production extension
         return Price(0.0);
@@ -635,8 +627,7 @@ const Price SalesManagerPrices<ModelVariant>::calc_marginal_production_extension
     // maximal: price_increase_production_extension * (possible_overcapacity_ratio - 1)
 }
 
-template<class ModelVariant>
-const Price SalesManagerPrices<ModelVariant>::calc_marginal_production_costs(const FlowQuantity& production_quantity_X,
+const Price SalesManagerPrices::calc_marginal_production_costs(const FlowQuantity& production_quantity_X,
                                                                              const Price& unit_production_costs_n_c) const {
     assert(production_quantity_X >= 0.0);
     assert(!isnan(unit_production_costs_n_c));
@@ -647,8 +638,7 @@ const Price SalesManagerPrices<ModelVariant>::calc_marginal_production_costs(con
     return unit_production_costs_n_c + calc_marginal_production_extension_penalty(production_quantity_X);
 }
 
-template<class ModelVariant>
-const FlowQuantity SalesManagerPrices<ModelVariant>::analytic_solution_in_production_extension(const Price& unit_production_costs_n_c,
+const FlowQuantity SalesManagerPrices::analytic_solution_in_production_extension(const Price& unit_production_costs_n_c,
                                                                                                const Price& price_demand_request_not_served_completely) const {
     assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
     assert(price_demand_request_not_served_completely >= unit_production_costs_n_c);
@@ -657,8 +647,7 @@ const FlowQuantity SalesManagerPrices<ModelVariant>::analytic_solution_in_produc
         * (1.0 + (price_demand_request_not_served_completely - unit_production_costs_n_c) / firm->sector->parameters().price_increase_production_extension));
 }
 
-template<class ModelVariant>
-const FlowValue SalesManagerPrices<ModelVariant>::calc_additional_revenue_expectation(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const {
+const FlowValue SalesManagerPrices::calc_additional_revenue_expectation(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const {
     // note: for X > sum_of_demand_requests_D this curve corresponds to the marginal supply curve
     // note: communicated_parameters_.production_X <= sum_demand_requests_D (up to rounding issues)
     assert(round(production_quantity_X_p) >= sum_demand_requests_D_.get_quantity());
@@ -672,8 +661,7 @@ const FlowValue SalesManagerPrices<ModelVariant>::calc_additional_revenue_expect
            / (1.0 - firm->sector->parameters().supply_elasticity);
 }
 
-template<class ModelVariant>
-const Price SalesManagerPrices<ModelVariant>::calc_marginal_revenue_curve(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const {
+const Price SalesManagerPrices::calc_marginal_revenue_curve(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const {
     // note: for X > sum_of_demand_requests_D this curve corresponds to the marginal supply curve
     // note: communicated_parameters_.production_X == sum_demand_requests_D (up to rounding issues)
     assert(round(production_quantity_X_p) >= sum_demand_requests_D_.get_quantity());
@@ -683,8 +671,7 @@ const Price SalesManagerPrices<ModelVariant>::calc_marginal_revenue_curve(const 
     return n_min_p * pow(sum_demand_requests_D_.get_quantity() / production_quantity_X_p, firm->sector->parameters().supply_elasticity);
 }
 
-template<class ModelVariant>
-const Price SalesManagerPrices<ModelVariant>::goal_fkt_marginal_costs_minus_marginal_revenue(const FlowQuantity& production_quantity_X_p,
+const Price SalesManagerPrices::goal_fkt_marginal_costs_minus_marginal_revenue(const FlowQuantity& production_quantity_X_p,
                                                                                              const Price& unit_production_costs_n_c,
                                                                                              const Price& n_min_p) const {
     FlowQuantity production_quantity_X_rounded = round(production_quantity_X_p);
@@ -693,16 +680,14 @@ const Price SalesManagerPrices<ModelVariant>::goal_fkt_marginal_costs_minus_marg
     return calc_marginal_production_costs(production_quantity_X_rounded, unit_production_costs_n_c) - marginal_revenue;
 }
 
-template<class ModelVariant>
-const Price SalesManagerPrices<ModelVariant>::goal_fkt_marginal_costs_minus_price(const FlowQuantity& production_quantity_X_p,
+const Price SalesManagerPrices::goal_fkt_marginal_costs_minus_price(const FlowQuantity& production_quantity_X_p,
                                                                                   const Price& unit_production_costs_n_c,
                                                                                   const Price& price) const {
     FlowQuantity production_quantity_X_rounded = round(production_quantity_X_p);
     return calc_marginal_production_costs(production_quantity_X_rounded, unit_production_costs_n_c) - price;
 }
 
-template<class ModelVariant>
-const Flow SalesManagerPrices<ModelVariant>::search_root_bisec_expectation(const FlowQuantity& left,
+const Flow SalesManagerPrices::search_root_bisec_expectation(const FlowQuantity& left,
                                                                            const FlowQuantity& right,
                                                                            const FlowQuantity& production_quantity_X_p,
                                                                            const Price& unit_production_costs_n_c,
@@ -743,8 +728,7 @@ const Flow SalesManagerPrices<ModelVariant>::search_root_bisec_expectation(const
 #define PRINT_ROW1(a, b) "      " << std::setw(14) << a << " = " << std::setw(14) << b << '\n'
 #define PRINT_ROW2(a, b, c) "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n"
 
-template<class ModelVariant>
-void SalesManagerPrices<ModelVariant>::print_parameters() const {
+void SalesManagerPrices::print_parameters() const {
     info(PRINT_ROW1("X", communicated_parameters_.production_X.get_quantity())
          << PRINT_ROW1("X_exp", communicated_parameters_.expected_production_X.get_quantity())
          << PRINT_ROW1("X_hat", communicated_parameters_.possible_production_X_hat) << PRINT_ROW1("  lambda", firm->forcing())
@@ -762,10 +746,9 @@ void SalesManagerPrices<ModelVariant>::print_parameters() const {
 #endif
 
 #ifdef DEBUG
-template<class ModelVariant>
-void SalesManagerPrices<ModelVariant>::print_connections(
-    typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator begin_equally_distributed,
-    typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator end_equally_distributed) const {
+void SalesManagerPrices::print_connections(
+    typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
+    typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const {
 #pragma omp critical(output)
     {
         std::cout << model()->run()->timeinfo() << ", " << id() << ": supply distribution for " << business_connections.size() << " outputs :\n";
@@ -795,5 +778,29 @@ void SalesManagerPrices<ModelVariant>::print_connections(
 }
 #endif
 
-INSTANTIATE_PRICES(SalesManagerPrices);
+const SupplyParameters &SalesManagerPrices::communicated_parameters() const {
+    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    return communicated_parameters_;
+}
+
+const FlowValue &SalesManagerPrices::total_production_costs_C() const {
+    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    return total_production_costs_C_;
+}
+
+const FlowValue &SalesManagerPrices::total_revenue_R() const {
+    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    return total_revenue_R_;
+}
+
+void SalesManagerPrices::impose_tax(const Ratio tax_p) {
+    assertstep(EXPECTATION);
+    tax_ = tax_p;
+}
+
+const FlowValue SalesManagerPrices::get_tax() const {
+    return tax_ * firm->production_X().get_value();
+}
+
+
 }  // namespace acclimate

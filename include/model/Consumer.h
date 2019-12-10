@@ -25,19 +25,17 @@
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Region;
 
-template<class ModelVariant>
-class Consumer : public EconomicAgent<ModelVariant> {
+class Consumer : public EconomicAgent {
   public:
-    using EconomicAgent<ModelVariant>::id;
-    using EconomicAgent<ModelVariant>::input_storages;
-    using EconomicAgent<ModelVariant>::model;
-    using EconomicAgent<ModelVariant>::region;
+    using EconomicAgent::id;
+    using EconomicAgent::input_storages;
+    using EconomicAgent::model;
+    using EconomicAgent::region;
 
   protected:
-    using EconomicAgent<ModelVariant>::forcing_;
+    using EconomicAgent::forcing_;
 
   protected:
     void add_revenue_to_budget();
@@ -47,8 +45,8 @@ class Consumer : public EconomicAgent<ModelVariant> {
 #endif
 
   public:
-    Consumer<ModelVariant>* as_consumer() override;
-    explicit Consumer(Region<ModelVariant>* region_p);
+    Consumer* as_consumer() override;
+    explicit Consumer(Region* region_p);
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;

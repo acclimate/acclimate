@@ -27,16 +27,12 @@
 
 namespace acclimate {
 
-template<class ModelVariant>
 class BusinessConnection;
-template<class ModelVariant>
 class GeoEntity;
-template<class ModelVariant>
 class Model;
 
-template<class ModelVariant>
 class TransportChainLink {
-    friend class BusinessConnection<ModelVariant>;
+    friend class BusinessConnection;
 
   protected:
     Forcing forcing_nu;
@@ -44,17 +40,17 @@ class TransportChainLink {
     Flow overflow;
     std::vector<AnnotatedFlow> transport_queue;
     TransportDelay pos;
-    std::unique_ptr<TransportChainLink<ModelVariant>> next_transport_chain_link;
-    GeoEntity<ModelVariant>* geo_entity;
+    std::unique_ptr<TransportChainLink> next_transport_chain_link;
+    GeoEntity* geo_entity;
 
-    TransportChainLink(BusinessConnection<ModelVariant>* business_connection_p,
+    TransportChainLink(BusinessConnection* business_connection_p,
                        const TransportDelay& initial_transport_delay_tau,
                        const Flow& initial_flow_Z_star,
-                       GeoEntity<ModelVariant>* geo_entity_p);
+                       GeoEntity* geo_entity_p);
 
   public:
     const TransportDelay initial_transport_delay_tau;
-    BusinessConnection<ModelVariant>* const business_connection;
+    BusinessConnection* const business_connection;
 
     ~TransportChainLink();
     void push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star);
@@ -66,12 +62,8 @@ class TransportChainLink {
     FloatType get_passage() const;
     FlowQuantity get_flow_deficit() const;
     inline void unregister_geoentity() { geo_entity = nullptr; }
-
-    inline Model<ModelVariant>* model() const { return business_connection->model(); }
-    inline std::string id() const {
-        return (business_connection->seller ? business_connection->seller->id() : "INVALID") + "-" + std::to_string(business_connection->get_id(this)) + "->"
-               + (business_connection->buyer ? business_connection->buyer->storage->economic_agent->id() : "INVALID");
-    }
+    Model* model() const;
+    std::string id() const;
 };
 }  // namespace acclimate
 

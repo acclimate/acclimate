@@ -31,7 +31,12 @@
 #include <omp.h>
 #endif
 #include "input/ModelInitializer.h"
+#include "model/EconomicAgent.h"
+#include "model/Government.h"
 #include "model/Model.h"
+#include "model/PurchasingManagerPrices.h"
+#include "model/Region.h"
+#include "model/Storage.h"
 #include "output/ArrayOutput.h"
 #include "output/ConsoleOutput.h"
 #include "output/DamageOutput.h"
@@ -48,7 +53,6 @@
 #include "scenario/Hurricanes.h"
 #include "scenario/Scenario.h"
 #include "scenario/Taxes.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
@@ -59,8 +63,7 @@ static volatile bool checkpoint_scheduled = false;
 void handle_sigterm(int /* signal */) { checkpoint_scheduled = true; }
 #endif
 
-template<class ModelVariant>
-Run<ModelVariant>::Run(const settings::SettingsNode& settings) {
+Run::Run(const settings::SettingsNode& settings) {
     step(IterationStep::INITIALIZATION);
 
 #ifdef ENABLE_DMTCP
@@ -75,9 +78,9 @@ Run<ModelVariant>::Run(const settings::SettingsNode& settings) {
 #endif
     instantiated = true;
 
-    auto model = new Model<ModelVariant>(this);
+    auto model = new Model(this);
     {
-        ModelInitializer<ModelVariant> model_initializer(model, settings);
+        ModelInitializer model_initializer(model, settings);
         model_initializer.initialize();
 #ifdef DEBUG
         model_initializer.print_network_characteristics();
@@ -85,23 +88,23 @@ Run<ModelVariant>::Run(const settings::SettingsNode& settings) {
         model_m.reset(model);
     }
 
-    Scenario<ModelVariant>* scenario;  // TODO put in scope below!
+    Scenario* scenario;  // TODO put in scope below!
     for (auto scenario_node : settings["scenarios"].as_sequence()) {
         const std::string& type = scenario_node["type"].template as<std::string>();
         if (type == "events") {
-            scenario = new Scenario<ModelVariant>(settings, scenario_node, model);
+            scenario = new Scenario(settings, scenario_node, model);
         } else if (type == "taxes") {
-            scenario = new Taxes<ModelVariant>(settings, scenario_node, model);
+            scenario = new Taxes(settings, scenario_node, model);
         } else if (type == "flooding") {
-            scenario = new Flooding<ModelVariant>(settings, scenario_node, model);
+            scenario = new Flooding(settings, scenario_node, model);
         } else if (type == "hurricanes") {
-            scenario = new Hurricanes<ModelVariant>(settings, scenario_node, model);
+            scenario = new Hurricanes(settings, scenario_node, model);
         } else if (type == "direct_population") {
-            scenario = new DirectPopulation<ModelVariant>(settings, scenario_node, model);
+            scenario = new DirectPopulation(settings, scenario_node, model);
         } else if (type == "heat_labor_productivity") {
-            scenario = new HeatLaborProductivity<ModelVariant>(settings, scenario_node, model);
+            scenario = new HeatLaborProductivity(settings, scenario_node, model);
         } else if (type == "event_series") {
-            scenario = new EventSeriesScenario<ModelVariant>(settings, scenario_node, model);
+            scenario = new EventSeriesScenario(settings, scenario_node, model);
         } else {
             error_("Unknown scenario type '" << type << "'");
         }
@@ -109,26 +112,26 @@ Run<ModelVariant>::Run(const settings::SettingsNode& settings) {
     }
 
     for (const auto& node : settings["outputs"].as_sequence()) {
-        Output<ModelVariant>* output;
+        Output* output;
         const std::string& type = node["format"].template as<std::string>();
         if (type == "console") {
-            output = new ConsoleOutput<ModelVariant>(settings, model, scenario, node);
+            output = new ConsoleOutput(settings, model, scenario, node);
         } else if (type == "json") {
-            output = new JSONOutput<ModelVariant>(settings, model, scenario, node);
+            output = new JSONOutput(settings, model, scenario, node);
         } else if (type == "json_network") {
-            output = new JSONNetworkOutput<ModelVariant>(settings, model, scenario, node);
+            output = new JSONNetworkOutput(settings, model, scenario, node);
         } else if (type == "netcdf") {
-            output = new NetCDFOutput<ModelVariant>(settings, model, scenario, node);
+            output = new NetCDFOutput(settings, model, scenario, node);
         } else if (type == "histogram") {
-            output = new HistogramOutput<ModelVariant>(settings, model, scenario, node);
+            output = new HistogramOutput(settings, model, scenario, node);
         } else if (type == "gnuplot") {
-            output = new GnuplotOutput<ModelVariant>(settings, model, scenario, node);
+            output = new GnuplotOutput(settings, model, scenario, node);
         } else if (type == "damage") {
-            output = new DamageOutput<ModelVariant>(settings, model, scenario, node);
+            output = new DamageOutput(settings, model, scenario, node);
         } else if (type == "array") {
-            output = new ArrayOutput<ModelVariant>(settings, model, scenario, node);
+            output = new ArrayOutput(settings, model, scenario, node);
         } else if (type == "progress") {
-            output = new ProgressOutput<ModelVariant>(settings, model, scenario, node);
+            output = new ProgressOutput(settings, model, scenario, node);
         } else {
             error_("Unknown output format '" << type << "'");
         }
@@ -137,8 +140,7 @@ Run<ModelVariant>::Run(const settings::SettingsNode& settings) {
     }
 }
 
-template<class ModelVariant>
-int Run<ModelVariant>::run() {
+int Run::run() {
     if (has_run) {
         error_("model has already run");
     }
@@ -233,8 +235,7 @@ int Run<ModelVariant>::run() {
     return 0;
 }
 
-template<class ModelVariant>
-Run<ModelVariant>::~Run() {
+Run::~Run() {
     if (!checkpoint_scheduled) {
         for (auto& scenario : scenarios_m) {
             scenario->end();
@@ -249,13 +250,12 @@ Run<ModelVariant>::~Run() {
     instantiated = false;
 }
 
-template<class ModelVariant>
-void Run<ModelVariant>::event(EventType type,
-                              const Sector<ModelVariant>* sector_from,
-                              const Region<ModelVariant>* region_from,
-                              const Sector<ModelVariant>* sector_to,
-                              const Region<ModelVariant>* region_to,
-                              FloatType value) {
+void Run::event(EventType type,
+                const Sector* sector_from,
+                const Region* region_from,
+                const Sector* sector_to,
+                const Region* region_to,
+                FloatType value) {
     info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
                                  << (region_from == nullptr ? "" : region_from->id()) << "->" << (sector_to == nullptr ? "" : sector_to->id())
                                  << (sector_to != nullptr && region_to != nullptr ? ":" : "") << (region_to == nullptr ? "" : region_to->id())
@@ -265,12 +265,11 @@ void Run<ModelVariant>::event(EventType type,
     }
 }
 
-template<class ModelVariant>
-void Run<ModelVariant>::event(EventType type,
-                              const Sector<ModelVariant>* sector_from,
-                              const Region<ModelVariant>* region_from,
-                              const EconomicAgent<ModelVariant>* economic_agent_to,
-                              FloatType value) {
+void Run::event(EventType type,
+                const Sector* sector_from,
+                const Region* region_from,
+                const EconomicAgent* economic_agent_to,
+                FloatType value) {
     info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
                                  << (region_from == nullptr ? "" : region_from->id()) << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
@@ -279,11 +278,10 @@ void Run<ModelVariant>::event(EventType type,
     }
 }
 
-template<class ModelVariant>
-void Run<ModelVariant>::event(EventType type,
-                              const EconomicAgent<ModelVariant>* economic_agent_from,
-                              const EconomicAgent<ModelVariant>* economic_agent_to,
-                              FloatType value) {
+void Run::event(EventType type,
+                const EconomicAgent* economic_agent_from,
+                const EconomicAgent* economic_agent_to,
+                FloatType value) {
     info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id())
                                  << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
@@ -292,12 +290,11 @@ void Run<ModelVariant>::event(EventType type,
     }
 }
 
-template<class ModelVariant>
-void Run<ModelVariant>::event(EventType type,
-                              const EconomicAgent<ModelVariant>* economic_agent_from,
-                              const Sector<ModelVariant>* sector_to,
-                              const Region<ModelVariant>* region_to,
-                              FloatType value) {
+void Run::event(EventType type,
+                const EconomicAgent* economic_agent_from,
+                const Sector* sector_to,
+                const Region* region_to,
+                FloatType value) {
     info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->")
                                  << (sector_to == nullptr ? "" : sector_to->id() + ":") << (region_to == nullptr ? "" : region_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
@@ -306,8 +303,7 @@ void Run<ModelVariant>::event(EventType type,
     }
 }
 
-template<class ModelVariant>
-unsigned int Run<ModelVariant>::thread_count() const {
+unsigned int Run::thread_count() const {
 #ifdef _OPENMP
     return omp_get_max_threads();
 #else
@@ -316,8 +312,7 @@ unsigned int Run<ModelVariant>::thread_count() const {
 }
 
 #ifdef DEBUG
-template<class ModelVariant>
-std::string Run<ModelVariant>::timeinfo() const {
+std::string Run::timeinfo() const {
     std::string res;
     if (step_m != IterationStep::INITIALIZATION) {
         res = std::to_string(time_m) + " ";
@@ -358,9 +353,7 @@ std::string Run<ModelVariant>::timeinfo() const {
 #endif
 
 #define ADD_EVENT(e) __STRING(e),
-template<class ModelVariant>
-const std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> Run<ModelVariant>::event_names = {ACCLIMATE_ADD_EVENTS};
+const std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> Run::event_names = {ACCLIMATE_ADD_EVENTS};
 #undef ADD_EVENT
 
-INSTANTIATE_BASIC(Run);
 }  // namespace acclimate

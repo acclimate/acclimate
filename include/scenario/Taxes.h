@@ -22,20 +22,18 @@
 #define ACCLIMATE_TAXES_H
 
 #include "scenario/Scenario.h"
-#include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-class Taxes : public Scenario<ModelVariant> {
+class Taxes : public Scenario {
   protected:
-    using Scenario<ModelVariant>::model;
-    using Scenario<ModelVariant>::id;
-    using Scenario<ModelVariant>::scenario_node;
-    using Scenario<ModelVariant>::settings;
+    using Scenario::model;
+    using Scenario::id;
+    using Scenario::scenario_node;
+    using Scenario::settings;
 
   public:
-    Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
+    Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
     Time start() override;
     bool iterate() override;
 };

@@ -23,40 +23,35 @@
 #include <iomanip>
 #include "model/BusinessConnection.h"
 #include "model/Firm.h"
-#include "variants/ModelVariants.h"
+#include "model/Model.h"
+#include "run.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-SalesManager<ModelVariant>::SalesManager(Firm<ModelVariant>* firm_p) : firm(firm_p) {}
+SalesManager::SalesManager(Firm* firm_p) : firm(firm_p) {}
 
-template<class ModelVariant>
-void SalesManager<ModelVariant>::add_demand_request_D(const Demand& demand_request_D) {
+void SalesManager::add_demand_request_D(const Demand& demand_request_D) {
     assertstep(PURCHASE);
     firm->sector->add_demand_request_D(demand_request_D);
     sum_demand_requests_D_lock.call([&]() { sum_demand_requests_D_ += demand_request_D; });
 }
 
-template<class ModelVariant>
-void SalesManager<ModelVariant>::add_initial_demand_request_D_star(const Demand& initial_demand_request_D_star) {
+void SalesManager::add_initial_demand_request_D_star(const Demand& initial_demand_request_D_star) {
     assertstep(INITIALIZATION);
     sum_demand_requests_D_ += initial_demand_request_D_star;
 }
 
-template<class ModelVariant>
-void SalesManager<ModelVariant>::subtract_initial_demand_request_D_star(const Demand& initial_demand_request_D_star) {
+void SalesManager::subtract_initial_demand_request_D_star(const Demand& initial_demand_request_D_star) {
     assertstep(INITIALIZATION);
     sum_demand_requests_D_ -= initial_demand_request_D_star;
 }
 
-template<class ModelVariant>
-void SalesManager<ModelVariant>::iterate_expectation() {
+void SalesManager::iterate_expectation() {
     assertstep(EXPECTATION);
     sum_demand_requests_D_ = Flow(0.0);
 }
 
-template<class ModelVariant>
-const Flow SalesManager<ModelVariant>::get_transport_flow() const {
+const Flow SalesManager::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
@@ -65,10 +60,9 @@ const Flow SalesManager<ModelVariant>::get_transport_flow() const {
     return res;
 }
 
-template<class ModelVariant>
-bool SalesManager<ModelVariant>::remove_business_connection(BusinessConnection<ModelVariant>* business_connection) {
+bool SalesManager::remove_business_connection(BusinessConnection* business_connection) {
     auto it = std::find_if(business_connections.begin(), business_connections.end(),
-                           [business_connection](const std::shared_ptr<BusinessConnection<ModelVariant>>& it) { return it.get() == business_connection; });
+                           [business_connection](const std::shared_ptr<BusinessConnection>& it) { return it.get() == business_connection; });
     if (it == std::end(business_connections)) {
         error("Business connection " << business_connection->id() << " not found");
     }
@@ -82,16 +76,14 @@ bool SalesManager<ModelVariant>::remove_business_connection(BusinessConnection<M
     return false;
 }
 
-template<class ModelVariant>
-SalesManager<ModelVariant>::~SalesManager() {
+SalesManager::~SalesManager() {
     for (auto& business_connection : business_connections) {
         business_connection->invalidate_seller();
     }
 }
 
 #ifdef DEBUG
-template<class ModelVariant>
-void SalesManager<ModelVariant>::print_details() const {
+void SalesManager::print_details() const {
     info(business_connections.size() << " outputs:");
     for (const auto& bc : business_connections) {
         info("    " << bc->id() << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
@@ -99,5 +91,17 @@ void SalesManager<ModelVariant>::print_details() const {
 }
 #endif
 
-INSTANTIATE_BASIC(SalesManager);
+Model *SalesManager::model() const {
+    return firm->model();
+}
+
+std::string SalesManager::id() const {
+    return firm->id();
+}
+
+const Demand &SalesManager::sum_demand_requests_D() const {
+    assertstepnot(PURCHASE);
+    return sum_demand_requests_D_;
+}
+
 }  // namespace acclimate

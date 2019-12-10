@@ -27,23 +27,19 @@
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Firm;
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Region;
 
-template<class ModelVariant>
 class Government {
   public:
-    const Region<ModelVariant>* region;
+    const Region* region;
 
   protected:
     Value budget_;
 
   private:
-    std::unordered_map<Firm<ModelVariant>*, Ratio> taxed_firms;
+    std::unordered_map<Firm*, Ratio> taxed_firms;
 
   public:
     inline const Value& budget() const { return budget_; }
@@ -54,14 +50,14 @@ class Government {
     void impose_tax();
 
   public:
-    explicit Government(Region<ModelVariant>* region_p);
+    explicit Government(Region* region_p);
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
     void define_tax(const std::string& sector, const Ratio& tax_ratio_p);
-    inline Model<ModelVariant>* model() const { return region->model(); }
-    inline std::string id() const { return "GOVM:" + region->id(); }
+    Model* model() const;
+    std::string id() const;
 };
 }  // namespace acclimate
 

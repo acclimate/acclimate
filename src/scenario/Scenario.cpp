@@ -22,23 +22,24 @@
 #include <memory>
 #include <random>
 #include <utility>
+#include "model/CapacityManagerPrices.h"
+#include "model/Consumer.h"
 #include "model/EconomicAgent.h"
+#include "model/Firm.h"
+#include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "run.h"
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-Scenario<ModelVariant>::Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p)
+Scenario::Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
     : model_m(model_p), scenario_node(std::move(scenario_node_p)), settings(settings_p) {
     srand(0);
 }
 
-template<class ModelVariant>
-void Scenario<ModelVariant>::set_firm_property(Firm<ModelVariant>* firm, const settings::SettingsNode& node, bool reset) {
+void Scenario::set_firm_property(Firm* firm, const settings::SettingsNode& node, bool reset) {
     for (const auto& it_map : node.as_map()) {
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
@@ -50,8 +51,7 @@ void Scenario<ModelVariant>::set_firm_property(Firm<ModelVariant>* firm, const s
     }
 }
 
-template<class ModelVariant>
-void Scenario<ModelVariant>::set_consumer_property(Consumer<ModelVariant>* consumer, const settings::SettingsNode& node, bool reset) {
+void Scenario::set_consumer_property(Consumer* consumer, const settings::SettingsNode& node, bool reset) {
     for (const auto& it_map : node.as_map()) {
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
@@ -61,8 +61,7 @@ void Scenario<ModelVariant>::set_consumer_property(Consumer<ModelVariant>* consu
     }
 }
 
-template<class ModelVariant>
-void Scenario<ModelVariant>::set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, bool reset) {
+void Scenario::set_location_property(GeoLocation* location, const settings::SettingsNode& node, bool reset) {
     for (const auto& it_map : node.as_map()) {
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
@@ -72,8 +71,7 @@ void Scenario<ModelVariant>::set_location_property(GeoLocation<ModelVariant>* lo
     }
 }
 
-template<class ModelVariant>
-void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, bool reset) {
+void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
     for (const auto& targets : node.as_sequence()) {
         for (const auto& target : targets.as_map()) {
             const std::string& type = target.first;
@@ -81,14 +79,14 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, bo
             if (type == "firm") {
                 if (it.has("sector")) {
                     if (it.has("region")) {
-                        Firm<ModelVariant>* firm = model()->find_firm(it["sector"].template as<std::string>(), it["region"].template as<std::string>());
+                        Firm* firm = model()->find_firm(it["sector"].template as<std::string>(), it["region"].template as<std::string>());
                         if (firm) {
                             set_firm_property(firm, it, reset);
                         } else {
                             error("Firm " << it["sector"].template as<std::string>() << ":" << it["region"].template as<std::string>() << " not found");
                         }
                     } else {
-                        Sector<ModelVariant>* sector = model()->find_sector(it["sector"].template as<std::string>());
+                        Sector* sector = model()->find_sector(it["sector"].template as<std::string>());
                         if (sector) {
                             for (auto& p : sector->firms) {
                                 set_firm_property(p, it, reset);
@@ -99,10 +97,10 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, bo
                     }
                 } else {
                     if (it.has("region")) {
-                        Region<ModelVariant>* region = model()->find_region(it["region"].template as<std::string>());
+                        Region* region = model()->find_region(it["region"].template as<std::string>());
                         if (region) {
                             for (auto& ea : region->economic_agents) {
-                                if (ea->type == EconomicAgent<ModelVariant>::Type::FIRM) {
+                                if (ea->type == EconomicAgent::Type::FIRM) {
                                     set_firm_property(ea->as_firm(), it, reset);
                                 }
                             }
@@ -119,7 +117,7 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, bo
                 }
             } else if (type == "consumer") {
                 if (it.has("region")) {
-                    Consumer<ModelVariant>* consumer = model()->find_consumer(it["region"].template as<std::string>());
+                    Consumer* consumer = model()->find_consumer(it["region"].template as<std::string>());
                     if (consumer) {
                         set_consumer_property(consumer, it, reset);
                     } else {
@@ -128,7 +126,7 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, bo
                 } else {
                     for (auto& r : model()->regions) {
                         for (auto& ea : r->economic_agents) {
-                            if (ea->type == EconomicAgent<ModelVariant>::Type::CONSUMER) {
+                            if (ea->type == EconomicAgent::Type::CONSUMER) {
                                 set_consumer_property(ea->as_consumer(), it, reset);
                             }
                         }
@@ -136,7 +134,7 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, bo
                 }
             } else if (type == "sea") {
                 if (it.has("sea_route")) {
-                    GeoLocation<ModelVariant>* location = model()->find_location(it["sea_route"].template as<std::string>());
+                    GeoLocation* location = model()->find_location(it["sea_route"].template as<std::string>());
                     if (location) {
                         set_location_property(location, it, reset);
                     } else {
@@ -148,8 +146,7 @@ void Scenario<ModelVariant>::apply_target(const settings::SettingsNode& node, bo
     }
 }
 
-template<class ModelVariant>
-bool Scenario<ModelVariant>::iterate() {
+bool Scenario::iterate() {
     for (const auto& event : scenario_node["events"].as_sequence()) {
         const std::string& type = event["type"].template as<std::string>();
         if (type == "shock") {
@@ -165,13 +162,19 @@ bool Scenario<ModelVariant>::iterate() {
     return true;
 }
 
-template<class ModelVariant>
-std::string Scenario<ModelVariant>::time_units_str() const {
+std::string Scenario::time_units_str() const {
     if (scenario_node.has("baseyear")) {
         return std::string("days since ") + std::to_string(scenario_node["baseyear"].template as<unsigned int>()) + "-1-1";
     }
     return "days since 0-1-1";
 }
 
-INSTANTIATE_BASIC(Scenario);
+bool Scenario::is_first_timestep() const {
+    return model()->timestep() == 0;
+}
+
+bool Scenario::is_last_timestep() const {
+    return model()->time() >= model()->stop_time();
+}
+
 }  // namespace acclimate

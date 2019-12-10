@@ -19,18 +19,21 @@
 */
 
 #include "model/CapacityManager.h"
+#include "model/Firm.h"
 #include "model/Storage.h"
 #include "run.h"
-#include "variants/ModelVariants.h"
+#include "model/Model.h"
+#include "model/PurchasingManagerPrices.h"
+#include "model/SalesManagerPrices.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-CapacityManager<ModelVariant>::CapacityManager(Firm<ModelVariant>* firm_p, const Ratio& possible_overcapacity_ratio_beta_p)
+
+CapacityManager::CapacityManager(Firm* firm_p, const Ratio& possible_overcapacity_ratio_beta_p)
     : firm(firm_p), possible_overcapacity_ratio_beta(possible_overcapacity_ratio_beta_p) {}
 
-template<class ModelVariant>
-const Flow CapacityManager<ModelVariant>::get_possible_production_X_hat() const {
+
+const Flow CapacityManager::get_possible_production_X_hat() const {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
 
@@ -46,34 +49,41 @@ const Flow CapacityManager<ModelVariant>::get_possible_production_X_hat() const 
     return round(firm->initial_production_X_star() * possible_production_capacity_p_hat);
 }
 
-template<class ModelVariant>
-Ratio CapacityManager<ModelVariant>::get_production_capacity_p() const {
+
+Ratio CapacityManager::get_production_capacity_p() const {
     return firm->production_X() / firm->initial_production_X_star();
 }
 
-template<class ModelVariant>
-Ratio CapacityManager<ModelVariant>::get_desired_production_capacity_p_tilde() const {
+
+Ratio CapacityManager::get_desired_production_capacity_p_tilde() const {
     return desired_production_X_tilde_ / firm->initial_production_X_star();
 }
 
-template<class ModelVariant>
-Ratio CapacityManager<ModelVariant>::get_possible_production_capacity_p_hat() const {
+
+Ratio CapacityManager::get_possible_production_capacity_p_hat() const {
     return possible_production_X_hat_ / firm->initial_production_X_star();
 }
 
-template<class ModelVariant>
-void CapacityManager<ModelVariant>::calc_possible_and_desired_production() {
+
+void CapacityManager::calc_possible_and_desired_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     possible_production_X_hat_ = get_possible_production_X_hat();
     desired_production_X_tilde_ = firm->sales_manager->sum_demand_requests_D();
 }
 
-template<class ModelVariant>
-const Flow CapacityManager<ModelVariant>::calc_production_X() {
+
+const Flow CapacityManager::calc_production_X() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     calc_possible_and_desired_production();
     return std::min(possible_production_X_hat_, desired_production_X_tilde_);
 }
 
-INSTANTIATE_BASIC(CapacityManager);
+Model *CapacityManager::model() const {
+    return firm->model();
+}
+
+std::string CapacityManager::id() const {
+    return firm->id();
+}
+
 }  // namespace acclimate

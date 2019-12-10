@@ -21,24 +21,20 @@
 #ifndef ACCLIMATE_HISTOGRAMOUTPUT_H
 #define ACCLIMATE_HISTOGRAMOUTPUT_H
 
+#include "output/Output.h"
 #include <fstream>
 #include <vector>
-#include "output/Output.h"
-#include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Scenario;
 
-template<class ModelVariant>
-class HistogramOutput : public Output<ModelVariant> {
+class HistogramOutput : public Output {
   public:
-    using Output<ModelVariant>::output_node;
-    using Output<ModelVariant>::model;
-    using Output<ModelVariant>::settings_string;
+    using Output::output_node;
+    using Output::model;
+    using Output::settings_string;
 
   private:
     std::ofstream file;
@@ -58,8 +54,8 @@ class HistogramOutput : public Output<ModelVariant> {
 
   public:
     HistogramOutput(const settings::SettingsNode& settings_p,
-                    Model<ModelVariant>* model_p,
-                    Scenario<ModelVariant>* scenario_p,
+                    Model* model_p,
+                    Scenario* scenario_p,
                     settings::SettingsNode output_node_p);
     void initialize() override;
 };

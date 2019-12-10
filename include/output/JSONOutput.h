@@ -21,28 +21,22 @@
 #ifndef ACCLIMATE_JSONOUTPUT_H
 #define ACCLIMATE_JSONOUTPUT_H
 
+#include "output/Output.h"
 #include <fstream>
 #include <memory>
-#include "output/Output.h"
-#include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Region;
-template<class ModelVariant>
 class Sector;
-template<class ModelVariant>
 class Scenario;
 
-template<class ModelVariant>
-class JSONOutput : public Output<ModelVariant> {
+class JSONOutput : public Output {
   public:
-    using Output<ModelVariant>::output_node;
-    using Output<ModelVariant>::model;
-    using Output<ModelVariant>::settings_string;
+    using Output::output_node;
+    using Output::model;
+    using Output::settings_string;
 
   protected:
     std::ostream* out = nullptr;
@@ -54,16 +48,16 @@ class JSONOutput : public Output<ModelVariant> {
     void internal_iterate_end() override;
     void internal_end() override;
     void internal_write_value(const hstring& name, FloatType v, const hstring& suffix) override;
-    void internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) override;
-    void internal_start_target(const hstring& name, Sector<ModelVariant>* sector) override;
-    void internal_start_target(const hstring& name, Region<ModelVariant>* region) override;
+    void internal_start_target(const hstring& name, Sector* sector, Region* region) override;
+    void internal_start_target(const hstring& name, Sector* sector) override;
+    void internal_start_target(const hstring& name, Region* region) override;
     void internal_start_target(const hstring& name) override;
     void internal_end_target() override;
 
   public:
     JSONOutput(const settings::SettingsNode& settings_p,
-               Model<ModelVariant>* model_p,
-               Scenario<ModelVariant>* scenario_p,
+               Model* model_p,
+               Scenario* scenario_p,
                settings::SettingsNode output_node_p);
     void initialize() override;
 };

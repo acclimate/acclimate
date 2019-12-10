@@ -21,23 +21,26 @@
 #include "model/PurchasingManager.h"
 #include <algorithm>
 #include <iomanip>
+#include "model/BusinessConnection.h"
+#include "model/EconomicAgent.h"
+#include "model/Firm.h"
+#include "model/Model.h"
+#include "model/SalesManagerPrices.h"
+#include "model/Sector.h"
 #include "model/Storage.h"
-#include "variants/ModelVariants.h"
+#include "run.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-PurchasingManager<ModelVariant>::PurchasingManager(Storage<ModelVariant>* storage_p) : storage(storage_p) {}
+PurchasingManager::PurchasingManager(Storage* storage_p) : storage(storage_p) {}
 
-template<class ModelVariant>
-void PurchasingManager<ModelVariant>::iterate_consumption_and_production() {
+void PurchasingManager::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
 }
 
-template<class ModelVariant>
-bool PurchasingManager<ModelVariant>::remove_business_connection(const BusinessConnection<ModelVariant>* business_connection) {
+bool PurchasingManager::remove_business_connection(const BusinessConnection* business_connection) {
     auto it = std::find_if(business_connections.begin(), business_connections.end(),
-                           [business_connection](const std::shared_ptr<BusinessConnection<ModelVariant>>& it) { return it.get() == business_connection; });
+                           [business_connection](const std::shared_ptr<BusinessConnection>& it) { return it.get() == business_connection; });
     if (it == std::end(business_connections)) {
         error("Business connection " << business_connection->id() << " not found");
     }
@@ -49,8 +52,7 @@ bool PurchasingManager<ModelVariant>::remove_business_connection(const BusinessC
     return false;
 }
 
-template<class ModelVariant>
-const FlowQuantity PurchasingManager<ModelVariant>::get_flow_deficit() const {
+const FlowQuantity PurchasingManager::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     FlowQuantity res = FlowQuantity(0.0);
     for (const auto& bc : business_connections) {
@@ -59,8 +61,7 @@ const FlowQuantity PurchasingManager<ModelVariant>::get_flow_deficit() const {
     return round(res);
 }
 
-template<class ModelVariant>
-const Flow PurchasingManager<ModelVariant>::get_transport_flow() const {
+const Flow PurchasingManager::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
@@ -69,8 +70,7 @@ const Flow PurchasingManager<ModelVariant>::get_transport_flow() const {
     return res;
 }
 
-template<class ModelVariant>
-const Flow PurchasingManager<ModelVariant>::get_disequilibrium() const {
+const Flow PurchasingManager::get_disequilibrium() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
@@ -79,8 +79,7 @@ const Flow PurchasingManager<ModelVariant>::get_disequilibrium() const {
     return res;
 }
 
-template<class ModelVariant>
-FloatType PurchasingManager<ModelVariant>::get_stddeviation() const {
+FloatType PurchasingManager::get_stddeviation() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     FloatType res = 0.0;
     for (const auto& bc : business_connections) {
@@ -89,8 +88,7 @@ FloatType PurchasingManager<ModelVariant>::get_stddeviation() const {
     return res;
 }
 
-template<class ModelVariant>
-const Flow PurchasingManager<ModelVariant>::get_sum_of_last_shipments() const {
+const Flow PurchasingManager::get_sum_of_last_shipments() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
@@ -99,28 +97,47 @@ const Flow PurchasingManager<ModelVariant>::get_sum_of_last_shipments() const {
     return res;
 }
 
-template<class ModelVariant>
-void PurchasingManager<ModelVariant>::add_initial_demand_D_star(const Demand& demand_D_p) {
+void PurchasingManager::add_initial_demand_D_star(const Demand& demand_D_p) {
     assertstep(INITIALIZATION);
     demand_D_ += demand_D_p;
 }
 
-template<class ModelVariant>
-void PurchasingManager<ModelVariant>::subtract_initial_demand_D_star(const Demand& demand_D_p) {
+void PurchasingManager::subtract_initial_demand_D_star(const Demand& demand_D_p) {
     assertstep(INITIALIZATION);
     demand_D_ -= demand_D_p;
 }
 
-template<class ModelVariant>
-PurchasingManager<ModelVariant>::~PurchasingManager() {
+PurchasingManager::~PurchasingManager() {
     for (auto& business_connection : business_connections) {
         business_connection->invalidate_buyer();
     }
 }
 
+const Demand& PurchasingManager::demand_D(const EconomicAgent* const caller) const {
 #ifdef DEBUG
-template<class ModelVariant>
-void PurchasingManager<ModelVariant>::print_details() const {
+    if (caller != storage->economic_agent) {
+        assertstepnot(PURCHASE);
+    }
+#else
+    UNUSED(caller);
+#endif
+    return demand_D_;
+}
+
+const Demand &PurchasingManager::initial_demand_D_star() const {
+    return storage->initial_input_flow_I_star();
+}
+
+Model* PurchasingManager::model() const {
+    return storage->model();
+}
+
+std::string PurchasingManager::id() const {
+    return storage->sector->id() + "->" + storage->economic_agent->id();
+}
+
+#ifdef DEBUG
+void PurchasingManager::print_details() const {
     info(business_connections.size() << " inputs:  I_star= " << storage->initial_input_flow_I_star().get_quantity());
     for (const auto& bc : business_connections) {
         info("    " << bc->id() << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity() << "  X_star= " << std::setw(11)
@@ -129,5 +146,4 @@ void PurchasingManager<ModelVariant>::print_details() const {
 }
 #endif
 
-INSTANTIATE_BASIC(PurchasingManager);
 }  // namespace acclimate

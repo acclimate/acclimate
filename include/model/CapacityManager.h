@@ -26,15 +26,12 @@
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Firm;
-template<class ModelVariant>
 class Model;
 
-template<class ModelVariant>
 class CapacityManager {
   public:
-    Firm<ModelVariant>* const firm;
+    Firm* const firm;
     const Ratio possible_overcapacity_ratio_beta;
 
   private:
@@ -50,14 +47,14 @@ class CapacityManager {
     virtual void calc_possible_and_desired_production();
 
   public:
-    CapacityManager(Firm<ModelVariant>* firm_p, const Ratio& possible_overcapacity_ratio_beta_p);
+    CapacityManager(Firm* firm_p, const Ratio& possible_overcapacity_ratio_beta_p);
     virtual ~CapacityManager() = default;
     virtual const Flow calc_production_X();
     Ratio get_production_capacity_p() const;
     Ratio get_desired_production_capacity_p_tilde() const;
     Ratio get_possible_production_capacity_p_hat() const;
-    inline Model<ModelVariant>* model() const { return firm->model(); }
-    inline std::string id() const { return firm->id(); }
+    Model* model() const;
+    std::string id() const;
 };
 }  // namespace acclimate
 

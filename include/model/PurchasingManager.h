@@ -23,41 +23,26 @@
 
 #include <string>
 #include <vector>
-#include "run.h"
+#include <memory>
 #include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class BusinessConnection;
-template<class ModelVariant>
 class EconomicAgent;
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Storage;
 
-template<class ModelVariant>
 class PurchasingManager {
   protected:
     Demand demand_D_ = Demand(0.0);
 
   public:
-    Storage<ModelVariant>* const storage;
-    std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>> business_connections;
+    Storage* const storage;
+    std::vector<std::shared_ptr<BusinessConnection>> business_connections;
 
-    inline const Demand& demand_D(const EconomicAgent<ModelVariant>* const caller = nullptr) const {
-#ifdef DEBUG
-        if (caller != storage->economic_agent) {
-            assertstepnot(PURCHASE);
-        }
-#else
-        UNUSED(caller);
-#endif
-        return demand_D_;
-    }
-
-    explicit PurchasingManager(Storage<ModelVariant>* storage_p);
+    const Demand& demand_D(const EconomicAgent* const caller = nullptr) const;
+    explicit PurchasingManager(Storage* storage_p);
     virtual ~PurchasingManager();
     virtual const FlowQuantity get_flow_deficit() const;
     virtual const Flow get_transport_flow() const;
@@ -66,12 +51,12 @@ class PurchasingManager {
     const Flow get_sum_of_last_shipments() const;
     virtual void iterate_consumption_and_production();
     virtual void iterate_purchase() = 0;
-    virtual bool remove_business_connection(const BusinessConnection<ModelVariant>* business_connection);
-    inline const Demand& initial_demand_D_star() const { return storage->initial_input_flow_I_star(); }
+    virtual bool remove_business_connection(const BusinessConnection* business_connection);
+    const Demand& initial_demand_D_star() const;
     virtual void add_initial_demand_D_star(const Demand& demand_D_p);
     virtual void subtract_initial_demand_D_star(const Demand& demand_D_p);
-    inline Model<ModelVariant>* model() const { return storage->model(); }
-    inline std::string id() const { return storage->sector->id() + "->" + storage->economic_agent->id(); }
+    Model* model() const;
+    std::string id() const;
 #ifdef DEBUG
     void print_details() const;
 #endif

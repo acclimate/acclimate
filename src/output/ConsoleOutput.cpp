@@ -25,23 +25,25 @@
 #include <string>
 #include <utility>
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 #include "version.h"
+
+#include "model/Model.h"
+#include "model/Region.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-ConsoleOutput<ModelVariant>::ConsoleOutput(const settings::SettingsNode& settings_p,
-                                           Model<ModelVariant>* model_p,
-                                           Scenario<ModelVariant>* scenario_p,
-                                           settings::SettingsNode output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)) {
+
+ConsoleOutput::ConsoleOutput(const settings::SettingsNode& settings_p,
+                             Model* model_p,
+                             Scenario* scenario_p,
+                             settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {
     stack = 0;
     out = nullptr;
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::initialize() {
+
+void ConsoleOutput::initialize() {
     if (!output_node.has("file")) {
         out = &std::cout;
     } else {
@@ -52,8 +54,8 @@ void ConsoleOutput<ModelVariant>::initialize() {
     }
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_threads) {
+
+void ConsoleOutput::internal_write_header(tm* timestamp, int max_threads) {
     *out << "Start time " << std::asctime(timestamp)
          << "\n"
             "Version "
@@ -63,18 +65,18 @@ void ConsoleOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_t
          << max_threads << " threads" << std::endl;
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_write_footer(tm* duration) {
+
+void ConsoleOutput::internal_write_footer(tm* duration) {
     *out << "\n\nDuration " << std::mktime(duration) << "s";
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_write_settings() {
+
+void ConsoleOutput::internal_write_settings() {
     *out << '\n' << settings_string << '\n';
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_start() {
+
+void ConsoleOutput::internal_start() {
     *out << "Starting"
             "\n\n"
             "Iteration time "
@@ -82,52 +84,51 @@ void ConsoleOutput<ModelVariant>::internal_start() {
     out->flush();
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_iterate_begin() {
+
+void ConsoleOutput::internal_iterate_begin() {
     *out << "\n\n"
          << "Iteration time " << (model()->time() + Time(1));
     out->flush();
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_end() {
+
+void ConsoleOutput::internal_end() {
     *out << "\n\nEnded\n";
     out->flush();
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
+
+void ConsoleOutput::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     *out << std::setprecision(15) << "\t" << name << suffix << "=" << v;
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+
+void ConsoleOutput::internal_start_target(const hstring& name, Sector* sector, Region* region) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << " " << sector->id() << "," << region->id() << ":";
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector) {
+
+void ConsoleOutput::internal_start_target(const hstring& name, Sector* sector) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << " " << sector->id() << ":";
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_start_target(const hstring& name, Region<ModelVariant>* region) {
+
+void ConsoleOutput::internal_start_target(const hstring& name, Region* region) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << " " << region->id() << ":";
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_start_target(const hstring& name) {
+
+void ConsoleOutput::internal_start_target(const hstring& name) {
     ++stack;
     *out << '\n' << std::string(2 * stack, ' ') << name << ":";
 }
 
-template<class ModelVariant>
-void ConsoleOutput<ModelVariant>::internal_end_target() {
+
+void ConsoleOutput::internal_end_target() {
     --stack;
 }
 
-INSTANTIATE_BASIC(ConsoleOutput);
 }  // namespace acclimate

@@ -20,19 +20,21 @@
 
 #include "model/CapacityManagerPrices.h"
 #include <iomanip>
+#include "model/Firm.h"
+#include "model/Model.h"
+#include "model/SalesManagerPrices.h"
+#include "model/PurchasingManagerPrices.h"
 #include "model/Storage.h"
 #include "run.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-CapacityManagerPrices<ModelVariant>::CapacityManagerPrices(Firm<ModelVariant>* firm_p, Ratio possible_overcapacity_ratio_beta_p)
-    : CapacityManager<ModelVariant>(firm_p, possible_overcapacity_ratio_beta_p) {}
+CapacityManagerPrices::CapacityManagerPrices(Firm* firm_p, Ratio possible_overcapacity_ratio_beta_p)
+    : CapacityManager(firm_p, possible_overcapacity_ratio_beta_p) {}
 
 #ifdef DEBUG
-template<class ModelVariant>
-void CapacityManagerPrices<ModelVariant>::print_inputs() const {
+
+void CapacityManagerPrices::print_inputs() const {
     info(id() << ": " << firm->input_storages.size() << " inputs:");
     for (const auto& is : firm->input_storages) {
         Flow possible_use_U_hat = is->get_possible_use_U_hat();
@@ -47,8 +49,8 @@ void CapacityManagerPrices<ModelVariant>::print_inputs() const {
 }
 #endif
 
-template<class ModelVariant>
-const Flow CapacityManagerPrices<ModelVariant>::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
+
+const Flow CapacityManagerPrices::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
     assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     Price unit_commodity_costs = Price(0.0);
@@ -80,26 +82,25 @@ const Flow CapacityManagerPrices<ModelVariant>::get_possible_production_X_hat_in
     return result;
 }
 
-template<class ModelVariant>
-const Flow CapacityManagerPrices<ModelVariant>::get_possible_production_X_hat() const {
+
+const Flow CapacityManagerPrices::get_possible_production_X_hat() const {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     bool consider_transport_in_production_costs = false;
     return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false);
 }
 
-template<class ModelVariant>
-const Flow CapacityManagerPrices<ModelVariant>::estimate_possible_production_X_hat() const {
+
+const Flow CapacityManagerPrices::estimate_possible_production_X_hat() const {
     assertstep(EXPECTATION);
     bool consider_transport_in_production_costs = true;
     return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true);
 }
 
-template<class ModelVariant>
-const Flow CapacityManagerPrices<ModelVariant>::calc_production_X() {
+
+const Flow CapacityManagerPrices::calc_production_X() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     calc_possible_and_desired_production();
     return firm->sales_manager->calc_production_X();
 }
 
-INSTANTIATE_PRICES(CapacityManagerPrices);
 }  // namespace acclimate

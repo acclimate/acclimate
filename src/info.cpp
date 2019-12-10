@@ -54,6 +54,4 @@ const char* acclimate_info = "Version:                " ACCLIMATE_VERSION
                              "no"
 #endif
                              "\n"
-                             "Enabled variants:       " ACCLIMATE_VARIANTS
-                             "\n"
                              "Enabled options:        " ACCLIMATE_OPTIONS;

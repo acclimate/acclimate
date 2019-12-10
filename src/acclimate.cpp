@@ -26,7 +26,6 @@
 #include <utility>
 #include "run.h"
 #include "types.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
@@ -67,50 +66,11 @@ Acclimate::Acclimate(settings::SettingsNode settings_p) {
     signal(SIGFPE, handle_fpe_error);
     feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);
 #endif
-    const std::string& variant = settings_p["model"]["variant"].as<std::string>();
-    if (variant == "basic") {
-#ifdef VARIANT_BASIC
-        variant_m = ModelVariantType::BASIC;
-        run_m = std::make_shared<Run<VariantBasic>>(std::move(settings_p));
-#else
-        error_("Model variant '" << variant << "' not available in this binary");
-#endif
-    } else if (variant == "demand") {
-#ifdef VARIANT_DEMAND
-        variant_m = ModelVariantType::DEMAND;
-        run_m = std::make_shared<Run<VariantDemand>>(std::move(settings_p));
-#else
-        error_("Model variant '" << variant << "' not available in this binary");
-#endif
-    } else if (variant == "prices") {
-#ifdef VARIANT_PRICES
-        variant_m = ModelVariantType::PRICES;
-        run_m = std::make_shared<Run<VariantPrices>>(std::move(settings_p));
-#else
-        error_("Model variant '" << variant << "' not available in this binary");
-#endif
-    } else {
-        error_("Unknown model variant '" << variant << "'");
-    }
+run_m = std::make_shared<Run>(std::move(settings_p));
 }
 
 int Acclimate::run() {
-    switch (variant_m) {
-#ifdef VARIANT_BASIC
-        case ModelVariantType::BASIC:
-            return static_cast<Run<VariantBasic>*>(run_m.get())->run();
-#endif
-#ifdef VARIANT_DEMAND
-        case ModelVariantType::DEMAND:
-            return static_cast<Run<VariantDemand>*>(run_m.get())->run();
-#endif
-#ifdef VARIANT_PRICES
-        case ModelVariantType::PRICES:
-            return static_cast<Run<VariantPrices>*>(run_m.get())->run();
-#endif
-        default:
-            return -1;
-    }
+    return static_cast<Run*>(run_m.get())->run();
 }
 
 }  // namespace acclimate

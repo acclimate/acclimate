@@ -68,27 +68,20 @@ enum class IterationStep {
 enum class EventType : unsigned char { ACCLIMATE_ADD_EVENTS };
 #undef ADD_EVENT
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Scenario;
-template<class ModelVariant>
 class Output;
-template<class ModelVariant>
 class Region;
-template<class ModelVariant>
 class Sector;
-template<class ModelVariant>
 class EconomicAgent;
 
-template<class ModelVariant>
 class Run {
     friend class Acclimate;
 
   protected:
-    std::unique_ptr<Model<ModelVariant>> model_m;
-    std::vector<std::unique_ptr<Scenario<ModelVariant>>> scenarios_m;
-    std::vector<std::unique_ptr<Output<ModelVariant>>> outputs_m;
+    std::unique_ptr<Model> model_m;
+    std::vector<std::unique_ptr<Scenario>> scenarios_m;
+    std::vector<std::unique_ptr<Output>> outputs_m;
     unsigned int time_m = 0;
     std::size_t duration_m = 0;
     IterationStep step_m = IterationStep::INITIALIZATION;
@@ -110,27 +103,27 @@ class Run {
 #ifdef DEBUG
     std::string timeinfo() const;
 #endif
-    inline const Model<ModelVariant>* model() { return model_m.get(); }
-    inline const Output<ModelVariant>* output(const IntType i) { return outputs_m[i].get(); }
+    inline const Model* model() { return model_m.get(); }
+    inline const Output* output(const IntType i) { return outputs_m[i].get(); }
     void event(EventType type,
-               const Sector<ModelVariant>* sector_from,
-               const Region<ModelVariant>* region_from,
-               const Sector<ModelVariant>* sector_to,
-               const Region<ModelVariant>* region_to,
+               const Sector* sector_from,
+               const Region* region_from,
+               const Sector* sector_to,
+               const Region* region_to,
                FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
     void event(EventType type,
-               const Sector<ModelVariant>* sector_from,
-               const Region<ModelVariant>* region_from,
-               const EconomicAgent<ModelVariant>* economic_agent_to,
+               const Sector* sector_from,
+               const Region* region_from,
+               const EconomicAgent* economic_agent_to,
                FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
     void event(EventType type,
-               const EconomicAgent<ModelVariant>* economic_agent_from = nullptr,
-               const EconomicAgent<ModelVariant>* economic_agent_to = nullptr,
+               const EconomicAgent* economic_agent_from = nullptr,
+               const EconomicAgent* economic_agent_to = nullptr,
                FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
     void event(EventType type,
-               const EconomicAgent<ModelVariant>* economic_agent_from,
-               const Sector<ModelVariant>* sector_to,
-               const Region<ModelVariant>* region_to,
+               const EconomicAgent* economic_agent_from,
+               const Sector* sector_to,
+               const Region* region_to,
                FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
 };
 

@@ -21,8 +21,8 @@
 #ifndef ACCLIMATE_PROGRESSOUTPUT_H
 #define ACCLIMATE_PROGRESSOUTPUT_H
 
-#include <memory>
 #include "output/Output.h"
+#include <memory>
 
 namespace progressbar {
 class ProgressBar;
@@ -30,19 +30,15 @@ class ProgressBar;
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Sector;
-template<class ModelVariant>
 class Scenario;
 
-template<class ModelVariant>
-class ProgressOutput : public Output<ModelVariant> {
+class ProgressOutput : public Output {
   public:
-    using Output<ModelVariant>::id;
-    using Output<ModelVariant>::model;
-    using Output<ModelVariant>::output_node;
+    using Output::id;
+    using Output::model;
+    using Output::output_node;
 
   protected:
     std::unique_ptr<progressbar::ProgressBar> bar;
@@ -53,8 +49,8 @@ class ProgressOutput : public Output<ModelVariant> {
 
   public:
     ProgressOutput(const settings::SettingsNode& settings_p,
-                   Model<ModelVariant>* model_p,
-                   Scenario<ModelVariant>* scenario_p,
+                   Model* model_p,
+                   Scenario* scenario_p,
                    settings::SettingsNode output_node_p);
     void initialize() override;
     void checkpoint_resume() override;

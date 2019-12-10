@@ -22,33 +22,18 @@
 #define ACCLIMATE_H
 
 #include <memory>
-#include "run.h"
 #include "settingsnode.h"
 #include "types.h"
 
 namespace acclimate {
 
-enum class ModelVariantType {
-#ifdef VARIANT_BASIC
-    BASIC,
-#endif
-#ifdef VARIANT_DEMAND
-    DEMAND,
-#endif
-#ifdef VARIANT_PRICES
-    PRICES,
-#endif
-};
-
 class Acclimate {
   protected:
-    ModelVariantType variant_m;
     std::shared_ptr<void> run_m;
 
   public:
     explicit Acclimate(settings::SettingsNode settings_p);
 
-    inline const ModelVariantType& variant() const { return variant_m; }
     int run();
 };
 }  // namespace acclimate

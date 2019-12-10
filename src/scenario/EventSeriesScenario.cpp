@@ -21,26 +21,23 @@
 #include "scenario/EventSeriesScenario.h"
 
 #include <memory>
+#include "model/Firm.h"
 #include "model/Model.h"
 #include "model/Sector.h"
 #include "run.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-EventSeriesScenario<ModelVariant>::EventSeriesScenario(const settings::SettingsNode& settings_p,
+EventSeriesScenario::EventSeriesScenario(const settings::SettingsNode& settings_p,
                                                        settings::SettingsNode scenario_node_p,
-                                                       Model<ModelVariant>* model_p)
-    : ExternalScenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
+                                                       Model* model_p)
+    : ExternalScenario(settings_p, scenario_node_p, model_p) {}
 
-template<class ModelVariant>
-ExternalForcing* EventSeriesScenario<ModelVariant>::read_forcing_file(const std::string& filename, const std::string& variable_name) {
+ExternalForcing* EventSeriesScenario::read_forcing_file(const std::string& filename, const std::string& variable_name) {
     return new EventForcing(filename, variable_name, model());
 }
 
-template<class ModelVariant>
-void EventSeriesScenario<ModelVariant>::read_forcings() {
+void EventSeriesScenario::read_forcings() {
     auto forcing_l = static_cast<EventForcing*>(forcing.get());
     for (std::size_t i = 0; i < forcing_l->firms.size(); ++i) {
         if (forcing_l->firms[i]) {
@@ -53,13 +50,11 @@ void EventSeriesScenario<ModelVariant>::read_forcings() {
     }
 }
 
-template<class ModelVariant>
-void EventSeriesScenario<ModelVariant>::EventForcing::read_data() {
+void EventSeriesScenario::EventForcing::read_data() {
     variable.getVar({time_index, 0, 0}, {1, sectors_count, regions_count}, &forcings[0]);
 }
 
-template<class ModelVariant>
-EventSeriesScenario<ModelVariant>::EventForcing::EventForcing(const std::string& filename, const std::string& variable_name, const Model<ModelVariant>* model)
+EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, const std::string& variable_name, const Model* model)
     : ExternalForcing(filename, variable_name) {
     std::vector<const char*> regions(file->getDim("region").getSize());
     file->getVar("region").getVar(&regions[0]);
@@ -70,12 +65,12 @@ EventSeriesScenario<ModelVariant>::EventForcing::EventForcing(const std::string&
     firms.reserve(regions_count * sectors_count);
     forcings.reserve(regions_count * sectors_count);
     for (const auto& sector_name : sectors) {
-        Sector<ModelVariant>* sector = model->find_sector(sector_name);
+        Sector* sector = model->find_sector(sector_name);
         if (!sector) {
             error_("sector '" + std::string(sector_name) + "' not found");
         }
         for (const auto& region_name : regions) {
-            Firm<ModelVariant>* firm = model->find_firm(sector, region_name);
+            Firm* firm = model->find_firm(sector, region_name);
             if (!firm) {
                 warning_("firm '" + std::string(sector_name) + ":" + std::string(region_name) + "' not found");
             }
@@ -85,5 +80,4 @@ EventSeriesScenario<ModelVariant>::EventForcing::EventForcing(const std::string&
     }
 }
 
-INSTANTIATE_BASIC(EventSeriesScenario);
 }  // namespace acclimate

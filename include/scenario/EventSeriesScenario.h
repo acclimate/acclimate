@@ -21,31 +21,28 @@
 #ifndef ACCLIMATE_EVENTSERIESSCENARIO_H
 #define ACCLIMATE_EVENTSERIESSCENARIO_H
 
+#include "scenario/ExternalScenario.h"
 #include <cstddef>
 #include <string>
 #include <vector>
 #include "scenario/ExternalForcing.h"
-#include "scenario/ExternalScenario.h"
-#include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Firm;
 
-template<class ModelVariant>
-class EventSeriesScenario : public ExternalScenario<ModelVariant> {
+class EventSeriesScenario : public ExternalScenario {
   protected:
-    using ExternalScenario<ModelVariant>::forcing;
+    using ExternalScenario::forcing;
 
     class EventForcing : public ExternalForcing {
-        friend class EventSeriesScenario<ModelVariant>;
+        friend class EventSeriesScenario;
 
       protected:
         using ExternalForcing::file;
         using ExternalForcing::time_index;
         using ExternalForcing::variable;
-        std::vector<Firm<ModelVariant>*> firms;
+        std::vector<Firm*> firms;
         std::vector<Forcing> forcings;
         std::size_t regions_count;
         std::size_t sectors_count;
@@ -53,16 +50,16 @@ class EventSeriesScenario : public ExternalScenario<ModelVariant> {
         void read_data() override;
 
       public:
-        EventForcing(const std::string& filename, const std::string& variable_name, const Model<ModelVariant>* model);
+        EventForcing(const std::string& filename, const std::string& variable_name, const Model* model);
     };
 
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
 
   public:
-    using ExternalScenario<ModelVariant>::id;
-    using ExternalScenario<ModelVariant>::model;
-    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
+    using ExternalScenario::id;
+    using ExternalScenario::model;
+    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
 };
 }  // namespace acclimate
 

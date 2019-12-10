@@ -21,18 +21,12 @@
 #ifndef ACCLIMATE_SALESMANAGERPRICES_H
 #define ACCLIMATE_SALESMANAGERPRICES_H
 
-#include <memory>
-#include <tuple>
-#include <vector>
-#include "run.h"
 #include "model/SalesManager.h"
-#include "types.h"
+#include <tuple>
 
 namespace acclimate {
 
-template<class Modelvariant>
 class BusinessConnection;
-template<class Modelvariant>
 class Firm;
 
 struct SupplyParameters {
@@ -42,16 +36,15 @@ struct SupplyParameters {
     Flow possible_production_X_hat = Flow(0.0);  // price = unit_production_costs_n_c
 };
 
-template<class ModelVariant>
-class SalesManagerPrices : public SalesManager<ModelVariant> {
+class SalesManagerPrices : public SalesManager {
   public:
-    using SalesManager<ModelVariant>::business_connections;
-    using SalesManager<ModelVariant>::firm;
-    using SalesManager<ModelVariant>::id;
-    using SalesManager<ModelVariant>::model;
+    using SalesManager::business_connections;
+    using SalesManager::firm;
+    using SalesManager::id;
+    using SalesManager::model;
 
   protected:
-    using SalesManager<ModelVariant>::sum_demand_requests_D_;
+    using SalesManager::sum_demand_requests_D_;
 
   private:
     // For communicating certain quantities to (potential) buyers
@@ -62,32 +55,20 @@ class SalesManagerPrices : public SalesManager<ModelVariant> {
     Flow estimated_possible_production_X_hat_ = Flow(0.0);
     Ratio tax_ = Ratio(0.0);
     struct {
-        typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::iterator connection_not_served_completely;
+        typename std::vector<std::shared_ptr<BusinessConnection>>::iterator connection_not_served_completely;
         Price price_cheapest_buyer_accepted_in_optimization = Price(0.0);  // Price of cheapest connection, that has been considered in the profit optimization
         Flow flow_not_served_completely = Flow(0.0);
     } supply_distribution_scenario;  // to distribute production among demand requests
 
   public:
-    inline const SupplyParameters& communicated_parameters() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return communicated_parameters_;
-    }
-    inline const FlowValue& total_production_costs_C() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return total_production_costs_C_;
-    }
-    inline const FlowValue& total_revenue_R() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return total_revenue_R_;
-    }
-    inline void impose_tax(const Ratio tax_p) {
-        assertstep(EXPECTATION);
-        tax_ = tax_p;
-    }
-    inline const FlowValue get_tax() const { return tax_ * firm->production_X().get_value(); }
+    const SupplyParameters& communicated_parameters() const;
+    const FlowValue& total_production_costs_C() const;
+    const FlowValue& total_revenue_R() const;
+    void impose_tax(const Ratio tax_p);
+    const FlowValue get_tax() const;
 
   public:
-    explicit SalesManagerPrices(Firm<ModelVariant>* firm_p);
+    explicit SalesManagerPrices(Firm* firm_p);
     ~SalesManagerPrices() override = default;
 
     void distribute(const Flow& _) override;
@@ -124,8 +105,8 @@ class SalesManagerPrices : public SalesManager<ModelVariant> {
                                              const Price& precision_p) const;
 #ifdef DEBUG
     void print_parameters() const;
-    void print_connections(typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator begin_equally_distributed,
-                           typename std::vector<std::shared_ptr<BusinessConnection<ModelVariant>>>::const_iterator end_equally_distributed) const;
+    void print_connections(typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
+                           typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const;
 #endif
 };
 }  // namespace acclimate

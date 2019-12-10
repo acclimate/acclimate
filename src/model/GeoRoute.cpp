@@ -19,12 +19,12 @@
 */
 
 #include "model/GeoRoute.h"
-#include "variants/ModelVariants.h"
+
+#include "model/GeoEntity.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-std::string GeoRoute<ModelVariant>::id() const {
+std::string GeoRoute::id() const {
     std::string res;
     for (std::size_t i = 0; i < path.size(); ++i) {
         if (i > 0) {
@@ -35,5 +35,4 @@ std::string GeoRoute<ModelVariant>::id() const {
     return res;
 }
 
-INSTANTIATE_BASIC(GeoRoute);
 }  // namespace acclimate

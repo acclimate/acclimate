@@ -21,31 +21,27 @@
 #ifndef ACCLIMATE_FLOODING_H
 #define ACCLIMATE_FLOODING_H
 
+#include "scenario/RasteredScenario.h"
 #include <cstddef>
 #include <vector>
-#include "scenario/RasteredScenario.h"
-#include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Region;
 
-template<class ModelVariant>
-class Flooding : public RasteredScenario<ModelVariant, FloatType> {
+class Flooding : public RasteredScenario<FloatType> {
   protected:
     std::vector<std::size_t> sectors;
-    FloatType new_region_forcing(Region<ModelVariant>* region) const override;
-    void set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, FloatType proxy_sum) const override;
-    void reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const override;
+    FloatType new_region_forcing(Region* region) const override;
+    void set_region_forcing(Region* region, const FloatType& forcing, FloatType proxy_sum) const override;
+    void reset_forcing(Region* region, FloatType& forcing) const override;
     void add_cell_forcing(
-        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const override;
+        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, FloatType& region_forcing) const override;
 
   public:
-    using RasteredScenario<ModelVariant, FloatType>::id;
-    Flooding(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
+    using RasteredScenario<FloatType>::id;
+    Flooding(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
 };
 }  // namespace acclimate
 

@@ -21,47 +21,45 @@
 #ifndef ACCLIMATE_RASTEREDSCENARIO_H
 #define ACCLIMATE_RASTEREDSCENARIO_H
 
+#include "scenario/ExternalScenario.h"
 #include <memory>
 #include <string>
 #include <vector>
-#include "scenario/ExternalScenario.h"
 #include "scenario/RasteredData.h"
-#include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Region;
 
-template<class ModelVariant, class RegionForcingType>
-class RasteredScenario : public ExternalScenario<ModelVariant> {
+template<class RegionForcingType>
+class RasteredScenario : public ExternalScenario {
   public:
     struct RegionInfo {
-        Region<ModelVariant>* region;
+        Region* region;
         FloatType proxy_sum;
         RegionForcingType forcing;
     };
 
   protected:
-    using ExternalScenario<ModelVariant>::forcing;
-    using ExternalScenario<ModelVariant>::model;
-    using ExternalScenario<ModelVariant>::next_time;
-    using ExternalScenario<ModelVariant>::scenario_node;
-    using ExternalScenario<ModelVariant>::settings;
+    using ExternalScenario::forcing;
+    using ExternalScenario::model;
+    using ExternalScenario::next_time;
+    using ExternalScenario::scenario_node;
+    using ExternalScenario::settings;
 
     std::unique_ptr<RasteredData<int>> iso_raster;
     std::unique_ptr<RasteredData<FloatType>> proxy;
     std::vector<RegionInfo> region_forcings;
     FloatType total_current_proxy_sum_ = 0;
 
-    virtual RegionForcingType new_region_forcing(Region<ModelVariant>* region) const = 0;
-    virtual void set_region_forcing(Region<ModelVariant>* region, const RegionForcingType& forcing, FloatType proxy_sum) const = 0;
-    virtual void reset_forcing(Region<ModelVariant>* region, RegionForcingType& forcing) const = 0;
+    virtual RegionForcingType new_region_forcing(Region* region) const = 0;
+    virtual void set_region_forcing(Region* region, const RegionForcingType& forcing, FloatType proxy_sum) const = 0;
+    virtual void reset_forcing(Region* region, RegionForcingType& forcing) const = 0;
     virtual void add_cell_forcing(FloatType x,
                                   FloatType y,
                                   FloatType proxy_value,
                                   FloatType cell_forcing,
-                                  const Region<ModelVariant>* region,
+                                  const Region* region,
                                   RegionForcingType& region_forcing) const = 0;
     void internal_start() override;
     void internal_iterate_start() override;
@@ -69,10 +67,10 @@ class RasteredScenario : public ExternalScenario<ModelVariant> {
     void iterate_first_timestep() override;
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
-    RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
+    RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
 
   public:
-    using ExternalScenario<ModelVariant>::id;
+    using ExternalScenario::id;
     ~RasteredScenario() override = default;
     inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
     inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; }

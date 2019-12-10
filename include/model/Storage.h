@@ -23,24 +23,20 @@
 
 #include <memory>
 #include <string>
-#include "run.h"
 #include "types.h"
+#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class EconomicAgent;
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Sector;
 
-template<class ModelVariant>
 class Storage {
   public:
-    Sector<ModelVariant>* const sector;
-    EconomicAgent<ModelVariant>* const economic_agent;
-    std::unique_ptr<typename ModelVariant::PurchasingManagerType> const purchasing_manager;
+    Sector* const sector;
+    EconomicAgent* const economic_agent;
+    std::unique_ptr<typename VariantPrices::PurchasingManagerType> const purchasing_manager;
 
   private:
     Flow input_flow_I_[3] = {Flow(0.0), Flow(0.0), Flow(0.0)};
@@ -51,30 +47,12 @@ class Storage {
     Flow used_flow_U_ = Flow(0.0);
     Flow desired_used_flow_U_tilde_ = Flow(0.0);
     OpenMPLock input_flow_I_lock;
-    typename ModelVariant::StorageParameters parameters_;
+    typename VariantPrices::StorageParameters parameters_;
 
   public:
-    const Stock& content_S() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return content_S_;
-    }
-    const Flow& used_flow_U(const EconomicAgent<ModelVariant>* const caller = nullptr) const {
-#ifdef DEBUG
-        if (caller != economic_agent) {
-            assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        }
-#else
-        UNUSED(caller);
-#endif
-        return used_flow_U_;
-    }
-    const Flow& desired_used_flow_U_tilde(const EconomicAgent<ModelVariant>* const caller = nullptr) const {
-        if (caller != economic_agent) {
-            assertstepnot(CONSUMPTION_AND_PRODUCTION);
-            assertstepnot(EXPECTATION);
-        }
-        return desired_used_flow_U_tilde_;
-    }
+    const Stock& content_S() const;
+    const Flow& used_flow_U(const EconomicAgent* const caller = nullptr) const;
+    const Flow& desired_used_flow_U_tilde(const EconomicAgent* const caller = nullptr) const;
     const Stock& initial_content_S_star() const { return initial_content_S_star_; }
     const Flow& initial_input_flow_I_star() const { return initial_input_flow_I_star_; }
     const Flow& initial_used_flow_U_star() const {
@@ -86,14 +64,11 @@ class Storage {
     void calc_content_S();
 
   public:
-    inline const typename ModelVariant::StorageParameters& parameters() const { return parameters_; }
-    inline typename ModelVariant::StorageParameters& parameters_writable() {
-        assertstep(INITIALIZATION);
-        return parameters_;
-    }
+    inline const typename VariantPrices::StorageParameters& parameters() const { return parameters_; }
+    typename VariantPrices::StorageParameters& parameters_writable();
 
   public:
-    Storage(Sector<ModelVariant>* sector_p, EconomicAgent<ModelVariant>* economic_agent_p);
+    Storage(Sector* sector_p, EconomicAgent* economic_agent_p);
     void set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p);
     void use_content_S(const Flow& used_flow_U_current);
     const Flow estimate_possible_use_U_hat() const;
@@ -107,8 +82,8 @@ class Storage {
     void add_initial_flow_Z_star(const Flow& flow_Z_star);
     bool subtract_initial_flow_Z_star(const Flow& flow_Z_star);
     void iterate_consumption_and_production();
-    inline Model<ModelVariant>* model() const { return sector->model(); }
-    inline std::string id() const { return sector->id() + ":_S_->" + economic_agent->id(); }
+    Model* model() const;
+    std::string id() const;
 };
 }  // namespace acclimate
 

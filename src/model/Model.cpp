@@ -22,39 +22,41 @@
 #include <algorithm>
 #include <chrono>
 #include <random>
+#include "model/Consumer.h"
 #include "model/EconomicAgent.h"
+#include "model/GeoLocation.h"
+#include "model/GeoRoute.h"
+#include "model/Government.h"
+#include "model/Firm.h"
+#include "model/PurchasingManagerPrices.h"
 #include "model/Region.h"
-#include "model/Sector.h"
 #include "model/Storage.h"
-#include "variants/ModelVariants.h"
+#include "run.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-Model<ModelVariant>::Model(Run<ModelVariant>* const run_p)
-    : run_m(run_p), consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector<ModelVariant>::TransportType::IMMEDIATE)) {
+Model::Model(Run* const run_p)
+    : run_m(run_p), consumption_sector(new Sector(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector::TransportType::IMMEDIATE)) {
     sectors.emplace_back(consumption_sector);
 }
 
-template<class ModelVariant>
-Region<ModelVariant>* Model<ModelVariant>::add_region(std::string name) {
-    auto region = new Region<ModelVariant>(this, name, regions.size());
+Region* Model::add_region(std::string name) {
+    auto region = new Region(this, name, regions.size());
     regions.emplace_back(region);
     return region;
 }
 
-template<class ModelVariant>
-Sector<ModelVariant>* Model<ModelVariant>::add_sector(std::string name,
-                                                      const Ratio& upper_storage_limit_omega_p,
-                                                      const Time& initial_storage_fill_factor_psi_p,
-                                                      typename Sector<ModelVariant>::TransportType transport_type_p) {
-    auto sector = new Sector<ModelVariant>(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
+Sector *Model::add_sector(std::string name,
+                          const Ratio &upper_storage_limit_omega_p,
+                          const Time &initial_storage_fill_factor_psi_p,
+                          typename Sector::TransportType transport_type_p) {
+    auto sector = new Sector(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p,
+                             transport_type_p);
     sectors.emplace_back(sector);
     return sector;
 }
 
-template<class ModelVariant>
-void Model<ModelVariant>::start() {
+void Model::start() {
     time_ = start_time_;
     timestep_ = 0;
     for (const auto& region : regions) {
@@ -73,8 +75,7 @@ void Model<ModelVariant>::start() {
 #endif
 }
 
-template<class ModelVariant>
-void Model<ModelVariant>::iterate_consumption_and_production() {
+void Model::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < sectors.size(); ++i) {
@@ -93,8 +94,7 @@ void Model<ModelVariant>::iterate_consumption_and_production() {
     }
 }
 
-template<class ModelVariant>
-void Model<ModelVariant>::iterate_expectation() {
+void Model::iterate_expectation() {
     assertstep(EXPECTATION);
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < regions.size(); ++i) {
@@ -108,8 +108,7 @@ void Model<ModelVariant>::iterate_expectation() {
     }
 }
 
-template<class ModelVariant>
-void Model<ModelVariant>::iterate_purchase() {
+void Model::iterate_purchase() {
     assertstep(PURCHASE);
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < regions.size(); ++i) {
@@ -125,14 +124,13 @@ void Model<ModelVariant>::iterate_purchase() {
     }
 #ifdef _OPENMP
     std::sort(std::begin(purchasing_managers), std::end(purchasing_managers),
-              [](const std::pair<PurchasingManager<ModelVariant>*, std::size_t>& a, const std::pair<PurchasingManager<ModelVariant>*, std::size_t>& b) {
+              [](const std::pair<PurchasingManager*, std::size_t>& a, const std::pair<PurchasingManager*, std::size_t>& b) {
                   return b.second > a.second;
               });
 #endif
 }
 
-template<class ModelVariant>
-void Model<ModelVariant>::iterate_investment() {
+void Model::iterate_investment() {
     assertstep(INVESTMENT);
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < regions.size(); ++i) {
@@ -146,70 +144,98 @@ void Model<ModelVariant>::iterate_investment() {
     }
 }
 
-template<class ModelVariant>
-Region<ModelVariant>* Model<ModelVariant>::find_region(const std::string& name) const {
-    auto it = std::find_if(regions.begin(), regions.end(), [name](const std::unique_ptr<Region<ModelVariant>>& it) { return it->id() == name; });
+Region* Model::find_region(const std::string& name) const {
+    auto it = std::find_if(regions.begin(), regions.end(), [name](const std::unique_ptr<Region>& it) { return it->id() == name; });
     if (it == regions.end()) {
         return nullptr;
     }
     return it->get();
 }
 
-template<class ModelVariant>
-Sector<ModelVariant>* Model<ModelVariant>::find_sector(const std::string& name) const {
-    auto it = std::find_if(sectors.begin(), sectors.end(), [name](const std::unique_ptr<Sector<ModelVariant>>& it) { return it->id() == name; });
+Sector* Model::find_sector(const std::string& name) const {
+    auto it = std::find_if(sectors.begin(), sectors.end(), [name](const std::unique_ptr<Sector>& it) { return it->id() == name; });
     if (it == sectors.end()) {
         return nullptr;
     }
     return it->get();
 }
 
-template<class ModelVariant>
-Firm<ModelVariant>* Model<ModelVariant>::find_firm(const std::string& sector_name, const std::string& region_name) const {
-    Sector<ModelVariant>* sector = find_sector(sector_name);
+Firm* Model::find_firm(const std::string& sector_name, const std::string& region_name) const {
+    Sector* sector = find_sector(sector_name);
     if (sector) {
         return find_firm(sector, region_name);
     }
     return nullptr;
 }
 
-template<class ModelVariant>
-Firm<ModelVariant>* Model<ModelVariant>::find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const {
-    auto it = std::find_if(sector->firms.begin(), sector->firms.end(), [region_name](const Firm<ModelVariant>* it) { return it->region->id() == region_name; });
+Firm* Model::find_firm(Sector* sector, const std::string& region_name) const {
+    auto it = std::find_if(sector->firms.begin(), sector->firms.end(), [region_name](const Firm* it) { return it->region->id() == region_name; });
     if (it == sector->firms.end()) {
         return nullptr;
     }
     return *it;
 }
 
-template<class ModelVariant>
-Consumer<ModelVariant>* Model<ModelVariant>::find_consumer(Region<ModelVariant>* region) const {
+Consumer* Model::find_consumer(Region* region) const {
     auto it = std::find_if(region->economic_agents.begin(), region->economic_agents.end(),
-                           [](const std::unique_ptr<EconomicAgent<ModelVariant>>& it) { return it->type == EconomicAgent<ModelVariant>::Type::CONSUMER; });
+                           [](const std::unique_ptr<EconomicAgent>& it) { return it->type == EconomicAgent::Type::CONSUMER; });
     if (it == region->economic_agents.end()) {
         return nullptr;
     }
     return it->get()->as_consumer();
 }
 
-template<class ModelVariant>
-Consumer<ModelVariant>* Model<ModelVariant>::find_consumer(const std::string& region_name) const {
-    Region<ModelVariant>* region = find_region(region_name);
+Consumer* Model::find_consumer(const std::string& region_name) const {
+    Region* region = find_region(region_name);
     if (region) {
         return find_consumer(region);
     }
     return nullptr;
 }
 
-template<class ModelVariant>
-GeoLocation<ModelVariant>* Model<ModelVariant>::find_location(const std::string& name) const {
+GeoLocation* Model::find_location(const std::string& name) const {
     auto it =
-        std::find_if(other_locations.begin(), other_locations.end(), [name](const std::unique_ptr<GeoLocation<ModelVariant>>& it) { return it->id() == name; });
+        std::find_if(other_locations.begin(), other_locations.end(), [name](const std::unique_ptr<GeoLocation>& it) { return it->id() == name; });
     if (it == other_locations.end()) {
         return nullptr;
     }
     return it->get();
 }
 
-INSTANTIATE_BASIC(Model);
+void Model::switch_registers() {
+    assertstep(SCENARIO);
+    current_register_ = 1 - current_register_;
+}
+
+void Model::tick() {
+    assertstep(SCENARIO);
+    time_ += delta_t_;
+    ++timestep_;
+}
+
+void Model::delta_t(const Time &delta_t_p) {
+    assertstep(INITIALIZATION);
+    delta_t_ = delta_t_p;
+}
+
+void Model::start_time(const Time &start_time) {
+    assertstep(INITIALIZATION);
+    start_time_ = start_time;
+}
+
+void Model::stop_time(const Time &stop_time) {
+    assertstep(INITIALIZATION);
+    stop_time_ = stop_time;
+}
+
+void Model::no_self_supply(bool no_self_supply_p) {
+    assertstep(INITIALIZATION);
+    no_self_supply_ = no_self_supply_p;
+}
+
+typename VariantPrices::ModelParameters &Model::parameters_writable() {
+    assertstep(INITIALIZATION);
+    return parameters_;
+}
+
 }  // namespace acclimate

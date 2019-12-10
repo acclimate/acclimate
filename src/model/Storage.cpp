@@ -21,20 +21,19 @@
 #include "model/Storage.h"
 #include <algorithm>
 #include "model/EconomicAgent.h"
+#include "model/Firm.h"
 #include "model/Model.h"
+#include "model/PurchasingManagerPrices.h"
 #include "model/Sector.h"
 #include "run.h"
-#include "variants/ModelVariants.h"
 #include "variants/VariantPrices.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-Storage<ModelVariant>::Storage(Sector<ModelVariant>* sector_p, EconomicAgent<ModelVariant>* economic_agent_p)
-    : sector(sector_p), economic_agent(economic_agent_p), purchasing_manager(new typename ModelVariant::PurchasingManagerType(this)) {}
+Storage::Storage(Sector* sector_p, EconomicAgent* economic_agent_p)
+    : sector(sector_p), economic_agent(economic_agent_p), purchasing_manager(new typename VariantPrices::PurchasingManagerType(this)) {}
 
-template<class ModelVariant>
-void Storage<ModelVariant>::iterate_consumption_and_production() {
+void Storage::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     calc_content_S();
     input_flow_I_[2] = input_flow_I_[model()->other_register()];
@@ -42,42 +41,34 @@ void Storage<ModelVariant>::iterate_consumption_and_production() {
     purchasing_manager->iterate_consumption_and_production();
 }
 
-template<class ModelVariant>
-const Flow Storage<ModelVariant>::estimate_possible_use_U_hat() const {
+const Flow Storage::estimate_possible_use_U_hat() const {
     assertstep(EXPECTATION);
     return content_S_ / model()->delta_t() + next_input_flow_I();
 }
 
-template<class ModelVariant>
-const Flow Storage<ModelVariant>::get_possible_use_U_hat() const {
+const Flow Storage::get_possible_use_U_hat() const {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     return content_S_ / model()->delta_t() + current_input_flow_I();
 }
 
-template<class ModelVariant>
-const Flow& Storage<ModelVariant>::current_input_flow_I() const {
+const Flow& Storage::current_input_flow_I() const {
     return input_flow_I_[model()->other_register()];
 }
 
-template<class ModelVariant>
-const Flow& Storage<ModelVariant>::last_input_flow_I() const {
+const Flow& Storage::last_input_flow_I() const {
     assertstepor(OUTPUT, PURCHASE);
     return input_flow_I_[2];
 }
 
-template<class ModelVariant>
-Ratio Storage<ModelVariant>::get_technology_coefficient_a() const {
+Ratio Storage::get_technology_coefficient_a() const {
     return initial_input_flow_I_star_ / economic_agent->as_firm()->initial_production_X_star();
 }
 
-template<class ModelVariant>
-Ratio Storage<ModelVariant>::get_input_share_u() const {
+Ratio Storage::get_input_share_u() const {
     return initial_input_flow_I_star_ / economic_agent->as_firm()->initial_total_use_U_star();
 }
 
-#ifdef VARIANT_PRICES
-template<>
-void Storage<VariantPrices>::calc_content_S() {
+void Storage::calc_content_S() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     assert(used_flow_U_.get_quantity() * model()->delta_t() <= content_S_.get_quantity() + current_input_flow_I().get_quantity() * model()->delta_t());
     auto former_content = content_S_;
@@ -97,32 +88,13 @@ void Storage<VariantPrices>::calc_content_S() {
         content_S_.set_price(tmp);
     }
 }
-#endif
 
-template<class ModelVariant>
-void Storage<ModelVariant>::calc_content_S() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
-    content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * model()->delta_t());
-    assert(content_S_.get_quantity() >= 0.0);
-
-    Stock maxStock = initial_content_S_star_ * forcing_mu_ * sector->upper_storage_limit_omega;
-    if (maxStock.get_quantity() < content_S_.get_quantity()) {
-        model()->run()->event(EventType::STORAGE_OVERRUN, sector, nullptr, economic_agent, to_float(content_S_.get_quantity() - maxStock.get_quantity()));
-        content_S_ = maxStock;
-    }
-    if (content_S_.get_quantity() <= 0.0) {
-        model()->run()->event(EventType::STORAGE_UNDERRUN, sector, nullptr, economic_agent);
-    }
-}
-
-template<class ModelVariant>
-void Storage<ModelVariant>::use_content_S(const Flow& used_flow_U_current) {
+void Storage::use_content_S(const Flow& used_flow_U_current) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     used_flow_U_ = used_flow_U_current;
 }
 
-template<class ModelVariant>
-void Storage<ModelVariant>::set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p) {
+void Storage::set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p) {
     if (economic_agent->is_consumer()) {
         assertstep(CONSUMPTION_AND_PRODUCTION);
     }
@@ -132,20 +104,17 @@ void Storage<ModelVariant>::set_desired_used_flow_U_tilde(const Flow& desired_us
     desired_used_flow_U_tilde_ = desired_used_flow_U_tilde_p;
 }
 
-template<class ModelVariant>
-void Storage<ModelVariant>::push_flow_Z(const Flow& flow_Z) {
+void Storage::push_flow_Z(const Flow& flow_Z) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     input_flow_I_lock.call([&]() { input_flow_I_[model()->current_register()] += flow_Z; });
 }
 
-template<class ModelVariant>
-const Flow& Storage<ModelVariant>::next_input_flow_I() const {
+const Flow& Storage::next_input_flow_I() const {
     assertstep(EXPECTATION);
     return input_flow_I_[model()->current_register()];
 }
 
-template<class ModelVariant>
-void Storage<ModelVariant>::add_initial_flow_Z_star(const Flow& flow_Z_star) {
+void Storage::add_initial_flow_Z_star(const Flow& flow_Z_star) {
     assertstep(INITIALIZATION);
     input_flow_I_[1] += flow_Z_star;
     input_flow_I_[2] += flow_Z_star;
@@ -153,15 +122,14 @@ void Storage<ModelVariant>::add_initial_flow_Z_star(const Flow& flow_Z_star) {
     initial_content_S_star_ = round(initial_content_S_star_ + flow_Z_star * sector->initial_storage_fill_factor_psi);
     content_S_ = round(content_S_ + flow_Z_star * sector->initial_storage_fill_factor_psi);
     purchasing_manager->add_initial_demand_D_star(flow_Z_star);
-    if (economic_agent->type == EconomicAgent<ModelVariant>::Type::FIRM) {
+    if (economic_agent->type == EconomicAgent::Type::FIRM) {
         economic_agent->as_firm()->add_initial_total_use_U_star(flow_Z_star);
     }
 }
 
-template<class ModelVariant>
-bool Storage<ModelVariant>::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
+bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
     assertstep(INITIALIZATION);
-    if (economic_agent->type == EconomicAgent<ModelVariant>::Type::FIRM) {
+    if (economic_agent->type == EconomicAgent::Type::FIRM) {
         economic_agent->as_firm()->subtract_initial_total_use_U_star(flow_Z_star);
     }
     if (initial_input_flow_I_star_.get_quantity() - flow_Z_star.get_quantity() >= FlowQuantity::precision) {
@@ -177,5 +145,41 @@ bool Storage<ModelVariant>::subtract_initial_flow_Z_star(const Flow& flow_Z_star
     return true;
 }
 
-INSTANTIATE_BASIC(Storage);
+Model *Storage::model() const {
+    return sector->model();
+}
+
+std::string Storage::id() const {
+    return sector->id() + ":_S_->" + economic_agent->id();
+}
+
+const Stock &Storage::content_S() const {
+    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    return content_S_;
+}
+
+const Flow &Storage::used_flow_U(const EconomicAgent *const caller) const {
+#ifdef DEBUG
+    if (caller != economic_agent) {
+        assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    }
+#else
+    UNUSED(caller);
+#endif
+    return used_flow_U_;
+}
+
+const Flow &Storage::desired_used_flow_U_tilde(const EconomicAgent *const caller) const {
+    if (caller != economic_agent) {
+        assertstepnot(CONSUMPTION_AND_PRODUCTION);
+        assertstepnot(EXPECTATION);
+    }
+    return desired_used_flow_U_tilde_;
+}
+
+typename VariantPrices::StorageParameters &Storage::parameters_writable() {
+    assertstep(INITIALIZATION);
+    return parameters_;
+}
+
 }  // namespace acclimate
