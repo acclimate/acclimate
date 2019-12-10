@@ -110,7 +110,7 @@ const Demand& Sector::total_production_X() const {
     return total_production_X_m;
 }
 
-typename VariantPrices::SectorParameters& Sector::parameters_writable() {
+Parameters::SectorParameters& Sector::parameters_writable() {
     assertstep(INITIALIZATION);
     return parameters_m;
 }

@@ -24,8 +24,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "parameters.h"
 #include "types.h"
-#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
@@ -48,7 +48,7 @@ class EconomicAgent {
     };
 
   private:
-    typename VariantPrices::AgentParameters parameters_;
+    Parameters::AgentParameters parameters_;
 
   protected:
     Forcing forcing_ = Forcing(1.0);
@@ -60,9 +60,9 @@ class EconomicAgent {
     const Type type;
 
   public:
-    inline const typename VariantPrices::AgentParameters& parameters() const { return parameters_; }
+    inline const Parameters::AgentParameters& parameters() const { return parameters_; }
 
-    typename VariantPrices::AgentParameters const& parameters_writable() const;
+    Parameters::AgentParameters const& parameters_writable() const;
 
   protected:
     EconomicAgent(Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p);

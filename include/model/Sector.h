@@ -23,8 +23,9 @@
 
 #include <string>
 #include <vector>
+#include "parameters.h"
+#include "settingsnode.h"
 #include "types.h"
-#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
@@ -50,7 +51,7 @@ class Sector {
     Flow total_production_X_m = Flow(0.0);
     OpenMPLock total_production_X_lock;
     Flow last_total_production_X_m = Flow(0.0);
-    typename VariantPrices::SectorParameters parameters_m;
+    Parameters::SectorParameters parameters_m;
     Model* const model_m;
     Sector(Model* model_p,
            std::string id_p,
@@ -66,9 +67,9 @@ class Sector {
 
     const Demand& total_production_X() const;
 
-    inline const typename VariantPrices::SectorParameters& parameters() const { return parameters_m; }
+    inline const Parameters::SectorParameters& parameters() const { return parameters_m; }
 
-    typename VariantPrices::SectorParameters& parameters_writable();
+    Parameters::SectorParameters& parameters_writable();
 
   public:
     const Ratio upper_storage_limit_omega;

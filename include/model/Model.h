@@ -27,8 +27,8 @@
 #include <utility>
 #include <vector>
 #include "model/Sector.h"
+#include "parameters.h"
 #include "types.h"
-#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
@@ -68,7 +68,7 @@ class Model {
     TimeStep timestep_ = 0;
     unsigned char current_register_ = 1;
     Time delta_t_ = Time(1.0);
-    typename VariantPrices::ModelParameters parameters_;
+    Parameters::ModelParameters parameters_;
     bool no_self_supply_ = false;
     std::vector<std::pair<PurchasingManager*, std::size_t>> purchasing_managers;
     std::vector<std::pair<EconomicAgent*, std::size_t>> economic_agents;
@@ -108,9 +108,9 @@ class Model {
 
     inline unsigned char other_register() const { return 1 - current_register_; }
 
-    inline const typename VariantPrices::ModelParameters& parameters() const { return parameters_; }
+    inline const Parameters::ModelParameters& parameters() const { return parameters_; }
 
-    typename VariantPrices::ModelParameters& parameters_writable();
+    Parameters::ModelParameters& parameters_writable();
 
     Region* add_region(std::string name);
     Sector* add_sector(std::string name,

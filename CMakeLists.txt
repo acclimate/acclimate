@@ -89,13 +89,6 @@ endif()
 string(REPLACE ";" ", " ACCLIMATE_OPTIONS "${ACCLIMATE_OPTIONS}")
 target_compile_definitions(acclimate PRIVATE ACCLIMATE_OPTIONS="${ACCLIMATE_OPTIONS}")
 
-# acclimate_include_option(VARIANTS VARIANT_BASIC "include acclimate version 'basic'" OFF)
-# acclimate_include_option(VARIANTS VARIANT_DEMAND "include acclimate version 'demand'" OFF)
-# acclimate_include_option(VARIANTS VARIANT_PRICES "include acclimate version 'prices'" ON)
-
-# string(REPLACE ";" ", " ACCLIMATE_VARIANTS "${ACCLIMATE_VARIANTS}")
-# target_compile_definitions(acclimate PRIVATE ACCLIMATE_VARIANTS="${ACCLIMATE_VARIANTS}")
-
 include_nlopt(acclimate ON "34fd7ce")
 
 include_netcdf_cxx4(acclimate ON v4.3.0)

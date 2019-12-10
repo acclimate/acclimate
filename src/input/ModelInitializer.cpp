@@ -44,9 +44,6 @@
 #include "optimization.h"
 #include "run.h"
 
-
-//#include "variants/ModelVariants.h"
-
 namespace acclimate {
 
 ModelInitializer::ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p)

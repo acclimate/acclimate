@@ -163,7 +163,7 @@ Government const* Region::government() const {
     return government_m.get();
 }
 
-const typename VariantPrices::RegionParameters& Region::parameters_writable() const {
+const Parameters::RegionParameters& Region::parameters_writable() const {
     assertstep(INITIALIZATION);
     return parameters_m;
 }

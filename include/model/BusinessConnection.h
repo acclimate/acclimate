@@ -24,7 +24,6 @@
 #include <memory>
 #include <string>
 #include "types.h"
-#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
@@ -33,8 +32,10 @@ class GeoRoute;
 class Model;
 
 class PurchasingManager;
+class PurchasingManagerPrices;
 
 class SalesManager;
+class SalesManagerPrices;
 
 class TransportChainLink;
 
@@ -51,11 +52,11 @@ class BusinessConnection {
     std::unique_ptr<TransportChainLink> first_transport_link;
 
   public:
-    typename VariantPrices::PurchasingManagerType* buyer;  // TODO encapsulate
-    typename VariantPrices::SalesManagerType* seller;      // TODO encapsulate
+    PurchasingManagerPrices* buyer;  // TODO encapsulate
+    SalesManagerPrices* seller;      // TODO encapsulate
 
-    BusinessConnection(typename VariantPrices::PurchasingManagerType* buyer_p,
-                       typename VariantPrices::SalesManagerType* seller_p,
+    BusinessConnection(PurchasingManagerPrices* buyer_p,
+                       SalesManagerPrices* seller_p,
                        const Flow& initial_flow_Z_star_p);
 
     inline const Time& time() const { return time_; }

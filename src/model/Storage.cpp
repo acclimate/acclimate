@@ -26,13 +26,12 @@
 #include "model/PurchasingManagerPrices.h"
 #include "model/Sector.h"
 #include "run.h"
-#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
 Storage::Storage(Sector* sector_p, EconomicAgent* economic_agent_p)
         : sector(sector_p), economic_agent(economic_agent_p),
-          purchasing_manager(new typename VariantPrices::PurchasingManagerType(this)) {}
+          purchasing_manager(new PurchasingManagerPrices(this)) {}
 
 void Storage::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -181,7 +180,7 @@ const Flow& Storage::desired_used_flow_U_tilde(const EconomicAgent* const caller
     return desired_used_flow_U_tilde_;
 }
 
-typename VariantPrices::StorageParameters& Storage::parameters_writable() {
+Parameters::StorageParameters& Storage::parameters_writable() {
     assertstep(INITIALIZATION);
     return parameters_;
 }

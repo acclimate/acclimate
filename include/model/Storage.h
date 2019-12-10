@@ -23,8 +23,8 @@
 
 #include <memory>
 #include <string>
+#include "parameters.h"
 #include "types.h"
-#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
@@ -32,13 +32,15 @@ class EconomicAgent;
 
 class Model;
 
+class PurchasingManagerPrices;
+
 class Sector;
 
 class Storage {
   public:
     Sector* const sector;
     EconomicAgent* const economic_agent;
-    std::unique_ptr<typename VariantPrices::PurchasingManagerType> const purchasing_manager;
+    std::unique_ptr<PurchasingManagerPrices> const purchasing_manager;
 
   private:
     Flow input_flow_I_[3] = {Flow(0.0), Flow(0.0), Flow(0.0)};
@@ -49,7 +51,7 @@ class Storage {
     Flow used_flow_U_ = Flow(0.0);
     Flow desired_used_flow_U_tilde_ = Flow(0.0);
     OpenMPLock input_flow_I_lock;
-    typename VariantPrices::StorageParameters parameters_;
+    Parameters::StorageParameters parameters_;
 
   public:
     const Stock& content_S() const;
@@ -70,9 +72,9 @@ class Storage {
     void calc_content_S();
 
   public:
-    inline const typename VariantPrices::StorageParameters& parameters() const { return parameters_; }
+    inline const Parameters::StorageParameters& parameters() const { return parameters_; }
 
-    typename VariantPrices::StorageParameters& parameters_writable();
+    Parameters::StorageParameters& parameters_writable();
 
   public:
     Storage(Sector* sector_p, EconomicAgent* economic_agent_p);

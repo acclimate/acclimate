@@ -29,7 +29,7 @@
 #include "model/GeoRoute.h"
 #include "model/Sector.h"
 #include "types.h"
-#include "variants/VariantPrices.h"
+#include "parameters.h"
 
 namespace acclimate {
 
@@ -53,7 +53,7 @@ class Region : public GeoLocation {
     OpenMPLock consumption_flow_Y_lock;
     std::unique_ptr<Government> government_m;
     const IntType index_m;
-    typename VariantPrices::RegionParameters parameters_m;
+    Parameters::RegionParameters parameters_m;
     OpenMPLock economic_agents_lock;
 
     struct route_hash {
@@ -84,9 +84,9 @@ class Region : public GeoLocation {
     Government* government();
     Government const* government() const;
 
-    inline const typename VariantPrices::RegionParameters& parameters() const { return parameters_m; }
+    inline const Parameters::RegionParameters& parameters() const { return parameters_m; }
 
-    const typename VariantPrices::RegionParameters& parameters_writable() const;
+    const Parameters::RegionParameters& parameters_writable() const;
     ~Region() override = default;
 
     inline IntType index() const { return index_m; };

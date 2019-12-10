@@ -77,7 +77,7 @@ std::string EconomicAgent::id() const {
     return sector->id() + ":" + region->id();
 }
 
-typename VariantPrices::AgentParameters const& EconomicAgent::parameters_writable() const {
+Parameters::AgentParameters const& EconomicAgent::parameters_writable() const {
     assertstep(INITIALIZATION);
     return parameters_;
 }

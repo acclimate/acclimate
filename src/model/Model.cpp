@@ -241,7 +241,7 @@ void Model::no_self_supply(bool no_self_supply_p) {
     no_self_supply_ = no_self_supply_p;
 }
 
-typename VariantPrices::ModelParameters& Model::parameters_writable() {
+Parameters::ModelParameters& Model::parameters_writable() {
     assertstep(INITIALIZATION);
     return parameters_;
 }

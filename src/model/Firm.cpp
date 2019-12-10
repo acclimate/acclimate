@@ -30,14 +30,13 @@
 #include "model/Sector.h"
 #include "model/Storage.h"
 #include "run.h"
-#include "variants/VariantPrices.h"
 
 namespace acclimate {
 
 Firm::Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
         : EconomicAgent(sector_p, region_p, EconomicAgent::Type::FIRM),
-          capacity_manager(new typename VariantPrices::CapacityManagerType(this, possible_overcapacity_ratio_beta_p)),
-          sales_manager(new typename VariantPrices::SalesManagerType(this)) {}
+          capacity_manager(new CapacityManagerPrices(this, possible_overcapacity_ratio_beta_p)),
+          sales_manager(new SalesManagerPrices(this)) {}
 
 inline Firm* Firm::as_firm() {
     return this;

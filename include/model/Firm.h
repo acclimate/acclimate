@@ -27,7 +27,11 @@ namespace acclimate {
 
 class BusinessConnection;
 
+class CapacityManagerPrices;
+
 class Region;
+
+class SalesManagerPrices;
 
 class Sector;
 
@@ -47,8 +51,8 @@ class Firm : public EconomicAgent {
     using EconomicAgent::model;
     using EconomicAgent::region;
     using EconomicAgent::sector;
-    std::unique_ptr<typename VariantPrices::CapacityManagerType> const capacity_manager;
-    std::unique_ptr<typename VariantPrices::SalesManagerType> const sales_manager;
+    std::unique_ptr<CapacityManagerPrices> const capacity_manager;
+    std::unique_ptr<SalesManagerPrices> const sales_manager;
 
   public:
     Firm* as_firm() override;

@@ -18,27 +18,17 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_VARIANTPRICES_H
-#define ACCLIMATE_VARIANTPRICES_H
+#ifndef PARAMETERS_H
+#define PARAMETERS_H
 
-#include "variants/Variant.h"
+#include "types.h"
 
 namespace acclimate {
 
-class PurchasingManagerPrices;
+struct Parameters {
+    struct AgentParameters {};
 
-class CapacityManagerPrices;
-
-class SalesManagerPrices;
-
-class VariantPrices : public Variant {
-  public:
-    using PurchasingManagerType = PurchasingManagerPrices;
-    using CapacityManagerType = CapacityManagerPrices;
-    using SalesManagerType = SalesManagerPrices;
-
-    class ModelParameters : public Variant::ModelParameters {
-      public:
+    struct ModelParameters {
         Price cheapest_price_range_width = Price(0.0);
         Price transport_penalty_large = Price(0.0);
         Price transport_penalty_small = Price(0.0);
@@ -58,8 +48,9 @@ class VariantPrices : public Variant {
         unsigned int optimization_timeout;  // timeout in sec
     };
 
-    class SectorParameters : public Variant::SectorParameters {
-      public:
+    struct RegionParameters {};
+
+    struct SectorParameters {
         Price estimated_price_increase_production_extension = Price(0.0);
         Price initial_markup = Price(0.0);
         Price price_increase_production_extension = Price(0.0);
@@ -68,15 +59,10 @@ class VariantPrices : public Variant {
         Time target_storage_withdraw_time = Time(0.0);
     };
 
-    class StorageParameters : public Variant::StorageParameters {
-      public:
+    struct StorageParameters {
         Ratio consumption_price_elasticity = Ratio(0.0);
     };
 };
 }  // namespace acclimate
-
-//#include "model/CapacityManagerPrices.h"
-//#include "model/PurchasingManagerPrices.h"
-//#include "model/SalesManagerPrices.h"
 
 #endif

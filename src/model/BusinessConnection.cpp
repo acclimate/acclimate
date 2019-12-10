@@ -31,8 +31,8 @@
 
 namespace acclimate {
 
-BusinessConnection::BusinessConnection(typename VariantPrices::PurchasingManagerType* buyer_p,
-                                       typename VariantPrices::SalesManagerType* seller_p,
+BusinessConnection::BusinessConnection(PurchasingManagerPrices* buyer_p,
+                                       SalesManagerPrices* seller_p,
                                        const Flow& initial_flow_Z_star_p)
         : buyer(buyer_p),
           demand_fulfill_history_(1.0),
