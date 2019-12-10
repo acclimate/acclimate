@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "model/Identifier.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
@@ -51,12 +52,13 @@ class EconomicAgent {
     Forcing forcing_ = Forcing(1.0);
 
   public:
+    Identifier<ModelVariant>* const identifier{};
     Sector<ModelVariant>* const sector;
     Region<ModelVariant>* const region;
     std::vector<std::unique_ptr<Storage<ModelVariant>>> input_storages;
     const Type type;
 
-  public:
+
     inline const typename ModelVariant::AgentParameters& parameters() const { return parameters_; }
     inline typename ModelVariant::AgentParameters const& parameters_writable() const {
         assertstep(INITIALIZATION);
@@ -64,7 +66,7 @@ class EconomicAgent {
     }
 
   protected:
-    EconomicAgent(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p);
+    EconomicAgent(Identifier<ModelVariant>* identifier_p, Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p);
 
   public:
     inline const Forcing& forcing() const { return forcing_; }

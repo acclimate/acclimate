@@ -31,7 +31,7 @@ namespace acclimate {
 
 template<class ModelVariant>
 Consumer<ModelVariant>::Consumer(Region<ModelVariant>* region_p)
-    : EconomicAgent<ModelVariant>(region_p->model()->consumption_sector, region_p, EconomicAgent<ModelVariant>::Type::CONSUMER) {}
+    : EconomicAgent<ModelVariant>(region_p-> model() ->consumption_identifier, region_p->model()->consumption_sector, region_p, EconomicAgent<ModelVariant>::Type::CONSUMER) {}
 
 template<class ModelVariant>
 inline Consumer<ModelVariant>* Consumer<ModelVariant>::as_consumer() {

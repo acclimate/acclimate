@@ -32,7 +32,7 @@ namespace acclimate {
 
 template<class ModelVariant>
 Model<ModelVariant>::Model(Run<ModelVariant>* const run_p)
-    : run_m(run_p), consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector<ModelVariant>::TransportType::IMMEDIATE)) {
+    : run_m(run_p), consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector<ModelVariant>::TransportType::IMMEDIATE)), consumption_identifier(new Identifier<ModelVariant>(this, "FCON",0)),void_identifier(new Identifier<ModelVariant>(this, "VOID",-1)) {
     sectors.emplace_back(consumption_sector);
 }
 
@@ -174,13 +174,23 @@ Firm<ModelVariant>* Model<ModelVariant>::find_firm(const std::string& sector_nam
 }
 
 template<class ModelVariant>
-Firm<ModelVariant>* Model<ModelVariant>::find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const {
+    Firm<ModelVariant> *Model<ModelVariant>::find_firm(Sector<ModelVariant> *sector, const std::string& region_name) const {
     auto it = std::find_if(sector->firms.begin(), sector->firms.end(), [region_name](const Firm<ModelVariant>* it) { return it->region->id() == region_name; });
     if (it == sector->firms.end()) {
         return nullptr;
     }
     return *it;
+    }
+template<class ModelVariant>
+Firm<ModelVariant>* Model<ModelVariant>::find_firm(Identifier<ModelVariant>* identifier, Sector<ModelVariant>* sector, const std::string& identifier_name) const {
+    auto it = std::find_if(sector->firms.begin(), sector->firms.end(), [identifier_name](const Firm<ModelVariant>* it) { return it->identifier->id() == identifier_name; });
+    if (it == sector->firms.end()) {
+        return nullptr;
+    }
+    return *it;
 }
+
+
 
 template<class ModelVariant>
 Consumer<ModelVariant>* Model<ModelVariant>::find_consumer(Region<ModelVariant>* region) const {
@@ -211,5 +221,7 @@ GeoLocation<ModelVariant>* Model<ModelVariant>::find_location(const std::string&
     return it->get();
 }
 
-INSTANTIATE_BASIC(Model);
+
+
+    INSTANTIATE_BASIC(Model);
 }  // namespace acclimate

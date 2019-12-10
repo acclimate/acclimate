@@ -65,10 +65,14 @@ settings::SettingsNode ModelInitializer<ModelVariant>::get_named_property(const 
 }
 
 template<class ModelVariant>
-settings::SettingsNode ModelInitializer<ModelVariant>::get_firm_property(const std::string& sector_name,
+settings::SettingsNode ModelInitializer<ModelVariant>::get_firm_property(const std::string identifier_name,const std::string& sector_name,
                                                                          const std::string& region_name,
                                                                          const std::string& property_name) const {
     const settings::SettingsNode& firm_settings = settings["firms"];
+
+    if (firm_settings.has(identifier_name) && firm_settings[identifier_name].has(property_name)){
+        return firm_settings[identifier_name][property_name];
+    }
     if (firm_settings.has(sector_name + ":" + region_name) && firm_settings[sector_name + ":" + region_name].has(property_name)) {
         return firm_settings[sector_name + ":" + region_name][property_name];
     }
@@ -78,17 +82,24 @@ settings::SettingsNode ModelInitializer<ModelVariant>::get_firm_property(const s
     if (firm_settings.has(region_name) && firm_settings[region_name].has(property_name)) {
         return firm_settings[region_name][property_name];
     }
+
     return firm_settings["ALL"][property_name];
 }
 
 template<class ModelVariant>
-Firm<ModelVariant>* ModelInitializer<ModelVariant>::add_firm(Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
-    auto firm = new Firm<ModelVariant>(sector, region,
-                                       static_cast<Ratio>(get_firm_property(sector->id(), region->id(), "possible_overcapacity_ratio").template as<double>()));
+Firm<ModelVariant>* ModelInitializer<ModelVariant>::add_firm(Identifier<ModelVariant>* identifier, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+    auto firm = new Firm<ModelVariant>(identifier, sector, region,
+                                       static_cast<Ratio>(get_firm_property(identifier->id(),sector->id(), region->id(), "possible_overcapacity_ratio").template as<double>()));
     region->economic_agents.emplace_back(firm);
     sector->firms.push_back(firm);
     return firm;
 }
+
+    template<class ModelVariant>
+    Firm<ModelVariant>* ModelInitializer<ModelVariant>::add_firm(Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+        return add_firm(model()->void_identifier, sector, region);
+    }
+
 
 template<class ModelVariant>
 Consumer<ModelVariant>* ModelInitializer<ModelVariant>::add_consumer(Region<ModelVariant>* region) {

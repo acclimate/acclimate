@@ -27,8 +27,8 @@
 namespace acclimate {
 
 template<class ModelVariant>
-EconomicAgent<ModelVariant>::EconomicAgent(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p)
-    : sector(sector_p), region(region_p), type(type_p) {}
+EconomicAgent<ModelVariant>::EconomicAgent(Identifier<ModelVariant>* identifier_p, Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p)
+    :identifier(identifier_p), sector(sector_p), region(region_p), type(type_p) {}
 
 template<class ModelVariant>
 inline Firm<ModelVariant>* EconomicAgent<ModelVariant>::as_firm() {
@@ -71,5 +71,7 @@ void EconomicAgent<ModelVariant>::remove_storage(Storage<ModelVariant>* storage)
     input_storages.erase(it);
 }
 
-INSTANTIATE_BASIC(EconomicAgent);
+
+
+    INSTANTIATE_BASIC(EconomicAgent);
 }  // namespace acclimate

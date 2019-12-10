@@ -29,6 +29,7 @@
 #include "model/GeoLocation.h"
 #include "run.h"
 #include "types.h"
+#include "Identifier.h"
 
 namespace acclimate {
 
@@ -62,6 +63,8 @@ class Model {
     std::vector<std::unique_ptr<Region<ModelVariant>>> regions;
     std::vector<std::unique_ptr<GeoLocation<ModelVariant>>> other_locations;
     Sector<ModelVariant>* const consumption_sector;
+    Identifier<ModelVariant>* const consumption_identifier;
+    Identifier<ModelVariant>* const void_identifier;
 
   private:
     Time time_ = Time(0.0);
@@ -134,13 +137,18 @@ class Model {
     Region<ModelVariant>* find_region(const std::string& name) const;
     Sector<ModelVariant>* find_sector(const std::string& name) const;
     Firm<ModelVariant>* find_firm(const std::string& sector_name, const std::string& region_name) const;
-    Firm<ModelVariant>* find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const;
+    Firm<ModelVariant>* find_firm(Sector<ModelVariant>* sector, const std::string& region) const;
+    Firm <ModelVariant>* find_firm(Identifier<ModelVariant> *identifier, Sector <ModelVariant> *sector, const std::string &identifier_name) const;
     Consumer<ModelVariant>* find_consumer(Region<ModelVariant>* region) const;
     Consumer<ModelVariant>* find_consumer(const std::string& region_name) const;
     GeoLocation<ModelVariant>* find_location(const std::string& name) const;
     inline Run<ModelVariant>* run() const { return run_m; }
     inline std::string id() const { return "MODEL"; }
+
+
+
 };
+
 }  // namespace acclimate
 
 #endif
