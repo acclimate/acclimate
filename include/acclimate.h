@@ -24,12 +24,13 @@
 #include <memory>
 #include "settingsnode.h"
 #include "types.h"
+#include "run.h"
 
 namespace acclimate {
 
 class Acclimate {
   protected:
-    std::shared_ptr<void> run_m;
+    std::unique_ptr<Run> run_m;
 
   public:
     explicit Acclimate(settings::SettingsNode settings_p);

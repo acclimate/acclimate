@@ -66,11 +66,11 @@ Acclimate::Acclimate(settings::SettingsNode settings_p) {
     signal(SIGFPE, handle_fpe_error);
     feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);
 #endif
-    run_m = std::make_shared<Run>(std::move(settings_p));
+    run_m = std::unique_ptr<Run>(new Run(settings_p));
 }
 
 int Acclimate::run() {
-    return static_cast<Run*>(run_m.get())->run();
+    return (run_m.get())->run();
 }
 
 }  // namespace acclimate
