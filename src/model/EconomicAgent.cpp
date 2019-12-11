@@ -22,7 +22,7 @@
 #include <algorithm>
 #include "model/GeoRoute.h"
 #include "model/Model.h"
-#include "model/PurchasingManagerPrices.h"
+#include "model/PurchasingManager.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
 #include "model/Region.h"

@@ -23,15 +23,12 @@
 #include <fstream>
 #include <utility>
 #include "model/BusinessConnection.h"
-#include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Model.h"
 #include "model/PurchasingManager.h"
-#include "model/PurchasingManagerPrices.h"
 #include "model/Region.h"
 #include "model/SalesManager.h"
-#include "model/SalesManagerPrices.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
 #include "scenario/Scenario.h"

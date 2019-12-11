@@ -24,15 +24,15 @@
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Storage.h"
-#include "model/SalesManagerPrices.h"
-#include "model/PurchasingManagerPrices.h"
+#include "model/SalesManager.h"
+#include "model/PurchasingManager.h"
 #include "model/TransportChainLink.h"
 #include "run.h"
 
 namespace acclimate {
 
-BusinessConnection::BusinessConnection(PurchasingManagerPrices* buyer_p,
-                                       SalesManagerPrices* seller_p,
+BusinessConnection::BusinessConnection(PurchasingManager* buyer_p,
+                                       SalesManager* seller_p,
                                        const Flow& initial_flow_Z_star_p)
         : buyer(buyer_p),
           demand_fulfill_history_(1.0),

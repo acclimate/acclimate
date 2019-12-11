@@ -26,7 +26,7 @@
 #include "model/GeoRoute.h"
 #include "model/Government.h"
 #include "model/Model.h"
-#include "model/PurchasingManagerPrices.h"
+#include "model/PurchasingManager.h"
 #include "model/Storage.h"
 #include "run.h"
 

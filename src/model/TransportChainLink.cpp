@@ -23,8 +23,8 @@
 #include "model/BusinessConnection.h"
 #include "model/EconomicAgent.h"
 #include "model/Model.h"
-#include "model/PurchasingManagerPrices.h"
-#include "model/SalesManagerPrices.h"
+#include "model/PurchasingManager.h"
+#include "model/SalesManager.h"
 #include "model/Storage.h"
 #include "run.h"
 

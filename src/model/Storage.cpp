@@ -23,7 +23,7 @@
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Model.h"
-#include "model/PurchasingManagerPrices.h"
+#include "model/PurchasingManager.h"
 #include "model/Sector.h"
 #include "run.h"
 
@@ -31,7 +31,7 @@ namespace acclimate {
 
 Storage::Storage(Sector* sector_p, EconomicAgent* economic_agent_p)
         : sector(sector_p), economic_agent(economic_agent_p),
-          purchasing_manager(new PurchasingManagerPrices(this)) {}
+          purchasing_manager(new PurchasingManager(this)) {}
 
 void Storage::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);

@@ -20,13 +20,13 @@
 
 #include "model/Firm.h"
 #include <vector>
-#include "model/CapacityManagerPrices.h"
+#include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
 #include "model/GeoRoute.h"
 #include "model/Model.h"
-#include "model/PurchasingManagerPrices.h"
+#include "model/PurchasingManager.h"
 #include "model/Region.h"
-#include "model/SalesManagerPrices.h"
+#include "model/SalesManager.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
 #include "run.h"
@@ -35,8 +35,8 @@ namespace acclimate {
 
 Firm::Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
         : EconomicAgent(sector_p, region_p, EconomicAgent::Type::FIRM),
-          capacity_manager(new CapacityManagerPrices(this, possible_overcapacity_ratio_beta_p)),
-          sales_manager(new SalesManagerPrices(this)) {}
+          capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta_p)),
+          sales_manager(new SalesManager(this)) {}
 
 inline Firm* Firm::as_firm() {
     return this;

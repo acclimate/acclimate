@@ -32,7 +32,7 @@ class EconomicAgent;
 
 class Model;
 
-class PurchasingManagerPrices;
+class PurchasingManager;
 
 class Sector;
 
@@ -40,7 +40,7 @@ class Storage {
   public:
     Sector* const sector;
     EconomicAgent* const economic_agent;
-    std::unique_ptr<PurchasingManagerPrices> const purchasing_manager;
+    std::unique_ptr<PurchasingManager> const purchasing_manager;
 
   private:
     Flow input_flow_I_[3] = {Flow(0.0), Flow(0.0), Flow(0.0)};

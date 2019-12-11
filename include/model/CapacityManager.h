@@ -45,18 +45,28 @@ class CapacityManager {
     const Flow& possible_production_X_hat() const { return possible_production_X_hat_; }
 
   protected:
-    virtual const Flow get_possible_production_X_hat() const;
     virtual void calc_possible_and_desired_production();
 
   public:
-    CapacityManager(Firm* firm_p, const Ratio& possible_overcapacity_ratio_beta_p);
-    virtual ~CapacityManager() = default;
-    virtual const Flow calc_production_X();
+    CapacityManager(Firm* firm_p, Ratio possible_overcapacity_ratio_beta_p);
+    ~CapacityManager() = default;
     Ratio get_production_capacity_p() const;
     Ratio get_desired_production_capacity_p_tilde() const;
     Ratio get_possible_production_capacity_p_hat() const;
     Model* model() const;
     std::string id() const;
+
+  private:
+    const Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const;
+
+  public:
+    const Flow get_possible_production_X_hat() const;
+    const Flow estimate_possible_production_X_hat() const;
+    const Flow calc_production_X();
+#ifdef DEBUG
+    void print_inputs() const;
+#endif
+
 };
 }  // namespace acclimate
 

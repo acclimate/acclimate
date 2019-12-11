@@ -25,7 +25,7 @@
 #include "model/GeoRoute.h"
 #include "model/Model.h"
 #include "model/Region.h"
-#include "model/SalesManagerPrices.h"
+#include "model/SalesManager.h"
 
 namespace acclimate {
 

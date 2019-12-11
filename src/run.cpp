@@ -38,7 +38,7 @@
 #include "model/EconomicAgent.h"
 #include "model/Government.h"
 #include "model/Model.h"
-#include "model/PurchasingManagerPrices.h"
+#include "model/PurchasingManager.h"
 #include "model/Region.h"
 #include "model/Storage.h"
 #include "output/ArrayOutput.h"

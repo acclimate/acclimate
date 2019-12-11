@@ -32,10 +32,8 @@ class GeoRoute;
 class Model;
 
 class PurchasingManager;
-class PurchasingManagerPrices;
 
 class SalesManager;
-class SalesManagerPrices;
 
 class TransportChainLink;
 
@@ -52,11 +50,11 @@ class BusinessConnection {
     std::unique_ptr<TransportChainLink> first_transport_link;
 
   public:
-    PurchasingManagerPrices* buyer;  // TODO encapsulate
-    SalesManagerPrices* seller;      // TODO encapsulate
+    PurchasingManager* buyer;  // TODO encapsulate
+    SalesManager* seller;      // TODO encapsulate
 
-    BusinessConnection(PurchasingManagerPrices* buyer_p,
-                       SalesManagerPrices* seller_p,
+    BusinessConnection(PurchasingManager* buyer_p,
+                       SalesManager* seller_p,
                        const Flow& initial_flow_Z_star_p);
 
     inline const Time& time() const { return time_; }

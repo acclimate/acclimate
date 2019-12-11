@@ -22,7 +22,7 @@
 #include <memory>
 #include <random>
 #include <utility>
-#include "model/CapacityManagerPrices.h"
+#include "model/CapacityManager.h"
 #include "model/Consumer.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
