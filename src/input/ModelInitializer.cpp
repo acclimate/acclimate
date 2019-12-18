@@ -19,10 +19,12 @@
 */
 
 #include "input/ModelInitializer.h"
+
 #include <algorithm>
 #include <fstream>
 #include <memory>
 #include <vector>
+
 #include "MRIOIndexSet.h"
 #include "MRIOTable.h"
 #include "model/BusinessConnection.h"
@@ -46,8 +48,7 @@
 
 namespace acclimate {
 
-ModelInitializer::ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p)
-        : model_m(model_p), settings(settings_p) {
+ModelInitializer::ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p) : model_m(model_p), settings(settings_p) {
     const settings::SettingsNode& parameters = settings["model"];
     const settings::SettingsNode& run = settings["run"];
     model()->start_time(run["start"].as<Time>());
@@ -69,8 +70,7 @@ settings::SettingsNode ModelInitializer::get_firm_property(const std::string& se
                                                            const std::string& region_name,
                                                            const std::string& property_name) const {
     const settings::SettingsNode& firm_settings = settings["firms"];
-    if (firm_settings.has(sector_name + ":" + region_name) &&
-        firm_settings[sector_name + ":" + region_name].has(property_name)) {
+    if (firm_settings.has(sector_name + ":" + region_name) && firm_settings[sector_name + ":" + region_name].has(property_name)) {
         return firm_settings[sector_name + ":" + region_name][property_name];
     }
     if (firm_settings.has(sector_name) && firm_settings[sector_name].has(property_name)) {
@@ -83,9 +83,8 @@ settings::SettingsNode ModelInitializer::get_firm_property(const std::string& se
 }
 
 Firm* ModelInitializer::add_firm(Sector* sector, Region* region) {
-    auto firm = new Firm(sector, region,
-                         static_cast<Ratio>(get_firm_property(sector->id(), region->id(),
-                                                              "possible_overcapacity_ratio").template as<double>()));
+    auto firm =
+        new Firm(sector, region, static_cast<Ratio>(get_firm_property(sector->id(), region->id(), "possible_overcapacity_ratio").template as<double>()));
     region->economic_agents.emplace_back(firm);
     sector->firms.push_back(firm);
     return firm;
@@ -110,34 +109,25 @@ Sector* ModelInitializer::add_sector(const std::string& name) {
     if (sector == nullptr) {
         const settings::SettingsNode& sectors_node = settings["sectors"];
         sectors_node.require();
-        sector = model()->add_sector(
-                name, get_named_property(sectors_node, name, "upper_storage_limit").template as<Ratio>(),
-                get_named_property(sectors_node, name, "initial_storage_fill_factor").template as<FloatType>() *
-                model()->delta_t(),
-                Sector::map_transport_type(
-                        get_named_property(sectors_node, name, "transport").template as<settings::hstring>()));
-        sector->parameters_writable().supply_elasticity = get_named_property(sectors_node, name,
-                                                                             "supply_elasticity").template as<Ratio>();
+        sector = model()->add_sector(name, get_named_property(sectors_node, name, "upper_storage_limit").template as<Ratio>(),
+                                     get_named_property(sectors_node, name, "initial_storage_fill_factor").template as<FloatType>() * model()->delta_t(),
+                                     Sector::map_transport_type(get_named_property(sectors_node, name, "transport").template as<settings::hstring>()));
+        sector->parameters_writable().supply_elasticity = get_named_property(sectors_node, name, "supply_elasticity").template as<Ratio>();
         sector->parameters_writable().price_increase_production_extension =
-                get_named_property(sectors_node, name, "price_increase_production_extension").template as<Price>();
+            get_named_property(sectors_node, name, "price_increase_production_extension").template as<Price>();
         sector->parameters_writable().estimated_price_increase_production_extension =
-                get_named_property(sectors_node, name, "estimated_price_increase_production_extension")
-                        .template as<Price>(
-                                to_float(sector->parameters_writable().price_increase_production_extension));
-        sector->parameters_writable().initial_markup = get_named_property(sectors_node, name,
-                                                                          "initial_markup").template as<Price>();
+            get_named_property(sectors_node, name, "estimated_price_increase_production_extension")
+                .template as<Price>(to_float(sector->parameters_writable().price_increase_production_extension));
+        sector->parameters_writable().initial_markup = get_named_property(sectors_node, name, "initial_markup").template as<Price>();
         sector->parameters_writable().target_storage_refill_time =
-                get_named_property(sectors_node, name, "target_storage_refill_time").template as<FloatType>() *
-                model()->delta_t();
+            get_named_property(sectors_node, name, "target_storage_refill_time").template as<FloatType>() * model()->delta_t();
         sector->parameters_writable().target_storage_withdraw_time =
-                get_named_property(sectors_node, name, "target_storage_withdraw_time").template as<FloatType>() *
-                model()->delta_t();
+            get_named_property(sectors_node, name, "target_storage_withdraw_time").template as<FloatType>() * model()->delta_t();
     }
     return sector;
 }
 
-void ModelInitializer::initialize_connection(
-        Sector* sector_from, Region* region_from, Sector* sector_to, Region* region_to, const Flow& flow) {
+void ModelInitializer::initialize_connection(Sector* sector_from, Region* region_from, Sector* sector_to, Region* region_to, const Flow& flow) {
     Firm* firm_from = model()->find_firm(sector_from, region_from->id());
     if (!firm_from) {
         firm_from = add_firm(sector_from, region_from);
@@ -175,9 +165,8 @@ void ModelInitializer::initialize_connection(Firm* firm_from, EconomicAgent* eco
             const settings::SettingsNode& consumers_node = settings["consumers"];
             consumers_node.require();
             input_storage->parameters_writable().consumption_price_elasticity =
-                    get_named_property(consumers_node, sector_from->id() + "->" + economic_agent_to->region->id(),
-                                       "consumption_price_elasticity")
-                            .template as<Ratio>();
+                get_named_property(consumers_node, sector_from->id() + "->" + economic_agent_to->region->id(), "consumption_price_elasticity")
+                    .template as<Ratio>();
         }
         economic_agent_to->input_storages.emplace_back(input_storage);
     }
@@ -185,9 +174,7 @@ void ModelInitializer::initialize_connection(Firm* firm_from, EconomicAgent* eco
     input_storage->add_initial_flow_Z_star(flow);
     firm_from->add_initial_production_X_star(flow);
 
-    auto business_connection =
-            std::make_shared<BusinessConnection>(input_storage->purchasing_manager.get(),
-                                                 firm_from->sales_manager.get(), flow);
+    auto business_connection = std::make_shared<BusinessConnection>(input_storage->purchasing_manager.get(), firm_from->sales_manager.get(), flow);
     firm_from->sales_manager->business_connections.emplace_back(business_connection);
     input_storage->purchasing_manager->business_connections.emplace_back(business_connection);
 
@@ -208,8 +195,7 @@ void ModelInitializer::clean_network() {
         info("Cleaning up...");
 #endif
         for (auto region = model()->regions.begin(); region != model()->regions.end(); ++region) {
-            for (auto economic_agent = (*region)->economic_agents.begin();
-                 economic_agent != (*region)->economic_agents.end();) {
+            for (auto economic_agent = (*region)->economic_agents.begin(); economic_agent != (*region)->economic_agents.end();) {
                 if ((*economic_agent)->type == EconomicAgent::Type::FIRM) {
                     Firm* firm = (*economic_agent)->as_firm();
 
@@ -220,8 +206,7 @@ void ModelInitializer::clean_network() {
                     FloatType value_added = to_float(firm->initial_production_X_star().get_quantity() - input);
 
                     if (value_added <= 0.0 || firm->sales_manager->business_connections.empty()
-                        || (firm->sales_manager->business_connections.size() == 1 && firm->self_supply_connection()) ||
-                        firm->input_storages.empty()
+                        || (firm->sales_manager->business_connections.size() == 1 && firm->self_supply_connection()) || firm->input_storages.empty()
                         || (firm->input_storages.size() == 1 && firm->self_supply_connection())) {
                         needs_cleaning = true;
 
@@ -240,8 +225,7 @@ void ModelInitializer::clean_network() {
                             if (!business_connection->buyer) {
                                 error("Buyer invalid");
                             }
-                            if (!business_connection->buyer->storage->subtract_initial_flow_Z_star(
-                                    business_connection->initial_flow_Z_star())) {
+                            if (!business_connection->buyer->storage->subtract_initial_flow_Z_star(business_connection->initial_flow_Z_star())) {
                                 business_connection->buyer->remove_business_connection(business_connection.get());
                             }
                         }
@@ -252,8 +236,7 @@ void ModelInitializer::clean_network() {
                                 if (!business_connection->seller) {
                                     error("Seller invalid");
                                 }
-                                business_connection->seller->firm->subtract_initial_production_X_star(
-                                        business_connection->initial_flow_Z_star());
+                                business_connection->seller->firm->subtract_initial_production_X_star(business_connection->initial_flow_Z_star());
                                 business_connection->seller->remove_business_connection(business_connection.get());
                             }
                         }
@@ -476,8 +459,7 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
                     if (p2->used) {  // regions are already marked used
                         auto& path = paths[i * size + j].points();
                         if (path.empty()) {
-                            error("No roadsea transport connection from " << ids[input_indices[i]] << " to "
-                                                                          << ids[input_indices[j]]);
+                            error("No roadsea transport connection from " << ids[input_indices[i]] << " to " << ids[input_indices[j]]);
                         } else {
                             for (std::size_t k = 1; k < path.size() - 1; ++k) {
                                 found = found || !path[k]->used;
@@ -597,8 +579,7 @@ void ModelInitializer::read_centroids_netcdf(const std::string& filename) {
                 if (transport_delay > 0) {
                     --transport_delay;
                 }
-                auto inf = std::make_shared<GeoConnection>(model(), transport_delay, type, region_from.get(),
-                                                           region_to.get());
+                auto inf = std::make_shared<GeoConnection>(model(), transport_delay, type, region_from.get(), region_to.get());
                 region_from->connections.push_back(inf);
                 region_to->connections.push_back(inf);
 
@@ -613,8 +594,7 @@ void ModelInitializer::read_centroids_netcdf(const std::string& filename) {
                 if (transport_delay > 0) {
                     --transport_delay;
                 }
-                auto inf = std::make_shared<GeoConnection>(model(), transport_delay, GeoConnection::Type::AVIATION,
-                                                           region_from.get(), region_to.get());
+                auto inf = std::make_shared<GeoConnection>(model(), transport_delay, GeoConnection::Type::AVIATION, region_from.get(), region_to.get());
                 region_from->connections.push_back(inf);
                 region_to->connections.push_back(inf);
 
@@ -627,11 +607,8 @@ void ModelInitializer::read_centroids_netcdf(const std::string& filename) {
     }
 }
 
-void ModelInitializer::create_simple_transport_connection(Region* region_from,
-                                                          Region* region_to,
-                                                          TransportDelay transport_delay) {
-    auto inf = std::make_shared<GeoConnection>(model(), transport_delay, GeoConnection::Type::UNSPECIFIED, region_from,
-                                               region_to);
+void ModelInitializer::create_simple_transport_connection(Region* region_from, Region* region_to, TransportDelay transport_delay) {
+    auto inf = std::make_shared<GeoConnection>(model(), transport_delay, GeoConnection::Type::UNSPECIFIED, region_from, region_to);
     region_from->connections.push_back(inf);
     region_to->connections.push_back(inf);
 
@@ -707,8 +684,7 @@ void ModelInitializer::read_transport_times_csv(const std::string& index_filenam
                 if (region_to && region_from != region_to) {
                     transport_delay_tau = std::stoi(transport_str);
                     if (transport_delay_tau <= 0) {
-                        error("Transport delay not valid: " << transport_delay_tau << " in col " << col << " in row "
-                                                            << row);
+                        error("Transport delay not valid: " << transport_delay_tau << " in col " << col << " in row " << row);
                     }
                     create_simple_transport_connection(region_from, region_to,
                                                        transport_delay_tau - 1);  // -1 for backwards compatibility
@@ -743,38 +719,28 @@ void ModelInitializer::build_artificial_network() {
     for (std::size_t r = 0; r < regions_cnt; ++r) {
         for (std::size_t i = 0; i < sectors_cnt; ++i) {
             info(model()->sectors[i + 1]->firms[r]->id()
-                         << "->" << model()->sectors[(i + 1) % sectors_cnt + 1]->firms[r]->id() << " = "
-                         << flow.get_quantity());
-            initialize_connection(model()->sectors[i + 1]->firms[r],
-                                  model()->sectors[(i + 1) % sectors_cnt + 1]->firms[r], flow);
+                 << "->" << model()->sectors[(i + 1) % sectors_cnt + 1]->firms[r]->id() << " = " << flow.get_quantity());
+            initialize_connection(model()->sectors[i + 1]->firms[r], model()->sectors[(i + 1) % sectors_cnt + 1]->firms[r], flow);
             if (!closed && r == regions_cnt - 1) {
                 info(model()->sectors[i + 1]->firms[r]->id()
-                             << "->" << model()->find_consumer(model()->regions[r].get())->id() << " = "
-                             << double_flow.get_quantity());
-                initialize_connection(model()->sectors[i + 1]->firms[r],
-                                      model()->find_consumer(model()->regions[r].get()), double_flow);
+                     << "->" << model()->find_consumer(model()->regions[r].get())->id() << " = " << double_flow.get_quantity());
+                initialize_connection(model()->sectors[i + 1]->firms[r], model()->find_consumer(model()->regions[r].get()), double_flow);
             } else {
                 info(model()->sectors[i + 1]->firms[r]->id()
-                             << "->" << model()->find_consumer(model()->regions[r].get())->id() << " = "
-                             << flow.get_quantity());
-                initialize_connection(model()->sectors[i + 1]->firms[r],
-                                      model()->find_consumer(model()->regions[r].get()), flow);
+                     << "->" << model()->find_consumer(model()->regions[r].get())->id() << " = " << flow.get_quantity());
+                initialize_connection(model()->sectors[i + 1]->firms[r], model()->find_consumer(model()->regions[r].get()), flow);
             }
             if (closed || r < regions_cnt - 1) {
                 info(model()->sectors[i + 1]->firms[r]->id()
-                             << "->"
-                             << model()->sectors[(i + skewness) % sectors_cnt + 1]->firms[(r + 1) % regions_cnt]->id()
-                             << " = " << flow.get_quantity());
-                initialize_connection(model()->sectors[i + 1]->firms[r],
-                                      model()->sectors[(i + skewness) % sectors_cnt + 1]->firms[(r + 1) % regions_cnt],
+                     << "->" << model()->sectors[(i + skewness) % sectors_cnt + 1]->firms[(r + 1) % regions_cnt]->id() << " = " << flow.get_quantity());
+                initialize_connection(model()->sectors[i + 1]->firms[r], model()->sectors[(i + skewness) % sectors_cnt + 1]->firms[(r + 1) % regions_cnt],
                                       flow);
             }
         }
     }
 }
 
-void ModelInitializer::build_agent_network_from_table(const mrio::Table<FloatType, std::size_t>& table,
-                                                      FloatType flow_threshold) {
+void ModelInitializer::build_agent_network_from_table(const mrio::Table<FloatType, std::size_t>& table, FloatType flow_threshold) {
     std::vector<EconomicAgent*> economic_agents;
     economic_agents.reserve(table.index_set().size());
 
@@ -845,22 +811,20 @@ void ModelInitializer::build_agent_network() {
             flows_file.close();
             index_file.close();
             build_agent_network_from_table(table, flow_threshold);
-        }
-            break;
+        } break;
         case settings::hstring::hash("netcdf"): {
             const auto& filename = network["file"].as<std::string>();
             mrio::Table<FloatType, std::size_t> table;
             const auto flow_threshold = network["threshold"].as<FloatType>();
             table.read_from_netcdf(filename, flow_threshold);
             build_agent_network_from_table(table, flow_threshold);
-        }
-            break;
+        } break;
         case settings::hstring::hash("artificial"): {
             build_artificial_network();
             return;
-        }
-            break;
-        default: error("Unknown network type '" << type << "'");
+        } break;
+        default:
+            error("Unknown network type '" << type << "'");
     }
 }
 
@@ -878,8 +842,7 @@ void ModelInitializer::build_transport_network() {
                     create_simple_transport_connection(region_from.get(), region_to.get(), transport_delay);
                 }
             }
-        }
-            break;
+        } break;
         case settings::hstring::hash("csv"):
             read_transport_times_csv(transport["index"].as<std::string>(), transport["file"].as<std::string>());
             break;
@@ -889,7 +852,8 @@ void ModelInitializer::build_transport_network() {
         case settings::hstring::hash("network"):
             read_transport_network_netcdf(transport["file"].as<std::string>());
             break;
-        default: error("Unknown transport type '" << type << "'");
+        default:
+            error("Unknown transport type '" << type << "'");
     }
 }
 
@@ -908,16 +872,14 @@ void ModelInitializer::pre_initialize() {
     model()->parameters_writable().optimization_timeout = parameters["optimization_timeout"].as<unsigned int>();
     model()->parameters_writable().quadratic_transport_penalty = parameters["quadratic_transport_penalty"].as<bool>();
     model()->parameters_writable().maximal_decrease_reservation_price_limited_by_markup =
-            parameters["maximal_decrease_reservation_price_limited_by_markup"].as<bool>();
+        parameters["maximal_decrease_reservation_price_limited_by_markup"].as<bool>();
     model()->parameters_writable().always_extend_expected_demand_curve = parameters["always_extend_expected_demand_curve"].as<bool>();
     model()->parameters_writable().naive_expectations = parameters["naive_expectations"].as<bool>();
     model()->parameters_writable().deviation_penalty = parameters["deviation_penalty"].as<bool>(false);
     model()->parameters_writable().cost_correction = parameters["cost_correction"].as<bool>();
     model()->parameters_writable().min_storage = parameters["min_storage"].as<Ratio>(0.0);
-    model()->parameters_writable().cheapest_price_range_preserve_seller_price = parameters["cheapest_price_range_preserve_seller_price"].as<bool>(
-            false);
-    model()->parameters_writable().cheapest_price_range_generic_size = (
-            parameters["cheapest_price_range_width"].as<std::string>() == "auto");
+    model()->parameters_writable().cheapest_price_range_preserve_seller_price = parameters["cheapest_price_range_preserve_seller_price"].as<bool>(false);
+    model()->parameters_writable().cheapest_price_range_generic_size = (parameters["cheapest_price_range_width"].as<std::string>() == "auto");
     if (!model()->parameters_writable().cheapest_price_range_generic_size) {
         model()->parameters_writable().cheapest_price_range_width = parameters["cheapest_price_range_width"].as<Price>();
     }
@@ -954,7 +916,8 @@ void ModelInitializer::pre_initialize() {
         case settings::hstring::hash("var2"):
             model()->parameters_writable().optimization_algorithm = nlopt::LD_VAR2;
             break;
-        default: error("unknown optimization alorithm '" << optimization_algorithm << "'");
+        default:
+            error("unknown optimization alorithm '" << optimization_algorithm << "'");
     }
 }
 

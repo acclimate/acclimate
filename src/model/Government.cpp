@@ -19,13 +19,13 @@
 */
 
 #include "model/Government.h"
-#include "run.h"
 
 #include "model/Firm.h"
 #include "model/GeoRoute.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/SalesManager.h"
+#include "run.h"
 
 namespace acclimate {
 
@@ -38,9 +38,7 @@ void Government::collect_tax() {
     }
 }
 
-void Government::redistribute_tax() {
-    assertstep(INVESTMENT);
-}
+void Government::redistribute_tax() { assertstep(INVESTMENT); }
 
 void Government::impose_tax() {
     assertstep(EXPECTATION);
@@ -59,9 +57,7 @@ void Government::define_tax(const std::string& sector, const Ratio& tax_ratio_p)
     }
 }
 
-void Government::iterate_consumption_and_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
-}
+void Government::iterate_consumption_and_production() { assertstep(CONSUMPTION_AND_PRODUCTION); }
 
 void Government::iterate_expectation() {
     assertstep(EXPECTATION);
@@ -69,21 +65,15 @@ void Government::iterate_expectation() {
     impose_tax();
 }
 
-void Government::iterate_purchase() {
-    assertstep(PURCHASE);
-}
+void Government::iterate_purchase() { assertstep(PURCHASE); }
 
 void Government::iterate_investment() {
     assertstep(INVESTMENT);
     redistribute_tax();
 }
 
-Model* Government::model() const {
-    return region->model();
-}
+Model* Government::model() const { return region->model(); }
 
-std::string Government::id() const {
-    return "GOVM:" + region->id();
-}
+std::string Government::id() const { return "GOVM:" + region->id(); }
 
 }  // namespace acclimate

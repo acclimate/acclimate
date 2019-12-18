@@ -23,6 +23,7 @@
 
 #include <string>
 #include <unordered_map>
+
 #include "settingsnode.h"
 #include "types.h"
 
@@ -62,7 +63,7 @@ class ModelInitializer {
 
         ~TemporaryGeoEntity() {
             if (used) {
-                (void) entity_m.release();
+                (void)entity_m.release();
             }
         }
     };
@@ -76,7 +77,7 @@ class ModelInitializer {
         Path() = default;
 
         Path(FloatType costs_p, TemporaryGeoEntity* p1, TemporaryGeoEntity* p2, TemporaryGeoEntity* connection)
-                : costs_m(costs_p), points_m({p1, connection, p2}) {}
+            : costs_m(costs_p), points_m({p1, connection, p2}) {}
 
         inline FloatType costs() const { return costs_m; }
 
@@ -96,17 +97,16 @@ class ModelInitializer {
                 res.costs_m = costs_m + other.costs_m;
                 res.points_m.assign(std::begin(points_m), std::end(points_m));
                 res.points_m.resize(points_m.size() + other.points_m.size() - 1);
-                std::copy(std::begin(other.points_m), std::end(other.points_m),
-                          std::begin(res.points_m) + points_m.size() - 1);
+                std::copy(std::begin(other.points_m), std::end(other.points_m), std::begin(res.points_m) + points_m.size() - 1);
             }
             return res;
         }
     };
 
   private:
-    settings::SettingsNode get_firm_property(const std::string& sector_name, const std::string& region_name,
-                                             const std::string& property_name) const;
-    settings::SettingsNode get_named_property(const settings::SettingsNode& node_settings, const std::string& node_name,
+    settings::SettingsNode get_firm_property(const std::string& sector_name, const std::string& region_name, const std::string& property_name) const;
+    settings::SettingsNode get_named_property(const settings::SettingsNode& node_settings,
+                                              const std::string& node_name,
                                               const std::string& property_name) const;
 
   protected:
@@ -118,11 +118,7 @@ class ModelInitializer {
     Firm* add_firm(Sector* sector, Region* region);
     Consumer* add_consumer(Region* region);
     void create_simple_transport_connection(Region* region_from, Region* region_to, TransportDelay transport_delay);
-    void initialize_connection(Sector* sector_from,
-                               Region* region_from,
-                               Sector* sector_to,
-                               Region* region_to,
-                               const Flow& flow);
+    void initialize_connection(Sector* sector_from, Region* region_from, Sector* sector_to, Region* region_to, const Flow& flow);
     void initialize_connection(Firm* firm_from, EconomicAgent* economic_agent_to, const Flow& flow);
     void clean_network();
     void pre_initialize();

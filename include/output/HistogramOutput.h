@@ -21,9 +21,10 @@
 #ifndef ACCLIMATE_HISTOGRAMOUTPUT_H
 #define ACCLIMATE_HISTOGRAMOUTPUT_H
 
-#include "output/Output.h"
 #include <fstream>
 #include <vector>
+
+#include "output/Output.h"
 
 namespace acclimate {
 
@@ -33,8 +34,8 @@ class Scenario;
 
 class HistogramOutput : public Output {
   public:
-    using Output::output_node;
     using Output::model;
+    using Output::output_node;
     using Output::settings_string;
 
   private:
@@ -54,10 +55,7 @@ class HistogramOutput : public Output {
     void internal_write_value(const hstring& name, FloatType v, const hstring& suffix) override;
 
   public:
-    HistogramOutput(const settings::SettingsNode& settings_p,
-                    Model* model_p,
-                    Scenario* scenario_p,
-                    settings::SettingsNode output_node_p);
+    HistogramOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
 };
 }  // namespace acclimate

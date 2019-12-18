@@ -26,6 +26,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "model/Sector.h"
 #include "parameters.h"
 #include "types.h"

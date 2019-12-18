@@ -19,10 +19,12 @@
 */
 
 #include "output/JSONOutput.h"
+
 #include <ctime>
 #include <iostream>
 #include <string>
 #include <utility>
+
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
@@ -32,11 +34,8 @@
 
 namespace acclimate {
 
-JSONOutput::JSONOutput(const settings::SettingsNode& settings_p,
-                       Model* model_p,
-                       Scenario* scenario_p,
-                       settings::SettingsNode output_node_p)
-        : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
+JSONOutput::JSONOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
 
 void JSONOutput::initialize() {
     if (!output_node.has("file")) {
@@ -79,13 +78,9 @@ void JSONOutput::internal_write_settings() {
             "\"data\": {\n";
 }
 
-void JSONOutput::internal_iterate_begin() {
-    *out << "    \"" << model()->time() << "\": {\n";
-}
+void JSONOutput::internal_iterate_begin() { *out << "    \"" << model()->time() << "\": {\n"; }
 
-void JSONOutput::internal_iterate_end() {
-    *out << "    },\n";
-}
+void JSONOutput::internal_iterate_end() { *out << "    },\n"; }
 
 void JSONOutput::internal_end() {
     *out << "}\n";
@@ -96,9 +91,7 @@ void JSONOutput::internal_write_value(const hstring& name, FloatType v, const hs
     *out << "            \"" << name << suffix << "\": " << v << ",\n";
 }
 
-void JSONOutput::internal_end_target() {
-    *out << "        },\n";
-}
+void JSONOutput::internal_end_target() { *out << "        },\n"; }
 
 void JSONOutput::internal_start_target(const hstring& name, Sector* sector, Region* region) {
     *out << "        \"" << name
@@ -124,8 +117,6 @@ void JSONOutput::internal_start_target(const hstring& name, Region* region) {
          << region->id() << "\",\n";
 }
 
-void JSONOutput::internal_start_target(const hstring& name) {
-    *out << "        \"" << name << "\": {\n";
-}
+void JSONOutput::internal_start_target(const hstring& name) { *out << "        \"" << name << "\": {\n"; }
 
 }  // namespace acclimate

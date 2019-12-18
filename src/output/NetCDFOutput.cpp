@@ -19,10 +19,12 @@
 */
 
 #include "output/NetCDFOutput.h"
+
 #include <ctime>
 #include <limits>
 #include <ostream>
 #include <utility>
+
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
@@ -37,11 +39,8 @@ extern const char* acclimate_git_diff;
 
 namespace acclimate {
 
-NetCDFOutput::NetCDFOutput(const settings::SettingsNode& settings_p,
-                           Model* model_p,
-                           Scenario* scenario_p,
-                           settings::SettingsNode output_node_p)
-        : ArrayOutput(settings_p, model_p, scenario_p, std::move(output_node_p), false) {
+NetCDFOutput::NetCDFOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
+    : ArrayOutput(settings_p, model_p, scenario_p, std::move(output_node_p), false) {
     flush_freq = 1;
     event_cnt = 0;
 }
@@ -67,18 +66,13 @@ void NetCDFOutput::initialize() {
     dim_region = file->addDim("region", regions_size);
     netCDF::NcDim dim_event = file->addDim("event");
     netCDF::NcDim dim_event_type = file->addDim("event_type", Run::event_names.size());
-    netCDF::NcCompoundType event_compound_type = file->addCompoundType("event_compound_type",
-                                                                       sizeof(typename ArrayOutput::Event));
+    netCDF::NcCompoundType event_compound_type = file->addCompoundType("event_compound_type", sizeof(typename ArrayOutput::Event));
     event_compound_type.addMember("time", netCDF::NcType::nc_UINT, offsetof(typename ArrayOutput::Event, time));
     event_compound_type.addMember("type", netCDF::NcType::nc_UBYTE, offsetof(typename ArrayOutput::Event, type));
-    event_compound_type.addMember("sector_from", netCDF::NcType::nc_INT,
-                                  offsetof(typename ArrayOutput::Event, sector_from));
-    event_compound_type.addMember("region_from", netCDF::NcType::nc_INT,
-                                  offsetof(typename ArrayOutput::Event, region_from));
-    event_compound_type.addMember("sector_to", netCDF::NcType::nc_INT,
-                                  offsetof(typename ArrayOutput::Event, sector_to));
-    event_compound_type.addMember("region_to", netCDF::NcType::nc_INT,
-                                  offsetof(typename ArrayOutput::Event, region_to));
+    event_compound_type.addMember("sector_from", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput::Event, sector_from));
+    event_compound_type.addMember("region_from", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput::Event, region_from));
+    event_compound_type.addMember("sector_to", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput::Event, sector_to));
+    event_compound_type.addMember("region_to", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput::Event, region_to));
     event_compound_type.addMember("value", netCDF::NcType::nc_DOUBLE, offsetof(typename ArrayOutput::Event, value));
     var_events = file->addVar("events", event_compound_type, {dim_event});
     var_events.setCompression(false, true, 7);
@@ -123,18 +117,11 @@ void NetCDFOutput::internal_write_header(tm* timestamp, int max_threads) {
 #endif
 }
 
-void NetCDFOutput::internal_write_footer(tm* duration) {
-    file->putAtt("duration", netCDF::NcType::nc_INT, std::mktime(duration));
-}
+void NetCDFOutput::internal_write_footer(tm* duration) { file->putAtt("duration", netCDF::NcType::nc_INT, std::mktime(duration)); }
 
-void NetCDFOutput::internal_write_settings() {
-    file->putAtt("settings", settings_string.c_str());
-}
+void NetCDFOutput::internal_write_settings() { file->putAtt("settings", settings_string.c_str()); }
 
-void NetCDFOutput::create_variable_meta(typename ArrayOutput::Variable& v,
-                                        const hstring& path,
-                                        const hstring& name,
-                                        const hstring& suffix) {
+void NetCDFOutput::create_variable_meta(typename ArrayOutput::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
     auto meta = new VariableMeta();
     std::vector<netCDF::NcDim> dims;
     meta->index.push_back(0);

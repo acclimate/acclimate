@@ -19,14 +19,15 @@
 */
 
 #include "scenario/ExternalForcing.h"
+
 #include <ostream>
 #include <utility>
+
 #include "run.h"
 
 namespace acclimate {
 
-ExternalForcing::ExternalForcing(std::string filename_p, const std::string& variable_name) : filename(
-        std::move(filename_p)) {
+ExternalForcing::ExternalForcing(std::string filename_p, const std::string& variable_name) : filename(std::move(filename_p)) {
     try {
         file.reset(new netCDF::NcFile(filename, netCDF::NcFile::read, netCDF::NcFile::nc4));
     } catch (netCDF::exceptions::NcException& ex) {

@@ -29,19 +29,13 @@ class GeoLocation;
 
 class GeoConnection : public GeoEntity {
   public:
-    enum class Type {
-        ROAD, AVIATION, SEAROUTE, UNSPECIFIED
-    };
+    enum class Type { ROAD, AVIATION, SEAROUTE, UNSPECIFIED };
 
   public:
     const GeoLocation* location1;  // TODO encapsulate
     const GeoLocation* location2;  // TODO encapsulate
     const Type type;
-    GeoConnection(Model* model_m,
-                  TransportDelay delay,
-                  Type type_p,
-                  const GeoLocation* location1_p,
-                  const GeoLocation* location2_p);
+    GeoConnection(Model* model_m, TransportDelay delay, Type type_p, const GeoLocation* location1_p, const GeoLocation* location2_p);
     void invalidate_location(const GeoLocation* location);
     std::string id() const override;
 };

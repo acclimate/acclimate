@@ -19,24 +19,22 @@
 */
 
 #include "output/ConsoleOutput.h"
+
 #include <ctime>
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <utility>
-#include "settingsnode.h"
-#include "version.h"
 
 #include "model/Model.h"
 #include "model/Region.h"
+#include "settingsnode.h"
+#include "version.h"
 
 namespace acclimate {
 
-ConsoleOutput::ConsoleOutput(const settings::SettingsNode& settings_p,
-                             Model* model_p,
-                             Scenario* scenario_p,
-                             settings::SettingsNode output_node_p)
-        : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {
+ConsoleOutput::ConsoleOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {
     stack = 0;
     out = nullptr;
 }
@@ -62,13 +60,9 @@ void ConsoleOutput::internal_write_header(tm* timestamp, int max_threads) {
          << max_threads << " threads" << std::endl;
 }
 
-void ConsoleOutput::internal_write_footer(tm* duration) {
-    *out << "\n\nDuration " << std::mktime(duration) << "s";
-}
+void ConsoleOutput::internal_write_footer(tm* duration) { *out << "\n\nDuration " << std::mktime(duration) << "s"; }
 
-void ConsoleOutput::internal_write_settings() {
-    *out << '\n' << settings_string << '\n';
-}
+void ConsoleOutput::internal_write_settings() { *out << '\n' << settings_string << '\n'; }
 
 void ConsoleOutput::internal_start() {
     *out << "Starting"
@@ -113,8 +107,6 @@ void ConsoleOutput::internal_start_target(const hstring& name) {
     *out << '\n' << std::string(2 * stack, ' ') << name << ":";
 }
 
-void ConsoleOutput::internal_end_target() {
-    --stack;
-}
+void ConsoleOutput::internal_end_target() { --stack; }
 
 }  // namespace acclimate

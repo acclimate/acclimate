@@ -19,36 +19,33 @@
 */
 
 #include "model/BusinessConnection.h"
+
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Model.h"
-#include "model/Region.h"
-#include "model/Storage.h"
-#include "model/SalesManager.h"
 #include "model/PurchasingManager.h"
+#include "model/Region.h"
+#include "model/SalesManager.h"
+#include "model/Storage.h"
 #include "model/TransportChainLink.h"
 #include "run.h"
 
 namespace acclimate {
 
-BusinessConnection::BusinessConnection(PurchasingManager* buyer_p,
-                                       SalesManager* seller_p,
-                                       const Flow& initial_flow_Z_star_p)
-        : buyer(buyer_p),
-          demand_fulfill_history_(1.0),
-          initial_flow_Z_star_(initial_flow_Z_star_p),
-          last_delivery_Z_(initial_flow_Z_star_p),
-          last_demand_request_D_(initial_flow_Z_star_p),
-          seller(seller_p),
-          transport_costs(0.0),
-          last_shipment_Z_(initial_flow_Z_star_p),
-          time_(seller_p->model()->time()) {
-    if (seller->firm->sector->transport_type == Sector::TransportType::IMMEDIATE
-        || buyer->storage->economic_agent->region == seller->firm->region) {
+BusinessConnection::BusinessConnection(PurchasingManager* buyer_p, SalesManager* seller_p, const Flow& initial_flow_Z_star_p)
+    : buyer(buyer_p),
+      demand_fulfill_history_(1.0),
+      initial_flow_Z_star_(initial_flow_Z_star_p),
+      last_delivery_Z_(initial_flow_Z_star_p),
+      last_demand_request_D_(initial_flow_Z_star_p),
+      seller(seller_p),
+      transport_costs(0.0),
+      last_shipment_Z_(initial_flow_Z_star_p),
+      time_(seller_p->model()->time()) {
+    if (seller->firm->sector->transport_type == Sector::TransportType::IMMEDIATE || buyer->storage->economic_agent->region == seller->firm->region) {
         first_transport_link.reset(new TransportChainLink(this, 0, initial_flow_Z_star_p, nullptr));
     } else {
-        const auto& route = seller->firm->region->find_path_to(buyer->storage->economic_agent->region,
-                                                               seller->firm->sector->transport_type);
+        const auto& route = seller->firm->region->find_path_to(buyer->storage->economic_agent->region, seller->firm->sector->transport_type);
         assert(route.path.size() > 0);
         TransportChainLink* link;
         for (std::size_t i = 0; i < route.path.size(); ++i) {
@@ -81,9 +78,7 @@ FloatType BusinessConnection::get_minimum_passage() const {
     return minimum_passage;
 }
 
-bool BusinessConnection::get_domestic() const {
-    return (buyer->storage->economic_agent->region == seller->firm->region);
-}
+bool BusinessConnection::get_domestic() const { return (buyer->storage->economic_agent->region == seller->firm->region); }
 
 void BusinessConnection::push_flow_Z(const Flow& flow_Z) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -193,13 +188,9 @@ FloatType BusinessConnection::get_stddeviation() const {
     return res;
 }
 
-Model* BusinessConnection::model() const {
-    return buyer->model();
-}
+Model* BusinessConnection::model() const { return buyer->model(); }
 
-std::string BusinessConnection::id() const {
-    return (seller ? seller->id() : "INVALID") + "->" + (buyer ? buyer->storage->economic_agent->id() : "INVALID");
-}
+std::string BusinessConnection::id() const { return (seller ? seller->id() : "INVALID") + "->" + (buyer ? buyer->storage->economic_agent->id() : "INVALID"); }
 
 const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller) const {
 #ifdef DEBUG

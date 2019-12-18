@@ -22,6 +22,7 @@
 #define ACCLIMATE_SCENARIO_H
 
 #include <string>
+
 #include "settingsnode.h"
 #include "types.h"
 

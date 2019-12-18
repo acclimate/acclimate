@@ -19,14 +19,16 @@
 */
 
 #include "scenario/RasteredTimeData.h"
+
 #include <memory>
+
 #include "types.h"
 
 namespace acclimate {
 
 template<typename T>
 RasteredTimeData<T>::RasteredTimeData(const std::string& filename_p, const std::string& variable_name)
-        : RasteredData<T>::RasteredData(filename_p), ExternalForcing::ExternalForcing(filename_p, variable_name) {
+    : RasteredData<T>::RasteredData(filename_p), ExternalForcing::ExternalForcing(filename_p, variable_name) {
     read_boundaries(file.get());
     data.reset(new T[y_count * x_count]);
 }
@@ -36,9 +38,7 @@ void RasteredTimeData<T>::read_data() {
     variable.getVar({time_index, 0, 0}, {1, y_count, x_count}, data.get());
 }
 
-template
-class RasteredTimeData<int>;
+template class RasteredTimeData<int>;
 
-template
-class RasteredTimeData<FloatType>;
+template class RasteredTimeData<FloatType>;
 }  // namespace acclimate

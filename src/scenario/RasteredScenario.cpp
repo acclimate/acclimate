@@ -19,7 +19,9 @@
 */
 
 #include "scenario/RasteredScenario.h"
+
 #include <cstddef>
+
 #include "model/Model.h"
 #include "model/Region.h"
 #include "run.h"
@@ -29,19 +31,17 @@
 namespace acclimate {
 
 template<class RegionForcingType>
-RasteredScenario<RegionForcingType>::RasteredScenario(const settings::SettingsNode& settings_p,
-                                                      settings::SettingsNode scenario_node_p,
-                                                      Model* model_p)
-        : ExternalScenario(settings_p, scenario_node_p, model_p) {}
+RasteredScenario<RegionForcingType>::RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
+    : ExternalScenario(settings_p, scenario_node_p, model_p) {}
 
 template<class RegionForcingType>
-ExternalForcing*
-RasteredScenario<RegionForcingType>::read_forcing_file(const std::string& filename, const std::string& variable_name) {
+ExternalForcing* RasteredScenario<RegionForcingType>::read_forcing_file(const std::string& filename, const std::string& variable_name) {
     auto result = new RasteredTimeData<FloatType>(filename, variable_name);
     if (!result->is_compatible(*iso_raster)) {
         info("ISO raster size is " << (*iso_raster / *result) << " of forcing");
         error("Forcing and ISO raster not compatible in raster resolution");
-    }info("Proxy size is " << (*proxy / *result) << " of forcing");
+    }
+    info("Proxy size is " << (*proxy / *result) << " of forcing");
     return result;
 }
 
@@ -67,9 +67,9 @@ void RasteredScenario<RegionForcingType>::internal_start() {
         for (const auto& r : index_val) {
             const auto region = model()->find_region(r);
             region_forcings.emplace_back(RegionInfo{
-                    region,                     // region
-                    0,                          // proxy_sum
-                    new_region_forcing(region)  // forcing
+                region,                     // region
+                0,                          // proxy_sum
+                new_region_forcing(region)  // forcing
             });
         }
     }
@@ -127,8 +127,7 @@ void RasteredScenario<RegionForcingType>::read_forcings() {
                     if (!std::isnan(forcing_v)) {
                         RegionInfo& region_info = region_forcings[i];
                         if (region_info.region) {
-                            add_cell_forcing(x, y, proxy_value / sub_cnt / sub_cnt, forcing_v, region_info.region,
-                                             region_info.forcing);
+                            add_cell_forcing(x, y, proxy_value / sub_cnt / sub_cnt, forcing_v, region_info.region, region_info.forcing);
                         }
                     }
                 }
@@ -156,9 +155,7 @@ bool RasteredScenario<RegionForcingType>::internal_iterate_end() {
     return true;
 }
 
-template
-class RasteredScenario<FloatType>;
+template class RasteredScenario<FloatType>;
 
-template
-class RasteredScenario<std::vector<FloatType>>;
+template class RasteredScenario<std::vector<FloatType>>;
 }  // namespace acclimate

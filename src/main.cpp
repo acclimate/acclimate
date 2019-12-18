@@ -22,6 +22,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+
 #include "acclimate.h"
 #include "settingsnode.h"
 #include "settingsnode/inner.h"
@@ -45,9 +46,9 @@ static void print_usage(const char* program_name) {
               << program_name
               << " (<option> | <settingsfile>)\n"
                  "Options:\n"
-                 #ifdef ACCLIMATE_HAS_DIFF
+#ifdef ACCLIMATE_HAS_DIFF
                  "  -d, --diff     Print git diff output from compilation\n"
-                 #endif
+#endif
                  "  -h, --help     Print this help text\n"
                  "  -i, --info     Print further information\n"
                  "  -v, --version  Print version"
@@ -91,19 +92,17 @@ int main(int argc, char* argv[]) {
 #ifndef DEBUG
         try {
 #endif
-        if (arg == "-") {
-            std::cin >> std::noskipws;
-            acclimate::Acclimate acclimate(
-                    settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(std::cin))));
+            if (arg == "-") {
+                std::cin >> std::noskipws;
+                acclimate::Acclimate acclimate(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(std::cin))));
+                return acclimate.run();
+            }
+            std::ifstream settings_file(arg);
+            if (!settings_file) {
+                throw std::runtime_error("Cannot open " + arg);
+            }
+            acclimate::Acclimate acclimate(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(settings_file))));
             return acclimate.run();
-        }
-        std::ifstream settings_file(arg);
-        if (!settings_file) {
-            throw std::runtime_error("Cannot open " + arg);
-        }
-        acclimate::Acclimate acclimate(
-                settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(settings_file))));
-        return acclimate.run();
 #ifndef DEBUG
         } catch (std::runtime_error& ex) {
             std::cerr << ex.what() << std::endl;

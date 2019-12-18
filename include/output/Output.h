@@ -23,9 +23,10 @@
 
 #include <ctime>
 #include <string>
+
+#include "run.h"
 #include "settingsnode.h"
 #include "types.h"
-#include "run.h"
 
 namespace acclimate {
 
@@ -72,8 +73,7 @@ class Output {
     inline void internal_write_value(const hstring& name, const Flow& v);
     inline void internal_write_value(const hstring& name, FloatType v);
     template<int precision_digits_p>
-    inline void internal_write_value(const hstring& name, const Type<precision_digits_p>& v,
-                                     const hstring& suffix = hstring::null());
+    inline void internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix = hstring::null());
 
   protected:
     std::string settings_string;
@@ -99,29 +99,12 @@ class Output {
 
   public:
     Scenario* const scenario;
-    Output(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p,
-           settings::SettingsNode output_node_p);
+    Output(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     virtual void initialize() = 0;
-    virtual void event(EventType type,
-                       const Sector* sector_from,
-                       const Region* region_from,
-                       const Sector* sector_to,
-                       const Region* region_to,
-                       FloatType value);
-    virtual void event(EventType type,
-                       const Sector* sector_from,
-                       const Region* region_from,
-                       const EconomicAgent* economic_agent_to,
-                       FloatType value);
-    virtual void event(EventType type,
-                       const EconomicAgent* economic_agent_from,
-                       const EconomicAgent* economic_agent_to,
-                       FloatType value);
-    virtual void event(EventType type,
-                       const EconomicAgent* economic_agent_from,
-                       const Sector* sector_to,
-                       const Region* region_to,
-                       FloatType value);
+    virtual void event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value);
+    virtual void event(EventType type, const Sector* sector_from, const Region* region_from, const EconomicAgent* economic_agent_to, FloatType value);
+    virtual void event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value);
+    virtual void event(EventType type, const EconomicAgent* economic_agent_from, const Sector* sector_to, const Region* region_to, FloatType value);
     void start();
     void iterate();
     void end();

@@ -23,16 +23,15 @@
 #include <algorithm>
 #include <cstddef>
 #include <string>
+
 #include "model/EconomicAgent.h"
 #include "model/Region.h"
 #include "settingsnode.h"
 
 namespace acclimate {
 
-HeatLaborProductivity::HeatLaborProductivity(const settings::SettingsNode& settings_p,
-                                             settings::SettingsNode scenario_node_p,
-                                             Model* model_p)
-        : RasteredScenario<HeatLaborProductivity::RegionForcingType>(settings_p, scenario_node_p, model_p) {}
+HeatLaborProductivity::HeatLaborProductivity(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
+    : RasteredScenario<HeatLaborProductivity::RegionForcingType>(settings_p, scenario_node_p, model_p) {}
 
 typename HeatLaborProductivity::RegionForcingType HeatLaborProductivity::new_region_forcing(Region* region) const {
     if (region) {
@@ -41,16 +40,13 @@ typename HeatLaborProductivity::RegionForcingType HeatLaborProductivity::new_reg
     return std::vector<FloatType>();
 }
 
-void HeatLaborProductivity::reset_forcing(Region* region,
-                                          typename HeatLaborProductivity::RegionForcingType& forcing) const {
+void HeatLaborProductivity::reset_forcing(Region* region, typename HeatLaborProductivity::RegionForcingType& forcing) const {
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
         forcing[i] = 0.0;
     }
 }
 
-void HeatLaborProductivity::set_region_forcing(Region* region,
-                                               const HeatLaborProductivity::RegionForcingType& forcing,
-                                               FloatType proxy_sum) const {
+void HeatLaborProductivity::set_region_forcing(Region* region, const HeatLaborProductivity::RegionForcingType& forcing, FloatType proxy_sum) const {
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
         auto& it = region->economic_agents[i];
         if (it->type == EconomicAgent::Type::FIRM) {

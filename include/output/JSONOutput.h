@@ -21,9 +21,10 @@
 #ifndef ACCLIMATE_JSONOUTPUT_H
 #define ACCLIMATE_JSONOUTPUT_H
 
-#include "output/Output.h"
 #include <fstream>
 #include <memory>
+
+#include "output/Output.h"
 
 namespace acclimate {
 
@@ -37,8 +38,8 @@ class Scenario;
 
 class JSONOutput : public Output {
   public:
-    using Output::output_node;
     using Output::model;
+    using Output::output_node;
     using Output::settings_string;
 
   protected:
@@ -58,10 +59,7 @@ class JSONOutput : public Output {
     void internal_end_target() override;
 
   public:
-    JSONOutput(const settings::SettingsNode& settings_p,
-               Model* model_p,
-               Scenario* scenario_p,
-               settings::SettingsNode output_node_p);
+    JSONOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
 };
 }  // namespace acclimate

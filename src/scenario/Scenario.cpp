@@ -19,9 +19,11 @@
 */
 
 #include "scenario/Scenario.h"
+
 #include <memory>
 #include <random>
 #include <utility>
+
 #include "model/CapacityManager.h"
 #include "model/Consumer.h"
 #include "model/EconomicAgent.h"
@@ -35,7 +37,7 @@
 namespace acclimate {
 
 Scenario::Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-        : model_m(model_p), scenario_node(std::move(scenario_node_p)), settings(settings_p) {
+    : model_m(model_p), scenario_node(std::move(scenario_node_p)), settings(settings_p) {
     srand(0);
 }
 
@@ -79,13 +81,11 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
             if (type == "firm") {
                 if (it.has("sector")) {
                     if (it.has("region")) {
-                        Firm* firm = model()->find_firm(it["sector"].template as<std::string>(),
-                                                        it["region"].template as<std::string>());
+                        Firm* firm = model()->find_firm(it["sector"].template as<std::string>(), it["region"].template as<std::string>());
                         if (firm) {
                             set_firm_property(firm, it, reset);
                         } else {
-                            error("Firm " << it["sector"].template as<std::string>() << ":"
-                                          << it["region"].template as<std::string>() << " not found");
+                            error("Firm " << it["sector"].template as<std::string>() << ":" << it["region"].template as<std::string>() << " not found");
                         }
                     } else {
                         Sector* sector = model()->find_sector(it["sector"].template as<std::string>());
@@ -166,18 +166,13 @@ bool Scenario::iterate() {
 
 std::string Scenario::time_units_str() const {
     if (scenario_node.has("baseyear")) {
-        return std::string("days since ") + std::to_string(scenario_node["baseyear"].template as<unsigned int>()) +
-               "-1-1";
+        return std::string("days since ") + std::to_string(scenario_node["baseyear"].template as<unsigned int>()) + "-1-1";
     }
     return "days since 0-1-1";
 }
 
-bool Scenario::is_first_timestep() const {
-    return model()->timestep() == 0;
-}
+bool Scenario::is_first_timestep() const { return model()->timestep() == 0; }
 
-bool Scenario::is_last_timestep() const {
-    return model()->time() >= model()->stop_time();
-}
+bool Scenario::is_last_timestep() const { return model()->time() >= model()->stop_time(); }
 
 }  // namespace acclimate

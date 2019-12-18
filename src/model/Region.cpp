@@ -19,9 +19,11 @@
 */
 
 #include "model/Region.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <utility>
+
 #include "model/EconomicAgent.h"
 #include "model/GeoRoute.h"
 #include "model/Government.h"
@@ -33,7 +35,7 @@
 namespace acclimate {
 
 Region::Region(Model* model_p, std::string id_p, const IntType index_p)
-        : GeoLocation(model_p, 0, GeoLocation::Type::REGION, std::move(id_p)), index_m(index_p) {}
+    : GeoLocation(model_p, 0, GeoLocation::Type::REGION, std::move(id_p)), index_m(index_p) {}
 
 void Region::add_export_Z(const Flow& export_flow_Z_p) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -51,8 +53,7 @@ void Region::add_consumption_flow_Y(const Flow& consumption_flow_Y_p) {
 }
 
 Flow Region::get_gdp() const {
-    return consumption_flow_Y_[model()->current_register()] + export_flow_Z_[model()->current_register()] -
-           import_flow_Z_[model()->current_register()];
+    return consumption_flow_Y_[model()->current_register()] + export_flow_Z_[model()->current_register()] - import_flow_Z_[model()->current_register()];
 }
 
 void Region::iterate_consumption_and_production() {
@@ -86,30 +87,22 @@ void Region::iterate_investment() {
     }
 }
 
-const GeoRoute& Region::find_path_to(Region* region,
-                                     typename Sector::TransportType transport_type) const {
+const GeoRoute& Region::find_path_to(Region* region, typename Sector::TransportType transport_type) const {
     const auto& it = routes.find(std::make_pair(region->index(), transport_type));
     if (it == std::end(routes)) {
-        error("No transport data from " << id() << " to " << region->id() << " via "
-                                        << Sector::unmap_transport_type(transport_type));
+        error("No transport data from " << id() << " to " << region->id() << " via " << Sector::unmap_transport_type(transport_type));
     }
     return it->second;
 }
 
-inline Region* Region::as_region() {
-    return this;
-}
+inline Region* Region::as_region() { return this; }
 
-inline const Region* Region::as_region() const {
-    return this;
-}
+inline const Region* Region::as_region() const { return this; }
 
 void Region::remove_economic_agent(EconomicAgent* economic_agent) {
     economic_agents_lock.call([&]() {
         auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
-                               [economic_agent](const std::unique_ptr<EconomicAgent>& it) {
-                                   return it.get() == economic_agent;
-                               });
+                               [economic_agent](const std::unique_ptr<EconomicAgent>& it) { return it.get() == economic_agent; });
         economic_agents.erase(it);
     });
 }
@@ -139,13 +132,9 @@ void Region::set_government(Government* government_p) {
     government_m.reset(government_p);
 }
 
-Government* Region::government() {
-    return government_m.get();
-}
+Government* Region::government() { return government_m.get(); }
 
-Government const* Region::government() const {
-    return government_m.get();
-}
+Government const* Region::government() const { return government_m.get(); }
 
 const Parameters::RegionParameters& Region::parameters_writable() const {
     assertstep(INITIALIZATION);

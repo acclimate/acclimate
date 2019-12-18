@@ -19,21 +19,20 @@
 */
 
 #include "output/HistogramOutput.h"
+
 #include <cstddef>
 #include <ctime>
 #include <string>
 #include <utility>
+
 #include "model/Model.h"
 #include "settingsnode.h"
 #include "version.h"
 
 namespace acclimate {
 
-HistogramOutput::HistogramOutput(const settings::SettingsNode& settings_p,
-                                 Model* model_p,
-                                 Scenario* scenario_p,
-                                 settings::SettingsNode output_node_p)
-        : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {
+HistogramOutput::HistogramOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {
     windows = 0;
     min = 0;
     max = 1;
@@ -55,9 +54,7 @@ void HistogramOutput::internal_write_header(tm* timestamp, int max_threads) {
          << "# Max number of threads: " << max_threads << "\n";
 }
 
-void HistogramOutput::internal_write_footer(tm* duration) {
-    file << "# Duration: " << std::mktime(duration) << "s\n";
-}
+void HistogramOutput::internal_write_footer(tm* duration) { file << "# Duration: " << std::mktime(duration) << "s\n"; }
 
 void HistogramOutput::internal_write_settings() {
     std::stringstream ss;
@@ -72,9 +69,7 @@ void HistogramOutput::internal_write_settings() {
     file << "#\n";
 }
 
-void HistogramOutput::internal_iterate_begin() {
-    std::fill(std::begin(count), std::end(count), 0);
-}
+void HistogramOutput::internal_iterate_begin() { std::fill(std::begin(count), std::end(count), 0); }
 
 void HistogramOutput::internal_iterate_end() {
     for (std::size_t i = 0; i < windows; ++i) {
@@ -83,9 +78,7 @@ void HistogramOutput::internal_iterate_end() {
     file << "\n";
 }
 
-void HistogramOutput::internal_end() {
-    file.close();
-}
+void HistogramOutput::internal_end() { file.close(); }
 
 void HistogramOutput::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     UNUSED(name);

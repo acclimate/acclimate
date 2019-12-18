@@ -21,10 +21,11 @@
 #ifndef ACCLIMATE_ARRAYOUTPUT_H
 #define ACCLIMATE_ARRAYOUTPUT_H
 
-#include "output/Output.h"
 #include <cstddef>
 #include <unordered_map>
 #include <vector>
+
+#include "output/Output.h"
 
 namespace settings {
 class SettingsNode;
@@ -54,7 +55,7 @@ class ArrayOutput : public Output {
         void* meta = nullptr;
 
         Variable(std::vector<FloatType> data_p, std::vector<std::size_t> shape_p, std::size_t size_p, void* meta_p)
-                : data(std::move(data_p)), shape(std::move(shape_p)), size(size_p), meta(meta_p) {}
+            : data(std::move(data_p)), shape(std::move(shape_p)), size(size_p), meta(meta_p) {}
     };
 
     struct Event {
@@ -75,7 +76,7 @@ class ArrayOutput : public Output {
         Region* region;
 
         Target(hstring name_p, std::size_t index_p, Sector* sector_p, Region* region_p)
-                : name(std::move(name_p)), index(index_p), sector(sector_p), region(region_p) {}
+            : name(std::move(name_p)), index(index_p), sector(sector_p), region(region_p) {}
     };
 
     std::size_t sectors_size = 0;
@@ -110,18 +111,10 @@ class ArrayOutput : public Output {
     }
 
   public:
-    ArrayOutput(const settings::SettingsNode& settings_p,
-                Model* model_p,
-                Scenario* scenario_p,
-                settings::SettingsNode output_node_p,
-                bool over_time_p = true);
+    ArrayOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p, bool over_time_p = true);
     ~ArrayOutput() override = default;
-    void event(EventType type,
-               const Sector* sector_from,
-               const Region* region_from,
-               const Sector* sector_to,
-               const Region* region_to,
-               FloatType value) override;
+    void event(
+        EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) override;
     void initialize() override;
     const typename ArrayOutput::Variable& get_variable(const hstring& fullname) const;
 

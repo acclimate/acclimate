@@ -19,12 +19,15 @@
 */
 
 #include "run.h"
+
 #include <unistd.h>
+
 #include <chrono>
 #include <utility>
 
 #ifdef ENABLE_DMTCP
 #include <dmtcp.h>
+
 #include <csignal>
 #include <thread>
 #endif
@@ -254,60 +257,38 @@ Run::~Run() {
     instantiated = false;
 }
 
-void Run::event(EventType type,
-                const Sector* sector_from,
-                const Region* region_from,
-                const Sector* sector_to,
-                const Region* region_to,
-                FloatType value) {
-    info_(event_names[(int) type] << " " << (sector_from == nullptr ? "" : sector_from->id())
-                                  << (sector_from != nullptr && region_from != nullptr ? ":" : "")
-                                  << (region_from == nullptr ? "" : region_from->id()) << "->"
-                                  << (sector_to == nullptr ? "" : sector_to->id())
-                                  << (sector_to != nullptr && region_to != nullptr ? ":" : "")
-                                  << (region_to == nullptr ? "" : region_to->id())
-                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
+void Run::event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) {
+    info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
+                                 << (region_from == nullptr ? "" : region_from->id()) << "->" << (sector_to == nullptr ? "" : sector_to->id())
+                                 << (sector_to != nullptr && region_to != nullptr ? ":" : "") << (region_to == nullptr ? "" : region_to->id())
+                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, sector_from, region_from, sector_to, region_to, value);
     }
 }
 
-void Run::event(EventType type,
-                const Sector* sector_from,
-                const Region* region_from,
-                const EconomicAgent* economic_agent_to,
-                FloatType value) {
-    info_(event_names[(int) type] << " " << (sector_from == nullptr ? "" : sector_from->id())
-                                  << (sector_from != nullptr && region_from != nullptr ? ":" : "")
-                                  << (region_from == nullptr ? "" : region_from->id())
-                                  << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
-                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
+void Run::event(EventType type, const Sector* sector_from, const Region* region_from, const EconomicAgent* economic_agent_to, FloatType value) {
+    info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
+                                 << (region_from == nullptr ? "" : region_from->id()) << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
+                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, sector_from, region_from, economic_agent_to, value);
     }
 }
 
-void Run::event(EventType type,
-                const EconomicAgent* economic_agent_from,
-                const EconomicAgent* economic_agent_to,
-                FloatType value) {
-    info_(event_names[(int) type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id())
-                                  << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
-                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
+void Run::event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) {
+    info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id())
+                                 << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
+                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, economic_agent_from, economic_agent_to, value);
     }
 }
 
-void Run::event(EventType type,
-                const EconomicAgent* economic_agent_from,
-                const Sector* sector_to,
-                const Region* region_to,
-                FloatType value) {
-    info_(event_names[(int) type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->")
-                                  << (sector_to == nullptr ? "" : sector_to->id() + ":")
-                                  << (region_to == nullptr ? "" : region_to->id())
-                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
+void Run::event(EventType type, const EconomicAgent* economic_agent_from, const Sector* sector_to, const Region* region_to, FloatType value) {
+    info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->")
+                                 << (sector_to == nullptr ? "" : sector_to->id() + ":") << (region_to == nullptr ? "" : region_to->id())
+                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, economic_agent_from, sector_to, region_to, value);
     }
@@ -365,8 +346,7 @@ std::string Run::timeinfo() const {
 #endif
 
 #define ADD_EVENT(e) __STRING(e),
-const std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> Run::event_names = {
-        ACCLIMATE_ADD_EVENTS};
+const std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> Run::event_names = {ACCLIMATE_ADD_EVENTS};
 #undef ADD_EVENT
 
 }  // namespace acclimate

@@ -22,6 +22,7 @@
 #define ACCLIMATE_CAPACITYMANAGER_H
 
 #include <string>
+
 #include "types.h"
 
 namespace acclimate {
@@ -66,7 +67,6 @@ class CapacityManager {
 #ifdef DEBUG
     void print_inputs() const;
 #endif
-
 };
 }  // namespace acclimate
 

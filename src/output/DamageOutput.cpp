@@ -19,9 +19,11 @@
 */
 
 #include "output/DamageOutput.h"
+
 #include <iostream>
 #include <string>
 #include <utility>
+
 #include "model/Firm.h"
 #include "model/Model.h"
 #include "model/Region.h"
@@ -30,11 +32,8 @@
 
 namespace acclimate {
 
-DamageOutput::DamageOutput(const settings::SettingsNode& settings_p,
-                           Model* model_p,
-                           Scenario* scenario_p,
-                           settings::SettingsNode output_node_p)
-        : Output(settings_p, model_p, scenario_p, std::move(output_node_p)), damage(0.0) {
+DamageOutput::DamageOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)), damage(0.0) {
     out = nullptr;
 }
 
@@ -57,8 +56,6 @@ void DamageOutput::internal_iterate_end() {
     }
 }
 
-void DamageOutput::internal_end() {
-    *out << damage << std::endl;
-}
+void DamageOutput::internal_end() { *out << damage << std::endl; }
 
 }  // namespace acclimate

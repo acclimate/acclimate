@@ -19,7 +19,9 @@
 */
 
 #include "model/Storage.h"
+
 #include <algorithm>
+
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Model.h"
@@ -30,8 +32,7 @@
 namespace acclimate {
 
 Storage::Storage(Sector* sector_p, EconomicAgent* economic_agent_p)
-        : sector(sector_p), economic_agent(economic_agent_p),
-          purchasing_manager(new PurchasingManager(this)) {}
+    : sector(sector_p), economic_agent(economic_agent_p), purchasing_manager(new PurchasingManager(this)) {}
 
 void Storage::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -51,27 +52,20 @@ const Flow Storage::get_possible_use_U_hat() const {
     return content_S_ / model()->delta_t() + current_input_flow_I();
 }
 
-const Flow& Storage::current_input_flow_I() const {
-    return input_flow_I_[model()->other_register()];
-}
+const Flow& Storage::current_input_flow_I() const { return input_flow_I_[model()->other_register()]; }
 
 const Flow& Storage::last_input_flow_I() const {
     assertstepor(OUTPUT, PURCHASE);
     return input_flow_I_[2];
 }
 
-Ratio Storage::get_technology_coefficient_a() const {
-    return initial_input_flow_I_star_ / economic_agent->as_firm()->initial_production_X_star();
-}
+Ratio Storage::get_technology_coefficient_a() const { return initial_input_flow_I_star_ / economic_agent->as_firm()->initial_production_X_star(); }
 
-Ratio Storage::get_input_share_u() const {
-    return initial_input_flow_I_star_ / economic_agent->as_firm()->initial_total_use_U_star();
-}
+Ratio Storage::get_input_share_u() const { return initial_input_flow_I_star_ / economic_agent->as_firm()->initial_total_use_U_star(); }
 
 void Storage::calc_content_S() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    assert(used_flow_U_.get_quantity() * model()->delta_t() <=
-           content_S_.get_quantity() + current_input_flow_I().get_quantity() * model()->delta_t());
+    assert(used_flow_U_.get_quantity() * model()->delta_t() <= content_S_.get_quantity() + current_input_flow_I().get_quantity() * model()->delta_t());
     auto former_content = content_S_;
     content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * model()->delta_t());
     if (content_S_.get_quantity() <= model()->parameters().min_storage * initial_content_S_star_.get_quantity()) {
@@ -83,8 +77,7 @@ void Storage::calc_content_S() {
 
     Stock maxStock = initial_content_S_star_ * forcing_mu_ * sector->upper_storage_limit_omega;
     if (maxStock.get_quantity() < content_S_.get_quantity()) {
-        model()->run()->event(EventType::STORAGE_OVERRUN, sector, nullptr, economic_agent,
-                              to_float(content_S_.get_quantity() - maxStock.get_quantity()));
+        model()->run()->event(EventType::STORAGE_OVERRUN, sector, nullptr, economic_agent, to_float(content_S_.get_quantity() - maxStock.get_quantity()));
         const Price tmp = content_S_.get_price();
         content_S_ = maxStock;
         content_S_.set_price(tmp);
@@ -138,8 +131,7 @@ bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
         input_flow_I_[1] -= flow_Z_star;
         input_flow_I_[2] -= flow_Z_star;
         initial_input_flow_I_star_ -= flow_Z_star;  // = initial_used_flow_U_star
-        initial_content_S_star_ = round(
-                initial_content_S_star_ - flow_Z_star * sector->initial_storage_fill_factor_psi);
+        initial_content_S_star_ = round(initial_content_S_star_ - flow_Z_star * sector->initial_storage_fill_factor_psi);
         content_S_ = round(content_S_ - flow_Z_star * sector->initial_storage_fill_factor_psi);
         purchasing_manager->subtract_initial_demand_D_star(flow_Z_star);
         return false;
@@ -148,13 +140,9 @@ bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
     return true;
 }
 
-Model* Storage::model() const {
-    return sector->model();
-}
+Model* Storage::model() const { return sector->model(); }
 
-std::string Storage::id() const {
-    return sector->id() + ":_S_->" + economic_agent->id();
-}
+std::string Storage::id() const { return sector->id() + ":_S_->" + economic_agent->id(); }
 
 const Stock& Storage::content_S() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);

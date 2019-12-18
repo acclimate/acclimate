@@ -19,8 +19,10 @@
 */
 
 #include "scenario/Flooding.h"
+
 #include <algorithm>
 #include <string>
+
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Model.h"
@@ -31,7 +33,7 @@
 namespace acclimate {
 
 Flooding::Flooding(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-        : RasteredScenario<FloatType>(settings_p, scenario_node_p, model_p) {
+    : RasteredScenario<FloatType>(settings_p, scenario_node_p, model_p) {
     if (scenario_node_p.has("sectors")) {
         for (const auto& sector_node : scenario_node_p["sectors"].as_sequence()) {
             const auto& sector_name = sector_node.as<std::string>();
@@ -57,8 +59,7 @@ void Flooding::reset_forcing(Region* region, FloatType& forcing) const {
 void Flooding::set_region_forcing(Region* region, const FloatType& forcing, FloatType proxy_sum) const {
     for (auto& it : region->economic_agents) {
         if (it->is_firm()) {
-            if (sectors.empty() ||
-                std::find(sectors.begin(), sectors.end(), it->as_firm()->sector->index()) != sectors.end()) {
+            if (sectors.empty() || std::find(sectors.begin(), sectors.end(), it->as_firm()->sector->index()) != sectors.end()) {
                 it->forcing(1.0 - forcing / proxy_sum);
             }
         }
@@ -66,8 +67,7 @@ void Flooding::set_region_forcing(Region* region, const FloatType& forcing, Floa
 }
 
 void Flooding::add_cell_forcing(
-        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region,
-        FloatType& region_forcing) const {
+    FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, FloatType& region_forcing) const {
     UNUSED(region);
     UNUSED(x);
     UNUSED(y);

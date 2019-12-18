@@ -21,9 +21,10 @@
 #ifndef ACCLIMATE_DAMAGEOUTPUT_H
 #define ACCLIMATE_DAMAGEOUTPUT_H
 
-#include "output/Output.h"
 #include <fstream>
 #include <memory>
+
+#include "output/Output.h"
 
 namespace acclimate {
 
@@ -37,8 +38,8 @@ class Scenario;
 
 class DamageOutput : public Output {
   public:
-    using Output::output_node;
     using Output::model;
+    using Output::output_node;
 
   private:
     FlowQuantity damage;
@@ -50,10 +51,7 @@ class DamageOutput : public Output {
     void internal_end() override;
 
   public:
-    DamageOutput(const settings::SettingsNode& settings_p,
-                 Model* model_p,
-                 Scenario* scenario_p,
-                 settings::SettingsNode output_node_p);
+    DamageOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
 };
 }  // namespace acclimate

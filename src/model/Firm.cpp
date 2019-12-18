@@ -19,7 +19,9 @@
 */
 
 #include "model/Firm.h"
+
 #include <vector>
+
 #include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
 #include "model/GeoRoute.h"
@@ -34,17 +36,13 @@
 namespace acclimate {
 
 Firm::Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
-        : EconomicAgent(sector_p, region_p, EconomicAgent::Type::FIRM),
-          capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta_p)),
-          sales_manager(new SalesManager(this)) {}
+    : EconomicAgent(sector_p, region_p, EconomicAgent::Type::FIRM),
+      capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta_p)),
+      sales_manager(new SalesManager(this)) {}
 
-inline Firm* Firm::as_firm() {
-    return this;
-}
+inline Firm* Firm::as_firm() { return this; }
 
-inline const Firm* Firm::as_firm() const {
-    return this;
-}
+inline const Firm* Firm::as_firm() const { return this; }
 
 void Firm::produce_X() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
@@ -72,8 +70,7 @@ void Firm::iterate_expectation() {
     sales_manager->iterate_expectation();
     for (const auto& is : input_storages) {
         const FlowQuantity& desired_production =
-                std::max(sales_manager->communicated_parameters().expected_production_X.get_quantity(),
-                         sales_manager->sum_demand_requests_D().get_quantity());
+            std::max(sales_manager->communicated_parameters().expected_production_X.get_quantity(), sales_manager->sum_demand_requests_D().get_quantity());
         is->set_desired_used_flow_U_tilde(round(desired_production * is->get_technology_coefficient_a()));
     }
 }
@@ -135,9 +132,7 @@ void Firm::print_details() const {
 
 #endif
 
-const Flow Firm::maximal_production_beta_X_star() const {
-    return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta);
-}
+const Flow Firm::maximal_production_beta_X_star() const { return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta); }
 
 const Flow Firm::forced_maximal_production_lambda_beta_X_star() const {
     return round(initial_production_X_star_ * forcing_ * capacity_manager->possible_overcapacity_ratio_beta);
@@ -152,13 +147,11 @@ FloatType Firm::maximal_production_quantity_beta_X_star_float() const {
 }
 
 const FlowQuantity Firm::forced_maximal_production_quantity_lambda_beta_X_star() const {
-    return round(initial_production_X_star_.get_quantity() *
-                 (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
+    return round(initial_production_X_star_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
 }
 
 FloatType Firm::forced_maximal_production_quantity_lambda_beta_X_star_float() const {
-    return to_float(initial_production_X_star_.get_quantity()) *
-           (capacity_manager->possible_overcapacity_ratio_beta * forcing_);
+    return to_float(initial_production_X_star_.get_quantity()) * (capacity_manager->possible_overcapacity_ratio_beta * forcing_);
 }
 
 const BusinessConnection* Firm::self_supply_connection() const {

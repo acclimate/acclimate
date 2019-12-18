@@ -19,9 +19,11 @@
 */
 
 #include "output/JSONNetworkOutput.h"
+
 #include <algorithm>
 #include <fstream>
 #include <utility>
+
 #include "model/BusinessConnection.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
@@ -36,11 +38,8 @@
 
 namespace acclimate {
 
-JSONNetworkOutput::JSONNetworkOutput(const settings::SettingsNode& settings_p,
-                                     Model* model_p,
-                                     Scenario* scenario_p,
-                                     settings::SettingsNode output_node_p)
-        : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
+JSONNetworkOutput::JSONNetworkOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
 
 void JSONNetworkOutput::initialize() {
     timestep = output_node["timestep"].template as<TimeStep>();
@@ -66,8 +65,7 @@ void JSONNetworkOutput::internal_iterate_end() {
                     sector = ps->sector->id();
                     out_flow = ps->production_X();
                     if (advanced) {
-                        out << "\n    \"production_capacity\": "
-                            << (ps->production_X() / ps->initial_production_X_star()) << ",";
+                        out << "\n    \"production_capacity\": " << (ps->production_X() / ps->initial_production_X_star()) << ",";
                     }
                 } else {
                     sector = "FCON";

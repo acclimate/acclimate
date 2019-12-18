@@ -19,11 +19,13 @@
 */
 
 #include "acclimate.h"
+
 #include <cfenv>
 #include <csignal>
 #include <ostream>
 #include <string>
 #include <utility>
+
 #include "run.h"
 #include "types.h"
 
@@ -69,8 +71,6 @@ Acclimate::Acclimate(settings::SettingsNode settings_p) {
     run_m = std::unique_ptr<Run>(new Run(settings_p));
 }
 
-int Acclimate::run() {
-    return (run_m.get())->run();
-}
+int Acclimate::run() { return (run_m.get())->run(); }
 
 }  // namespace acclimate

@@ -22,6 +22,7 @@
 #define ACCLIMATE_RUN_H
 
 #include <features.h>
+
 #include <array>
 #include <cstddef>
 #include <iostream>
@@ -30,6 +31,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
 #include "settingsnode.h"
 #include "types.h"
 
@@ -65,9 +67,7 @@ enum class IterationStep {
     ADD_EVENT(OPTIMIZER_FAILURE)
 
 #define ADD_EVENT(e) e,
-enum class EventType : unsigned char {
-    ACCLIMATE_ADD_EVENTS
-};
+enum class EventType : unsigned char { ACCLIMATE_ADD_EVENTS };
 #undef ADD_EVENT
 
 class Model;

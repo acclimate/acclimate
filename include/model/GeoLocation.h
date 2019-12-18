@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <memory>
+
 #include "model/GeoEntity.h"
 
 namespace acclimate {
@@ -35,9 +36,7 @@ class Region;
 
 class GeoLocation : public GeoEntity {
   public:
-    enum class Type {
-        REGION, SEA, PORT
-    };
+    enum class Type { REGION, SEA, PORT };
 
   protected:
     std::unique_ptr<GeoPoint> centroid_m;

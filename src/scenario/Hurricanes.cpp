@@ -19,6 +19,7 @@
 */
 
 #include "scenario/Hurricanes.h"
+
 #include "model/EconomicAgent.h"
 #include "model/Region.h"
 #include "settingsnode.h"
@@ -26,7 +27,7 @@
 namespace acclimate {
 
 Hurricanes::Hurricanes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-        : RasteredScenario<FloatType>(settings_p, scenario_node_p, model_p) {
+    : RasteredScenario<FloatType>(settings_p, scenario_node_p, model_p) {
     threshold = scenario_node_p["forcing"]["threshold"].as<double>();
 }
 
@@ -49,8 +50,7 @@ void Hurricanes::set_region_forcing(Region* region, const FloatType& forcing, Fl
 }
 
 void Hurricanes::add_cell_forcing(
-        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region,
-        FloatType& region_forcing) const {
+    FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, FloatType& region_forcing) const {
     UNUSED(region);
     UNUSED(x);
     UNUSED(y);

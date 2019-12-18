@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <string>
+
 #include "types.h"
 
 namespace acclimate {
@@ -53,9 +54,7 @@ class BusinessConnection {
     PurchasingManager* buyer;  // TODO encapsulate
     SalesManager* seller;      // TODO encapsulate
 
-    BusinessConnection(PurchasingManager* buyer_p,
-                       SalesManager* seller_p,
-                       const Flow& initial_flow_Z_star_p);
+    BusinessConnection(PurchasingManager* buyer_p, SalesManager* seller_p, const Flow& initial_flow_Z_star_p);
 
     inline const Time& time() const { return time_; }
 

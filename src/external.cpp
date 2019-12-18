@@ -19,6 +19,7 @@
 */
 
 #include <cstring>
+
 #include "acclimate.h"
 #include "model/Model.h"
 #include "output/ArrayOutput.h"
@@ -26,11 +27,8 @@
 
 namespace acclimate {
 
-static void
-acclimate_get_variable(const char* name, const FloatType** data, std::size_t* size, const std::size_t** shape,
-                       std::size_t* dimension) {
-    const typename ArrayOutput::Variable& var =
-            static_cast<const ArrayOutput*>(Acclimate::Run::instance()->output(0))->get_variable(name);
+static void acclimate_get_variable(const char* name, const FloatType** data, std::size_t* size, const std::size_t** shape, std::size_t* dimension) {
+    const typename ArrayOutput::Variable& var = static_cast<const ArrayOutput*>(Acclimate::Run::instance()->output(0))->get_variable(name);
     *data = &var.data[0];
     *size = var.data.size();
     *shape = &var.shape[0];
@@ -46,12 +44,9 @@ static void acclimate_get_event(const std::size_t index, std::size_t* timestep, 
     } else {
         const typename ArrayOutput::Event& e = output->get_events()[index];
         *timestep = e.time;
-        std::string desc = std::string(Acclimate::event_names[e.type]) + " " +
-                           (e.sector_from < 0 ? "" : output->model->sectors_C[e.sector_from]->id())
-                           + (e.sector_from >= 0 && e.region_from >= 0 ? ":" : "") +
-                           (e.region_from < 0 ? "" : output->model->regions_R[e.region_from]->id())
-                           + (e.sector_to < 0 ? "" : output->model->sectors_C[e.sector_to]->id()) +
-                           (e.sector_to >= 0 && e.region_to >= 0 ? ":" : "")
+        std::string desc = std::string(Acclimate::event_names[e.type]) + " " + (e.sector_from < 0 ? "" : output->model->sectors_C[e.sector_from]->id())
+                           + (e.sector_from >= 0 && e.region_from >= 0 ? ":" : "") + (e.region_from < 0 ? "" : output->model->regions_R[e.region_from]->id())
+                           + (e.sector_to < 0 ? "" : output->model->sectors_C[e.sector_to]->id()) + (e.sector_to >= 0 && e.region_to >= 0 ? ":" : "")
                            + (e.region_to < 0 ? "" : output->model->regions_R[e.region_to]->id());
         std::memcpy(event, desc.c_str(), desc.length() + 1);
         *value = std::numeric_limits<FloatType>::quiet_NaN();
@@ -95,9 +90,7 @@ int acclimate_run() {
     }
 }
 
-int
-acclimate_get_variable_prices(const char* name, const FloatType** data, std::size_t* size, const std::size_t** shape,
-                              std::size_t* dimension) {
+int acclimate_get_variable_prices(const char* name, const FloatType** data, std::size_t* size, const std::size_t** shape, std::size_t* dimension) {
     try {
         acclimate_get_variable(name, data, size, shape, dimension);
         return 0;

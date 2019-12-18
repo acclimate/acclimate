@@ -21,6 +21,7 @@
 #include "scenario/EventSeriesScenario.h"
 
 #include <memory>
+
 #include "model/Firm.h"
 #include "model/Model.h"
 #include "model/Sector.h"
@@ -28,10 +29,8 @@
 
 namespace acclimate {
 
-EventSeriesScenario::EventSeriesScenario(const settings::SettingsNode& settings_p,
-                                         settings::SettingsNode scenario_node_p,
-                                         Model* model_p)
-        : ExternalScenario(settings_p, scenario_node_p, model_p) {}
+EventSeriesScenario::EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
+    : ExternalScenario(settings_p, scenario_node_p, model_p) {}
 
 ExternalForcing* EventSeriesScenario::read_forcing_file(const std::string& filename, const std::string& variable_name) {
     return new EventForcing(filename, variable_name, model());
@@ -50,13 +49,10 @@ void EventSeriesScenario::read_forcings() {
     }
 }
 
-void EventSeriesScenario::EventForcing::read_data() {
-    variable.getVar({time_index, 0, 0}, {1, sectors_count, regions_count}, &forcings[0]);
-}
+void EventSeriesScenario::EventForcing::read_data() { variable.getVar({time_index, 0, 0}, {1, sectors_count, regions_count}, &forcings[0]); }
 
-EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, const std::string& variable_name,
-                                                const Model* model)
-        : ExternalForcing(filename, variable_name) {
+EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, const std::string& variable_name, const Model* model)
+    : ExternalForcing(filename, variable_name) {
     std::vector<const char*> regions(file->getDim("region").getSize());
     file->getVar("region").getVar(&regions[0]);
     std::vector<const char*> sectors(file->getDim("sector").getSize());

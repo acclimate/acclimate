@@ -21,10 +21,11 @@
 #ifndef ACCLIMATE_GNUPLOTOUTPUT_H
 #define ACCLIMATE_GNUPLOTOUTPUT_H
 
-#include "output/Output.h"
 #include <fstream>
 #include <unordered_map>
 #include <vector>
+
+#include "output/Output.h"
 
 namespace acclimate {
 
@@ -67,10 +68,7 @@ class GnuplotOutput : public Output {
     void internal_end_target() override;
 
   public:
-    GnuplotOutput(const settings::SettingsNode& settings_p,
-                  Model* model_p,
-                  Scenario* scenario_p,
-                  settings::SettingsNode output_node_p);
+    GnuplotOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
 };
 }  // namespace acclimate

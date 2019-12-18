@@ -21,9 +21,10 @@
 #ifndef ACCLIMATE_RASTEREDTIMEDATA_H
 #define ACCLIMATE_RASTEREDTIMEDATA_H
 
-#include "scenario/RasteredData.h"
-#include "scenario/ExternalForcing.h"
 #include <string>
+
+#include "scenario/ExternalForcing.h"
+#include "scenario/RasteredData.h"
 
 namespace acclimate {
 

@@ -19,10 +19,12 @@
 */
 
 #include "output/GnuplotOutput.h"
+
 #include <cstddef>
 #include <ctime>
 #include <string>
 #include <utility>
+
 #include "model/Model.h"
 #include "model/Region.h"
 #include "run.h"
@@ -31,11 +33,8 @@
 
 namespace acclimate {
 
-GnuplotOutput::GnuplotOutput(const settings::SettingsNode& settings_p,
-                             Model* model_p,
-                             Scenario* scenario_p,
-                             settings::SettingsNode output_node_p)
-        : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
+GnuplotOutput::GnuplotOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
 
 void GnuplotOutput::initialize() {
     if (!output_node.has("file")) {
@@ -50,9 +49,7 @@ void GnuplotOutput::internal_write_header(tm* timestamp, int max_threads) {
          << "# Max number of threads: " << max_threads << "\n";
 }
 
-void GnuplotOutput::internal_write_footer(tm* duration) {
-    file << "# Duration: " << std::mktime(duration) << "s\n";
-}
+void GnuplotOutput::internal_write_footer(tm* duration) { file << "# Duration: " << std::mktime(duration) << "s\n"; }
 
 void GnuplotOutput::internal_write_settings() {
     std::stringstream ss;
@@ -67,9 +64,7 @@ void GnuplotOutput::internal_write_settings() {
     file << "#\n";
 }
 
-void GnuplotOutput::internal_end() {
-    file.close();
-}
+void GnuplotOutput::internal_end() { file.close(); }
 
 void GnuplotOutput::internal_start() {
     file << "# Sectors:\n# set ytics (";
@@ -143,8 +138,6 @@ void GnuplotOutput::internal_start_target(const hstring& name) {
     stack.push_back(t);
 }
 
-void GnuplotOutput::internal_end_target() {
-    stack.pop_back();
-}
+void GnuplotOutput::internal_end_target() { stack.pop_back(); }
 
 }  // namespace acclimate

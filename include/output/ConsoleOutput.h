@@ -21,9 +21,10 @@
 #ifndef ACCLIMATE_CONSOLEOUTPUT_H
 #define ACCLIMATE_CONSOLEOUTPUT_H
 
-#include "output/Output.h"
 #include <fstream>
 #include <memory>
+
+#include "output/Output.h"
 
 namespace acclimate {
 
@@ -37,8 +38,8 @@ class Scenario;
 
 class ConsoleOutput : public Output {
   public:
-    using Output::output_node;
     using Output::model;
+    using Output::output_node;
     using Output::settings_string;
 
   private:
@@ -61,10 +62,7 @@ class ConsoleOutput : public Output {
     void internal_end_target() override;
 
   public:
-    ConsoleOutput(const settings::SettingsNode& settings_p,
-                  Model* model_p,
-                  Scenario* scenario_p,
-                  settings::SettingsNode output_node_p);
+    ConsoleOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
 };
 }  // namespace acclimate

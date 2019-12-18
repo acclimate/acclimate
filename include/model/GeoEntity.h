@@ -23,6 +23,7 @@
 
 #include <string>
 #include <vector>
+
 #include "types.h"
 
 namespace acclimate {
@@ -33,9 +34,7 @@ class TransportChainLink;
 
 class GeoEntity {
   public:
-    enum class Type {
-        LOCATION, CONNECTION
-    };
+    enum class Type { LOCATION, CONNECTION };
 
   protected:
     Type type_m;

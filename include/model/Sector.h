@@ -23,6 +23,7 @@
 
 #include <string>
 #include <vector>
+
 #include "parameters.h"
 #include "settingsnode.h"
 #include "types.h"
@@ -37,9 +38,7 @@ class Sector {
     friend class Model;
 
   public:
-    enum class TransportType {
-        AVIATION, IMMEDIATE, ROADSEA
-    };
+    enum class TransportType { AVIATION, IMMEDIATE, ROADSEA };
     static TransportType map_transport_type(const settings::hstring& transport_type);
     static const char* unmap_transport_type(TransportType transport_type);
 
@@ -78,11 +77,7 @@ class Sector {
     std::vector<Firm*> firms;
 
   public:
-    Sector(Model* model_p,
-           std::string id_p,
-           IntType index_p,
-           const Ratio& upper_storage_limit_omega_p,
-           const Time& initial_storage_fill_factor_psi_p);
+    Sector(Model* model_p, std::string id_p, IntType index_p, const Ratio& upper_storage_limit_omega_p, const Time& initial_storage_fill_factor_psi_p);
     void add_demand_request_D(const Demand& demand_request_D);
     void add_production_X(const Flow& production_X);
     void add_initial_production_X(const Flow& production_X);

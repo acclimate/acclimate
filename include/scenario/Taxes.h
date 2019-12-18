@@ -27,8 +27,8 @@ namespace acclimate {
 
 class Taxes : public Scenario {
   protected:
-    using Scenario::model;
     using Scenario::id;
+    using Scenario::model;
     using Scenario::scenario_node;
     using Scenario::settings;
 

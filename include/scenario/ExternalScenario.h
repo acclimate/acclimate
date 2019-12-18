@@ -21,19 +21,20 @@
 #ifndef ACCLIMATE_EXTERNALSCENARIO_H
 #define ACCLIMATE_EXTERNALSCENARIO_H
 
-#include "scenario/Scenario.h"
 #include <memory>
 #include <string>
+
 #include "scenario/ExternalForcing.h"
+#include "scenario/Scenario.h"
 
 namespace acclimate {
 
 class ExternalScenario : public Scenario {
   protected:
     using Scenario::scenario_node;
-    using Scenario::settings;
-    using Scenario::set_firm_property;
     using Scenario::set_consumer_property;
+    using Scenario::set_firm_property;
+    using Scenario::settings;
 
     std::string forcing_file;
     std::string expression;
@@ -68,8 +69,8 @@ class ExternalScenario : public Scenario {
 
   public:
     using Scenario::id;
-    using Scenario::model;
     using Scenario::is_first_timestep;
+    using Scenario::model;
     ~ExternalScenario() override = default;
     bool iterate() override;
     Time start() override;

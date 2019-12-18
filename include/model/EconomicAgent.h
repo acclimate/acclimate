@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "parameters.h"
 #include "types.h"
 
@@ -43,9 +44,7 @@ class Storage;
 
 class EconomicAgent {
   public:
-    enum class Type {
-        CONSUMER, FIRM
-    };
+    enum class Type { CONSUMER, FIRM };
 
   private:
     Parameters::AgentParameters parameters_;

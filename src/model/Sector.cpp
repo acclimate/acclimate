@@ -19,7 +19,9 @@
 */
 
 #include "model/Sector.h"
+
 #include <utility>
+
 #include "model/Model.h"
 #include "run.h"
 
@@ -31,12 +33,12 @@ Sector::Sector(Model* model_p,
                const Ratio& upper_storage_limit_omega_p,
                const Time& initial_storage_fill_factor_psi_p,
                TransportType transport_type_p)
-        : id_m(std::move(id_p)),
-          index_m(index_p),
-          model_m(model_p),
-          upper_storage_limit_omega(upper_storage_limit_omega_p),
-          initial_storage_fill_factor_psi(initial_storage_fill_factor_psi_p),
-          transport_type(transport_type_p) {}
+    : id_m(std::move(id_p)),
+      index_m(index_p),
+      model_m(model_p),
+      upper_storage_limit_omega(upper_storage_limit_omega_p),
+      initial_storage_fill_factor_psi(initial_storage_fill_factor_psi_p),
+      transport_type(transport_type_p) {}
 
 void Sector::add_demand_request_D(const Demand& demand_request_D) {
     assertstep(PURCHASE);
@@ -84,7 +86,8 @@ Sector::TransportType Sector::map_transport_type(const settings::hstring& transp
             return TransportType::IMMEDIATE;
         case settings::hstring::hash("roadsea"):
             return TransportType::ROADSEA;
-        default: error_("Unknown transport type " << transport_type);
+        default:
+            error_("Unknown transport type " << transport_type);
     }
 }
 
@@ -96,7 +99,8 @@ const char* Sector::unmap_transport_type(Sector::TransportType transport_type) {
             return "immediate";
         case TransportType::ROADSEA:
             return "roadsea";
-        default: error_("Unkown transport type");
+        default:
+            error_("Unkown transport type");
     }
 }
 

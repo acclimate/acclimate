@@ -21,11 +21,12 @@
 #ifndef ACCLIMATE_EVENTSERIESSCENARIO_H
 #define ACCLIMATE_EVENTSERIESSCENARIO_H
 
-#include "scenario/ExternalScenario.h"
 #include <cstddef>
 #include <string>
 #include <vector>
+
 #include "scenario/ExternalForcing.h"
+#include "scenario/ExternalScenario.h"
 
 namespace acclimate {
 
@@ -59,8 +60,7 @@ class EventSeriesScenario : public ExternalScenario {
   public:
     using ExternalScenario::id;
     using ExternalScenario::model;
-    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p,
-                        Model* model_p);
+    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
 };
 }  // namespace acclimate
 

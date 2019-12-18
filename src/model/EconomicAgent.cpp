@@ -19,19 +19,20 @@
 */
 
 #include "model/EconomicAgent.h"
+
 #include <algorithm>
+
 #include "model/GeoRoute.h"
 #include "model/Model.h"
 #include "model/PurchasingManager.h"
+#include "model/Region.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
-#include "model/Region.h"
 #include "run.h"
 
 namespace acclimate {
 
-EconomicAgent::EconomicAgent(Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p)
-        : sector(sector_p), region(region_p), type(type_p) {}
+EconomicAgent::EconomicAgent(Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p) : sector(sector_p), region(region_p), type(type_p) {}
 
 inline Firm* EconomicAgent::as_firm() {
     assert(type == Type::FIRM);
@@ -63,19 +64,13 @@ Storage* EconomicAgent::find_input_storage(const std::string& sector_name) const
 }
 
 void EconomicAgent::remove_storage(Storage* storage) {
-    auto it =
-            std::find_if(input_storages.begin(), input_storages.end(),
-                         [storage](const std::unique_ptr<Storage>& it) { return it.get() == storage; });
+    auto it = std::find_if(input_storages.begin(), input_storages.end(), [storage](const std::unique_ptr<Storage>& it) { return it.get() == storage; });
     input_storages.erase(it);
 }
 
-Model* EconomicAgent::model() const {
-    return sector->model();
-}
+Model* EconomicAgent::model() const { return sector->model(); }
 
-std::string EconomicAgent::id() const {
-    return sector->id() + ":" + region->id();
-}
+std::string EconomicAgent::id() const { return sector->id() + ":" + region->id(); }
 
 Parameters::AgentParameters const& EconomicAgent::parameters_writable() const {
     assertstep(INITIALIZATION);

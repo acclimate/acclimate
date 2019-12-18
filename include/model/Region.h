@@ -21,15 +21,16 @@
 #ifndef ACCLIMATE_REGION_H
 #define ACCLIMATE_REGION_H
 
-#include "model/GeoLocation.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "model/GeoLocation.h"
 #include "model/GeoRoute.h"
 #include "model/Sector.h"
-#include "types.h"
 #include "parameters.h"
+#include "types.h"
 
 namespace acclimate {
 
@@ -57,9 +58,7 @@ class Region : public GeoLocation {
     OpenMPLock economic_agents_lock;
 
     struct route_hash {
-        std::size_t operator()(const std::pair<IntType, typename Sector::TransportType>& p) const {
-            return (p.first << 3) | (static_cast<IntType>(p.second));
-        }
+        std::size_t operator()(const std::pair<IntType, typename Sector::TransportType>& p) const { return (p.first << 3) | (static_cast<IntType>(p.second)); }
     };
 
     Region(Model* model_p, std::string id_p, IntType index_p);

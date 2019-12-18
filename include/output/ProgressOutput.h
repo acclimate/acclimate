@@ -21,8 +21,9 @@
 #ifndef ACCLIMATE_PROGRESSOUTPUT_H
 #define ACCLIMATE_PROGRESSOUTPUT_H
 
-#include "output/Output.h"
 #include <memory>
+
+#include "output/Output.h"
 
 namespace progressbar {
 class ProgressBar;
@@ -50,10 +51,7 @@ class ProgressOutput : public Output {
     void internal_end() override;
 
   public:
-    ProgressOutput(const settings::SettingsNode& settings_p,
-                   Model* model_p,
-                   Scenario* scenario_p,
-                   settings::SettingsNode output_node_p);
+    ProgressOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
     void checkpoint_resume() override;
     void checkpoint_stop() override;

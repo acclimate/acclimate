@@ -22,6 +22,7 @@
 #define ACCLIMATE_GEOPOINT_H
 
 #include <string>
+
 #include "types.h"
 
 namespace acclimate {

@@ -19,6 +19,7 @@
 */
 
 #include "model/GeoPoint.h"
+
 #include <cmath>
 #include <utility>
 

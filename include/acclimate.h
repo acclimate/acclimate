@@ -22,9 +22,10 @@
 #define ACCLIMATE_H
 
 #include <memory>
+
+#include "run.h"
 #include "settingsnode.h"
 #include "types.h"
-#include "run.h"
 
 namespace acclimate {
 

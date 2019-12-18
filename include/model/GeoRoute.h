@@ -21,8 +21,8 @@
 #ifndef ACCLIMATE_GEOROUTE_H
 #define ACCLIMATE_GEOROUTE_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace acclimate {
 

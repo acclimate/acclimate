@@ -65,23 +65,16 @@ class Firm : public EconomicAgent {
 
     inline const Flow& initial_total_use_U_star() const { return initial_total_use_U_star_; }
 
-    inline const Flow forced_initial_production_lambda_X_star() const {
-        return round(initial_production_X_star_ * forcing_);
-    }
+    inline const Flow forced_initial_production_lambda_X_star() const { return round(initial_production_X_star_ * forcing_); }
 
     const Flow maximal_production_beta_X_star() const;
     const Flow forced_maximal_production_lambda_beta_X_star() const;
 
-    inline const FlowQuantity&
-    initial_production_quantity_X_star() const { return initial_production_X_star_.get_quantity(); }
+    inline const FlowQuantity& initial_production_quantity_X_star() const { return initial_production_X_star_.get_quantity(); }
 
-    inline const FlowQuantity forced_initial_production_quantity_lambda_X_star() const {
-        return round(initial_production_X_star_.get_quantity() * forcing_);
-    }
+    inline const FlowQuantity forced_initial_production_quantity_lambda_X_star() const { return round(initial_production_X_star_.get_quantity() * forcing_); }
 
-    inline FloatType forced_initial_production_quantity_lambda_X_star_float() const {
-        return to_float(initial_production_X_star_.get_quantity() * forcing_);
-    }
+    inline FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_); }
 
     const FlowQuantity maximal_production_quantity_beta_X_star() const;
     FloatType maximal_production_quantity_beta_X_star_float() const;

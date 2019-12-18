@@ -19,20 +19,18 @@
 */
 
 #include "output/ArrayOutput.h"
+
 #include <limits>
 #include <utility>
-#include "settingsnode.h"
+
 #include "model/Model.h"
 #include "model/Region.h"
+#include "settingsnode.h"
 
 namespace acclimate {
 
-ArrayOutput::ArrayOutput(const settings::SettingsNode& settings_p,
-                         Model* model_p,
-                         Scenario* scenario_p,
-                         settings::SettingsNode output_node_p,
-                         bool over_time_p)
-        : Output(settings_p, model_p, scenario_p, std::move(output_node_p)), over_time(over_time_p) {
+ArrayOutput::ArrayOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p, bool over_time_p)
+    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)), over_time(over_time_p) {
     include_events = false;
 }
 
@@ -42,10 +40,8 @@ void ArrayOutput::initialize() {
     regions_size = model()->regions.size();
 }
 
-inline typename ArrayOutput::Variable& ArrayOutput::create_variable(const hstring& path,
-                                                                    const hstring& name,
-                                                                    const hstring& suffix) {
-    const auto key = suffix ^name ^path;
+inline typename ArrayOutput::Variable& ArrayOutput::create_variable(const hstring& path, const hstring& name, const hstring& suffix) {
+    const auto key = suffix ^ name ^ path;
     auto it = variables.find(key);
     if (it == variables.end()) {
         std::size_t size = 1;
@@ -84,8 +80,7 @@ inline std::size_t ArrayOutput::current_index() const {
 }
 
 void ArrayOutput::internal_start_target(const hstring& name, Sector* sector, Region* region) {
-    stack.emplace_back(Target{name, current_index() * regions_size * sectors_size + sector->index() * regions_size +
-                                    region->index(), sector, region});
+    stack.emplace_back(Target{name, current_index() * regions_size * sectors_size + sector->index() * regions_size + region->index(), sector, region});
 }
 
 void ArrayOutput::internal_start_target(const hstring& name, Sector* sector) {
@@ -96,13 +91,9 @@ void ArrayOutput::internal_start_target(const hstring& name, Region* region) {
     stack.emplace_back(Target{name, current_index() * regions_size + region->index(), nullptr, region});
 }
 
-void ArrayOutput::internal_start_target(const hstring& name) {
-    stack.emplace_back(Target{name, current_index(), nullptr, nullptr});
-}
+void ArrayOutput::internal_start_target(const hstring& name) { stack.emplace_back(Target{name, current_index(), nullptr, nullptr}); }
 
-void ArrayOutput::internal_end_target() {
-    stack.pop_back();
-}
+void ArrayOutput::internal_end_target() { stack.pop_back(); }
 
 void ArrayOutput::internal_iterate_begin() {
     if (over_time) {
@@ -122,12 +113,8 @@ const typename ArrayOutput::Variable& ArrayOutput::get_variable(const hstring& f
     return it->second;
 }
 
-void ArrayOutput::event(EventType type,
-                        const Sector* sector_from,
-                        const Region* region_from,
-                        const Sector* sector_to,
-                        const Region* region_to,
-                        FloatType value) {
+void ArrayOutput::event(
+    EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) {
     if (include_events) {
         Event event_struct;
         event_struct.time = model()->timestep();
