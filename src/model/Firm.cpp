@@ -36,6 +36,13 @@
 namespace acclimate {
 
 template<class ModelVariant>
+Firm<ModelVariant>::Firm(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
+        : EconomicAgent<ModelVariant>(sector_p, region_p, EconomicAgent<ModelVariant>::Type::FIRM),
+          capacity_manager(new typename ModelVariant::CapacityManagerType(this, possible_overcapacity_ratio_beta_p)),
+          sales_manager(new typename ModelVariant::SalesManagerType(this)) {}
+
+
+template<class ModelVariant>
 Firm<ModelVariant>::Firm(Identifier<ModelVariant>* identifier_p, Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
     : EconomicAgent<ModelVariant>(identifier_p, sector_p, region_p, EconomicAgent<ModelVariant>::Type::FIRM),
       capacity_manager(new typename ModelVariant::CapacityManagerType(this, possible_overcapacity_ratio_beta_p)),

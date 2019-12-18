@@ -65,10 +65,12 @@ class EconomicAgent {
         return parameters_;
     }
 
-  protected:
-    EconomicAgent(Identifier<ModelVariant>* identifier_p, Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p);
+  public:
+
 
   public:
+    EconomicAgent( Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p);
+    EconomicAgent(Identifier<ModelVariant>* identifier_p, Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p);
     inline const Forcing& forcing() const { return forcing_; }
     inline void forcing(const Forcing& forcing_p) {
         assertstep(SCENARIO);

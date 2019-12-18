@@ -32,7 +32,7 @@ namespace acclimate {
 
 template<class ModelVariant>
 Model<ModelVariant>::Model(Run<ModelVariant>* const run_p)
-    : run_m(run_p), consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector<ModelVariant>::TransportType::IMMEDIATE)), consumption_identifier(new Identifier<ModelVariant>(this, "FCON",0)),void_identifier(new Identifier<ModelVariant>(this, "VOID",-1)) {
+    : run_m(run_p), consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector<ModelVariant>::TransportType::IMMEDIATE)), consumption_identifier(new Identifier<ModelVariant>(this, "FCON",0)) {
     sectors.emplace_back(consumption_sector);
 }
 
@@ -51,6 +51,13 @@ Sector<ModelVariant>* Model<ModelVariant>::add_sector(std::string name,
     auto sector = new Sector<ModelVariant>(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
     sectors.emplace_back(sector);
     return sector;
+}
+
+template<class ModelVariant>
+Identifier<ModelVariant>* Model<ModelVariant>::add_identifier(std::string name) {
+    auto identifier = new Identifier<ModelVariant>(this, name, identifiers.size());
+    identifiers.emplace_back(identifier);
+    return identifier;
 }
 
 template<class ModelVariant>
@@ -156,6 +163,15 @@ Region<ModelVariant>* Model<ModelVariant>::find_region(const std::string& name) 
 }
 
 template<class ModelVariant>
+Identifier<ModelVariant>* Model<ModelVariant>::find_identifier(const std::string& name) const {
+    auto it = std::find_if(identifiers.begin(), identifiers.end(), [name](const std::unique_ptr<Identifier<ModelVariant>>& it) { return it->id() == name; });
+    if (it == identifiers.end()) {
+        return nullptr;
+    }
+    return it->get();
+}
+
+template<class ModelVariant>
 Sector<ModelVariant>* Model<ModelVariant>::find_sector(const std::string& name) const {
     auto it = std::find_if(sectors.begin(), sectors.end(), [name](const std::unique_ptr<Sector<ModelVariant>>& it) { return it->id() == name; });
     if (it == sectors.end()) {
@@ -181,16 +197,18 @@ template<class ModelVariant>
     }
     return *it;
     }
+
+
 template<class ModelVariant>
-Firm<ModelVariant>* Model<ModelVariant>::find_firm(Identifier<ModelVariant>* identifier, Sector<ModelVariant>* sector, const std::string& identifier_name) const {
-    auto it = std::find_if(sector->firms.begin(), sector->firms.end(), [identifier_name](const Firm<ModelVariant>* it) { return it->identifier->id() == identifier_name; });
-    if (it == sector->firms.end()) {
-        return nullptr;
-    }
-    return *it;
+Firm<ModelVariant>* Model<ModelVariant>::find_firm(const std::string& identifier_name) const {
+    auto it = find_identifier(identifier_name)->firms.front();
+    return it;
 }
 
-
+    template<class ModelVariant>
+    Firm<ModelVariant>* Model<ModelVariant>::find_firm(Identifier<ModelVariant>* identifier) const {
+       return find_firm(identifier->id());
+    }
 
 template<class ModelVariant>
 Consumer<ModelVariant>* Model<ModelVariant>::find_consumer(Region<ModelVariant>* region) const {

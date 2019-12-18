@@ -44,6 +44,8 @@ namespace acclimate {
                    std::string id_p,
                    IntType index_p);
         inline const std::string& id() const { return id_m; }
+
+        std::vector<Firm<ModelVariant>*> firms;
     }; // namespace acclimate
 }
 #endif

@@ -23,7 +23,6 @@
 #include <fstream>
 #include <memory>
 #include <vector>
-#include "MRIOIndexSet.h"
 #include "MRIOTable.h"
 #include "model/BusinessConnection.h"
 #include "model/Consumer.h"
@@ -86,19 +85,44 @@ settings::SettingsNode ModelInitializer<ModelVariant>::get_firm_property(const s
     return firm_settings["ALL"][property_name];
 }
 
+    template<class ModelVariant>
+    settings::SettingsNode ModelInitializer<ModelVariant>::get_firm_property(const std::string& sector_name,
+                                                                             const std::string& region_name,
+                                                                             const std::string& property_name) const {
+        const settings::SettingsNode& firm_settings = settings["firms"];
+
+
+        if (firm_settings.has(sector_name + ":" + region_name) && firm_settings[sector_name + ":" + region_name].has(property_name)) {
+            return firm_settings[sector_name + ":" + region_name][property_name];
+        }
+        if (firm_settings.has(sector_name) && firm_settings[sector_name].has(property_name)) {
+            return firm_settings[sector_name][property_name];
+        }
+        if (firm_settings.has(region_name) && firm_settings[region_name].has(property_name)) {
+            return firm_settings[region_name][property_name];
+        }
+
+        return firm_settings["ALL"][property_name];
+    }
+
 template<class ModelVariant>
 Firm<ModelVariant>* ModelInitializer<ModelVariant>::add_firm(Identifier<ModelVariant>* identifier, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
     auto firm = new Firm<ModelVariant>(identifier, sector, region,
                                        static_cast<Ratio>(get_firm_property(identifier->id(),sector->id(), region->id(), "possible_overcapacity_ratio").template as<double>()));
     region->economic_agents.emplace_back(firm);
     sector->firms.push_back(firm);
+    identifier ->firms.push_back(firm);
     return firm;
 }
 
-    template<class ModelVariant>
-    Firm<ModelVariant>* ModelInitializer<ModelVariant>::add_firm(Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
-        return add_firm(model()->void_identifier, sector, region);
-    }
+template<class ModelVariant>
+Firm<ModelVariant>* ModelInitializer<ModelVariant>::add_firm(Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+    auto firm = new Firm<ModelVariant>(sector, region,
+                                       static_cast<Ratio>(get_firm_property(sector->id(), region->id(), "possible_overcapacity_ratio").template as<double>()));
+    region->economic_agents.emplace_back(firm);
+    sector->firms.push_back(firm);
+    return firm;
+}
 
 
 template<class ModelVariant>
@@ -115,6 +139,15 @@ Region<ModelVariant>* ModelInitializer<ModelVariant>::add_region(const std::stri
         region = model()->add_region(name);
     }
     return region;
+}
+
+template<class ModelVariant>
+Identifier<ModelVariant>* ModelInitializer<ModelVariant>::add_identifier(const std::string& name) {
+    Identifier<ModelVariant>* identifier = model()->find_identifier(name);
+    if (identifier == nullptr) {
+        identifier = model()->add_identifier(name);
+    }
+    return identifier;
 }
 
 #ifdef VARIANT_BASIC
@@ -197,6 +230,17 @@ void ModelInitializer<ModelVariant>::initialize_connection(
     }
     initialize_connection(firm_from, firm_to, flow);
 }
+
+    template<class ModelVariant>
+    void ModelInitializer<ModelVariant>::initialize_connection(
+            Identifier<ModelVariant>* identifier_from, Identifier<ModelVariant>* identifier_to, const Flow& flow) {
+        Firm<ModelVariant>* firm_from = model()->find_firm(identifier_from);
+
+        Firm<ModelVariant>* firm_to = model()->find_firm(identifier_to);
+
+
+        initialize_connection(firm_from, firm_to, flow);
+    }
 
 #ifdef VARIANT_BASIC
 template<>
@@ -925,18 +969,19 @@ void ModelInitializer<ModelVariant>::build_agent_network_from_table(const mrio::
     }
 }
 
+
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::build_agent_network() {
-    const settings::SettingsNode& network = settings["network"];
-    const auto& type = network["type"].as<settings::hstring>();
+    const settings::SettingsNode &network = settings["network"];
+    const auto &type = network["type"].as<settings::hstring>();
     switch (type) {
         case settings::hstring::hash("csv"): {
-            const auto& index_filename = network["index"].as<std::string>();
+            const auto &index_filename = network["index"].as<std::string>();
             std::ifstream index_file(index_filename.c_str(), std::ios::in | std::ios::binary);
             if (!index_file) {
                 error("Could not open index file '" << index_filename << "'");
             }
-            const auto& filename = network["file"].as<std::string>();
+            const auto &filename = network["file"].as<std::string>();
             std::ifstream flows_file(filename.c_str(), std::ios::in | std::ios::binary);
             if (!flows_file) {
                 error("Could not open flows file '" << filename << "'");
@@ -947,22 +992,167 @@ void ModelInitializer<ModelVariant>::build_agent_network() {
             flows_file.close();
             index_file.close();
             build_agent_network_from_table(table, flow_threshold);
-        } break;
+        }
+            break;
         case settings::hstring::hash("netcdf"): {
-            const auto& filename = network["file"].as<std::string>();
+            const auto &filename = network["file"].as<std::string>();
             mrio::Table<FloatType, std::size_t> table;
             const auto flow_threshold = network["threshold"].as<FloatType>();
             table.read_from_netcdf(filename, flow_threshold);
             build_agent_network_from_table(table, flow_threshold);
-        } break;
+        }
+            break;
+
+
+        case settings::hstring::hash("netcdf_identifier_variant"): {
+            const auto &filename = network["file"].as<std::string>();
+            const auto flow_threshold = network["threshold"].as<FloatType>(); // not yet used
+
+            netCDF::NcFile file(filename, netCDF::NcFile::read);
+
+            netCDF::NcVar sectors_var = file.getVar("sector");
+            std::size_t sectors_count = sectors_var.getDim(0).getSize();
+            std::vector<const char*> sectors_val(sectors_count);
+            sectors_var.getVar(&sectors_val[0]);
+
+
+            netCDF::NcVar regions_var = file.getVar("region");
+            std::size_t regions_count = regions_var.getDim(0).getSize();
+            std::vector<const char*> regions_val(regions_count);
+            regions_var.getVar(&regions_val[0]);
+
+
+            netCDF::NcVar firm_group = file.getVar("firm");
+
+            int firm_group_dim = firm_group.getDim(0).getSize();
+            int firm_group_id = firm_group.getId();
+            int name_id;
+            int sector_int_id;
+            int region_int_id;
+
+            //Get the var ids
+
+            nc_inq_ncid(firm_group_id, "firm.name", &name_id);
+            nc_inq_ncid(firm_group_id, "firm.sector", &sector_int_id);
+            nc_inq_ncid(firm_group_id, "firm.region", &region_int_id);
+
+            info(name_id);
+
+            // define arrays to store data
+            std::vector<const char*> firm_names(firm_group_dim);
+            std::vector<const ulong*>sector_ints(firm_group_dim);
+            std::vector<const ulong*>region_ints(firm_group_dim);
+            // Read the data.
+
+            const size_t start[3] ={0,0,0};
+
+            const size_t steps[3] ={static_cast<size_t>(firm_group_dim-1),1,1};
+
+            int  status;
+
+            status = nc_get_vara(firm_group_id, name_id, start, steps,  &firm_names);
+            if (status != NC_NOERR) info("error");
+            if (status == NC_ERANGE) info("error erange");
+            if (status == NC_EEDGE) info("error eedge");
+            if (status == NC_ENOTVAR) info("error enovatar");
+            if (status == NC_EINVALCOORDS) info("error NC_EINVALCOORDS");
+            if (status == NC_EINDEFINE) info("error NC_EINDEFINE");
+            if (status == NC_EBADID) info("error bad id");
+            status = nc_get_vara(firm_group_id, sector_int_id, start, steps,
+                                  (unsigned long long int *) &sector_ints[0]);
+            if (status != NC_NOERR) info("error");
+            status = nc_get_vara(firm_group_id, region_int_id, start, steps,
+                                  (unsigned long long int *) &region_ints[0]);
+            if (status != NC_NOERR) info("error")
+
+info(firm_names.size())
+info(firm_names[0]);
+info(region_ints[0]);
+
+            for (int i = 0; i < firm_group_dim-1; i++) {
+
+
+                const char* identifier_name = firm_names[i];
+                unsigned long sector_index = (unsigned long) sector_ints[i];
+                const char* sector_name = sectors_val.at(sector_index);
+
+                unsigned long region_index = (unsigned long) region_ints[i];
+                const char* region_name = sectors_val.at(region_index);
+
+                info("ith variables found")
+                info(identifier_name)
+                Firm<ModelVariant> *firm = model()->find_firm(identifier_name);
+                info("Firm found")
+
+                Identifier<ModelVariant> *identifier = add_identifier(identifier_name);
+                Region<ModelVariant> *region = add_region(region_name);
+                Sector<ModelVariant> *sector = add_sector(sector_name);
+
+
+
+                if (sector_name == "FCON") {
+                    Consumer<ModelVariant> *consumer = model()->find_consumer(region);
+                    if (!consumer) {
+                        consumer = add_consumer(region);
+                    } else {
+                        error("Duplicate consumer for region " << region_name);
+                    }
+                } else {
+
+                    if (!firm) {
+                        firm = add_firm(identifier, sector, region);
+                        if (!firm) {
+                            error("Could not add firm");
+                        }
+                    }
+                }
+            }
+
+            info("number of Firms added ")
+           /* netCDF::NcGroup flow_group = file .getGroup("flow");
+            netCDF::NcVar firm_from_var = flow_group.getVar("firm_from");
+            netCDF::NcVar firm_to_var = flow_group.getVar("firm_to");
+            netCDF::NcVar value_var = flow_group.getVar("value");
+
+            std::size_t firm_from_count = firm_from_var.getDimCount();
+            std::vector<double> firm_from_val(firm_from_count);
+            value_var.getVar(&firm_from_val[0]);
+
+            std::size_t firm_to_count = firm_to_var.getDimCount();
+            std::vector<double> firm_to_val(firm_to_count);
+            value_var.getVar(&firm_to_val[0]);
+
+            std::size_t flows_count = value_var.getDimCount();
+            std::vector<double> value_val(flows_count);
+            value_var.getVar(&value_val[0]);
+
+            for (int i = 0; i < flows_count; i++) {
+                Identifier<ModelVariant> *firm_from_identifier = model()->find_identifier(
+                        firm_names[firm_from_val[i]]);
+                Identifier<ModelVariant> *firm_to_identifier = model()->find_identifier(
+                        firm_names[firm_to_val[i]]);
+                const Flow flow = Flow(FlowQuantity(value_val[i]), Price(1));
+                initialize_connection(firm_from_identifier, firm_to_identifier, flow);
+            }*/
+            break;
+        }
+
         case settings::hstring::hash("artificial"): {
             build_artificial_network();
             return;
-        } break;
-        default:
-            error("Unknown network type '" << type << "'");
+        }
+        break;
+        default: error("Unknown network type '" << type << "'");
+
+
+
+
     }
+
 }
+
+
+
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::build_transport_network() {
@@ -1093,5 +1283,8 @@ void ModelInitializer<ModelVariant>::post_initialize_variant() {
     }
 }
 
-INSTANTIATE_BASIC(ModelInitializer);
+
+
+
+    INSTANTIATE_BASIC(ModelInitializer);
 }  // namespace acclimate

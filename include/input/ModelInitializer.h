@@ -27,7 +27,7 @@
 #include "model/GeoEntity.h"
 #include "settingsnode.h"
 #include "types.h"
-
+#include "MRIOIndexSet.h"
 
 namespace mrio {
 template<typename ValueType, typename IndexType>
@@ -99,16 +99,27 @@ class ModelInitializer {
   private:
     settings::SettingsNode get_firm_property(const std::string identifier_name, const std::string &sector_name, const std::string &region_name,
                       const std::string &property_name) const;
-    settings::SettingsNode get_named_property(const settings::SettingsNode& node_settings, const std::string& node_name, const std::string& property_name) const;
 
+    settings::SettingsNode get_firm_property(const std::string &sector_name, const std::string &region_name,
+                      const std::string &property_name) const;
+
+    settings::SettingsNode get_named_property(const settings::SettingsNode &node_settings, const std::string &node_name,
+                                              const std::string &property_name) const;
   protected:
     Model<ModelVariant>* const model_m;
     const settings::SettingsNode& settings;
 
     Sector<ModelVariant>* add_sector(const std::string& name);
     Region<ModelVariant>* add_region(const std::string& name);
-    Firm<ModelVariant>* add_firm(Identifier<ModelVariant>*, Sector<ModelVariant>* sector, Region<ModelVariant>* region);
+
+    Identifier <ModelVariant> *add_identifier(const std::string &name);
+
+
     Firm <ModelVariant> *add_firm(Sector <ModelVariant> *sector, Region <ModelVariant> *region);
+
+    Firm<ModelVariant>* add_firm(Identifier<ModelVariant>*, Sector<ModelVariant>* sector, Region<ModelVariant>* region);
+    Firm<ModelVariant>* add_firm(Identifier<ModelVariant>*);
+
     Consumer<ModelVariant>* add_consumer(Region<ModelVariant>* region);
     void create_simple_transport_connection(Region<ModelVariant>* region_from, Region<ModelVariant>* region_to, TransportDelay transport_delay);
     void initialize_connection(Sector<ModelVariant>* sector_from,
@@ -116,6 +127,11 @@ class ModelInitializer {
                                Sector<ModelVariant>* sector_to,
                                Region<ModelVariant>* region_to,
                                const Flow& flow);
+
+    void initialize_connection( Identifier<ModelVariant>* identifier_from,
+                                Identifier<ModelVariant>* identifier_to,
+                                const Flow& flow);
+
     void initialize_connection(Firm<ModelVariant>* firm_from, EconomicAgent<ModelVariant>* economic_agent_to, const Flow& flow);
     void clean_network();
     void pre_initialize_variant();
@@ -136,9 +152,6 @@ class ModelInitializer {
 #endif
     inline Model<ModelVariant>* model() const { return model_m; }
     inline std::string id() const { return "MODELINITIALIZER"; }
-
-
-
 };
 }  // namespace acclimate
 

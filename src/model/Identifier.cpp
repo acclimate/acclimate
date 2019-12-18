@@ -29,10 +29,20 @@ template<class ModelVariant>
 Identifier<ModelVariant>::Identifier(Model<ModelVariant>* model_p,
                              std::string id_p,
                              const IntType index_p)
-    : id_m(std::move(id_p)),
-      model_m(model_p),
-      index_m(index_p)
+    :model_m(model_p),
+     id_m(std::move(id_p)),
+     index_m(index_p)
       {}
+
+    template<class ModelVariant>
+    void Sector<ModelVariant>::remove_firm(Firm<ModelVariant>* firm) {
+        for (auto it = firms.begin(); it != firms.end(); ++it) {  // TODO use find_if
+            if (*it == firm) {
+                firms.erase(it);
+                break;
+            }
+        }
+    }
 
       INSTANTIATE_BASIC(Identifier);
 }  // namespace acclimate
