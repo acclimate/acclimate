@@ -1022,66 +1022,36 @@ void ModelInitializer<ModelVariant>::build_agent_network() {
             regions_var.getVar(&regions_val[0]);
 
 
-            netCDF::NcVar firm_group = file.getVar("firm");
+            netCDF::NcVar firm_compound = file.getVar("firm");
+            int firm_compound_dim = firm_compound.getDim(0).getSize();
+            info(firm_compound_dim);
 
-            int firm_group_dim = firm_group.getDim(0).getSize();
-            int firm_group_id = firm_group.getId();
-            int name_id;
-            int sector_int_id;
-            int region_int_id;
+            // define struct to save compounded data of firm
+            struct FirmCompound {
+                const char *name = 0;
+                int sector = 0;
+                int region = 0;
+            };
 
-            //Get the var ids
+            std::vector<FirmCompound> firm_data (firm_compound_dim);
 
-            nc_inq_ncid(firm_group_id, "firm.name", &name_id);
-            nc_inq_ncid(firm_group_id, "firm.sector", &sector_int_id);
-            nc_inq_ncid(firm_group_id, "firm.region", &region_int_id);
+            firm_compound.getVar(&firm_data[0]);
 
-            info(name_id);
+            info(firm_data.size())
 
-            // define arrays to store data
-            std::vector<const char*> firm_names(firm_group_dim);
-            std::vector<const ulong*>sector_ints(firm_group_dim);
-            std::vector<const ulong*>region_ints(firm_group_dim);
-            // Read the data.
-
-            const size_t start[3] ={0,0,0};
-
-            const size_t steps[3] ={static_cast<size_t>(firm_group_dim-1),1,1};
-
-            int  status;
-
-            status = nc_get_vara(firm_group_id, name_id, start, steps,  &firm_names);
-            if (status != NC_NOERR) info("error");
-            if (status == NC_ERANGE) info("error erange");
-            if (status == NC_EEDGE) info("error eedge");
-            if (status == NC_ENOTVAR) info("error enovatar");
-            if (status == NC_EINVALCOORDS) info("error NC_EINVALCOORDS");
-            if (status == NC_EINDEFINE) info("error NC_EINDEFINE");
-            if (status == NC_EBADID) info("error bad id");
-            status = nc_get_vara(firm_group_id, sector_int_id, start, steps,
-                                  (unsigned long long int *) &sector_ints[0]);
-            if (status != NC_NOERR) info("error");
-            status = nc_get_vara(firm_group_id, region_int_id, start, steps,
-                                  (unsigned long long int *) &region_ints[0]);
-            if (status != NC_NOERR) info("error")
-
-info(firm_names.size())
-info(firm_names[0]);
-info(region_ints[0]);
-
-            for (int i = 0; i < firm_group_dim-1; i++) {
+            for (int i = 0; i < firm_compound_dim - 1; i++) {
 
 
-                const char* identifier_name = firm_names[i];
-                unsigned long sector_index = (unsigned long) sector_ints[i];
+                const char* identifier_name = firm_data[i].name;
+                unsigned long sector_index = firm_data[i].sector;
                 const char* sector_name = sectors_val.at(sector_index);
 
-                unsigned long region_index = (unsigned long) region_ints[i];
+                unsigned long region_index = firm_data[i].region;
                 const char* region_name = sectors_val.at(region_index);
 
                 info("ith variables found")
                 info(identifier_name)
-                Firm<ModelVariant> *firm = model()->find_firm(identifier_name);
+                Firm <ModelVariant> *firm = model()->find_firm(identifier_name);
                 info("Firm found")
 
                 Identifier<ModelVariant> *identifier = add_identifier(identifier_name);
@@ -1109,31 +1079,30 @@ info(region_ints[0]);
             }
 
             info("number of Firms added ")
-           /* netCDF::NcGroup flow_group = file .getGroup("flow");
-            netCDF::NcVar firm_from_var = flow_group.getVar("firm_from");
-            netCDF::NcVar firm_to_var = flow_group.getVar("firm_to");
-            netCDF::NcVar value_var = flow_group.getVar("value");
 
-            std::size_t firm_from_count = firm_from_var.getDimCount();
-            std::vector<double> firm_from_val(firm_from_count);
-            value_var.getVar(&firm_from_val[0]);
+            netCDF::NcVar flow_compound = file.getVar("flow");
+            int flows_count = flow_compound.getDim(0).getSize();
+            info(firm_compound_dim);
 
-            std::size_t firm_to_count = firm_to_var.getDimCount();
-            std::vector<double> firm_to_val(firm_to_count);
-            value_var.getVar(&firm_to_val[0]);
+            // define struct to save compounded data of firm
+            struct FlowCompound {
+                int firm_from = 0;
+                int firm_to = 0;
+                double value = 0;
+            };
 
-            std::size_t flows_count = value_var.getDimCount();
-            std::vector<double> value_val(flows_count);
-            value_var.getVar(&value_val[0]);
+            std::vector<FlowCompound> flow_data (flows_count);
+
+            flow_compound.getVar(&flow_data[0]);
 
             for (int i = 0; i < flows_count; i++) {
                 Identifier<ModelVariant> *firm_from_identifier = model()->find_identifier(
-                        firm_names[firm_from_val[i]]);
+                        firm_data[flow_data[i].firm_from].name);
                 Identifier<ModelVariant> *firm_to_identifier = model()->find_identifier(
-                        firm_names[firm_to_val[i]]);
-                const Flow flow = Flow(FlowQuantity(value_val[i]), Price(1));
+                        firm_data[flow_data[i].firm_to].name);
+                const Flow flow = Flow(FlowQuantity(flow_data[i].value), Price(1));
                 initialize_connection(firm_from_identifier, firm_to_identifier, flow);
-            }*/
+            }
             break;
         }
 
@@ -1150,9 +1119,6 @@ info(region_ints[0]);
     }
 
 }
-
-
-
 
 template<class ModelVariant>
 void ModelInitializer<ModelVariant>::build_transport_network() {
