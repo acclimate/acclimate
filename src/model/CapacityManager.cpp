@@ -70,7 +70,7 @@ void CapacityManager::print_inputs() const {
 
 #endif
 
-const Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
+Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
     assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     Price unit_commodity_costs = Price(0.0);
@@ -102,19 +102,19 @@ const Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_t
     return result;
 }
 
-const Flow CapacityManager::get_possible_production_X_hat() const {
+Flow CapacityManager::get_possible_production_X_hat() const {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     bool consider_transport_in_production_costs = false;
     return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false);
 }
 
-const Flow CapacityManager::estimate_possible_production_X_hat() const {
+Flow CapacityManager::estimate_possible_production_X_hat() const {
     assertstep(EXPECTATION);
     bool consider_transport_in_production_costs = true;
     return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true);
 }
 
-const Flow CapacityManager::calc_production_X() {
+Flow CapacityManager::calc_production_X() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     calc_possible_and_desired_production();
     return firm->sales_manager->calc_production_X();

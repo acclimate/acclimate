@@ -132,13 +132,13 @@ void Firm::print_details() const {
 
 #endif
 
-const Flow Firm::maximal_production_beta_X_star() const { return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta); }
+Flow Firm::maximal_production_beta_X_star() const { return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta); }
 
-const Flow Firm::forced_maximal_production_lambda_beta_X_star() const {
+Flow Firm::forced_maximal_production_lambda_beta_X_star() const {
     return round(initial_production_X_star_ * forcing_ * capacity_manager->possible_overcapacity_ratio_beta);
 }
 
-const FlowQuantity Firm::maximal_production_quantity_beta_X_star() const {
+FlowQuantity Firm::maximal_production_quantity_beta_X_star() const {
     return round(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
 }
 
@@ -146,7 +146,7 @@ FloatType Firm::maximal_production_quantity_beta_X_star_float() const {
     return to_float(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
 }
 
-const FlowQuantity Firm::forced_maximal_production_quantity_lambda_beta_X_star() const {
+FlowQuantity Firm::forced_maximal_production_quantity_lambda_beta_X_star() const {
     return round(initial_production_X_star_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
 }
 

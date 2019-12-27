@@ -73,11 +73,11 @@ class BusinessConnection {
     inline void invalidate_seller() { seller = nullptr; }
 
     std::size_t get_id(const TransportChainLink* transport_chain_link) const;
-    const Flow get_flow_mean() const;
-    const FlowQuantity get_flow_deficit() const;
-    const Flow get_total_flow() const;
-    const Flow get_transport_flow() const;
-    const Flow get_disequilibrium() const;
+    Flow get_flow_mean() const;
+    FlowQuantity get_flow_deficit() const;
+    Flow get_total_flow() const;
+    Flow get_transport_flow() const;
+    Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
     FloatType get_minimum_passage() const;
     TransportDelay get_transport_delay_tau() const;

@@ -81,8 +81,8 @@ class Storage {
     Storage(Sector* sector_p, EconomicAgent* economic_agent_p);
     void set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p);
     void use_content_S(const Flow& used_flow_U_current);
-    const Flow estimate_possible_use_U_hat() const;
-    const Flow get_possible_use_U_hat() const;
+    Flow estimate_possible_use_U_hat() const;
+    Flow get_possible_use_U_hat() const;
     void push_flow_Z(const Flow& flow_Z);
     const Flow& current_input_flow_I() const;
     const Flow& last_input_flow_I() const;

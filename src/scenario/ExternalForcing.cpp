@@ -50,7 +50,7 @@ int ExternalForcing::next_timestep() {
     return day;
 }
 
-const std::string ExternalForcing::calendar_str() const {
+std::string ExternalForcing::calendar_str() const {
     try {
         std::string res;
         time_variable.getAtt("calendar").getValues(res);
@@ -60,7 +60,7 @@ const std::string ExternalForcing::calendar_str() const {
     }
 }
 
-const std::string ExternalForcing::time_units_str() const {
+std::string ExternalForcing::time_units_str() const {
     try {
         std::string res;
         time_variable.getAtt("units").getValues(res);

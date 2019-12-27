@@ -60,7 +60,7 @@ bool PurchasingManager::remove_business_connection(const BusinessConnection* bus
     return false;
 }
 
-const FlowQuantity PurchasingManager::get_flow_deficit() const {
+FlowQuantity PurchasingManager::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     FlowQuantity res = FlowQuantity(0.0);
     for (const auto& bc : business_connections) {
@@ -69,7 +69,7 @@ const FlowQuantity PurchasingManager::get_flow_deficit() const {
     return round(res);
 }
 
-const Flow PurchasingManager::get_transport_flow() const {
+Flow PurchasingManager::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
@@ -78,7 +78,7 @@ const Flow PurchasingManager::get_transport_flow() const {
     return res;
 }
 
-const Flow PurchasingManager::get_disequilibrium() const {
+Flow PurchasingManager::get_disequilibrium() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
@@ -96,7 +96,7 @@ FloatType PurchasingManager::get_stddeviation() const {
     return res;
 }
 
-const Flow PurchasingManager::get_sum_of_last_shipments() const {
+Flow PurchasingManager::get_sum_of_last_shipments() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
@@ -145,7 +145,7 @@ FloatType PurchasingManager::optimized_value() const {
     return optimized_value_;
 }
 
-const Demand PurchasingManager::storage_demand() const {
+Demand PurchasingManager::storage_demand() const {
     assertstepnot(PURCHASE);
     return demand_D_ - purchase_;
 }
@@ -817,7 +817,7 @@ void PurchasingManager::calc_optimization_parameters(std::vector<FloatType>& dem
     }
 }
 
-const FlowQuantity PurchasingManager::calc_analytical_approximation_X_max(const BusinessConnection* bc) const {
+FlowQuantity PurchasingManager::calc_analytical_approximation_X_max(const BusinessConnection* bc) const {
     return bc->seller->communicated_parameters().possible_production_X_hat.get_quantity();
 }
 

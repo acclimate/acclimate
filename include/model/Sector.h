@@ -55,8 +55,8 @@ class Sector {
     Sector(Model* model_p,
            std::string id_p,
            IntType index_p,
-           const Ratio& upper_storage_limit_omega_p,
-           const Time& initial_storage_fill_factor_psi_p,
+           Ratio upper_storage_limit_omega_p,
+           Time initial_storage_fill_factor_psi_p,
            TransportType transport_type_p);
 
   public:

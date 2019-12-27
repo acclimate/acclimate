@@ -42,12 +42,12 @@ void Storage::iterate_consumption_and_production() {
     purchasing_manager->iterate_consumption_and_production();
 }
 
-const Flow Storage::estimate_possible_use_U_hat() const {
+Flow Storage::estimate_possible_use_U_hat() const {
     assertstep(EXPECTATION);
     return content_S_ / model()->delta_t() + next_input_flow_I();
 }
 
-const Flow Storage::get_possible_use_U_hat() const {
+Flow Storage::get_possible_use_U_hat() const {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     return content_S_ / model()->delta_t() + current_input_flow_I();
 }

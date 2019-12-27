@@ -43,8 +43,8 @@ class ExternalForcing {
     ExternalForcing(std::string filename_p, const std::string& variable_name);
     virtual ~ExternalForcing() = default;
     int next_timestep();
-    const std::string calendar_str() const;
-    const std::string time_units_str() const;
+    std::string calendar_str() const;
+    std::string time_units_str() const;
 };
 }  // namespace acclimate
 

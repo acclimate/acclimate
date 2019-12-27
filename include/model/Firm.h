@@ -65,33 +65,33 @@ class Firm : public EconomicAgent {
 
     inline const Flow& initial_total_use_U_star() const { return initial_total_use_U_star_; }
 
-    inline const Flow forced_initial_production_lambda_X_star() const { return round(initial_production_X_star_ * forcing_); }
+    inline Flow forced_initial_production_lambda_X_star() const { return round(initial_production_X_star_ * forcing_); }
 
-    const Flow maximal_production_beta_X_star() const;
-    const Flow forced_maximal_production_lambda_beta_X_star() const;
+    Flow maximal_production_beta_X_star() const;
+    Flow forced_maximal_production_lambda_beta_X_star() const;
 
     inline const FlowQuantity& initial_production_quantity_X_star() const { return initial_production_X_star_.get_quantity(); }
 
-    inline const FlowQuantity forced_initial_production_quantity_lambda_X_star() const { return round(initial_production_X_star_.get_quantity() * forcing_); }
+    inline FlowQuantity forced_initial_production_quantity_lambda_X_star() const { return round(initial_production_X_star_.get_quantity() * forcing_); }
 
     inline FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_); }
 
-    const FlowQuantity maximal_production_quantity_beta_X_star() const;
+    FlowQuantity maximal_production_quantity_beta_X_star() const;
     FloatType maximal_production_quantity_beta_X_star_float() const;
-    const FlowQuantity forced_maximal_production_quantity_lambda_beta_X_star() const;
+    FlowQuantity forced_maximal_production_quantity_lambda_beta_X_star() const;
     FloatType forced_maximal_production_quantity_lambda_beta_X_star_float() const;
 
-    inline const Flow direct_loss() const {
+    inline Flow direct_loss() const {
         return Flow(round(initial_production_X_star_.get_quantity() * Forcing(1.0 - forcing_)),
                     production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0), true);
     }
 
-    inline const Flow total_loss() const {
+    inline Flow total_loss() const {
         return Flow(round(initial_production_X_star_.get_quantity() - production_X_.get_quantity()),
                     production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0), true);
     }
 
-    inline const FlowValue total_value_loss() const { return (initial_production_X_star_ - production_X_).get_value(); }
+    inline FlowValue total_value_loss() const { return (initial_production_X_star_ - production_X_).get_value(); }
 
   protected:
     void produce_X();

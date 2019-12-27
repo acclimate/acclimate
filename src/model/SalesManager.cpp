@@ -52,7 +52,7 @@ void SalesManager::subtract_initial_demand_request_D_star(const Demand& initial_
     sum_demand_requests_D_ -= initial_demand_request_D_star;
 }
 
-const Flow SalesManager::get_transport_flow() const {
+Flow SalesManager::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
@@ -103,7 +103,7 @@ const Demand& SalesManager::sum_demand_requests_D() const {
     return sum_demand_requests_D_;
 }
 
-const Flow SalesManager::calc_production_X() {
+Flow SalesManager::calc_production_X() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     assert(!business_connections.empty());
     sum_demand_requests_D_ = round(sum_demand_requests_D_);
@@ -654,7 +654,7 @@ void SalesManager::initialize() {
     estimated_possible_production_X_hat_.set_price(initial_unit_commodity_costs + get_initial_unit_variable_production_costs());
 }
 
-const FlowValue SalesManager::calc_total_production_costs(const Flow& production_X, const Price& unit_production_costs_n_c) const {
+FlowValue SalesManager::calc_total_production_costs(const Flow& production_X, const Price& unit_production_costs_n_c) const {
     const FlowQuantity& production_quantity_X = production_X.get_quantity();
     assert(production_quantity_X >= 0.0);
     assert(!isnan(unit_production_costs_n_c));
@@ -665,7 +665,7 @@ const FlowValue SalesManager::calc_total_production_costs(const Flow& production
     return production_quantity_X * unit_production_costs_n_c + calc_production_extension_penalty_P(production_quantity_X);
 }
 
-const FlowValue SalesManager::calc_production_extension_penalty_P(const FlowQuantity& production_quantity_X) const {
+FlowValue SalesManager::calc_production_extension_penalty_P(const FlowQuantity& production_quantity_X) const {
     assert(production_quantity_X >= 0.0);
     if (production_quantity_X <= firm->forced_initial_production_quantity_lambda_X_star()) {  // not in production extension
         return FlowValue(0.0);
@@ -683,7 +683,7 @@ const FlowValue SalesManager::calc_production_extension_penalty_P(const FlowQuan
     // maximal penalty per unit: price_increase_production_extension / 2 * (possible_overcapacity_ratio - 1)^2 / possible_overcapacity_ratio
 }
 
-const Price SalesManager::calc_marginal_production_extension_penalty(const FlowQuantity& production_quantity_X) const {
+Price SalesManager::calc_marginal_production_extension_penalty(const FlowQuantity& production_quantity_X) const {
     assert(production_quantity_X >= 0.0);
     if (production_quantity_X <= firm->forced_initial_production_quantity_lambda_X_star()) {  // not in production extension
         return Price(0.0);
@@ -694,7 +694,7 @@ const Price SalesManager::calc_marginal_production_extension_penalty(const FlowQ
     // maximal: price_increase_production_extension * (possible_overcapacity_ratio - 1)
 }
 
-const Price SalesManager::calc_marginal_production_costs(const FlowQuantity& production_quantity_X, const Price& unit_production_costs_n_c) const {
+Price SalesManager::calc_marginal_production_costs(const FlowQuantity& production_quantity_X, const Price& unit_production_costs_n_c) const {
     assert(production_quantity_X >= 0.0);
     assert(!isnan(unit_production_costs_n_c));
     if (production_quantity_X <= firm->forced_initial_production_quantity_lambda_X_star()) {  // not in production extension
@@ -704,7 +704,7 @@ const Price SalesManager::calc_marginal_production_costs(const FlowQuantity& pro
     return unit_production_costs_n_c + calc_marginal_production_extension_penalty(production_quantity_X);
 }
 
-const FlowQuantity SalesManager::analytic_solution_in_production_extension(const Price& unit_production_costs_n_c,
+FlowQuantity SalesManager::analytic_solution_in_production_extension(const Price& unit_production_costs_n_c,
                                                                            const Price& price_demand_request_not_served_completely) const {
     assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
     assert(price_demand_request_not_served_completely >= unit_production_costs_n_c);
@@ -713,7 +713,7 @@ const FlowQuantity SalesManager::analytic_solution_in_production_extension(const
         * (1.0 + (price_demand_request_not_served_completely - unit_production_costs_n_c) / firm->sector->parameters().price_increase_production_extension));
 }
 
-const FlowValue SalesManager::calc_additional_revenue_expectation(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const {
+FlowValue SalesManager::calc_additional_revenue_expectation(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const {
     // note: for X > sum_of_demand_requests_D this curve corresponds to the marginal supply curve
     // note: communicated_parameters_.production_X <= sum_demand_requests_D (up to rounding issues)
     assert(round(production_quantity_X_p) >= sum_demand_requests_D_.get_quantity());
@@ -727,7 +727,7 @@ const FlowValue SalesManager::calc_additional_revenue_expectation(const FlowQuan
            / (1.0 - firm->sector->parameters().supply_elasticity);
 }
 
-const Price SalesManager::calc_marginal_revenue_curve(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const {
+Price SalesManager::calc_marginal_revenue_curve(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const {
     // note: for X > sum_of_demand_requests_D this curve corresponds to the marginal supply curve
     // note: communicated_parameters_.production_X == sum_demand_requests_D (up to rounding issues)
     assert(round(production_quantity_X_p) >= sum_demand_requests_D_.get_quantity());
@@ -737,7 +737,7 @@ const Price SalesManager::calc_marginal_revenue_curve(const FlowQuantity& produc
     return n_min_p * pow(sum_demand_requests_D_.get_quantity() / production_quantity_X_p, firm->sector->parameters().supply_elasticity);
 }
 
-const Price SalesManager::goal_fkt_marginal_costs_minus_marginal_revenue(const FlowQuantity& production_quantity_X_p,
+Price SalesManager::goal_fkt_marginal_costs_minus_marginal_revenue(const FlowQuantity& production_quantity_X_p,
                                                                          const Price& unit_production_costs_n_c,
                                                                          const Price& n_min_p) const {
     FlowQuantity production_quantity_X_rounded = round(production_quantity_X_p);
@@ -746,14 +746,14 @@ const Price SalesManager::goal_fkt_marginal_costs_minus_marginal_revenue(const F
     return calc_marginal_production_costs(production_quantity_X_rounded, unit_production_costs_n_c) - marginal_revenue;
 }
 
-const Price SalesManager::goal_fkt_marginal_costs_minus_price(const FlowQuantity& production_quantity_X_p,
+Price SalesManager::goal_fkt_marginal_costs_minus_price(const FlowQuantity& production_quantity_X_p,
                                                               const Price& unit_production_costs_n_c,
                                                               const Price& price) const {
     FlowQuantity production_quantity_X_rounded = round(production_quantity_X_p);
     return calc_marginal_production_costs(production_quantity_X_rounded, unit_production_costs_n_c) - price;
 }
 
-const Flow SalesManager::search_root_bisec_expectation(const FlowQuantity& left,
+Flow SalesManager::search_root_bisec_expectation(const FlowQuantity& left,
                                                        const FlowQuantity& right,
                                                        const FlowQuantity& production_quantity_X_p,
                                                        const Price& unit_production_costs_n_c,
@@ -866,6 +866,6 @@ void SalesManager::impose_tax(const Ratio tax_p) {
     tax_ = tax_p;
 }
 
-const FlowValue SalesManager::get_tax() const { return tax_ * firm->production_X().get_value(); }
+FlowValue SalesManager::get_tax() const { return tax_ * firm->production_X().get_value(); }
 
 }  // namespace acclimate

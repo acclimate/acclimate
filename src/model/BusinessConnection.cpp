@@ -126,7 +126,7 @@ void BusinessConnection::send_demand_request_D(const Demand& demand_request_D) {
     seller->add_demand_request_D(last_demand_request_D_);
 }
 
-const Flow BusinessConnection::get_flow_mean() const {
+Flow BusinessConnection::get_flow_mean() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     Flow res = last_delivery_Z_;
@@ -139,7 +139,7 @@ const Flow BusinessConnection::get_flow_mean() const {
     return round(res / Ratio(delay));
 }
 
-const FlowQuantity BusinessConnection::get_flow_deficit() const {
+FlowQuantity BusinessConnection::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     FlowQuantity res = initial_flow_Z_star_.get_quantity() - last_delivery_Z_.get_quantity();
@@ -150,12 +150,12 @@ const FlowQuantity BusinessConnection::get_flow_deficit() const {
     return round(res);
 }
 
-const Flow BusinessConnection::get_total_flow() const {
+Flow BusinessConnection::get_total_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     return round(get_transport_flow() + last_delivery_Z_);
 }
 
-const Flow BusinessConnection::get_transport_flow() const {
+Flow BusinessConnection::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     Flow res = Flow(0.0);
@@ -166,7 +166,7 @@ const Flow BusinessConnection::get_transport_flow() const {
     return round(res);
 }
 
-const Flow BusinessConnection::get_disequilibrium() const {
+Flow BusinessConnection::get_disequilibrium() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     Flow res = Flow(0.0);
