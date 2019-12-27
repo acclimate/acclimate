@@ -55,6 +55,7 @@ class NetCDFOutput : public ArrayOutput {
     using ArrayOutput::sectors_size;
     using ArrayOutput::stack;
     using ArrayOutput::variables;
+    static constexpr auto compression_level = 7;
     netCDF::NcDim dim_time;
     netCDF::NcDim dim_sector;
     netCDF::NcDim dim_region;

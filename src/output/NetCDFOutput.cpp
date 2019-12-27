@@ -75,26 +75,26 @@ void NetCDFOutput::initialize() {
     event_compound_type.addMember("region_to", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput::Event, region_to));
     event_compound_type.addMember("value", netCDF::NcType::nc_DOUBLE, offsetof(typename ArrayOutput::Event, value));
     var_events = file->addVar("events", event_compound_type, {dim_event});
-    var_events.setCompression(false, true, 7);
+    var_events.setCompression(false, true, compression_level);
 
     var_time_variable = file->addVar("time", netCDF::NcType::nc_INT, {dim_time});
-    var_time_variable.setCompression(false, true, 7);
+    var_time_variable.setCompression(false, true, compression_level);
 
     include_events = true;
     const auto& event_type_var = file->addVar("event_types", netCDF::NcType::nc_STRING, {dim_event_type});
-    event_type_var.setCompression(false, true, 7);
+    event_type_var.setCompression(false, true, compression_level);
     for (std::size_t i = 0; i < Run::event_names.size(); ++i) {
         event_type_var.putVar({i}, std::string(Run::event_names[i]));
     }
 
     const auto& sector_var = file->addVar("sector", netCDF::NcType::nc_STRING, {dim_sector});
-    sector_var.setCompression(false, true, 7);
+    sector_var.setCompression(false, true, compression_level);
     for (std::size_t i = 0; i < model()->sectors.size(); ++i) {
         sector_var.putVar({i}, model()->sectors[i]->id());
     }
 
     const auto& region_var = file->addVar("region", netCDF::NcType::nc_STRING, {dim_region});
-    region_var.setCompression(false, true, 7);
+    region_var.setCompression(false, true, compression_level);
     for (std::size_t i = 0; i < model()->regions.size(); ++i) {
         region_var.putVar({i}, model()->regions[i]->id());
     }
@@ -143,7 +143,7 @@ void NetCDFOutput::create_variable_meta(typename ArrayOutput::Variable& v, const
     netCDF::NcVar nc_var = group.addVar(std::string(name) + std::string(suffix), netCDF::NcType::nc_DOUBLE, dims);
     meta->nc_var = nc_var;
     meta->nc_var.setFill(true, std::numeric_limits<FloatType>::quiet_NaN());
-    meta->nc_var.setCompression(false, true, 7);
+    meta->nc_var.setCompression(false, true, compression_level);
     v.meta = meta;
 }
 
