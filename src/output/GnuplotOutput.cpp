@@ -90,16 +90,16 @@ void GnuplotOutput::internal_write_value(const hstring& name, FloatType v, const
     UNUSED(name);
     UNUSED(suffix);
     file << model()->time() << " ";
-    for (auto it = stack.begin(); it != stack.end(); ++it) {
-        if (it->region >= 0) {
-            if (it->sector >= 0) {
-                file << it->sector << " " << it->region << " ";
+    for (const auto& it : stack) {
+        if (it.region >= 0) {
+            if (it.sector >= 0) {
+                file << it.sector << " " << it.region << " ";
             } else {
-                file << it->region << " ";
+                file << it.region << " ";
             }
         } else {
-            if (it->sector >= 0) {
-                file << it->sector << " ";
+            if (it.sector >= 0) {
+                file << it.sector << " ";
             }
         }
     }

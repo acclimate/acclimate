@@ -78,18 +78,17 @@ void Model::start() {
 void Model::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < sectors.size(); ++i) {
-        sectors[i]->iterate_consumption_and_production();
+    for (auto& sector : sectors) {
+        sector->iterate_consumption_and_production();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions.size(); ++i) {
-        regions[i]->iterate_consumption_and_production();
+    for (auto& region : regions) {
+        region->iterate_consumption_and_production();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
-        auto& p = economic_agents[i];
+    for (auto& p : economic_agents) {
         p.first->iterate_consumption_and_production();
     }
 }
@@ -97,12 +96,12 @@ void Model::iterate_consumption_and_production() {
 void Model::iterate_expectation() {
     assertstep(EXPECTATION);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions.size(); ++i) {
+    for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
         regions[i]->iterate_expectation();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
         auto& p = economic_agents[i];
         p.first->iterate_expectation();
     }
@@ -111,11 +110,11 @@ void Model::iterate_expectation() {
 void Model::iterate_purchase() {
     assertstep(PURCHASE);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions.size(); ++i) {
+    for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
         regions[i]->iterate_purchase();
     }
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < purchasing_managers.size(); ++i) {
+    for (std::size_t i = 0; i < purchasing_managers.size(); ++i) {  // NOLINT(modernize-loop-convert)
         auto t1 = std::chrono::high_resolution_clock::now();
         auto& p = purchasing_managers[i];
         p.first->iterate_purchase();
@@ -131,12 +130,12 @@ void Model::iterate_purchase() {
 void Model::iterate_investment() {
     assertstep(INVESTMENT);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions.size(); ++i) {
+    for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
         regions[i]->iterate_investment();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
         auto& p = economic_agents[i];
         p.first->iterate_investment();
     }

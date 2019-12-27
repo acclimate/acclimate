@@ -194,8 +194,8 @@ void ModelInitializer::clean_network() {
 #ifdef CLEANUP_INFO
         info("Cleaning up...");
 #endif
-        for (auto region = model()->regions.begin(); region != model()->regions.end(); ++region) {
-            for (auto economic_agent = (*region)->economic_agents.begin(); economic_agent != (*region)->economic_agents.end();) {
+        for (auto& region : model()->regions) {
+            for (auto economic_agent = region->economic_agents.begin(); economic_agent != region->economic_agents.end();) {
                 if ((*economic_agent)->type == EconomicAgent::Type::FIRM) {
                     Firm* firm = (*economic_agent)->as_firm();
 
@@ -243,7 +243,7 @@ void ModelInitializer::clean_network() {
 
                         firm->sector->remove_firm(firm);
                         // Clean up memory of firm
-                        economic_agent = (*region)->economic_agents.erase(economic_agent);
+                        economic_agent = region->economic_agents.erase(economic_agent);
                     } else {
                         ++economic_agent;
                         ++firm_count;
@@ -256,7 +256,7 @@ void ModelInitializer::clean_network() {
                         warning(consumer->id() << ": removed (no incoming connection)");
 #endif
                         // Clean up memory of consumer
-                        economic_agent = (*region)->economic_agents.erase(economic_agent);
+                        economic_agent = region->economic_agents.erase(economic_agent);
                     } else {
                         ++economic_agent;
                         ++consumer_count;

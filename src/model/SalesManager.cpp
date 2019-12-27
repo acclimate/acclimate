@@ -78,8 +78,8 @@ bool SalesManager::remove_business_connection(BusinessConnection* business_conne
 }
 
 SalesManager::~SalesManager() {
-    for (auto& business_connection : business_connections) {
-        business_connection->invalidate_seller();
+    for (auto& bc : business_connections) {
+        bc->invalidate_seller();
     }
 }
 
@@ -87,7 +87,7 @@ SalesManager::~SalesManager() {
 
 void SalesManager::print_details() const {
     info(business_connections.size() << " outputs:");
-    for (const auto& bc : business_connections) {
+    for (const auto bc : business_connections) {
         info("    " << bc->id() << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
     }
 }
@@ -150,8 +150,8 @@ void SalesManager::distribute(const Flow& _) {
     assert(!business_connections.empty());
     // push all flows
     if (communicated_parameters_.production_X.get_quantity() <= 0.0) {  // no production
-        for (auto not_served_bc = business_connections.begin(); not_served_bc != business_connections.end(); ++not_served_bc) {
-            (*not_served_bc)->push_flow_Z(Flow(0.0));
+        for (auto& not_served_bc : business_connections) {
+            not_served_bc->push_flow_Z(Flow(0.0));
         }
     } else {  // non-zero production to distribute
 #ifdef DEBUG
@@ -633,19 +633,17 @@ void SalesManager::iterate_expectation() {
     sum_demand_requests_D_ = Flow(0.0);
 }
 
-inline const Price SalesManager::get_initial_unit_variable_production_costs() const {
+inline Price SalesManager::get_initial_unit_variable_production_costs() const {
     return std::max(Price(0.0), Price(1.0) - (initial_unit_commodity_costs + get_initial_markup()));
 }
 
-inline const Price SalesManager::get_initial_markup() const {
-    return std::min(Price(1.0) - initial_unit_commodity_costs, firm->sector->parameters().initial_markup);
-}
+inline Price SalesManager::get_initial_markup() const { return std::min(Price(1.0) - initial_unit_commodity_costs, firm->sector->parameters().initial_markup); }
 
 void SalesManager::initialize() {
     assertstep(INITIALIZATION);
     initial_unit_commodity_costs = Price(0.0);
-    for (auto input_storage = firm->input_storages.begin(); input_storage != firm->input_storages.end(); ++input_storage) {
-        initial_unit_commodity_costs += Price(1.0) * (*input_storage)->get_technology_coefficient_a();
+    for (auto& input_storage : firm->input_storages) {
+        initial_unit_commodity_costs += Price(1.0) * input_storage->get_technology_coefficient_a();
     }
     assert(initial_unit_commodity_costs > 0.0);
     assert(initial_unit_commodity_costs <= 1);
