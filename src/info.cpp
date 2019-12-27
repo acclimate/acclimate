@@ -20,9 +20,6 @@
 
 #include "version.h"
 
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
-
 const char* acclimate_info = "Version:                " ACCLIMATE_VERSION
                              "\n"
                              "\n"

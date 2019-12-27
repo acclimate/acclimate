@@ -178,7 +178,7 @@ FloatType PurchasingManager::estimate_production_extension_penalty(const Busines
     }
     // in production extension
     return std::max(0.0, to_float(bc->seller->firm->sector->parameters().estimated_price_increase_production_extension)
-                             / (2.0 * bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float())
+                             / (2 * bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float())
                              * (production_quantity_X - bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float())
                              * (production_quantity_X - bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float()));
 }
@@ -499,11 +499,11 @@ FloatType PurchasingManager::transport_penalty(FloatType D_r, const BusinessConn
         }
         if (model()->parameters().relative_transport_penalty) {
             if (target > FlowQuantity::precision) {
-                return (D_r - target) * ((D_r - target) * to_float(model()->parameters().transport_penalty_large) / (target * target) / 2.0 + marg_penalty);
+                return (D_r - target) * ((D_r - target) * to_float(model()->parameters().transport_penalty_large) / (target * target) / 2 + marg_penalty);
             }
-            return D_r * D_r * to_float(model()->parameters().transport_penalty_large / 2.0 + Price(marg_penalty));
+            return D_r * D_r * to_float(model()->parameters().transport_penalty_large / 2 + Price(marg_penalty));
         }
-        return (D_r - target) * ((D_r - target) * to_float(model()->parameters().transport_penalty_large) / 2.0 + marg_penalty);
+        return (D_r - target) * ((D_r - target) * to_float(model()->parameters().transport_penalty_large) / 2 + marg_penalty);
     }
     if (model()->parameters().relative_transport_penalty) {
         return partial_D_r_transport_penalty(D_r, business_connection) * (D_r - target) / target;
@@ -542,7 +542,7 @@ FloatType PurchasingManager::partial_D_r_transport_penalty(FloatType D_r, const 
         if (D_r > target) {
             return to_float(model()->parameters().transport_penalty_large) / target;
         }
-        return (to_float(model()->parameters().transport_penalty_large) - to_float(model()->parameters().transport_penalty_small)) / 2.0 / target;
+        return (to_float(model()->parameters().transport_penalty_large) - to_float(model()->parameters().transport_penalty_small)) / 2 / target;
     }
     if (D_r < target) {
         return -to_float(model()->parameters().transport_penalty_small);
@@ -550,7 +550,7 @@ FloatType PurchasingManager::partial_D_r_transport_penalty(FloatType D_r, const 
     if (D_r > target) {
         return to_float(model()->parameters().transport_penalty_large);
     }
-    return (to_float(model()->parameters().transport_penalty_large) - to_float(model()->parameters().transport_penalty_small)) / 2.0;
+    return (to_float(model()->parameters().transport_penalty_large) - to_float(model()->parameters().transport_penalty_small)) / 2;
 }
 
 void PurchasingManager::add_initial_demand_D_star(const Demand& demand_D_p) {
