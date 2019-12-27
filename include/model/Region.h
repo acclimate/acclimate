@@ -51,21 +51,22 @@ class Region : public GeoLocation {
     OpenMPLock consumption_flow_Y_lock;
 
     std::unique_ptr<Government> government_m;
-    const IntType index_m;
+    const IndexType index_m;
     Parameters::RegionParameters parameters_m;
     OpenMPLock economic_agents_lock;
 
     struct route_hash {
-        std::size_t operator()(const std::pair<IntType, typename Sector::TransportType>& p) const { return (p.first << 3) | (static_cast<IntType>(p.second)); }
+        std::size_t operator()(const std::pair<IndexType, typename Sector::TransportType>& p) const { return (p.first << 3) | (static_cast<IntType>(p.second)); }
     };
+    std::unordered_map<std::pair<IntType, typename Sector::TransportType>, GeoRoute, route_hash> routes;
+
+    Region(Model* model_p, std::string id_p, IndexType index_p);
 
   public:
     std::vector<std::unique_ptr<EconomicAgent>> economic_agents;
     using GeoLocation::connections;
     using GeoLocation::id;
     using GeoLocation::model;
-
-    Region(Model* model_p, std::string id_p, IndexType index_p);
     Region* as_region() override;
     const Region* as_region() const override;
     const Flow& consumption_C() const;
