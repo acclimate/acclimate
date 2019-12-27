@@ -44,7 +44,7 @@ struct Parameters {
         bool relative_transport_penalty;
         bool respect_markup_in_production_extension;
         int optimization_algorithm;
-        unsigned int optimization_maxiter;  // maximal iteration
+        int optimization_maxiter;  // maximal iteration
         unsigned int optimization_timeout;  // timeout in sec
     };
 

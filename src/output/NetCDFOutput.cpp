@@ -105,7 +105,7 @@ void NetCDFOutput::internal_start() {
     var_time_variable.putAtt("units", scenario->time_units_str());
 }
 
-void NetCDFOutput::internal_write_header(tm* timestamp, int max_threads) {
+void NetCDFOutput::internal_write_header(tm* timestamp, unsigned int max_threads) {
     std::string str = std::asctime(timestamp);
     str.erase(str.end() - 1);
     file->putAtt("start_time", str);

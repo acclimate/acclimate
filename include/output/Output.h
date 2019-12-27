@@ -83,7 +83,7 @@ class Output {
     bool is_first_timestep() const;
     bool is_last_timestep() const;
     inline void parameter_not_found(const std::string& name) const;
-    virtual void internal_write_header(tm* timestamp, int max_threads);
+    virtual void internal_write_header(tm* timestamp, unsigned int max_threads);
     virtual void internal_write_footer(tm* duration);
     virtual void internal_write_settings();
     virtual void internal_start();

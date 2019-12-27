@@ -250,13 +250,13 @@ FloatType PurchasingManager::purchase_constraint(const FloatType x[], FloatType 
 #endif
         // has to be in the form g(D_r) <= 0
         FloatType use = 0.0;
-        for (unsigned int r = 0; r < data->business_connections.size(); ++r) {
+        for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
             FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
             assert(!std::isnan(D_r));
             use += D_r;
         }
         if (grad != nullptr) {
-            for (unsigned int r = 0; r < data->business_connections.size(); ++r) {
+            for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
                 grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r]) * 1.0 / partial_use_scaled_use();
 #ifdef OPTIMIZATION_WARNINGS
                 if (grad[r] > MAX_GRADIENT) {
@@ -672,7 +672,7 @@ void PurchasingManager::optimize_purchase(std::vector<FloatType>& demand_request
         nlopt::opt opt(static_cast<nlopt::algorithm>(model()->parameters().optimization_algorithm), dimensions_optimization_problem);
 
         std::vector<FloatType> xtol_abs(data_p.business_connections.size());
-        for (unsigned int i = 0; i < data_p.business_connections.size(); ++i) {
+        for (std::size_t i = 0; i < data_p.business_connections.size(); ++i) {
             xtol_abs[i] = scaled_D_r(FlowQuantity::precision, data_p.business_connections[i]);
         }
 

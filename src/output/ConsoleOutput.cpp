@@ -50,7 +50,7 @@ void ConsoleOutput::initialize() {
     }
 }
 
-void ConsoleOutput::internal_write_header(tm* timestamp, int max_threads) {
+void ConsoleOutput::internal_write_header(tm* timestamp, unsigned int max_threads) {
     *out << "Start time " << std::asctime(timestamp)
          << "\n"
             "Version "

@@ -45,7 +45,7 @@ class JSONOutput : public Output {
   protected:
     std::ostream* out = nullptr;
     std::unique_ptr<std::ofstream> outfile;
-    void internal_write_header(tm* timestamp, int max_threads) override;
+    void internal_write_header(tm* timestamp, unsigned int max_threads) override;
     void internal_write_footer(tm* duration) override;
     void internal_write_settings() override;
     void internal_iterate_begin() override;

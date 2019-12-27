@@ -778,7 +778,7 @@ void Output::internal_write_value(const hstring& name, FloatType v, const hstrin
     UNUSED(v);
 }
 
-void Output::internal_write_header(tm* timestamp, int max_threads) {
+void Output::internal_write_header(tm* timestamp, unsigned int max_threads) {
     UNUSED(timestamp);
     UNUSED(max_threads);
 }

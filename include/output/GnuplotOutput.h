@@ -55,7 +55,7 @@ class GnuplotOutput : public Output {
     std::vector<Target> stack;
 
   protected:
-    void internal_write_header(tm* timestamp, int max_threads) override;
+    void internal_write_header(tm* timestamp, unsigned int max_threads) override;
     void internal_write_footer(tm* duration) override;
     void internal_write_settings() override;
     void internal_start() override;

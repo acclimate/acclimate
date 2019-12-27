@@ -48,7 +48,7 @@ void JSONOutput::initialize() {
     }
 }
 
-void JSONOutput::internal_write_header(tm* timestamp, int max_threads) {
+void JSONOutput::internal_write_header(tm* timestamp, unsigned int max_threads) {
     *out << "{\n"
             "\"info_header\": {\n"
             "    \"start_time\": \""

@@ -49,7 +49,7 @@ void HistogramOutput::initialize() {
     count.resize(windows);
 }
 
-void HistogramOutput::internal_write_header(tm* timestamp, int max_threads) {
+void HistogramOutput::internal_write_header(tm* timestamp, unsigned int max_threads) {
     file << "# Start time: " << std::asctime(timestamp) << "# Version: " << ACCLIMATE_VERSION << "\n"
          << "# Max number of threads: " << max_threads << "\n";
 }
