@@ -30,14 +30,14 @@
 namespace acclimate {
 
 EventSeriesScenario::EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-    : ExternalScenario(settings_p, scenario_node_p, model_p) {}
+    : ExternalScenario(settings_p, std::move(scenario_node_p), model_p) {}
 
 ExternalForcing* EventSeriesScenario::read_forcing_file(const std::string& filename, const std::string& variable_name) {
     return new EventForcing(filename, variable_name, model());
 }
 
 void EventSeriesScenario::read_forcings() {
-    auto forcing_l = static_cast<EventForcing*>(forcing.get());
+    auto forcing_l = static_cast<EventForcing*>(forcing.get());  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
     for (std::size_t i = 0; i < forcing_l->firms.size(); ++i) {
         if (forcing_l->firms[i] != nullptr) {
             if (std::isnan(forcing_l->forcings[i])) {

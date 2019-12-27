@@ -244,7 +244,9 @@ void PurchasingManager::calc_desired_purchase(const OptimizerData* data) {
     }
 }
 
-FloatType PurchasingManager::purchase_constraint(const FloatType x[], FloatType grad[], const OptimizerData* data) const {
+FloatType PurchasingManager::purchase_constraint(const FloatType x[],  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+                                                 FloatType grad[],     // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+                                                 const OptimizerData* data) const {
 #ifdef DEBUG
     try {
 #endif
@@ -274,7 +276,9 @@ FloatType PurchasingManager::purchase_constraint(const FloatType x[], FloatType 
 #endif
 }
 
-FloatType PurchasingManager::objective_costs(const FloatType x[], FloatType grad[], const OptimizerData* data) const {
+FloatType PurchasingManager::objective_costs(const FloatType x[],  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+                                             FloatType grad[],     // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+                                             const OptimizerData* data) const {
 #ifdef DEBUG
     try {
 #endif

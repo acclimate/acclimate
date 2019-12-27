@@ -87,7 +87,7 @@ bool ExternalScenario::next_forcing_file() {
     if (!expression.empty()) {
         const std::string final_expression = fill_template(expression);
         info("Invoking '" << final_expression << "'");
-        if (std::system(final_expression.c_str()) != 0) {
+        if (std::system(final_expression.c_str()) != 0) {  // NOLINT(cert-env33-c)
             error("Invoking '" << final_expression << "' raised an error");
         }
     }

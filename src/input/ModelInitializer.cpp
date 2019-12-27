@@ -395,11 +395,11 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
     std::vector<Path> paths(size * size, Path());
     for (std::size_t i = 0; i < size; ++i) {
         auto& p1 = points[i];
-        auto l1 = static_cast<GeoLocation*>(p1->entity());
-        for (std::size_t j = 0; j < i; ++j) {  // assume connections is symmetric
+        auto l1 = static_cast<GeoLocation*>(p1->entity());  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+        for (std::size_t j = 0; j < i; ++j) {               // assume connections is symmetric
             if (connections[input_indices[i] * input_size + input_indices[j]] > 0) {
                 auto& p2 = points[j];
-                auto l2 = static_cast<GeoLocation*>(p2->entity());
+                auto l2 = static_cast<GeoLocation*>(p2->entity());  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
                 FloatType costs;
                 TransportDelay delay;
                 typename GeoConnection::Type type;
@@ -476,25 +476,26 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
     for (std::size_t i = 0; i < size; ++i) {
         auto& p1 = points[i];
         if (p1->used) {
-            auto l1 = static_cast<GeoLocation*>(p1->entity());
+            auto l1 = static_cast<GeoLocation*>(p1->entity());  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
             if (l1->type != GeoLocation::Type::REGION) {
                 model()->other_locations.emplace_back(l1);
             }
             for (std::size_t j = 0; j < size; ++j) {
                 auto& p2 = points[j];
                 if (p2->used) {
-                    auto l2 = static_cast<GeoLocation*>(p2->entity());
+                    auto l2 = static_cast<GeoLocation*>(p2->entity());  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
                     auto& path = paths[i * size + j].points();
                     if (!path.empty()) {
                         if (path.size() == 3 && i < j) {  // direct connection, only once per i/j combination
-                            auto c = std::shared_ptr<GeoConnection>(static_cast<GeoConnection*>(path[1]->entity()));
+                            auto c = std::shared_ptr<GeoConnection>(
+                                static_cast<GeoConnection*>(path[1]->entity()));  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
                             l1->connections.push_back(c);
                             l2->connections.push_back(c);
                         }
                         if (l1->type == GeoLocation::Type::REGION && l2->type == GeoLocation::Type::REGION) {
                             // create roadsea route
-                            auto r1 = static_cast<Region*>(l1);
-                            auto r2 = static_cast<Region*>(l2);
+                            auto r1 = static_cast<Region*>(l1);  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+                            auto r2 = static_cast<Region*>(l2);  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
                             GeoRoute route;
                             route.path.resize(path.size() - 2);
                             for (std::size_t k = 1; k < path.size() - 1; ++k) {
@@ -510,8 +511,8 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
                         auto c = std::make_shared<GeoConnection>(model(), delay, GeoConnection::Type::AVIATION, l1, l2);
                         l1->connections.push_back(c);
                         l2->connections.push_back(c);
-                        auto r1 = static_cast<Region*>(l1);
-                        auto r2 = static_cast<Region*>(l2);
+                        auto r1 = static_cast<Region*>(l1);  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+                        auto r2 = static_cast<Region*>(l2);  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
                         GeoRoute route;
                         route.path.emplace_back(c.get());
                         r1->routes.emplace(std::make_pair(r2->index(), Sector::TransportType::AVIATION), route);
