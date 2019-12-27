@@ -95,9 +95,10 @@ Run::Run(const settings::SettingsNode& settings) {
         model_m.reset(model);
     }
 
-    Scenario* scenario;  // TODO put in scope below!
+    Scenario* scenario = nullptr;  // TODO put in scope below!
     for (auto scenario_node : settings["scenarios"].as_sequence()) {
         const std::string& type = scenario_node["type"].template as<std::string>();
+        // TODO use switch
         if (type == "events") {
             scenario = new Scenario(settings, scenario_node, model);
         } else if (type == "taxes") {
@@ -119,8 +120,9 @@ Run::Run(const settings::SettingsNode& settings) {
     }
 
     for (const auto& node : settings["outputs"].as_sequence()) {
-        Output* output;
+        Output* output = nullptr;
         const std::string& type = node["format"].template as<std::string>();
+        // TODO use switch
         if (type == "console") {
             output = new ConsoleOutput(settings, model, scenario, node);
         } else if (type == "json") {

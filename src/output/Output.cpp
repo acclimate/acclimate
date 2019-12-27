@@ -608,7 +608,8 @@ void Output::iterate() {
                             std::string ps;
                             while (getline(ss, ps, ',')) {
                                 std::istringstream ss_l(ps);
-                                std::string sector_name, region_name;
+                                std::string sector_name;
+                                std::string region_name;
                                 getline(ss_l, sector_name, ':');
                                 getline(ss_l, region_name, ':');
                                 const Firm* p = model()->find_firm(sector_name, region_name);
@@ -695,7 +696,7 @@ void Output::iterate() {
                         if (it.has("name")) {
                             region_name = it["name"].as<std::string>().c_str();
                         }
-                        if (dynamic_cast<RasteredScenario<FloatType>*>(scenario)) {
+                        if (dynamic_cast<RasteredScenario<FloatType>*>(scenario) != nullptr) {
                             for (const auto& observable : it["parameters"].as_sequence()) {
                                 const hstring& name = observable.as<hstring>();
                                 switch (name) {

@@ -113,7 +113,7 @@ bool ExternalScenario::next_forcing_file() {
         time_offset = model()->time() + model()->delta_t();
     }
     time_units_str_ = new_time_units_str;
-    next_time = static_cast<Time>(forcing->next_timestep() / time_step_width);
+    next_time = Time(forcing->next_timestep()) / time_step_width;
     if (next_time < 0) {
         error("Empty forcing in " << filename);
     }
@@ -172,9 +172,9 @@ bool ExternalScenario::iterate() {
     }
 
     internal_iterate_start();
-    if (model()->time() == next_time) {
+    if (model()->time() >= next_time) {
         read_forcings();
-        next_time = Time(forcing->next_timestep() / time_step_width);
+        next_time = Time(forcing->next_timestep()) / time_step_width;
         if (next_time < 0) {
             if (!next_forcing_file() && !stop_time_known) {
                 // TODO stop_time = model()->time();

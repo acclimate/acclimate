@@ -144,6 +144,8 @@ class Type {
                                                                                                                          \
   public:                                                                                                                \
     explicit T(FloatType t_) { set_float(t_); }                                                                          \
+    T(const T& other) = default;                                                                                         \
+    T(T&& other) = default;                                                                                              \
     T operator+(const T& other) const {                                                                                  \
         T res;                                                                                                           \
         res.t = t + other.t;                                                                                             \

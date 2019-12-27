@@ -119,7 +119,7 @@ void NetCDFOutput::internal_write_header(tm* timestamp, unsigned int max_threads
 
 void NetCDFOutput::internal_write_footer(tm* duration) { file->putAtt("duration", netCDF::NcType::nc_INT, std::mktime(duration)); }
 
-void NetCDFOutput::internal_write_settings() { file->putAtt("settings", settings_string.c_str()); }
+void NetCDFOutput::internal_write_settings() { file->putAtt("settings", settings_string); }
 
 void NetCDFOutput::create_variable_meta(typename ArrayOutput::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
     auto meta = new VariableMeta();
