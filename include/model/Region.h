@@ -53,19 +53,19 @@ class Region : public GeoLocation {
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
     OpenMPLock consumption_flow_Y_lock;
     std::unique_ptr<Government> government_m;
-    const IntType index_m;
+    const IndexType index_m;
     Parameters::RegionParameters parameters_m;
     OpenMPLock economic_agents_lock;
 
     struct route_hash {
-        std::size_t operator()(const std::pair<IntType, typename Sector::TransportType>& p) const { return (p.first << 3) | (static_cast<IntType>(p.second)); }
+        std::size_t operator()(const std::pair<IndexType, typename Sector::TransportType>& p) const { return (p.first << 3) | (static_cast<IntType>(p.second)); }
     };
 
-    Region(Model* model_p, std::string id_p, IntType index_p);
+    Region(Model* model_p, std::string id_p, IndexType index_p);
 
   public:
     std::vector<std::unique_ptr<EconomicAgent>> economic_agents;
-    std::unordered_map<std::pair<IntType, typename Sector::TransportType>, GeoRoute, route_hash> routes;
+    std::unordered_map<std::pair<IndexType, typename Sector::TransportType>, GeoRoute, route_hash> routes;
     using GeoLocation::connections;
 
     using GeoLocation::id;
@@ -84,7 +84,7 @@ class Region : public GeoLocation {
     const Parameters::RegionParameters& parameters_writable() const;
     ~Region() override = default;
 
-    inline IntType index() const { return index_m; };
+    inline IndexType index() const { return index_m; };
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);
     void add_consumption_flow_Y(const Flow& consumption_flow_Y_p);

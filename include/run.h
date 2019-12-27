@@ -118,7 +118,7 @@ class Run {
 
     inline const Model* model() { return model_m.get(); }
 
-    inline const Output* output(const IntType i) { return outputs_m[i].get(); }
+    inline const Output* output(const IndexType i) { return outputs_m[i].get(); }
 
     void event(EventType type,
                const Sector* sector_from,

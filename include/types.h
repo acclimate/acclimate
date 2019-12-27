@@ -87,6 +87,7 @@ class OpenMPLock {
 
 using FloatType = double;
 using IntType = long;
+using IndexType = int;
 
 using TransportDelay = unsigned int;
 using Distance = TransportDelay;

@@ -34,7 +34,7 @@
 
 namespace acclimate {
 
-Region::Region(Model* model_p, std::string id_p, const IntType index_p)
+Region::Region(Model* model_p, std::string id_p, IndexType index_p)
     : GeoLocation(model_p, 0, GeoLocation::Type::REGION, std::move(id_p)), index_m(index_p) {}
 
 void Region::add_export_Z(const Flow& export_flow_Z_p) {

@@ -43,7 +43,7 @@ class Sector {
     static const char* unmap_transport_type(TransportType transport_type);
 
   protected:
-    const IntType index_m;
+    const IndexType index_m;
     const std::string id_m;
     Demand total_demand_D_ = Demand(0.0);
     OpenMPLock total_demand_D_lock;
@@ -54,7 +54,7 @@ class Sector {
     Model* const model_m;
     Sector(Model* model_p,
            std::string id_p,
-           IntType index_p,
+           IndexType index_p,
            Ratio upper_storage_limit_omega_p,
            Time initial_storage_fill_factor_psi_p,
            TransportType transport_type_p);
@@ -77,7 +77,7 @@ class Sector {
     std::vector<Firm*> firms;
 
   public:
-    Sector(Model* model_p, std::string id_p, IntType index_p, const Ratio& upper_storage_limit_omega_p, const Time& initial_storage_fill_factor_psi_p);
+    Sector(Model* model_p, std::string id_p, IndexType index_p, const Ratio& upper_storage_limit_omega_p, const Time& initial_storage_fill_factor_psi_p);
     void add_demand_request_D(const Demand& demand_request_D);
     void add_production_X(const Flow& production_X);
     void add_initial_production_X(const Flow& production_X);
@@ -85,7 +85,7 @@ class Sector {
     void iterate_consumption_and_production();
     void remove_firm(Firm* firm);
 
-    inline IntType index() const { return index_m; }
+    inline IndexType index() const { return index_m; }
 
     inline Model* model() const { return model_m; }
 
