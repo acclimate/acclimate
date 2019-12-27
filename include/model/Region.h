@@ -56,7 +56,9 @@ class Region : public GeoLocation {
     OpenMPLock economic_agents_lock;
 
     struct route_hash {
-        std::size_t operator()(const std::pair<IndexType, typename Sector::TransportType>& p) const { return (p.first << 3) | (static_cast<IntType>(p.second)); }
+        std::size_t operator()(const std::pair<IndexType, typename Sector::TransportType>& p) const {
+            return (p.first << 3) | (static_cast<IntType>(p.second));
+        }
     };
     std::unordered_map<std::pair<IntType, typename Sector::TransportType>, GeoRoute, route_hash> routes;
 

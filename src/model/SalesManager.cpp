@@ -692,7 +692,7 @@ Price SalesManager::calc_marginal_production_costs(const FlowQuantity& productio
 }
 
 FlowQuantity SalesManager::analytic_solution_in_production_extension(const Price& unit_production_costs_n_c,
-                                                                           const Price& price_demand_request_not_served_completely) const {
+                                                                     const Price& price_demand_request_not_served_completely) const {
     assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
     assert(price_demand_request_not_served_completely >= unit_production_costs_n_c);
     return round(
@@ -725,8 +725,8 @@ Price SalesManager::calc_marginal_revenue_curve(const FlowQuantity& production_q
 }
 
 Price SalesManager::goal_fkt_marginal_costs_minus_marginal_revenue(const FlowQuantity& production_quantity_X_p,
-                                                                         const Price& unit_production_costs_n_c,
-                                                                         const Price& n_min_p) const {
+                                                                   const Price& unit_production_costs_n_c,
+                                                                   const Price& n_min_p) const {
     FlowQuantity production_quantity_X_rounded = round(production_quantity_X_p);
     assert(production_quantity_X_rounded <= communicated_parameters_.possible_production_X_hat.get_quantity());
     const Price marginal_revenue = calc_marginal_revenue_curve(production_quantity_X_rounded, n_min_p);
@@ -734,18 +734,18 @@ Price SalesManager::goal_fkt_marginal_costs_minus_marginal_revenue(const FlowQua
 }
 
 Price SalesManager::goal_fkt_marginal_costs_minus_price(const FlowQuantity& production_quantity_X_p,
-                                                              const Price& unit_production_costs_n_c,
-                                                              const Price& price) const {
+                                                        const Price& unit_production_costs_n_c,
+                                                        const Price& price) const {
     FlowQuantity production_quantity_X_rounded = round(production_quantity_X_p);
     return calc_marginal_production_costs(production_quantity_X_rounded, unit_production_costs_n_c) - price;
 }
 
 Flow SalesManager::search_root_bisec_expectation(const FlowQuantity& left,
-                                                       const FlowQuantity& right,
-                                                       const FlowQuantity& production_quantity_X_p,
-                                                       const Price& unit_production_costs_n_c,
-                                                       const Price& n_min_p,
-                                                       const Price& precision_p) const {
+                                                 const FlowQuantity& right,
+                                                 const FlowQuantity& production_quantity_X_p,
+                                                 const Price& unit_production_costs_n_c,
+                                                 const Price& n_min_p,
+                                                 const Price& precision_p) const {
     assert(left < right);  // check limits of interval
     // check if root is in interval
 
