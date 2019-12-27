@@ -33,7 +33,7 @@
 namespace acclimate {
 
 ExternalScenario::ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-    : Scenario(settings_p, scenario_node_p, model_p) {}
+    : Scenario(settings_p, std::move(scenario_node_p), model_p) {}
 
 std::string ExternalScenario::fill_template(const std::string& in) const {
     const char* beg_mark = "[[";

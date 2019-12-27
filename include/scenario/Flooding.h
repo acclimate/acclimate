@@ -34,6 +34,7 @@ class Region;
 
 class Flooding : public RasteredScenario<FloatType> {
   protected:
+    using ExternalScenario::scenario_node;
     std::vector<std::size_t> sectors;
     FloatType new_region_forcing(Region* region) const override;
     void set_region_forcing(Region* region, const FloatType& forcing, FloatType proxy_sum) const override;

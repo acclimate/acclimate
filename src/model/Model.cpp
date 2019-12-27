@@ -42,7 +42,7 @@ Model::Model(Run* const run_p) : run_m(run_p), consumption_sector(new Sector(thi
 }
 
 Region* Model::add_region(std::string name) {
-    auto region = new Region(this, name, regions.size());
+    auto region = new Region(this, std::move(name), regions.size());
     regions.emplace_back(region);
     return region;
 }
@@ -51,7 +51,7 @@ Sector* Model::add_sector(std::string name,
                           const Ratio& upper_storage_limit_omega_p,
                           const Time& initial_storage_fill_factor_psi_p,
                           typename Sector::TransportType transport_type_p) {
-    auto sector = new Sector(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
+    auto sector = new Sector(this, std::move(name), sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
     sectors.emplace_back(sector);
     return sector;
 }
@@ -61,9 +61,9 @@ void Model::start() {
     timestep_ = 0;
     for (const auto& region : regions) {
         for (const auto& economic_agent : region->economic_agents) {
-            economic_agents.push_back(std::make_pair(economic_agent.get(), 0));
+            economic_agents.emplace_back(std::make_pair(economic_agent.get(), 0));
             for (const auto& is : economic_agent->input_storages) {
-                purchasing_managers.push_back(std::make_pair(is->purchasing_manager.get(), 0));
+                purchasing_managers.emplace_back(std::make_pair(is->purchasing_manager.get(), 0));
             }
         }
     }

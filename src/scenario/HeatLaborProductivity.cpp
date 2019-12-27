@@ -31,7 +31,7 @@
 namespace acclimate {
 
 HeatLaborProductivity::HeatLaborProductivity(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-    : RasteredScenario<HeatLaborProductivity::RegionForcingType>(settings_p, scenario_node_p, model_p) {}
+    : RasteredScenario<HeatLaborProductivity::RegionForcingType>(settings_p, std::move(scenario_node_p), model_p) {}
 
 typename HeatLaborProductivity::RegionForcingType HeatLaborProductivity::new_region_forcing(Region* region) const {
     if (region != nullptr) {

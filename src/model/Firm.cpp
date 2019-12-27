@@ -161,7 +161,7 @@ const BusinessConnection* Firm::self_supply_connection() const {
 
 void Firm::self_supply_connection(std::shared_ptr<BusinessConnection> self_supply_connection_p) {
     assertstep(INITIALIZATION);
-    self_supply_connection_ = self_supply_connection_p;
+    self_supply_connection_ = std::move(self_supply_connection_p);
 }
 
 const Flow& Firm::production_X() const {

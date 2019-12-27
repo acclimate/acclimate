@@ -37,7 +37,7 @@ Sector::Sector(Model* model_p,
       index_m(index_p),
       model_m(model_p),
       upper_storage_limit_omega(upper_storage_limit_omega_p),
-      initial_storage_fill_factor_psi(initial_storage_fill_factor_psi_p),
+      initial_storage_fill_factor_psi(std::move(initial_storage_fill_factor_psi_p)),
       transport_type(transport_type_p) {}
 
 void Sector::add_demand_request_D(const Demand& demand_request_D) {

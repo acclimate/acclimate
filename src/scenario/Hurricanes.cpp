@@ -27,8 +27,8 @@
 namespace acclimate {
 
 Hurricanes::Hurricanes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-    : RasteredScenario<FloatType>(settings_p, scenario_node_p, model_p) {
-    threshold = scenario_node_p["forcing"]["threshold"].as<double>();
+    : RasteredScenario<FloatType>(settings_p, std::move(scenario_node_p), model_p) {
+    threshold = scenario_node["forcing"]["threshold"].as<double>();
 }
 
 FloatType Hurricanes::new_region_forcing(Region* region) const {
