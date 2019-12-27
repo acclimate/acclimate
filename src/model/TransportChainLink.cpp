@@ -134,8 +134,8 @@ FlowQuantity TransportChainLink::get_flow_deficit() const {
 Model* TransportChainLink::model() const { return business_connection->model(); }
 
 std::string TransportChainLink::id() const {
-    return (business_connection->seller != nullptr ? business_connection->seller->id() : "INVALID") + "-" + std::to_string(business_connection->get_id(this))
-           + "->" + (business_connection->buyer != nullptr ? business_connection->buyer->storage->economic_agent->id() : "INVALID");
+    return (business_connection->seller != nullptr ? business_connection->seller->id() : "INVALID") + "-" + std::to_string(business_connection->get_id(this)) + "->"
+           + (business_connection->buyer != nullptr ? business_connection->buyer->storage->economic_agent->id() : "INVALID");
 }
 
 }  // namespace acclimate
