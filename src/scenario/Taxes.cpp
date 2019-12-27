@@ -54,7 +54,7 @@ bool Taxes::iterate() {
             const std::string& sector = tax["sector"].as<std::string>();
             if (tax.has("region") && tax["region"].as<std::string>() != "ALL") {
                 Region* region = model()->find_region(tax["region"].as<std::string>());
-                if (!region) {
+                if (region == nullptr) {
                     error("Could not find region '" << tax["region"] << "'");
                 }
                 region->government()->define_tax(sector, tax_ratio);

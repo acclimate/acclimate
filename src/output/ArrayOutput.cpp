@@ -47,11 +47,11 @@ inline typename ArrayOutput::Variable& ArrayOutput::create_variable(const hstrin
         std::size_t size = 1;
         std::vector<std::size_t> shape;
         for (const auto& t : stack) {
-            if (t.sector) {
+            if (t.sector != nullptr) {
                 shape.push_back(sectors_size);
                 size *= sectors_size;
             }
-            if (t.region) {
+            if (t.region != nullptr) {
                 shape.push_back(regions_size);
                 size *= regions_size;
             }

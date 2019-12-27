@@ -34,7 +34,7 @@ HeatLaborProductivity::HeatLaborProductivity(const settings::SettingsNode& setti
     : RasteredScenario<HeatLaborProductivity::RegionForcingType>(settings_p, scenario_node_p, model_p) {}
 
 typename HeatLaborProductivity::RegionForcingType HeatLaborProductivity::new_region_forcing(Region* region) const {
-    if (region) {
+    if (region != nullptr) {
         return std::vector<FloatType>(region->economic_agents.size(), 0.0);
     }
     return std::vector<FloatType>();

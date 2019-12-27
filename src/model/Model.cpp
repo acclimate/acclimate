@@ -160,7 +160,7 @@ Sector* Model::find_sector(const std::string& name) const {
 
 Firm* Model::find_firm(const std::string& sector_name, const std::string& region_name) const {
     Sector* sector = find_sector(sector_name);
-    if (sector) {
+    if (sector != nullptr) {
         return find_firm(sector, region_name);
     }
     return nullptr;
@@ -185,7 +185,7 @@ Consumer* Model::find_consumer(Region* region) const {
 
 Consumer* Model::find_consumer(const std::string& region_name) const {
     Region* region = find_region(region_name);
-    if (region) {
+    if (region != nullptr) {
         return find_consumer(region);
     }
     return nullptr;

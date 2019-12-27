@@ -82,14 +82,14 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
                 if (it.has("sector")) {
                     if (it.has("region")) {
                         Firm* firm = model()->find_firm(it["sector"].template as<std::string>(), it["region"].template as<std::string>());
-                        if (firm) {
+                        if (firm != nullptr) {
                             set_firm_property(firm, it, reset);
                         } else {
                             error("Firm " << it["sector"].template as<std::string>() << ":" << it["region"].template as<std::string>() << " not found");
                         }
                     } else {
                         Sector* sector = model()->find_sector(it["sector"].template as<std::string>());
-                        if (sector) {
+                        if (sector != nullptr) {
                             for (auto& p : sector->firms) {
                                 set_firm_property(p, it, reset);
                             }
@@ -100,7 +100,7 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
                 } else {
                     if (it.has("region")) {
                         Region* region = model()->find_region(it["region"].template as<std::string>());
-                        if (region) {
+                        if (region != nullptr) {
                             for (auto& ea : region->economic_agents) {
                                 if (ea->type == EconomicAgent::Type::FIRM) {
                                     set_firm_property(ea->as_firm(), it, reset);
@@ -120,7 +120,7 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
             } else if (type == "consumer") {
                 if (it.has("region")) {
                     Consumer* consumer = model()->find_consumer(it["region"].template as<std::string>());
-                    if (consumer) {
+                    if (consumer != nullptr) {
                         set_consumer_property(consumer, it, reset);
                     } else {
                         error("Consumer " << it["region"].template as<std::string>() << " not found");
@@ -137,7 +137,7 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
             } else if (type == "sea") {
                 if (it.has("sea_route")) {
                     GeoLocation* location = model()->find_location(it["sea_route"].template as<std::string>());
-                    if (location) {
+                    if (location != nullptr) {
                         set_location_property(location, it, reset);
                     } else {
                         error("Sea route " << it["sea_route"].template as<std::string>() << " not found");

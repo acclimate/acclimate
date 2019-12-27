@@ -43,13 +43,13 @@ TransportChainLink::TransportChainLink(BusinessConnection* business_connection_p
       transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
       pos(0),
       forcing_nu(-1) {
-    if (geo_entity) {
+    if (geo_entity != nullptr) {
         geo_entity->transport_chain_links.push_back(this);
     }
 }
 
 TransportChainLink::~TransportChainLink() {
-    if (geo_entity) {
+    if (geo_entity != nullptr) {
         geo_entity->remove_transport_chain_link(this);
     }
 }
@@ -134,8 +134,8 @@ FlowQuantity TransportChainLink::get_flow_deficit() const {
 Model* TransportChainLink::model() const { return business_connection->model(); }
 
 std::string TransportChainLink::id() const {
-    return (business_connection->seller ? business_connection->seller->id() : "INVALID") + "-" + std::to_string(business_connection->get_id(this)) + "->"
-           + (business_connection->buyer ? business_connection->buyer->storage->economic_agent->id() : "INVALID");
+    return (business_connection->seller != nullptr ? business_connection->seller->id() : "INVALID") + "-" + std::to_string(business_connection->get_id(this)) + "->"
+           + (business_connection->buyer != nullptr ? business_connection->buyer->storage->economic_agent->id() : "INVALID");
 }
 
 }  // namespace acclimate

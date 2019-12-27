@@ -39,7 +39,7 @@ ExternalForcing* EventSeriesScenario::read_forcing_file(const std::string& filen
 void EventSeriesScenario::read_forcings() {
     auto forcing_l = static_cast<EventForcing*>(forcing.get());
     for (std::size_t i = 0; i < forcing_l->firms.size(); ++i) {
-        if (forcing_l->firms[i]) {
+        if (forcing_l->firms[i] != nullptr) {
             if (std::isnan(forcing_l->forcings[i])) {
                 forcing_l->firms[i]->forcing(1.0);
             } else {
@@ -63,12 +63,12 @@ EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, con
     forcings.reserve(regions_count * sectors_count);
     for (const auto& sector_name : sectors) {
         Sector* sector = model->find_sector(sector_name);
-        if (!sector) {
+        if (sector == nullptr) {
             error_("sector '" + std::string(sector_name) + "' not found");
         }
         for (const auto& region_name : regions) {
             Firm* firm = model->find_firm(sector, region_name);
-            if (!firm) {
+            if (firm == nullptr) {
                 warning_("firm '" + std::string(sector_name) + ":" + std::string(region_name) + "' not found");
             }
             firms.push_back(firm);

@@ -65,7 +65,7 @@ FloatType BusinessConnection::get_minimum_passage() const {
     TransportChainLink* link = first_transport_link.get();
     FloatType minimum_passage = 1.0;
     FloatType link_passage;
-    while (link) {
+    while (link != nullptr) {
         link_passage = link->get_passage();
         if (link_passage >= 0.0 && link_passage < minimum_passage) {
             minimum_passage = link_passage;
@@ -92,7 +92,7 @@ void BusinessConnection::push_flow_Z(const Flow& flow_Z) {
 TransportDelay BusinessConnection::get_transport_delay_tau() const {
     TransportChainLink* link = first_transport_link.get();
     TransportDelay res = 0;
-    while (link) {
+    while (link != nullptr) {
         res += link->transport_delay();
         link = link->next_transport_chain_link.get();
     }
@@ -131,7 +131,7 @@ Flow BusinessConnection::get_flow_mean() const {
     TransportChainLink* link = first_transport_link.get();
     Flow res = last_delivery_Z_;
     TransportDelay delay = 0;
-    while (link) {
+    while (link != nullptr) {
         res += link->get_total_flow();
         delay += link->transport_delay();
         link = link->next_transport_chain_link.get();
@@ -143,7 +143,7 @@ FlowQuantity BusinessConnection::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     FlowQuantity res = initial_flow_Z_star_.get_quantity() - last_delivery_Z_.get_quantity();
-    while (link) {
+    while (link != nullptr) {
         res += link->get_flow_deficit();
         link = link->next_transport_chain_link.get();
     }
@@ -159,7 +159,7 @@ Flow BusinessConnection::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     Flow res = Flow(0.0);
-    while (link) {
+    while (link != nullptr) {
         res += link->get_total_flow();
         link = link->next_transport_chain_link.get();
     }
@@ -170,7 +170,7 @@ Flow BusinessConnection::get_disequilibrium() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     Flow res = Flow(0.0);
-    while (link) {
+    while (link != nullptr) {
         res.add_possibly_negative(link->get_disequilibrium());
         link = link->next_transport_chain_link.get();
     }
@@ -181,7 +181,7 @@ FloatType BusinessConnection::get_stddeviation() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     FloatType res = 0.0;
-    while (link) {
+    while (link != nullptr) {
         res += link->get_stddeviation();
         link = link->next_transport_chain_link.get();
     }
@@ -190,7 +190,9 @@ FloatType BusinessConnection::get_stddeviation() const {
 
 Model* BusinessConnection::model() const { return buyer->model(); }
 
-std::string BusinessConnection::id() const { return (seller ? seller->id() : "INVALID") + "->" + (buyer ? buyer->storage->economic_agent->id() : "INVALID"); }
+std::string BusinessConnection::id() const {
+    return (seller != nullptr ? seller->id() : "INVALID") + "->" + (buyer != nullptr ? buyer->storage->economic_agent->id() : "INVALID");
+}
 
 const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller) const {
 #ifdef DEBUG

@@ -452,7 +452,7 @@ void Output::write_region_parameters(const Region* region, const settings::Setti
                 internal_write_value(name, region->get_gdp());
                 break;
             case hstring::hash("government_budget"):
-                if (region->government()) {
+                if (region->government() != nullptr) {
                     internal_write_value(name, region->government()->budget());
                 }
                 break;
@@ -567,7 +567,7 @@ void Output::iterate() {
                                     }
                                 } else {
                                     const Region* region = model()->find_region(it["region"].as<std::string>());
-                                    if (region) {
+                                    if (region != nullptr) {
                                         for (const auto& ea : region->economic_agents) {
                                             if (ea->type == EconomicAgent::Type::FIRM) {
                                                 const Firm* p = ea->as_firm();
@@ -583,7 +583,7 @@ void Output::iterate() {
                             } else {
                                 if (!it.has("region")) {
                                     const Sector* sector = model()->find_sector(it["sector"].as<std::string>());
-                                    if (sector) {
+                                    if (sector != nullptr) {
                                         for (const auto& p : sector->firms) {
                                             internal_start_target(hstring("firms"), p->sector, p->region);
                                             write_firm_parameters(p, it);
@@ -594,7 +594,7 @@ void Output::iterate() {
                                     }
                                 } else {
                                     const Firm* p = model()->find_firm(it["sector"].as<std::string>(), it["region"].as<std::string>());
-                                    if (p) {
+                                    if (p != nullptr) {
                                         internal_start_target(hstring("firms"), p->sector, p->region);
                                         write_firm_parameters(p, it);
                                         internal_end_target();
@@ -612,7 +612,7 @@ void Output::iterate() {
                                 getline(ss_l, sector_name, ':');
                                 getline(ss_l, region_name, ':');
                                 const Firm* p = model()->find_firm(sector_name, region_name);
-                                if (p) {
+                                if (p != nullptr) {
                                     internal_start_target(hstring("firms"), p->sector, p->region);
                                     write_firm_parameters(p, it);
                                     internal_end_target();
@@ -637,7 +637,7 @@ void Output::iterate() {
                             }
                         } else {
                             Consumer* c = model()->find_consumer(it["region"].as<std::string>());
-                            if (c) {
+                            if (c != nullptr) {
                                 internal_start_target(hstring("consumers"), c->region);
                                 write_consumer_parameters(c, it);
                                 internal_end_target();
@@ -700,8 +700,10 @@ void Output::iterate() {
                                 const hstring& name = observable.as<hstring>();
                                 switch (name) {
                                     case hstring::hash("total_current_proxy_sum"):
-                                        for (const auto& forcing : static_cast<RasteredScenario<FloatType>*>(scenario)->forcings()) {
-                                            if (forcing.region && ((region_name == nullptr) || forcing.region->id() == region_name)) {
+                                        for (const auto& forcing :
+                                             static_cast<RasteredScenario<FloatType>*>(scenario)  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+                                                 ->forcings()) {
+                                            if (forcing.region != nullptr && ((region_name == nullptr) || forcing.region->id() == region_name)) {
                                                 internal_start_target(hstring("regions"), forcing.region);
                                                 internal_write_value(name, forcing.forcing);
                                                 internal_end_target();

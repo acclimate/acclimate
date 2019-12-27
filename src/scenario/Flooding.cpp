@@ -38,7 +38,7 @@ Flooding::Flooding(const settings::SettingsNode& settings_p, settings::SettingsN
         for (const auto& sector_node : scenario_node_p["sectors"].as_sequence()) {
             const auto& sector_name = sector_node.as<std::string>();
             const auto& sector = model_p->find_sector(sector_name);
-            if (!sector) {
+            if (sector == nullptr) {
                 error("could not find sector " << sector_name);
             }
             sectors.push_back(sector->index());

@@ -128,12 +128,12 @@ void NetCDFOutput::create_variable_meta(typename ArrayOutput::Variable& v, const
     meta->sizes.push_back(1);
     dims.push_back(dim_time);
     for (const auto& t : stack) {
-        if (t.sector) {
+        if (t.sector != nullptr) {
             meta->index.push_back(0);
             meta->sizes.push_back(sectors_size);
             dims.push_back(dim_sector);
         }
-        if (t.region) {
+        if (t.region != nullptr) {
             meta->index.push_back(0);
             meta->sizes.push_back(regions_size);
             dims.push_back(dim_region);

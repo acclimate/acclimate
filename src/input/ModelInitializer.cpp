@@ -129,16 +129,16 @@ Sector* ModelInitializer::add_sector(const std::string& name) {
 
 void ModelInitializer::initialize_connection(Sector* sector_from, Region* region_from, Sector* sector_to, Region* region_to, const Flow& flow) {
     Firm* firm_from = model()->find_firm(sector_from, region_from->id());
-    if (!firm_from) {
+    if (firm_from == nullptr) {
         firm_from = add_firm(sector_from, region_from);
-        if (!firm_from) {
+        if (firm_from == nullptr) {
             return;
         }
     }
     Firm* firm_to = model()->find_firm(sector_to, region_to->id());
-    if (!firm_to) {
+    if (firm_to == nullptr) {
         firm_to = add_firm(sector_to, region_to);
-        if (!firm_to) {
+        if (firm_to == nullptr) {
             return;
         }
     }
@@ -206,8 +206,8 @@ void ModelInitializer::clean_network() {
                     FloatType value_added = to_float(firm->initial_production_X_star().get_quantity() - input);
 
                     if (value_added <= 0.0 || firm->sales_manager->business_connections.empty()
-                        || (firm->sales_manager->business_connections.size() == 1 && firm->self_supply_connection()) || firm->input_storages.empty()
-                        || (firm->input_storages.size() == 1 && firm->self_supply_connection())) {
+                        || (firm->sales_manager->business_connections.size() == 1 && firm->self_supply_connection() != nullptr) || firm->input_storages.empty()
+                        || (firm->input_storages.size() == 1 && firm->self_supply_connection() != nullptr)) {
                         needs_cleaning = true;
 
 #ifdef CLEANUP_INFO
@@ -222,7 +222,7 @@ void ModelInitializer::clean_network() {
 #endif
                         // Alter initial_input_flow of buying economic agents
                         for (auto& business_connection : firm->sales_manager->business_connections) {
-                            if (!business_connection->buyer) {
+                            if (business_connection->buyer == nullptr) {
                                 error("Buyer invalid");
                             }
                             if (!business_connection->buyer->storage->subtract_initial_flow_Z_star(business_connection->initial_flow_Z_star())) {
@@ -233,7 +233,7 @@ void ModelInitializer::clean_network() {
                         // Alter initial_production of supplying firms
                         for (auto& storage : firm->input_storages) {
                             for (auto& business_connection : storage->purchasing_manager->business_connections) {
-                                if (!business_connection->seller) {
+                                if (business_connection->seller == nullptr) {
                                     error("Seller invalid");
                                 }
                                 business_connection->seller->firm->subtract_initial_production_X_star(business_connection->initial_flow_Z_star());
@@ -381,7 +381,7 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
         } else if (types[i] == type_sea) {
             location = new GeoLocation(model(), 0, GeoLocation::Type::SEA, ids[i]);
         }
-        if (location) {
+        if (location != nullptr) {
             std::unique_ptr<GeoPoint> centroid(new GeoPoint(longitudes[i], latitudes[i]));
             location->set_centroid(centroid);
             points.emplace_back(new TemporaryGeoEntity(location, types[i] == type_region));
@@ -542,7 +542,7 @@ void ModelInitializer::read_centroids_netcdf(const std::string& filename) {
 
         for (std::size_t i = 0; i < regions_count; ++i) {
             Region* region = model()->find_region(regions_val[i]);
-            if (region) {
+            if (region != nullptr) {
                 std::unique_ptr<GeoPoint> centroid(new GeoPoint(lons_val[i], lats_val[i]));
                 region->set_centroid(centroid);
             }
@@ -557,7 +557,7 @@ void ModelInitializer::read_centroids_netcdf(const std::string& filename) {
     const auto sea_speed = transport["sea_speed"].as<FloatType>();
 
     for (auto& region_from : model()->regions) {
-        if (!region_from->centroid()) {
+        if (region_from->centroid() == nullptr) {
             error("Centroid for " << region_from->id() << " not found");
         }
         for (auto& region_to : model()->regions) {
@@ -668,7 +668,7 @@ void ModelInitializer::read_transport_times_csv(const std::string& index_filenam
         }
 
         auto region_from = regions[row];
-        if (region_from) {
+        if (region_from != nullptr) {
             std::istringstream transport_string_stream(transport_line);
             std::string transport_str;
 
@@ -681,7 +681,7 @@ void ModelInitializer::read_transport_times_csv(const std::string& index_filenam
                 }
 
                 auto region_to = regions[col];
-                if (region_to && region_from != region_to) {
+                if (region_to != nullptr && region_from != region_to) {
                     transport_delay_tau = std::stoi(transport_str);
                     if (transport_delay_tau <= 0) {
                         error("Transport delay not valid: " << transport_delay_tau << " in col " << col << " in row " << row);
@@ -750,7 +750,7 @@ void ModelInitializer::build_agent_network_from_table(const mrio::Table<FloatTyp
         Region* region = add_region(region_name);
         if (sector_name == "FCON") {
             Consumer* consumer = model()->find_consumer(region);
-            if (!consumer) {
+            if (consumer == nullptr) {
                 consumer = add_consumer(region);
                 economic_agents.push_back(consumer);
             } else {
@@ -759,9 +759,9 @@ void ModelInitializer::build_agent_network_from_table(const mrio::Table<FloatTyp
         } else {
             Sector* sector = add_sector(sector_name);
             Firm* firm = model()->find_firm(sector, region->id());
-            if (!firm) {
+            if (firm == nullptr) {
                 firm = add_firm(sector, region);
-                if (!firm) {
+                if (firm == nullptr) {
                     error("Could not add firm");
                 }
             }
