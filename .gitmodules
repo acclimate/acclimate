@@ -1,0 +1,12 @@
+[submodule "lib/settingsnode"]
+	path = lib/settingsnode
+	url = git@github.com:swillner/settingsnode
+[submodule "cmake"]
+	path = cmake
+	url = git@github.com:swillner/cmake-modules
+[submodule "lib/cpp-library"]
+	path = lib/cpp-library
+	url = git@github.com:swillner/cpp-library
+[submodule "lib/libmrio"]
+	path = lib/libmrio
+	url = git@github.com:swillner/libmrio
