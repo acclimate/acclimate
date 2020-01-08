@@ -113,7 +113,8 @@ class ArrayOutput : public Output {
     void initialize() override;
     const typename ArrayOutput::Variable& get_variable(const hstring& fullname) const;
 
-    const std::vector<Event>& get_events() const { return events; }    using Output::id;
+    const std::vector<Event>& get_events() const { return events; }
+    using Output::id;
     using Output::model;
 };
 }  // namespace acclimate

@@ -52,11 +52,6 @@ class BusinessConnection {
 
   public:
     BusinessConnection(PurchasingManager* buyer_p, SalesManager* seller_p, const Flow& initial_flow_Z_star_p);
-
-    const Time& time() const { return time_; }
-
-    void time(const Time& time_p) { time_ = time_p; }
-
     const Flow& last_shipment_Z(const SalesManager* caller = nullptr) const;
     const Flow& last_delivery_Z(const SalesManager* const caller = nullptr) const;
     const Demand& last_demand_request_D(const PurchasingManager* const caller = nullptr) const;

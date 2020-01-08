@@ -69,9 +69,6 @@ class Model {
 
   public:
     const Time& time() const { return time_; }
-
-    const TimeStep& timestep() const { return timestep_; }
-
     const Time& start_time() const { return start_time_; };
     const Time& stop_time() const { return stop_time_; };
     const TimeStep& timestep() const { return timestep_; }
@@ -79,15 +76,10 @@ class Model {
     bool done() const { return time() > stop_time(); };
     void switch_registers();
     void tick();
-
-    const Time& delta_t() const { return delta_t_; }
-
-    void delta_t(const Time& delta_t_p);
-
     const bool& no_self_supply() const { return no_self_supply_; }
-
-    void start_time(const Time& start_time);
-    void stop_time(const Time& stop_time);
+    void set_start_time(const Time& start_time);
+    void set_stop_time(const Time& stop_time);
+    void set_delta_t(const Time& delta_t_p);
     void no_self_supply(bool no_self_supply_p);
     const unsigned char& current_register() const { return current_register_; }
     unsigned char other_register() const { return 1 - current_register_; }

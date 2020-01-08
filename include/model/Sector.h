@@ -38,8 +38,6 @@ class Sector {
 
   public:
     enum class TransportType { AVIATION, IMMEDIATE, ROADSEA };
-    static TransportType map_transport_type(const settings::hstring& transport_type);
-    static const char* unmap_transport_type(TransportType transport_type);
 
   private:
     const IndexType index_m;
@@ -67,6 +65,8 @@ class Sector {
            TransportType transport_type_p);
 
   public:
+    static TransportType map_transport_type(const settings::hstring& transport_type);
+    static const char* unmap_transport_type(TransportType transport_type);
     const Demand& total_demand_D() const;
     const Demand& total_production_X() const;
     const Parameters::SectorParameters& parameters() const { return parameters_m; }
