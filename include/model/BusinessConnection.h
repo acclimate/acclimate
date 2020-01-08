@@ -29,17 +29,12 @@
 namespace acclimate {
 
 class GeoRoute;
-
 class Model;
-
 class PurchasingManager;
-
 class SalesManager;
-
 class TransportChainLink;
-
 class BusinessConnection {
-  protected:
+  private:
     Demand last_demand_request_D_;
     Flow initial_flow_Z_star_;
     Flow last_delivery_Z_;

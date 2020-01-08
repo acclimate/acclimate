@@ -28,24 +28,20 @@
 #include "types.h"
 
 namespace mrio {
+
 template<typename ValueType, typename IndexType>
 class Table;
+
 }  // namespace mrio
 
 namespace acclimate {
 
 class Consumer;
-
 class EconomicAgent;
-
 class GeoEntity;
-
 class Model;
-
 class Firm;
-
 class Region;
-
 class Sector;
 
 class ModelInitializer {
@@ -134,9 +130,7 @@ class ModelInitializer {
   public:
     ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p);
     void initialize();
-#ifdef DEBUG
     void print_network_characteristics() const;
-#endif
 
     inline Model* model() const { return model_m; }
 

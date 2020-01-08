@@ -29,7 +29,6 @@
 namespace acclimate {
 
 class Model;
-
 class Scenario;
 
 class HistogramOutput : public Output {

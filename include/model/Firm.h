@@ -26,37 +26,33 @@
 namespace acclimate {
 
 class BusinessConnection;
-
 class CapacityManager;
-
 class Region;
-
 class SalesManager;
-
 class Sector;
 
 class Firm : public EconomicAgent {
-  protected:
-    Flow initial_production_X_star_ = Flow(0.0);
-    Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
-    Flow initial_total_use_U_star_ = Flow(0.0);
-    std::shared_ptr<BusinessConnection> self_supply_connection_;
-
-  protected:
-    using EconomicAgent::forcing_;
-
   public:
     using EconomicAgent::id;
     using EconomicAgent::input_storages;
     using EconomicAgent::model;
     using EconomicAgent::region;
     using EconomicAgent::sector;
+
+  private:
+    Flow initial_production_X_star_ = Flow(0.0);
+    Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
+    Flow initial_total_use_U_star_ = Flow(0.0);
+    std::shared_ptr<BusinessConnection> self_supply_connection_;
+    using EconomicAgent::forcing_;
+
+  public:
     std::unique_ptr<CapacityManager> const capacity_manager;
     std::unique_ptr<SalesManager> const sales_manager;
 
-  public:
-    Firm* as_firm() override;
-    const Firm* as_firm() const override;
+    inline Firm* as_firm() override { return this; }
+    inline const Firm* as_firm() const override { return this; }
+
     const BusinessConnection* self_supply_connection() const;
     void self_supply_connection(std::shared_ptr<BusinessConnection> self_supply_connection_p);
     const Flow& production_X() const;
@@ -93,7 +89,7 @@ class Firm : public EconomicAgent {
 
     inline FlowValue total_value_loss() const { return (initial_production_X_star_ - production_X_).get_value(); }
 
-  protected:
+  private:
     void produce_X();
 
   public:
@@ -106,9 +102,8 @@ class Firm : public EconomicAgent {
     void subtract_initial_production_X_star(const Flow& initial_production_flow_X_star);
     void add_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
     void subtract_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
-#ifdef DEBUG
+    // DEBUG
     void print_details() const override;
-#endif
 };
 }  // namespace acclimate
 

@@ -34,7 +34,7 @@ class Acclimate {
     std::unique_ptr<Run> run_m;
 
   public:
-    explicit Acclimate(settings::SettingsNode settings_p);
+    explicit Acclimate(const settings::SettingsNode& settings_p);
 
     int run();
 };

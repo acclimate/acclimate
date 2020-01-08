@@ -31,7 +31,6 @@
 namespace acclimate {
 
 class Model;
-
 class Firm;
 
 class Sector {
@@ -42,7 +41,7 @@ class Sector {
     static TransportType map_transport_type(const settings::hstring& transport_type);
     static const char* unmap_transport_type(TransportType transport_type);
 
-  protected:
+  private:
     const IndexType index_m;
     const std::string id_m;
     Demand total_demand_D_ = Demand(0.0);
@@ -77,7 +76,6 @@ class Sector {
     std::vector<Firm*> firms;
 
   public:
-    Sector(Model* model_p, std::string id_p, IndexType index_p, const Ratio& upper_storage_limit_omega_p, const Time& initial_storage_fill_factor_psi_p);
     void add_demand_request_D(const Demand& demand_request_D);
     void add_production_X(const Flow& production_X);
     void add_initial_production_X(const Flow& production_X);

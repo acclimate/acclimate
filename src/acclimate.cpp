@@ -59,16 +59,15 @@ void handle_fpe_error(int /* signal */) {
 }
 #endif
 
-Acclimate::Acclimate(settings::SettingsNode settings_p) {
+Acclimate::Acclimate(const settings::SettingsNode& settings_p) {
 #ifdef BANKERS_ROUNDING
     fesetround(FE_TONEAREST);
 #endif
-
 #ifdef FLOATING_POINT_EXCEPTIONS
     signal(SIGFPE, handle_fpe_error);
     feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);
 #endif
-    run_m = std::unique_ptr<Run>(new Run(settings_p));
+    run_m = std::make_unique<Run>(settings_p);
 }
 
 int Acclimate::run() { return (run_m.get())->run(); }

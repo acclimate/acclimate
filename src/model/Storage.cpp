@@ -150,13 +150,13 @@ const Stock& Storage::content_S() const {
 }
 
 const Flow& Storage::used_flow_U(const EconomicAgent* const caller) const {
-#ifdef DEBUG
-    if (caller != economic_agent) {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    if constexpr (DEBUG_MODE) {
+        if (caller != economic_agent) {
+            assertstepnot(CONSUMPTION_AND_PRODUCTION);
+        }
+    } else {
+        UNUSED(caller);
     }
-#else
-    UNUSED(caller);
-#endif
     return used_flow_U_;
 }
 

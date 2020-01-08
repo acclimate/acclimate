@@ -195,35 +195,35 @@ std::string BusinessConnection::id() const {
 }
 
 const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller) const {
-#ifdef DEBUG
-    if (caller != seller) {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    if constexpr (DEBUG_MODE) {
+        if (caller != seller) {
+            assertstepnot(CONSUMPTION_AND_PRODUCTION);
+        }
+    } else {
+        UNUSED(caller);
     }
-#else
-    UNUSED(caller);
-#endif
     return last_shipment_Z_;
 }
 
 const Flow& BusinessConnection::last_delivery_Z(const SalesManager* const caller) const {
-#ifdef DEBUG
-    if (caller != seller) {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    if constexpr (DEBUG_MODE) {
+        if (caller != seller) {
+            assertstepnot(CONSUMPTION_AND_PRODUCTION);
+        }
+    } else {
+        UNUSED(caller);
     }
-#else
-    UNUSED(caller);
-#endif
     return last_delivery_Z_;
 }
 
 const Demand& BusinessConnection::last_demand_request_D(const PurchasingManager* const caller) const {
-#ifdef DEBUG
-    if (caller != buyer) {
-        assertstepnot(PURCHASE);
+    if constexpr (DEBUG_MODE) {
+        if (caller != buyer) {
+            assertstepnot(PURCHASE);
+        }
+    } else {
+        UNUSED(caller);
     }
-#else
-    UNUSED(caller);
-#endif
     return last_demand_request_D_;
 }
 

@@ -31,15 +31,10 @@
 namespace acclimate {
 
 class Consumer;
-
 class Firm;
-
 class Model;
-
 class Region;
-
 class Sector;
-
 class Storage;
 
 class EconomicAgent {
@@ -60,7 +55,6 @@ class EconomicAgent {
 
   public:
     inline const Parameters::AgentParameters& parameters() const { return parameters_; }
-
     Parameters::AgentParameters const& parameters_writable() const;
 
   protected:
@@ -76,7 +70,6 @@ class EconomicAgent {
     virtual const Consumer* as_consumer() const;
 
     inline bool is_firm() const { return type == Type::FIRM; }
-
     inline bool is_consumer() const { return type == Type::CONSUMER; }
 
     virtual ~EconomicAgent() = default;
@@ -88,9 +81,8 @@ class EconomicAgent {
     void remove_storage(Storage* storage);
     Model* model() const;
     virtual std::string id() const;
-#ifdef DEBUG
+    // DEBUG
     virtual void print_details() const = 0;
-#endif
 };
 }  // namespace acclimate
 

@@ -70,16 +70,15 @@ enum class IterationStep {
 enum class EventType : unsigned char { ACCLIMATE_ADD_EVENTS };
 #undef ADD_EVENT
 
+#define ADD_EVENT(e) __STRING(e),
+static constexpr std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> EVENT_NAMES = {ACCLIMATE_ADD_EVENTS};
+#undef ADD_EVENT
+
 class Model;
-
 class Scenario;
-
 class Output;
-
 class Region;
-
 class Sector;
-
 class EconomicAgent;
 
 class Run {
@@ -94,14 +93,11 @@ class Run {
     IterationStep step_m = IterationStep::INITIALIZATION;
     bool has_run = false;
 
-    static void initialize();
     int run();
 
     inline void step(const IterationStep& step_p) { step_m = step_p; }
 
   public:
-    static const std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> event_names;
-
     explicit Run(const settings::SettingsNode& settings);
     ~Run();
 
@@ -112,9 +108,7 @@ class Run {
     inline const std::size_t& duration() const { return duration_m; }
 
     unsigned int thread_count() const;
-#ifdef DEBUG
     std::string timeinfo() const;
-#endif
 
     inline const Model* model() { return model_m.get(); }
 

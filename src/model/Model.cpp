@@ -67,12 +67,12 @@ void Model::start() {
             }
         }
     }
-#ifdef _OPENMP
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(std::begin(economic_agents), std::end(economic_agents), g);
-    std::shuffle(std::begin(purchasing_managers), std::end(purchasing_managers), g);
-#endif
+    if constexpr (OPENMP_MODE) {
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(std::begin(economic_agents), std::end(economic_agents), g);
+        std::shuffle(std::begin(purchasing_managers), std::end(purchasing_managers), g);
+    }
 }
 
 void Model::iterate_consumption_and_production() {
@@ -121,10 +121,10 @@ void Model::iterate_purchase() {
         auto t2 = std::chrono::high_resolution_clock::now();
         p.second = (t2 - t1).count();
     }
-#ifdef _OPENMP
-    std::sort(std::begin(purchasing_managers), std::end(purchasing_managers),
-              [](const std::pair<PurchasingManager*, std::size_t>& a, const std::pair<PurchasingManager*, std::size_t>& b) { return b.second > a.second; });
-#endif
+    if constexpr (OPENMP_MODE) {
+        std::sort(std::begin(purchasing_managers), std::end(purchasing_managers),
+                  [](const std::pair<PurchasingManager*, std::size_t>& a, const std::pair<PurchasingManager*, std::size_t>& b) { return b.second > a.second; });
+    }
 }
 
 void Model::iterate_investment() {

@@ -30,11 +30,8 @@
 namespace acclimate {
 
 class EconomicAgent;
-
 class Model;
-
 class PurchasingManager;
-
 class Sector;
 
 class Storage {
@@ -69,12 +66,11 @@ class Storage {
 
     const Forcing& forcing_mu() const { return forcing_mu_; }
 
-  protected:
+  private:
     void calc_content_S();
 
   public:
     inline const Parameters::StorageParameters& parameters() const { return parameters_; }
-
     Parameters::StorageParameters& parameters_writable();
 
   public:

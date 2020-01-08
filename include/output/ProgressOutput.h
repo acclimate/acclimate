@@ -32,9 +32,7 @@ class ProgressBar;
 namespace acclimate {
 
 class Model;
-
 class Sector;
-
 class Scenario;
 
 class ProgressOutput : public Output {

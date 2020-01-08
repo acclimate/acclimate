@@ -29,9 +29,25 @@
 #include <string>
 
 #ifdef _OPENMP
-
 #include <omp.h>
+#endif
 
+#ifdef _OPENMP
+static constexpr bool OPENMP_MODE = true;
+#else
+static constexpr bool OPENMP_MODE = false;
+#endif
+
+#ifdef DEBUG
+static constexpr bool DEBUG_MODE = true;
+#else
+static constexpr bool DEBUG_MODE = false;
+#endif
+
+#ifdef BANKERS_ROUNDING
+static constexpr bool BANKERS_ROUNDING_MODE = true;
+#else
+static constexpr bool BANKERS_ROUNDING_MODE = false;
 #endif
 
 #define UNUSED(x) (void)(x)
@@ -96,19 +112,19 @@ using Ratio = FloatType;
 using Forcing = Ratio;
 
 inline FloatType fround(FloatType x) {
-#ifdef BANKERS_ROUNDING
-    return std::rint(x);
-#else
-    return std::round(x);
-#endif
+    if constexpr (BANKERS_ROUNDING_MODE) {
+        return std::rint(x);
+    } else {
+        return std::round(x);
+    }
 }
 
 inline IntType iround(FloatType x) {
-#ifdef BANKERS_ROUNDING
-    return std::lrint(x);
-#else
-    return std::round(x);
-#endif
+    if constexpr (BANKERS_ROUNDING_MODE) {
+        return std::lrint(x);
+    } else {
+        return std::round(x);
+    }
 }
 
 template<class T>
@@ -306,6 +322,10 @@ class Quantity : public RoundedType<3> {
 
     INCLUDE_ROUNDED_OPS(Quantity);
 };
+
+#undef INCLUDE_STANDARD_OPS
+#undef INCLUDE_ROUNDED_OPS
+#undef INCLUDE_NONROUNDED_OPS
 
 inline PriceGrad Price::operator/(const FlowQuantity& other) const { return PriceGrad(get_float() / other.get_float()); }
 

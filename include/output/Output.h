@@ -33,21 +33,13 @@ namespace acclimate {
 using hstring = settings::hstring;
 
 class Scenario;
-
 class BusinessConnection;
-
 class Consumer;
-
 class EconomicAgent;
-
 class Model;
-
 class Firm;
-
 class Region;
-
 class Sector;
-
 class Storage;
 
 class Output {

@@ -29,7 +29,6 @@
 namespace acclimate {
 
 class Model;
-
 class TransportChainLink;
 
 class GeoEntity {

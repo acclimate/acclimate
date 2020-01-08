@@ -37,7 +37,7 @@ else()
 endif()
 
 target_include_directories(acclimate PRIVATE include lib/cpp-library)
-set_property(TARGET acclimate PROPERTY CXX_STANDARD 11)
+set_property(TARGET acclimate PROPERTY CXX_STANDARD 17)
 
 add_system_paths()
 add_doxygen_documentation(doc doc)
@@ -59,6 +59,11 @@ function(acclimate_include_option OPTIONS_NAME NAME DESC STATE)
   if(ACCLIMATE_${NAME})
     set(ACCLIMATE_${OPTIONS_NAME} ${ACCLIMATE_${OPTIONS_NAME}} ${NAME} PARENT_SCOPE)
     target_compile_definitions(acclimate PRIVATE ${NAME})
+    #    if(ACCLIMATE_${NAME})
+    #      target_compile_definitions(acclimate PRIVATE ${NAME}=1)
+    #    else()
+    #      target_compile_definitions(acclimate PRIVATE ${NAME}=0)
+    #    endif() // TODO: let cmake define boolean macros
   endif()
 endfunction()
 

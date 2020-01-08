@@ -31,9 +31,7 @@
 namespace acclimate {
 
 class BusinessConnection;
-
 class Firm;
-
 class Model;
 
 struct SupplyParameters {
@@ -58,8 +56,6 @@ class SalesManager {
   public:
     explicit SalesManager(Firm* firm_p);
     ~SalesManager();
-    // virtual void distribute(const Flow& production_X) = 0;
-    // virtual void iterate_expectation();
     void add_demand_request_D(const Demand& demand_request_D);
     void add_initial_demand_request_D_star(const Demand& initial_demand_request_D_star);
     void subtract_initial_demand_request_D_star(const Demand& initial_demand_request_D_star);
@@ -67,9 +63,6 @@ class SalesManager {
     bool remove_business_connection(BusinessConnection* business_connection);
     Model* model() const;
     std::string id() const;
-#ifdef DEBUG
-    void print_details() const;
-#endif
 
   private:
     // For communicating certain quantities to (potential) buyers
@@ -96,7 +89,6 @@ class SalesManager {
     void distribute(const Flow& _);
     void initialize();
     void iterate_expectation();
-    Price get_initial_unit_value_added() const;
     Price get_initial_markup() const;
     Price get_initial_unit_variable_production_costs() const;
     Flow calc_production_X();
@@ -107,7 +99,6 @@ class SalesManager {
   private:
     std::tuple<Flow, Price> calc_supply_distribution_scenario(const Flow& possible_production_X_hat_p);
     std::tuple<Flow, Price> calc_expected_supply_distribution_scenario(const Flow& possible_production_X_hat_p);
-    Price calc_marginal_production_costs_plus_markup(const FlowQuantity& production_quantity_X, const Price& unit_production_costs_n_c) const;
     FlowValue calc_total_production_costs(const Flow& production_X, const Price& unit_production_costs_n_c) const;
     FlowQuantity analytic_solution_in_production_extension(const Price& unit_production_costs_n_c,
                                                            const Price& price_demand_request_not_served_completely) const;
@@ -123,11 +114,13 @@ class SalesManager {
                                        const Price& unit_production_costs_n_c,
                                        const Price& n_min_p,
                                        const Price& precision_p) const;
-#ifdef DEBUG
+
+  public:
+    // DEBUG
+    void print_details() const;
     void print_parameters() const;
     void print_connections(typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
                            typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const;
-#endif
 };
 }  // namespace acclimate
 

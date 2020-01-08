@@ -28,9 +28,7 @@
 namespace acclimate {
 
 class Model;
-
 class Region;
-
 using HeatLaborProductivityRegionForcingType = std::vector<FloatType>;
 
 class HeatLaborProductivity : public RasteredScenario<HeatLaborProductivityRegionForcingType> {

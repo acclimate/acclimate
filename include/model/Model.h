@@ -34,31 +34,17 @@
 namespace acclimate {
 
 class Run;
-
 class Consumer;
-
 class EconomicAgent;
-
 class GeoLocation;
-
 class Firm;
-
 class PurchasingManager;
-
 class Region;
 
 class Model {
     friend class Run;
 
   public:
-    struct Event {
-        const unsigned char type;
-        const Sector* sector_from;
-        const Region* region_from;
-        const Sector* sector_to;
-        const Region* region_to;
-        FloatType value;
-    };
     std::vector<std::unique_ptr<Sector>> sectors;
     std::vector<std::unique_ptr<Region>> regions;
     std::vector<std::unique_ptr<GeoLocation>> other_locations;

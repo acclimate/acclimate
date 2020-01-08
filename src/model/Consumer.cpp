@@ -35,8 +35,6 @@ namespace acclimate {
 
 Consumer::Consumer(Region* region_p) : EconomicAgent(region_p->model()->consumption_sector, region_p, EconomicAgent::Type::CONSUMER) {}
 
-inline Consumer* Consumer::as_consumer() { return this; }
-
 void Consumer::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     for (const auto& is : input_storages) {
@@ -82,15 +80,13 @@ void Consumer::iterate_investment() {
     // }
 }
 
-#ifdef DEBUG
-
 void Consumer::print_details() const {
-    info(id() << ":");
-    for (const auto& is : input_storages) {
-        is->purchasing_manager->print_details();
+    if constexpr (DEBUG_MODE) {
+        info(id() << ":");
+        for (const auto& is : input_storages) {
+            is->purchasing_manager->print_details();
+        }
     }
 }
-
-#endif
 
 }  // namespace acclimate

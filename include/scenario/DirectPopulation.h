@@ -26,7 +26,6 @@
 namespace acclimate {
 
 class Model;
-
 class Region;
 
 class DirectPopulation : public RasteredScenario<FloatType> {

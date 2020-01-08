@@ -28,7 +28,6 @@
 namespace acclimate {
 
 class Firm;
-
 class Model;
 
 class CapacityManager {

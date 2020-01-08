@@ -65,7 +65,7 @@ void NetCDFOutput::initialize() {
     dim_sector = file->addDim("sector", sectors_size);
     dim_region = file->addDim("region", regions_size);
     netCDF::NcDim dim_event = file->addDim("event");
-    netCDF::NcDim dim_event_type = file->addDim("event_type", Run::event_names.size());
+    netCDF::NcDim dim_event_type = file->addDim("event_type", EVENT_NAMES.size());
     netCDF::NcCompoundType event_compound_type = file->addCompoundType("event_compound_type", sizeof(typename ArrayOutput::Event));
     event_compound_type.addMember("time", netCDF::NcType::nc_UINT, offsetof(typename ArrayOutput::Event, time));
     event_compound_type.addMember("type", netCDF::NcType::nc_UBYTE, offsetof(typename ArrayOutput::Event, type));
@@ -83,8 +83,8 @@ void NetCDFOutput::initialize() {
     include_events = true;
     const auto& event_type_var = file->addVar("event_types", netCDF::NcType::nc_STRING, {dim_event_type});
     event_type_var.setCompression(false, true, compression_level);
-    for (std::size_t i = 0; i < Run::event_names.size(); ++i) {
-        event_type_var.putVar({i}, std::string(Run::event_names[i]));
+    for (std::size_t i = 0; i < EVENT_NAMES.size(); ++i) {
+        event_type_var.putVar({i}, std::string(EVENT_NAMES[i]));
     }
 
     const auto& sector_var = file->addVar("sector", netCDF::NcType::nc_STRING, {dim_sector});

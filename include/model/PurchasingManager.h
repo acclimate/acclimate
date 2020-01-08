@@ -30,13 +30,9 @@
 namespace acclimate {
 
 class BusinessConnection;
-
 class EconomicAgent;
-
 class Model;
-
 class PurchasingManager;
-
 class Storage;
 
 struct OptimizerData {
@@ -69,9 +65,6 @@ class PurchasingManager {
     const Demand& initial_demand_D_star() const;
     Model* model() const;
     std::string id() const;
-#ifdef DEBUG
-    void print_details() const;
-#endif
 
   protected:
     FloatType optimized_value_ = 0.0;
@@ -93,7 +86,7 @@ class PurchasingManager {
     void add_initial_demand_D_star(const Demand& demand_D_p);
     void subtract_initial_demand_D_star(const Demand& demand_D_p);
 
-  protected:
+  private:
     FloatType purchase_constraint(const FloatType x[], FloatType grad[], const OptimizerData* data) const;
     FloatType objective_costs(const FloatType x[], FloatType grad[], const OptimizerData* data) const;
     inline FloatType scaled_D_r(FloatType D_r, const BusinessConnection* bc) const;
@@ -116,14 +109,13 @@ class PurchasingManager {
     FloatType grad_n_r(FloatType D_r, const BusinessConnection* business_connection) const;
     FloatType grad_expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const;
     FloatType partial_D_r_transport_penalty(FloatType D_r, const BusinessConnection* business_connection) const;
-    FlowQuantity calc_analytical_approximation_X_max(const BusinessConnection* bc) const;
+    static FlowQuantity calc_analytical_approximation_X_max(const BusinessConnection* bc);
     void optimize_purchase(std::vector<FloatType>& demand_requests_D_p, OptimizerData& data_p);
-    void check_maximum_price_reached(std::vector<FloatType>& demand_requests_D_p, OptimizerData& data_p);
-    FlowValue check_D_in_bounds(FlowQuantity& D_r_, OptimizerData& data_p, unsigned int r) const;
 
-#ifdef DEBUG
+  public:
+    // DEBUG
+    void print_details() const;
     void print_distribution(const FloatType demand_requests_D_p[], const OptimizerData* data, bool connection_details) const;
-#endif
 };
 }  // namespace acclimate
 

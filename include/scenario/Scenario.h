@@ -29,11 +29,8 @@
 namespace acclimate {
 
 class Consumer;
-
 class Firm;
-
 class GeoLocation;
-
 class Model;
 
 class Scenario {

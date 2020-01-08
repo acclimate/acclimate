@@ -29,11 +29,8 @@
 namespace acclimate {
 
 class Model;
-
 class Region;
-
 class Sector;
-
 class Scenario;
 
 class DamageOutput : public Output {

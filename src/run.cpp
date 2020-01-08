@@ -21,21 +21,13 @@
 #include "run.h"
 
 #include <unistd.h>
-
 #include <chrono>
-#include <utility>
 
 #ifdef ENABLE_DMTCP
 #include <dmtcp.h>
-
 #include <csignal>
 #include <thread>
-#endif
-#ifdef _OPENMP
-
-#include <omp.h>
-
-#endif
+#endif  // TODO: remove conditionals
 
 #include "input/ModelInitializer.h"
 #include "model/EconomicAgent.h"
@@ -74,14 +66,12 @@ Run::Run(const settings::SettingsNode& settings) {
     step(IterationStep::INITIALIZATION);
 
 #ifdef ENABLE_DMTCP
-    if (dmtcp_is_enabled()) {
-        if (instantiated) {
-            error_("Only one run instance supported when checkpointing");
-        }
-        std::signal(SIGTERM, handle_sigterm);
-        close(10);
-        close(11);
+    if (instantiated) {
+        error_("Only one run instance supported when checkpointing");
     }
+    std::signal(SIGTERM, handle_sigterm);
+    close(10);
+    close(11);
 #endif
     instantiated = true;
 
@@ -89,9 +79,9 @@ Run::Run(const settings::SettingsNode& settings) {
     {
         ModelInitializer model_initializer(model, settings);
         model_initializer.initialize();
-#ifdef DEBUG
-        model_initializer.print_network_characteristics();
-#endif
+        if constexpr (DEBUG_MODE) {
+            model_initializer.print_network_characteristics();
+        }
         model_m.reset(model);
     }
 
@@ -201,11 +191,11 @@ int Run::run() {
             output->iterate();
         }
 
-#ifdef DEBUG
-        auto t2 = std::chrono::high_resolution_clock::now();
-        info_("Output took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count() << " ms");
-        t0 = t2;
-#endif
+        if constexpr (DEBUG_MODE) {
+            auto t2 = std::chrono::high_resolution_clock::now();
+            info_("Output took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count() << " ms");
+            t0 = t2;
+        }
 
 #ifdef ENABLE_DMTCP
         if (checkpoint_scheduled) {
@@ -260,7 +250,7 @@ Run::~Run() {
 }
 
 void Run::event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) {
-    info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
+    info_(EVENT_NAMES[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
                                  << (region_from == nullptr ? "" : region_from->id()) << "->" << (sector_to == nullptr ? "" : sector_to->id())
                                  << (sector_to != nullptr && region_to != nullptr ? ":" : "") << (region_to == nullptr ? "" : region_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
@@ -270,7 +260,7 @@ void Run::event(EventType type, const Sector* sector_from, const Region* region_
 }
 
 void Run::event(EventType type, const Sector* sector_from, const Region* region_from, const EconomicAgent* economic_agent_to, FloatType value) {
-    info_(event_names[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
+    info_(EVENT_NAMES[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
                                  << (region_from == nullptr ? "" : region_from->id()) << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
@@ -279,7 +269,7 @@ void Run::event(EventType type, const Sector* sector_from, const Region* region_
 }
 
 void Run::event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) {
-    info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id())
+    info_(EVENT_NAMES[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id())
                                  << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
@@ -288,7 +278,7 @@ void Run::event(EventType type, const EconomicAgent* economic_agent_from, const 
 }
 
 void Run::event(EventType type, const EconomicAgent* economic_agent_from, const Sector* sector_to, const Region* region_to, FloatType value) {
-    info_(event_names[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->")
+    info_(EVENT_NAMES[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->")
                                  << (sector_to == nullptr ? "" : sector_to->id() + ":") << (region_to == nullptr ? "" : region_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
@@ -297,58 +287,52 @@ void Run::event(EventType type, const EconomicAgent* economic_agent_from, const 
 }
 
 unsigned int Run::thread_count() const {
-#ifdef _OPENMP
-    return omp_get_max_threads();
-#else
-    return 1;
-#endif
+    if constexpr (OPENMP_MODE) {
+        return omp_get_max_threads();
+    } else {
+        return 1;
+    }
 }
-
-#ifdef DEBUG
 
 std::string Run::timeinfo() const {
-    std::string res;
-    if (step_m != IterationStep::INITIALIZATION) {
-        res = std::to_string(time_m) + " ";
-    } else {
-        res = "  ";
+    if constexpr (DEBUG_MODE) {
+        std::string res;
+        if (step_m != IterationStep::INITIALIZATION) {
+            res = std::to_string(time_m) + " ";
+        } else {
+            res = "  ";
+        }
+        switch (step_m) {
+            case IterationStep::INITIALIZATION:
+                res += "INI";
+                break;
+            case IterationStep::SCENARIO:
+                res += "SCE";
+                break;
+            case IterationStep::CONSUMPTION_AND_PRODUCTION:
+                res += "CAP";
+                break;
+            case IterationStep::EXPECTATION:
+                res += "EXP";
+                break;
+            case IterationStep::PURCHASE:
+                res += "PUR";
+                break;
+            case IterationStep::INVESTMENT:
+                res += "INV";
+                break;
+            case IterationStep::OUTPUT:
+                res += "OUT";
+                break;
+            case IterationStep::CLEANUP:
+                res += "CLU";
+                break;
+            default:
+                res += "???";
+                break;
+        }
+        return res;
     }
-    switch (step_m) {
-        case IterationStep::INITIALIZATION:
-            res += "INI";
-            break;
-        case IterationStep::SCENARIO:
-            res += "SCE";
-            break;
-        case IterationStep::CONSUMPTION_AND_PRODUCTION:
-            res += "CAP";
-            break;
-        case IterationStep::EXPECTATION:
-            res += "EXP";
-            break;
-        case IterationStep::PURCHASE:
-            res += "PUR";
-            break;
-        case IterationStep::INVESTMENT:
-            res += "INV";
-            break;
-        case IterationStep::OUTPUT:
-            res += "OUT";
-            break;
-        case IterationStep::CLEANUP:
-            res += "CLU";
-            break;
-        default:
-            res += "???";
-            break;
-    }
-    return res;
 }
-
-#endif
-
-#define ADD_EVENT(e) __STRING(e),
-const std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> Run::event_names = {ACCLIMATE_ADD_EVENTS};
-#undef ADD_EVENT
 
 }  // namespace acclimate

@@ -34,23 +34,21 @@ class Consumer : public EconomicAgent {
     using EconomicAgent::model;
     using EconomicAgent::region;
 
-  protected:
+  private:
     using EconomicAgent::forcing_;
 
-  protected:
     void add_revenue_to_budget();
     void substract_input_costs_from_budget();
-#ifdef DEBUG
-    void print_details() const override;
-#endif
 
   public:
-    Consumer* as_consumer() override;
+    Consumer* as_consumer() override { return this; };
     explicit Consumer(Region* region_p);
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;
     void iterate_investment() override;
+    // DEBUG
+    void print_details() const override;
 };
 }  // namespace acclimate
 

@@ -34,11 +34,8 @@ class SettingsNode;
 namespace acclimate {
 
 class Model;
-
 class Region;
-
 class Sector;
-
 class Scenario;
 
 class ArrayOutput : public Output {

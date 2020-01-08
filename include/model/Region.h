@@ -35,43 +35,37 @@
 namespace acclimate {
 
 class EconomicAgent;
-
 class Government;
-
-class Infrastructure;
-
 class Model;
+class ModelInitializer;
 
 class Region : public GeoLocation {
-    friend class Model;
+    friend class ModelInitializer;
 
-  protected:
+  private:
     Flow export_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
     OpenMPLock export_flow_Z_lock;
     Flow import_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
     OpenMPLock import_flow_Z_lock;
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
     OpenMPLock consumption_flow_Y_lock;
+
     std::unique_ptr<Government> government_m;
-    const IndexType index_m;
+    const IntType index_m;
     Parameters::RegionParameters parameters_m;
     OpenMPLock economic_agents_lock;
 
     struct route_hash {
-        std::size_t operator()(const std::pair<IndexType, typename Sector::TransportType>& p) const {
-            return (p.first << 3) | (static_cast<IntType>(p.second));
-        }
+        std::size_t operator()(const std::pair<IntType, typename Sector::TransportType>& p) const { return (p.first << 3) | (static_cast<IntType>(p.second)); }
     };
-
-    Region(Model* model_p, std::string id_p, IndexType index_p);
 
   public:
     std::vector<std::unique_ptr<EconomicAgent>> economic_agents;
-    std::unordered_map<std::pair<IndexType, typename Sector::TransportType>, GeoRoute, route_hash> routes;
     using GeoLocation::connections;
-
     using GeoLocation::id;
     using GeoLocation::model;
+
+    Region(Model* model_p, std::string id_p, IndexType index_p);
     Region* as_region() override;
     const Region* as_region() const override;
     const Flow& consumption_C() const;
@@ -82,11 +76,10 @@ class Region : public GeoLocation {
     Government const* government() const;
 
     inline const Parameters::RegionParameters& parameters() const { return parameters_m; }
-
     const Parameters::RegionParameters& parameters_writable() const;
     ~Region() override = default;
 
-    inline IndexType index() const { return index_m; };
+    inline IndexType index() const { return index_m; }
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);
     void add_consumption_flow_Y(const Flow& consumption_flow_Y_p);

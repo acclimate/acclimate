@@ -29,7 +29,6 @@
 namespace acclimate {
 
 class Model;
-
 class Region;
 
 class Flooding : public RasteredScenario<FloatType> {

@@ -29,9 +29,7 @@
 namespace acclimate {
 
 class GeoConnection;
-
 class GeoPoint;
-
 class Region;
 
 class GeoLocation : public GeoEntity {

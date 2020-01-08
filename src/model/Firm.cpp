@@ -40,10 +40,6 @@ Firm::Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacit
       capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta_p)),
       sales_manager(new SalesManager(this)) {}
 
-inline Firm* Firm::as_firm() { return this; }
-
-inline const Firm* Firm::as_firm() const { return this; }
-
 void Firm::produce_X() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     production_X_ = capacity_manager->calc_production_X();
@@ -120,18 +116,6 @@ void Firm::iterate_investment() {
     // }
 }
 
-#ifdef DEBUG
-
-void Firm::print_details() const {
-    info(id() << ": X_star= " << initial_production_X_star_.get_quantity() << ":");
-    for (auto it = input_storages.begin(); it != input_storages.end(); ++it) {
-        (*it)->purchasing_manager->print_details();
-    }
-    sales_manager->print_details();
-}
-
-#endif
-
 Flow Firm::maximal_production_beta_X_star() const { return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta); }
 
 Flow Firm::forced_maximal_production_lambda_beta_X_star() const {
@@ -167,6 +151,16 @@ void Firm::self_supply_connection(std::shared_ptr<BusinessConnection> self_suppl
 const Flow& Firm::production_X() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     return production_X_;
+}
+
+void Firm::print_details() const {
+    if constexpr (DEBUG_MODE) {
+        info(id() << ": X_star= " << initial_production_X_star_.get_quantity() << ":");
+        for (auto it = input_storages.begin(); it != input_storages.end(); ++it) {
+            (*it)->purchasing_manager->print_details();
+        }
+        sales_manager->print_details();
+    }
 }
 
 }  // namespace acclimate

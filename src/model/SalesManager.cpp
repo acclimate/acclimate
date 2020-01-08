@@ -68,12 +68,12 @@ bool SalesManager::remove_business_connection(BusinessConnection* business_conne
         error("Business connection " << business_connection->id() << " not found");
     }
     business_connections.erase(it);
-#ifdef DEBUG
-    if (business_connections.empty()) {
-        assertstep(INITIALIZATION);
-        return true;
+    if constexpr (DEBUG_MODE) {
+        if (business_connections.empty()) {
+            assertstep(INITIALIZATION);
+            return true;
+        }
     }
-#endif
     return false;
 }
 
@@ -82,17 +82,6 @@ SalesManager::~SalesManager() {
         bc->invalidate_seller();
     }
 }
-
-#ifdef DEBUG
-
-void SalesManager::print_details() const {
-    info(business_connections.size() << " outputs:");
-    for (const auto bc : business_connections) {
-        info("    " << bc->id() << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
-    }
-}
-
-#endif
 
 Model* SalesManager::model() const { return firm->model(); }
 
@@ -154,9 +143,9 @@ void SalesManager::distribute(const Flow& _) {
             not_served_bc->push_flow_Z(Flow(0.0));
         }
     } else {  // non-zero production to distribute
-#ifdef DEBUG
+        // DEBUG
         unsigned int pushed_flows = 0;
-#endif
+        //
         assert(!isnan(supply_distribution_scenario.price_cheapest_buyer_accepted_in_optimization));
         Price cheapest_price_range_half_width = Price(0.0);
         if (model()->parameters().cheapest_price_range_generic_size) {
@@ -179,9 +168,9 @@ void SalesManager::distribute(const Flow& _) {
                     assert((*served_bc)->last_demand_request_D().get_quantity() <= communicated_parameters_.production_X.get_quantity());
                     (*served_bc)->push_flow_Z(round((*served_bc)->last_demand_request_D()));
                     production_without_cheapest_price_range += round((*served_bc)->last_demand_request_D());
-#ifdef DEBUG
-                    ++pushed_flows;
-#endif
+                    if constexpr (DEBUG_MODE) {
+                        ++pushed_flows;
+                    }
                     begin_cheapest_price_range = served_bc + 1;
                 } else if (abs(round((*served_bc)->last_demand_request_D().get_price()
                                      - supply_distribution_scenario.price_cheapest_buyer_accepted_in_optimization))
@@ -192,15 +181,15 @@ void SalesManager::distribute(const Flow& _) {
                     end_cheapest_price_range = served_bc + 1;
                 } else {  // price lower than in cheapest price range
                     (*served_bc)->push_flow_Z(Flow(0.0));
-#ifdef DEBUG
-                    ++pushed_flows;
-#endif
+                    if constexpr (DEBUG_MODE) {
+                        ++pushed_flows;
+                    }
                 }
             } else {  // demand request is zero
                 (*served_bc)->push_flow_Z(Flow(0.0));
-#ifdef DEBUG
-                ++pushed_flows;
-#endif
+                if constexpr (DEBUG_MODE) {
+                    ++pushed_flows;
+                }
             }
         }
         if (begin_cheapest_price_range < end_cheapest_price_range) {
@@ -233,30 +222,30 @@ void SalesManager::distribute(const Flow& _) {
                     assert(flow_Z.get_quantity() <= (*served_bc)->last_demand_request_D().get_quantity());
                     (*served_bc)->push_flow_Z(flow_Z);
                     total_revenue_R_ += flow_Z.get_value();
-#ifdef DEBUG
-                    ++pushed_flows;
-#endif
+                    if constexpr (DEBUG_MODE) {
+                        ++pushed_flows;
+                    }
                 }
             } else {  // all demands in cheapest price range can be fulfilled
                 total_revenue_R_ = communicated_parameters_.production_X.get_value();
                 for (auto served_bc = begin_cheapest_price_range; served_bc != end_cheapest_price_range; ++served_bc) {
                     assert((*served_bc)->last_demand_request_D().get_quantity() <= communicated_parameters_.production_X.get_quantity());
                     (*served_bc)->push_flow_Z(round((*served_bc)->last_demand_request_D()));
-#ifdef DEBUG
-                    ++pushed_flows;
-#endif
+                    if constexpr (DEBUG_MODE) {
+                        ++pushed_flows;
+                    }
                 }
             }
         } else {
             total_revenue_R_ = communicated_parameters_.production_X.get_value();
         }
-#ifdef DEBUG
-        if (pushed_flows < business_connections.size()) {
-            debug(pushed_flows);
-            debug(business_connections.size());
+        if constexpr (DEBUG_MODE) {
+            if (pushed_flows < business_connections.size()) {
+                debug(pushed_flows);
+                debug(business_connections.size());
+            }
+            assert(pushed_flows == business_connections.size());
         }
-        assert(pushed_flows == business_connections.size());
-#endif
     }
 }
 
@@ -788,62 +777,6 @@ Flow SalesManager::search_root_bisec_expectation(const FlowQuantity& left,
     return search_root_bisec_expectation(left, middle, production_quantity_X_p, unit_production_costs_n_c, n_min_p, precision_p);
 }
 
-#ifdef DEBUG
-#define PRINT_ROW1(a, b) "      " << std::setw(14) << a << " = " << std::setw(14) << b << '\n'
-#define PRINT_ROW2(a, b, c) "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n"
-
-void SalesManager::print_parameters() const {
-    info(PRINT_ROW1("X", communicated_parameters_.production_X.get_quantity())
-         << PRINT_ROW1("X_exp", communicated_parameters_.expected_production_X.get_quantity())
-         << PRINT_ROW1("X_hat", communicated_parameters_.possible_production_X_hat) << PRINT_ROW1("  lambda", firm->forcing())
-         << PRINT_ROW1("X_star", firm->initial_production_X_star().get_quantity())
-         << PRINT_ROW1("lambda X_star", firm->forced_initial_production_quantity_lambda_X_star())
-         << PRINT_ROW1("p", communicated_parameters_.production_X.get_quantity() / firm->initial_production_X_star().get_quantity())
-         << PRINT_ROW1("p_exp", communicated_parameters_.expected_production_X.get_quantity() / firm->initial_production_X_star().get_quantity())
-         << PRINT_ROW1("m_prod_cost(X)", calc_marginal_production_costs(communicated_parameters_.production_X.get_quantity(),
-                                                                        communicated_parameters_.possible_production_X_hat.get_price() * (1 - tax_)))
-         << PRINT_ROW1("expected m_prod_cost(X)", calc_marginal_production_costs(communicated_parameters_.expected_production_X.get_quantity(),
-                                                                                 communicated_parameters_.possible_production_X_hat.get_price() * (1 - tax_)))
-         << PRINT_ROW1("n_bar", communicated_parameters_.offer_price_n_bar) << PRINT_ROW1("n_c", communicated_parameters_.possible_production_X_hat.get_price())
-         << PRINT_ROW1("  C", total_production_costs_C_));
-}
-
-#endif
-
-#ifdef DEBUG
-
-void SalesManager::print_connections(typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
-                                     typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const {
-#pragma omp critical(output)
-    {
-        std::cout << model()->run()->timeinfo() << ", " << id() << ": supply distribution for " << business_connections.size() << " outputs :\n";
-        FlowQuantity sum = FlowQuantity(0.0);
-        FlowQuantity initial_sum = FlowQuantity(0.0);
-        for (const auto& bc : business_connections) {
-            std::cout << "      " << bc->id() << " :\n"
-                      << PRINT_ROW1("n", bc->last_demand_request_D().get_price()) << PRINT_ROW1("D_r", bc->last_demand_request_D().get_quantity())
-                      << PRINT_ROW1("D_star", bc->initial_flow_Z_star().get_quantity()) << PRINT_ROW1("Z_last", bc->last_shipment_Z(this).get_quantity())
-                      << PRINT_ROW1("in_share", (bc->initial_flow_Z_star() / bc->buyer->storage->initial_input_flow_I_star())) << '\n';
-            sum += bc->last_demand_request_D().get_quantity();
-            initial_sum += bc->initial_flow_Z_star().get_quantity();
-        }
-        if (supply_distribution_scenario.connection_not_served_completely != business_connections.end()) {
-            std::cout << "      not completely served: " << (*supply_distribution_scenario.connection_not_served_completely)->id() << '\n';
-        } else {
-            std::cout << "      all connections served completely\n";
-        }
-        if (begin_equally_distributed != business_connections.end()) {
-            std::cout << "      first_equal_distribution: " << (*begin_equally_distributed)->id() << '\n';
-        }
-        if (end_equally_distributed != business_connections.end()) {
-            std::cout << "      last_equal_distribution:  " << (*end_equally_distributed)->id() << '\n';
-        }
-        std::cout << "      Sums:\n" << PRINT_ROW1("sum D_r", sum) << PRINT_ROW1("sum_star D_r", initial_sum);
-    }
-}
-
-#endif
-
 const SupplyParameters& SalesManager::communicated_parameters() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     return communicated_parameters_;
@@ -865,5 +798,73 @@ void SalesManager::impose_tax(const Ratio tax_p) {
 }
 
 FlowValue SalesManager::get_tax() const { return tax_ * firm->production_X().get_value(); }
+
+void SalesManager::print_details() const {
+    if constexpr (DEBUG_MODE) {
+        info(business_connections.size() << " outputs:");
+        for (const auto bc : business_connections) {
+            info("    " << bc->id() << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
+        }
+    }
+}
+
+void SalesManager::print_parameters() const {
+#define PRINT_ROW1(a, b) "      " << std::setw(14) << a << " = " << std::setw(14) << b << '\n'
+#define PRINT_ROW2(a, b, c) "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n"
+    if constexpr (DEBUG_MODE) {
+        info(PRINT_ROW1("X", communicated_parameters_.production_X.get_quantity())
+             << PRINT_ROW1("X_exp", communicated_parameters_.expected_production_X.get_quantity())
+             << PRINT_ROW1("X_hat", communicated_parameters_.possible_production_X_hat) << PRINT_ROW1("  lambda", firm->forcing())
+             << PRINT_ROW1("X_star", firm->initial_production_X_star().get_quantity())
+             << PRINT_ROW1("lambda X_star", firm->forced_initial_production_quantity_lambda_X_star())
+             << PRINT_ROW1("p", communicated_parameters_.production_X.get_quantity() / firm->initial_production_X_star().get_quantity())
+             << PRINT_ROW1("p_exp", communicated_parameters_.expected_production_X.get_quantity() / firm->initial_production_X_star().get_quantity())
+             << PRINT_ROW1("m_prod_cost(X)", calc_marginal_production_costs(communicated_parameters_.production_X.get_quantity(),
+                                                                            communicated_parameters_.possible_production_X_hat.get_price() * (1 - tax_)))
+             << PRINT_ROW1("expected m_prod_cost(X)",
+                           calc_marginal_production_costs(communicated_parameters_.expected_production_X.get_quantity(),
+                                                          communicated_parameters_.possible_production_X_hat.get_price() * (1 - tax_)))
+             << PRINT_ROW1("n_bar", communicated_parameters_.offer_price_n_bar)
+             << PRINT_ROW1("n_c", communicated_parameters_.possible_production_X_hat.get_price()) << PRINT_ROW1("  C", total_production_costs_C_));
+    }
+#undef PRINT_ROW1
+#undef PRINT_ROW2
+}
+
+void SalesManager::print_connections(typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
+                                     typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const {
+#define PRINT_ROW1(a, b) "      " << std::setw(14) << a << " = " << std::setw(14) << b << '\n'
+#define PRINT_ROW2(a, b, c) "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n"
+    if constexpr (DEBUG_MODE) {
+#pragma omp critical(output)
+        {
+            std::cout << model()->run()->timeinfo() << ", " << id() << ": supply distribution for " << business_connections.size() << " outputs :\n";
+            FlowQuantity sum = FlowQuantity(0.0);
+            FlowQuantity initial_sum = FlowQuantity(0.0);
+            for (const auto& bc : business_connections) {
+                std::cout << "      " << bc->id() << " :\n"
+                          << PRINT_ROW1("n", bc->last_demand_request_D().get_price()) << PRINT_ROW1("D_r", bc->last_demand_request_D().get_quantity())
+                          << PRINT_ROW1("D_star", bc->initial_flow_Z_star().get_quantity()) << PRINT_ROW1("Z_last", bc->last_shipment_Z(this).get_quantity())
+                          << PRINT_ROW1("in_share", (bc->initial_flow_Z_star() / bc->buyer->storage->initial_input_flow_I_star())) << '\n';
+                sum += bc->last_demand_request_D().get_quantity();
+                initial_sum += bc->initial_flow_Z_star().get_quantity();
+            }
+            if (supply_distribution_scenario.connection_not_served_completely != business_connections.end()) {
+                std::cout << "      not completely served: " << (*supply_distribution_scenario.connection_not_served_completely)->id() << '\n';
+            } else {
+                std::cout << "      all connections served completely\n";
+            }
+            if (begin_equally_distributed != business_connections.end()) {
+                std::cout << "      first_equal_distribution: " << (*begin_equally_distributed)->id() << '\n';
+            }
+            if (end_equally_distributed != business_connections.end()) {
+                std::cout << "      last_equal_distribution:  " << (*end_equally_distributed)->id() << '\n';
+            }
+            std::cout << "      Sums:\n" << PRINT_ROW1("sum D_r", sum) << PRINT_ROW1("sum_star D_r", initial_sum);
+        }
+    }
+#undef PRINT_ROW1
+#undef PRINT_ROW2
+}
 
 }  // namespace acclimate

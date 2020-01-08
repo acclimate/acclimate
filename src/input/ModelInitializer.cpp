@@ -46,6 +46,13 @@
 #include "optimization.h"
 #include "run.h"
 
+// TODO Set directly
+#ifdef CLEANUP_INFO
+static constexpr bool CLEANUP_INFO_MODE = true;
+#else
+static constexpr bool CLEANUP_INFO_MODE = false;
+#endif
+
 namespace acclimate {
 
 ModelInitializer::ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p) : model_m(model_p), settings(settings_p) {
@@ -191,9 +198,9 @@ void ModelInitializer::clean_network() {
         firm_count = 0;
         consumer_count = 0;
         needs_cleaning = false;
-#ifdef CLEANUP_INFO
-        info("Cleaning up...");
-#endif
+        if constexpr (CLEANUP_INFO_MODE) {
+            info("Cleaning up...");
+        }
         for (auto& region : model()->regions) {
             for (auto economic_agent = region->economic_agents.begin(); economic_agent != region->economic_agents.end();) {
                 if ((*economic_agent)->type == EconomicAgent::Type::FIRM) {
@@ -210,16 +217,16 @@ void ModelInitializer::clean_network() {
                         || (firm->input_storages.size() == 1 && firm->self_supply_connection() != nullptr)) {
                         needs_cleaning = true;
 
-#ifdef CLEANUP_INFO
-                        if (value_added <= 0.0) {
-                            warning(firm->id() << ": removed (value added only " << value_added << ")");
-                        } else if (firm->sales_manager->business_connections.size() == 0
-                                   || (firm->sales_manager->business_connections.size() == 1 && firm->self_supply_connection())) {
-                            warning(firm->id() << ": removed (no outgoing connection)");
-                        } else {
-                            warning(firm->id() << ": removed (no incoming connection)");
+                        if constexpr (CLEANUP_INFO_MODE) {
+                            if (value_added <= 0.0) {
+                                warning(firm->id() << ": removed (value added only " << value_added << ")");
+                            } else if (firm->sales_manager->business_connections.size() == 0
+                                       || (firm->sales_manager->business_connections.size() == 1 && firm->self_supply_connection())) {
+                                warning(firm->id() << ": removed (no outgoing connection)");
+                            } else {
+                                warning(firm->id() << ": removed (no incoming connection)");
+                            }
                         }
-#endif
                         // Alter initial_input_flow of buying economic agents
                         for (auto& business_connection : firm->sales_manager->business_connections) {
                             if (business_connection->buyer == nullptr) {
@@ -252,9 +259,9 @@ void ModelInitializer::clean_network() {
                     Consumer* consumer = (*economic_agent)->as_consumer();
 
                     if (consumer->input_storages.empty()) {
-#ifdef CLEANUP_INFO
-                        warning(consumer->id() << ": removed (no incoming connection)");
-#endif
+                        if constexpr (CLEANUP_INFO_MODE) {
+                            warning(consumer->id() << ": removed (no incoming connection)");
+                        }
                         // Clean up memory of consumer
                         economic_agent = region->economic_agents.erase(economic_agent);
                     } else {
@@ -274,42 +281,42 @@ void ModelInitializer::clean_network() {
     }
 }
 
-#ifdef DEBUG
-
 void ModelInitializer::print_network_characteristics() const {
-    FloatType average_transport_delay = 0;
-    unsigned int region_wo_firm_count = 0;
-    for (auto& region : model()->regions) {
-        FloatType average_transport_delay_region = 0;
-        unsigned int firm_count = 0;
-        for (auto& economic_agent : region->economic_agents) {
-            if (economic_agent->type == EconomicAgent::Type::FIRM) {
-                FloatType average_tranport_delay_economic_agent = 0;
-                Firm* firm = economic_agent->as_firm();
-                for (auto& business_connection : firm->sales_manager->business_connections) {
-                    average_tranport_delay_economic_agent += business_connection->get_transport_delay_tau();
+    if constexpr (DEBUG_MODE) {
+        FloatType average_transport_delay = 0;
+        unsigned int region_wo_firm_count = 0;
+        for (auto& region : model()->regions) {
+            FloatType average_transport_delay_region = 0;
+            unsigned int firm_count = 0;
+            for (auto& economic_agent : region->economic_agents) {
+                if (economic_agent->type == EconomicAgent::Type::FIRM) {
+                    FloatType average_tranport_delay_economic_agent = 0;
+                    Firm* firm = economic_agent->as_firm();
+                    for (auto& business_connection : firm->sales_manager->business_connections) {
+                        average_tranport_delay_economic_agent += business_connection->get_transport_delay_tau();
+                    }
+                    assert(!economic_agent->as_firm()->sales_manager->business_connections.empty());
+                    average_tranport_delay_economic_agent /= FloatType(firm->sales_manager->business_connections.size());
+                    ++firm_count;
+                    average_transport_delay_region += average_tranport_delay_economic_agent;
                 }
-                assert(!economic_agent->as_firm()->sales_manager->business_connections.empty());
-                average_tranport_delay_economic_agent /= FloatType(firm->sales_manager->business_connections.size());
-                ++firm_count;
-                average_transport_delay_region += average_tranport_delay_economic_agent;
+            }
+            if (firm_count > 0) {
+                average_transport_delay_region /= FloatType(firm_count);
+                if constexpr (CLEANUP_INFO_MODE) {
+                    info(region->id() << ": number of firms: " << firm_count << " average transport delay: " << average_transport_delay_region);
+                }
+                average_transport_delay += average_transport_delay_region;
+            } else {
+                ++region_wo_firm_count;
+                warning(region->id() << ": no firm");
             }
         }
-        if (firm_count > 0) {
-            average_transport_delay_region /= FloatType(firm_count);
-#ifdef CLEANUP_INFO
-            info(region->id() << ": number of firms: " << firm_count << " average transport delay: " << average_transport_delay_region);
-#endif
-            average_transport_delay += average_transport_delay_region;
-        } else {
-            ++region_wo_firm_count;
-            warning(region->id() << ": no firm");
+        average_transport_delay /= FloatType(model()->regions.size() - region_wo_firm_count);
+        if constexpr (CLEANUP_INFO_MODE) {
+            info("Average transport delay: " << average_transport_delay);
         }
     }
-    average_transport_delay /= FloatType(model()->regions.size() - region_wo_firm_count);
-#ifdef CLEANUP_INFO
-    info("Average transport delay: " << average_transport_delay);
-#endif
 }
 
 #endif
