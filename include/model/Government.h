@@ -36,16 +36,14 @@ class Government {
   public:
     const Region* region;
 
-  protected:
-    Value budget_;
-
   private:
+    Value budget_;
     std::unordered_map<Firm*, Ratio> taxed_firms;
 
   public:
     inline const Value& budget() const { return budget_; }
 
-  protected:
+  private:
     void collect_tax();
     void redistribute_tax();
     void impose_tax();

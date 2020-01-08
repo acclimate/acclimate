@@ -33,7 +33,6 @@ namespace acclimate {
 
 CapacityManager::CapacityManager(Firm* firm_p, Ratio possible_overcapacity_ratio_beta_p)
     : firm(firm_p), possible_overcapacity_ratio_beta(possible_overcapacity_ratio_beta_p) {
-    // TODO: is the argument Ratio or const Ratio&?
 }
 
 Ratio CapacityManager::get_production_capacity_p() const { return firm->production_X() / firm->initial_production_X_star(); }
@@ -52,23 +51,21 @@ Model* CapacityManager::model() const { return firm->model(); }
 
 std::string CapacityManager::id() const { return firm->id(); }
 
-#ifdef DEBUG
-
 void CapacityManager::print_inputs() const {
-    info(id() << ": " << firm->input_storages.size() << " inputs:");
-    for (const auto& is : firm->input_storages) {
-        Flow possible_use_U_hat = is->get_possible_use_U_hat();
-        info("    " << is->id() << ":"
+    if constexpr (DEBUG_MODE) {
+        info(id() << ": " << firm->input_storages.size() << " inputs:");
+        for (const auto& is : firm->input_storages) {
+            Flow possible_use_U_hat = is->get_possible_use_U_hat();
+            info("    " << is->id() << ":"
 
-                    << "  U_hat= " << std::setw(11) << possible_use_U_hat.get_quantity()
+                        << "  U_hat= " << std::setw(11) << possible_use_U_hat.get_quantity()
 
-                    << "  n_hat= " << std::setw(11) << possible_use_U_hat.get_price()
+                        << "  n_hat= " << std::setw(11) << possible_use_U_hat.get_price()
 
-                    << "  n_hat*a= " << std::setw(11) << (possible_use_U_hat.get_price() * is->get_technology_coefficient_a()));
+                        << "  n_hat*a= " << std::setw(11) << (possible_use_U_hat.get_price() * is->get_technology_coefficient_a()));
+        }
     }
 }
-
-#endif
 
 Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
     assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);

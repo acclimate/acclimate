@@ -63,9 +63,8 @@ class CapacityManager {
     Flow get_possible_production_X_hat() const;
     Flow estimate_possible_production_X_hat() const;
     Flow calc_production_X();
-#ifdef DEBUG
+    // DEBUG
     void print_inputs() const;
-#endif
 };
 }  // namespace acclimate
 

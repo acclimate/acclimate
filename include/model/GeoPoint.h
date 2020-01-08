@@ -28,7 +28,7 @@
 namespace acclimate {
 
 class GeoPoint {
-  protected:
+  private:
     const FloatType lon_, lat_;
 
   public:

@@ -91,7 +91,7 @@ class PurchasingManager {
     FloatType objective_costs(const FloatType x[], FloatType grad[], const OptimizerData* data) const;
     inline FloatType scaled_D_r(FloatType D_r, const BusinessConnection* bc) const;
     inline FloatType unscaled_D_r(FloatType x, const BusinessConnection* bc) const;
-    inline FloatType partial_D_r_scaled_D_r(const BusinessConnection* bc) const;
+    static inline FloatType partial_D_r_scaled_D_r(const BusinessConnection* bc);
     inline FloatType scaled_objective(FloatType obj) const;
     inline FloatType unscaled_objective(FloatType x) const;
     inline FloatType partial_objective_scaled_objective() const;

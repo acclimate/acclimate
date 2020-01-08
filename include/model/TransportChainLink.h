@@ -37,7 +37,7 @@ class Model;
 class TransportChainLink {
     friend class BusinessConnection;
 
-  protected:
+  private:
     Forcing forcing_nu;
     FlowQuantity initial_flow_quantity;
     Flow overflow;

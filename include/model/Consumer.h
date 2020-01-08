@@ -37,9 +37,6 @@ class Consumer : public EconomicAgent {
   private:
     using EconomicAgent::forcing_;
 
-    void add_revenue_to_budget();
-    void substract_input_costs_from_budget();
-
   public:
     Consumer* as_consumer() override { return this; };
     explicit Consumer(Region* region_p);

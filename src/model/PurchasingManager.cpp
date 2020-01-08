@@ -831,7 +831,7 @@ FlowQuantity PurchasingManager::calc_analytical_approximation_X_max(const Busine
 void PurchasingManager::print_details() const {
     if constexpr (DEBUG_MODE) {
         info(business_connections.size() << " inputs:  I_star= " << storage->initial_input_flow_I_star().get_quantity());
-        for (const auto bc : business_connections) {
+        for (const auto& bc : business_connections) {
             info("    " << bc->id() << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity() << "  X_star= " << std::setw(11)
                         << bc->seller->firm->initial_production_X_star().get_quantity());
         }
