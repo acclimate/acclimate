@@ -209,17 +209,17 @@ void Model::tick() {
     ++timestep_;
 }
 
-void Model::delta_t(const Time& delta_t_p) {
+void Model::set_delta_t(const Time& delta_t_p) {
     assertstep(INITIALIZATION);
     delta_t_ = delta_t_p;
 }
 
-void Model::start_time(const Time& start_time) {
+void Model::set_start_time(const Time& start_time) {
     assertstep(INITIALIZATION);
     start_time_ = start_time;
 }
 
-void Model::stop_time(const Time& stop_time) {
+void Model::set_stop_time(const Time& stop_time) {
     assertstep(INITIALIZATION);
     stop_time_ = stop_time;
 }

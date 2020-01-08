@@ -39,12 +39,18 @@ class Sector;
 class Scenario;
 
 class ArrayOutput : public Output {
-  public:
-    using Output::id;
-    using Output::model;
-    using Output::output_node;
-    using Output::scenario;
+  protected:
+    struct Target {
+        hstring name;
+        std::size_t index = 0;
+        Sector* sector;
+        Region* region;
 
+        Target(hstring name_p, std::size_t index_p, Sector* sector_p, Region* region_p)
+            : name(std::move(name_p)), index(index_p), sector(sector_p), region(region_p) {}
+    };
+
+  public:
     struct Variable {
         std::vector<FloatType> data;
         std::vector<std::size_t> shape;  // without time
@@ -66,16 +72,6 @@ class ArrayOutput : public Output {
     };
 
   protected:
-    struct Target {
-        hstring name;
-        std::size_t index = 0;
-        Sector* sector;
-        Region* region;
-
-        Target(hstring name_p, std::size_t index_p, Sector* sector_p, Region* region_p)
-            : name(std::move(name_p)), index(index_p), sector(sector_p), region(region_p) {}
-    };
-
     std::size_t sectors_size = 0;
     std::size_t regions_size = 0;
     std::unordered_map<hstring::hash_type, Variable> variables;
@@ -83,6 +79,10 @@ class ArrayOutput : public Output {
     std::vector<Event> events;
     bool include_events;
     bool over_time;
+
+  public:
+    using Output::output_node;
+    using Output::scenario;
 
   protected:
     void internal_write_value(const hstring& name, FloatType v, const hstring& suffix) override;
@@ -92,16 +92,14 @@ class ArrayOutput : public Output {
     void internal_start_target(const hstring& name) override;
     void internal_end_target() override;
     void internal_iterate_begin() override;
-    inline std::size_t current_index() const;
-    inline Variable& create_variable(const hstring& path, const hstring& name, const hstring& suffix);
-
+    std::size_t current_index() const;
+    Variable& create_variable(const hstring& path, const hstring& name, const hstring& suffix);
     virtual void create_variable_meta(Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
         UNUSED(v);
         UNUSED(path);
         UNUSED(name);
         UNUSED(suffix);
     }
-
     virtual bool internal_handle_event(Event& event) {
         UNUSED(event);
         return true;
@@ -115,7 +113,8 @@ class ArrayOutput : public Output {
     void initialize() override;
     const typename ArrayOutput::Variable& get_variable(const hstring& fullname) const;
 
-    const std::vector<Event>& get_events() const { return events; }
+    const std::vector<Event>& get_events() const { return events; }    using Output::id;
+    using Output::model;
 };
 }  // namespace acclimate
 

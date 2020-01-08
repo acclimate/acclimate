@@ -33,15 +33,12 @@ class Model;
 class Region;
 
 class Government {
-  public:
-    const Region* region;
-
   private:
     Value budget_;
     std::unordered_map<Firm*, Ratio> taxed_firms;
 
   public:
-    inline const Value& budget() const { return budget_; }
+    const Region* region;
 
   private:
     void collect_tax();
@@ -55,6 +52,7 @@ class Government {
     void iterate_purchase();
     void iterate_investment();
     void define_tax(const std::string& sector, const Ratio& tax_ratio_p);
+    const Value& budget() const { return budget_; }
     Model* model() const;
     std::string id() const;
 };

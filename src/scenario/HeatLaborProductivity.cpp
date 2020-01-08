@@ -50,7 +50,7 @@ void HeatLaborProductivity::set_region_forcing(Region* region, const HeatLaborPr
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
         auto& it = region->economic_agents[i];
         if (it->type == EconomicAgent::Type::FIRM) {
-            it->forcing(1 - forcing[i] / proxy_sum);
+            it->set_forcing(1 - forcing[i] / proxy_sum);
         }
     }
 }

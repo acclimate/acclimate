@@ -843,6 +843,4 @@ void Output::event(EventType type, const EconomicAgent* economic_agent_from, con
 
 bool Output::is_first_timestep() const { return scenario->is_first_timestep(); }
 
-bool Output::is_last_timestep() const { return scenario->is_last_timestep(); }
-
 }  // namespace acclimate

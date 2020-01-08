@@ -26,9 +26,7 @@
 namespace acclimate {
 
 class Taxes : public Scenario {
-  protected:
-    using Scenario::id;
-    using Scenario::model;
+  private:
     using Scenario::scenario_node;
     using Scenario::settings;
 
@@ -36,6 +34,8 @@ class Taxes : public Scenario {
     Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
     Time start() override;
     bool iterate() override;
+    using Scenario::id;
+    using Scenario::model;
 };
 }  // namespace acclimate
 

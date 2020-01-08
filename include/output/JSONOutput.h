@@ -34,14 +34,15 @@ class Sector;
 class Scenario;
 
 class JSONOutput : public Output {
+  private:
+    std::ostream* out = nullptr;
+    std::unique_ptr<std::ofstream> outfile;
+
   public:
-    using Output::model;
     using Output::output_node;
     using Output::settings_string;
 
-  protected:
-    std::ostream* out = nullptr;
-    std::unique_ptr<std::ofstream> outfile;
+  private:
     void internal_write_header(tm* timestamp, unsigned int max_threads) override;
     void internal_write_footer(tm* duration) override;
     void internal_write_settings() override;
@@ -58,6 +59,7 @@ class JSONOutput : public Output {
   public:
     JSONOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
+    using Output::model;
 };
 }  // namespace acclimate
 

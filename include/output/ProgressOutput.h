@@ -36,15 +36,13 @@ class Sector;
 class Scenario;
 
 class ProgressOutput : public Output {
-  public:
-    using Output::id;
-    using Output::model;
-    using Output::output_node;
-
-  protected:
+  private:
     std::unique_ptr<progressbar::ProgressBar> bar;
 
-  protected:
+  public:
+    using Output::output_node;
+
+  private:
     void internal_iterate_end() override;
     void internal_end() override;
 
@@ -53,6 +51,8 @@ class ProgressOutput : public Output {
     void initialize() override;
     void checkpoint_resume() override;
     void checkpoint_stop() override;
+    using Output::id;
+    using Output::model;
 };
 }  // namespace acclimate
 

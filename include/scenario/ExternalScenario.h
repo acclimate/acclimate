@@ -32,10 +32,7 @@ namespace acclimate {
 class ExternalScenario : public Scenario {
   protected:
     using Scenario::scenario_node;
-    using Scenario::set_consumer_property;
-    using Scenario::set_firm_property;
     using Scenario::settings;
-
     std::string forcing_file;
     std::string expression;
     std::string variable_name;
@@ -49,35 +46,30 @@ class ExternalScenario : public Scenario {
     Time time_offset = Time(0.0);
     int time_step_width = 1;
     bool stop_time_known = false;
-
     std::unique_ptr<ExternalForcing> forcing;
 
+  protected:
+    ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    using Scenario::set_consumer_property;
+    using Scenario::set_firm_property;
     bool next_forcing_file();
     std::string fill_template(const std::string& in) const;
-    ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
-
     virtual void internal_start() {}
-
     virtual void internal_iterate_start() {}
-
     virtual bool internal_iterate_end() { return true; }
-
     virtual void iterate_first_timestep() {}
-
     virtual ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) = 0;
     virtual void read_forcings() = 0;
 
   public:
+    ~ExternalScenario() override = default;
     using Scenario::id;
     using Scenario::is_first_timestep;
     using Scenario::model;
-    ~ExternalScenario() override = default;
     bool iterate() override;
     Time start() override;
     void end() override;
-
     std::string calendar_str() const override { return calendar_str_; }
-
     std::string time_units_str() const override { return time_units_str_; }
 };
 }  // namespace acclimate

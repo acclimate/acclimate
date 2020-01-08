@@ -35,21 +35,21 @@ class Scenario;
 
 class DamageOutput : public Output {
   public:
-    using Output::model;
     using Output::output_node;
 
   private:
     FlowQuantity damage;
-
-  protected:
     std::ostream* out;
     std::unique_ptr<std::ofstream> outfile;
+
+  private:
     void internal_iterate_end() override;
     void internal_end() override;
 
   public:
     DamageOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
+    using Output::model;
 };
 }  // namespace acclimate
 

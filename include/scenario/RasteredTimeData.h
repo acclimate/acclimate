@@ -30,7 +30,7 @@ namespace acclimate {
 
 template<typename T>
 class RasteredTimeData : public RasteredData<T>, public ExternalForcing {
-  protected:
+  private:
     using RasteredData<T>::read_boundaries;
     using RasteredData<T>::data;
     using RasteredData<T>::id;
@@ -39,6 +39,8 @@ class RasteredTimeData : public RasteredData<T>, public ExternalForcing {
     using RasteredData<T>::filename;
     using ExternalForcing::time_index;
     using ExternalForcing::variable;
+
+  private:
     void read_data() override;
 
   public:

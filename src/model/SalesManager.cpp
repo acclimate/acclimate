@@ -802,7 +802,7 @@ FlowValue SalesManager::get_tax() const { return tax_ * firm->production_X().get
 void SalesManager::print_details() const {
     if constexpr (DEBUG_MODE) {
         info(business_connections.size() << " outputs:");
-        for (const auto bc : business_connections) {
+        for (const auto& bc : business_connections) {
             info("    " << bc->id() << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
         }
     }

@@ -77,7 +77,7 @@ Parameters::AgentParameters const& EconomicAgent::parameters_writable() const {
     return parameters_;
 }
 
-void EconomicAgent::forcing(const Forcing& forcing_p) {
+void EconomicAgent::set_forcing(const Forcing& forcing_p) {
     assertstep(SCENARIO);
     assert(forcing_p >= 0.0);
     forcing_ = forcing_p;

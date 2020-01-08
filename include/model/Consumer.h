@@ -28,14 +28,12 @@ namespace acclimate {
 class Region;
 
 class Consumer : public EconomicAgent {
-  public:
-    using EconomicAgent::id;
-    using EconomicAgent::input_storages;
-    using EconomicAgent::model;
-    using EconomicAgent::region;
-
   private:
     using EconomicAgent::forcing_;
+
+  public:
+    using EconomicAgent::input_storages;
+    using EconomicAgent::region;
 
   public:
     Consumer* as_consumer() override { return this; };
@@ -44,6 +42,8 @@ class Consumer : public EconomicAgent {
     void iterate_expectation() override;
     void iterate_purchase() override;
     void iterate_investment() override;
+    using EconomicAgent::id;
+    using EconomicAgent::model;
     // DEBUG
     void print_details() const override;
 };

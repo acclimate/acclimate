@@ -46,9 +46,9 @@ void Scenario::set_firm_property(Firm* firm, const settings::SettingsNode& node,
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
         if (name == "remaining_capacity") {
-            firm->forcing(reset ? 1.0 : it.as<Forcing>() / firm->capacity_manager->possible_overcapacity_ratio_beta);
+            firm->set_forcing(reset ? 1.0 : it.as<Forcing>() / firm->capacity_manager->possible_overcapacity_ratio_beta);
         } else if (name == "forcing") {
-            firm->forcing(reset ? Forcing(1.0) : it.as<Forcing>());
+            firm->set_forcing(reset ? Forcing(1.0) : it.as<Forcing>());
         }
     }
 }
@@ -58,7 +58,7 @@ void Scenario::set_consumer_property(Consumer* consumer, const settings::Setting
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
         if (name == "remaining_consumption_rate") {
-            consumer->forcing(reset ? Forcing(1.0) : it.as<Forcing>());
+            consumer->set_forcing(reset ? Forcing(1.0) : it.as<Forcing>());
         }
     }
 }
@@ -172,7 +172,5 @@ std::string Scenario::time_units_str() const {
 }
 
 bool Scenario::is_first_timestep() const { return model()->timestep() == 0; }
-
-bool Scenario::is_last_timestep() const { return model()->time() >= model()->stop_time(); }
 
 }  // namespace acclimate

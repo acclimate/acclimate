@@ -37,19 +37,14 @@ class Model;
 class Scenario;
 
 class NetCDFOutput : public ArrayOutput {
-  public:
-    using Output::id;
-    using Output::model;
-    using Output::output_node;
-    using Output::scenario;
-    using Output::settings_string;
-
-  protected:
+  private:
     struct VariableMeta {
         std::vector<std::size_t> index;
         std::vector<std::size_t> sizes;
         netCDF::NcVar nc_var;
     };
+
+  private:
     using ArrayOutput::include_events;
     using ArrayOutput::regions_size;
     using ArrayOutput::sectors_size;
@@ -68,7 +63,12 @@ class NetCDFOutput : public ArrayOutput {
     std::string filename;
     OpenMPLock netcdf_event_lock;
 
-  protected:
+  public:
+    using Output::output_node;
+    using Output::scenario;
+    using Output::settings_string;
+
+  private:
     void internal_write_header(tm* timestamp, unsigned int max_threads) override;
     void internal_write_footer(tm* duration) override;
     void internal_write_settings() override;
@@ -87,6 +87,8 @@ class NetCDFOutput : public ArrayOutput {
     void flush() override;
     void checkpoint_stop() override;
     void checkpoint_resume() override;
+    using Output::id;
+    using Output::model;
 };
 }  // namespace acclimate
 

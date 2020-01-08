@@ -35,6 +35,8 @@ class GeoConnection : public GeoEntity {
     const GeoLocation* location1;  // TODO encapsulate
     const GeoLocation* location2;  // TODO encapsulate
     const Type type;
+
+  public:
     GeoConnection(Model* model_m, TransportDelay delay, Type type_p, const GeoLocation* location1_p, const GeoLocation* location2_p);
     void invalidate_location(const GeoLocation* location);
     std::string id() const override;

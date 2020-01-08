@@ -44,7 +44,7 @@ void DirectPopulation::reset_forcing(Region* region, FloatType& forcing) const {
 void DirectPopulation::set_region_forcing(Region* region, const FloatType& forcing, FloatType proxy_sum) const {
     for (auto& it : region->economic_agents) {
         if (it->is_firm()) {
-            it->as_firm()->forcing(1.0 - forcing / proxy_sum);
+            it->as_firm()->set_forcing(1.0 - forcing / proxy_sum);
         }
     }
 }

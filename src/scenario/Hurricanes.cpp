@@ -44,7 +44,7 @@ void Hurricanes::reset_forcing(Region* region, FloatType& forcing) const {
 void Hurricanes::set_region_forcing(Region* region, const FloatType& forcing, FloatType proxy_sum) const {
     for (auto& it : region->economic_agents) {
         if (it->type == EconomicAgent::Type::FIRM) {
-            it->forcing(1.0 - forcing / proxy_sum);
+            it->set_forcing(1.0 - forcing / proxy_sum);
         }
     }
 }

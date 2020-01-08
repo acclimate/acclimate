@@ -41,9 +41,9 @@ void EventSeriesScenario::read_forcings() {
     for (std::size_t i = 0; i < forcing_l->firms.size(); ++i) {
         if (forcing_l->firms[i] != nullptr) {
             if (std::isnan(forcing_l->forcings[i])) {
-                forcing_l->firms[i]->forcing(1.0);
+                forcing_l->firms[i]->set_forcing(1.0);
             } else {
-                forcing_l->firms[i]->forcing(forcing_l->forcings[i]);
+                forcing_l->firms[i]->set_forcing(forcing_l->forcings[i]);
             }
         }
     }

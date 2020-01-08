@@ -33,6 +33,7 @@ class Model;
 class PurchasingManager;
 class SalesManager;
 class TransportChainLink;
+
 class BusinessConnection {
   private:
     Demand last_demand_request_D_;
@@ -49,24 +50,19 @@ class BusinessConnection {
     PurchasingManager* buyer;  // TODO encapsulate
     SalesManager* seller;      // TODO encapsulate
 
+  public:
     BusinessConnection(PurchasingManager* buyer_p, SalesManager* seller_p, const Flow& initial_flow_Z_star_p);
 
-    inline const Time& time() const { return time_; }
+    const Time& time() const { return time_; }
 
-    inline void time(const Time& time_p) { time_ = time_p; }
+    void time(const Time& time_p) { time_ = time_p; }
 
     const Flow& last_shipment_Z(const SalesManager* caller = nullptr) const;
     const Flow& last_delivery_Z(const SalesManager* const caller = nullptr) const;
     const Demand& last_demand_request_D(const PurchasingManager* const caller = nullptr) const;
-
-    inline const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; }
-
-    void initial_flow_Z_star(const Flow& new_initial_flow_Z_star);
-
-    inline void invalidate_buyer() { buyer = nullptr; }
-
-    inline void invalidate_seller() { seller = nullptr; }
-
+    const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; }
+    void invalidate_buyer() { buyer = nullptr; }
+    void invalidate_seller() { seller = nullptr; }
     std::size_t get_id(const TransportChainLink* transport_chain_link) const;
     Flow get_flow_mean() const;
     FlowQuantity get_flow_deficit() const;
@@ -80,7 +76,6 @@ class BusinessConnection {
     void deliver_flow_Z(const Flow& flow_Z);
     void send_demand_request_D(const Demand& demand_request_D);
     bool get_domestic() const;
-
     Model* model() const;
     std::string id() const;
 };

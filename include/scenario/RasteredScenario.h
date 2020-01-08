@@ -43,16 +43,16 @@ class RasteredScenario : public ExternalScenario {
 
   protected:
     using ExternalScenario::forcing;
-    using ExternalScenario::model;
     using ExternalScenario::next_time;
     using ExternalScenario::scenario_node;
     using ExternalScenario::settings;
-
     std::unique_ptr<RasteredData<int>> iso_raster;
     std::unique_ptr<RasteredData<FloatType>> proxy;
     std::vector<RegionInfo> region_forcings;
     FloatType total_current_proxy_sum_ = 0;
 
+  protected:
+    RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
     virtual RegionForcingType new_region_forcing(Region* region) const = 0;
     virtual void set_region_forcing(Region* region, const RegionForcingType& forcing, FloatType proxy_sum) const = 0;
     virtual void reset_forcing(Region* region, RegionForcingType& forcing) const = 0;
@@ -64,15 +64,12 @@ class RasteredScenario : public ExternalScenario {
     void iterate_first_timestep() override;
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
-    RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
 
   public:
-    using ExternalScenario::id;
     ~RasteredScenario() override = default;
-
-    inline const std::vector<RegionInfo>& forcings() const { return region_forcings; }
-
-    inline FloatType total_current_proxy_sum() const { return total_current_proxy_sum_; }
+    using ExternalScenario::id;
+    using ExternalScenario::model;
+    const std::vector<RegionInfo>& forcings() const { return region_forcings; }
 };
 }  // namespace acclimate
 

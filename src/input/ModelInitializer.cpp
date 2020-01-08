@@ -58,9 +58,9 @@ namespace acclimate {
 ModelInitializer::ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p) : model_m(model_p), settings(settings_p) {
     const settings::SettingsNode& parameters = settings["model"];
     const settings::SettingsNode& run = settings["run"];
-    model()->start_time(run["start"].as<Time>());
-    model()->stop_time(run["stop"].as<Time>());
-    model()->delta_t(parameters["delta_t"].as<Time>());
+    model()->set_start_time(run["start"].as<Time>());
+    model()->set_stop_time(run["stop"].as<Time>());
+    model()->set_delta_t(parameters["delta_t"].as<Time>());
     model()->no_self_supply(parameters["no_self_supply"].as<bool>());
 }
 

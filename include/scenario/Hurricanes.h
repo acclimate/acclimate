@@ -31,8 +31,10 @@ class Model;
 class Region;
 
 class Hurricanes : public RasteredScenario<FloatType> {
-  protected:
+  private:
     FloatType threshold;
+
+  private:
     FloatType new_region_forcing(Region* region) const override;
     void set_region_forcing(Region* region, const FloatType& forcing, FloatType proxy_sum) const override;
     void reset_forcing(Region* region, FloatType& forcing) const override;

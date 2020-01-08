@@ -60,7 +60,7 @@ void Flooding::set_region_forcing(Region* region, const FloatType& forcing, Floa
     for (auto& it : region->economic_agents) {
         if (it->is_firm()) {
             if (sectors.empty() || std::find(sectors.begin(), sectors.end(), it->as_firm()->sector->index()) != sectors.end()) {
-                it->forcing(1.0 - forcing / proxy_sum);
+                it->set_forcing(1.0 - forcing / proxy_sum);
             }
         }
     }

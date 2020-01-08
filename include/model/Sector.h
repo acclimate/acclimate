@@ -51,6 +51,14 @@ class Sector {
     Flow last_total_production_X_m = Flow(0.0);
     Parameters::SectorParameters parameters_m;
     Model* const model_m;
+
+  public:
+    const Ratio upper_storage_limit_omega;
+    const Time initial_storage_fill_factor_psi;
+    const TransportType transport_type;
+    std::vector<Firm*> firms;
+
+  private:
     Sector(Model* model_p,
            std::string id_p,
            IndexType index_p,
@@ -60,22 +68,9 @@ class Sector {
 
   public:
     const Demand& total_demand_D() const;
-
-    inline const Demand& last_total_production_X() const { return last_total_production_X_m; }
-
     const Demand& total_production_X() const;
-
-    inline const Parameters::SectorParameters& parameters() const { return parameters_m; }
-
+    const Parameters::SectorParameters& parameters() const { return parameters_m; }
     Parameters::SectorParameters& parameters_writable();
-
-  public:
-    const Ratio upper_storage_limit_omega;
-    const Time initial_storage_fill_factor_psi;
-    const TransportType transport_type;
-    std::vector<Firm*> firms;
-
-  public:
     void add_demand_request_D(const Demand& demand_request_D);
     void add_production_X(const Flow& production_X);
     void add_initial_production_X(const Flow& production_X);
@@ -83,11 +78,10 @@ class Sector {
     void iterate_consumption_and_production();
     void remove_firm(Firm* firm);
 
-    inline IndexType index() const { return index_m; }
+    IndexType index() const { return index_m; }
 
-    inline Model* model() const { return model_m; }
-
-    inline const std::string& id() const { return id_m; }
+    Model* model() const { return model_m; }
+    const std::string& id() const { return id_m; }
 };
 }  // namespace acclimate
 

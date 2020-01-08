@@ -84,7 +84,7 @@ class EconomicAgent;
 class Run {
     friend class Acclimate;
 
-  protected:
+  private:
     std::unique_ptr<Model> model_m;
     std::vector<std::unique_ptr<Scenario>> scenarios_m;
     std::vector<std::unique_ptr<Output>> outputs_m;
@@ -93,27 +93,20 @@ class Run {
     IterationStep step_m = IterationStep::INITIALIZATION;
     bool has_run = false;
 
+  private:
     int run();
-
-    inline void step(const IterationStep& step_p) { step_m = step_p; }
+    void step(const IterationStep& step_p) { step_m = step_p; }
 
   public:
     explicit Run(const settings::SettingsNode& settings);
     ~Run();
-
-    inline IterationStep step() const { return step_m; }
-
-    inline unsigned int time() const { return time_m; }
-
-    inline const std::size_t& duration() const { return duration_m; }
-
+    IterationStep step() const { return step_m; }
+    unsigned int time() const { return time_m; }
+    const std::size_t& duration() const { return duration_m; }
     unsigned int thread_count() const;
     std::string timeinfo() const;
-
-    inline const Model* model() { return model_m.get(); }
-
-    inline const Output* output(const IndexType i) { return outputs_m[i].get(); }
-
+    const Model* model() { return model_m.get(); }
+    const Output* output(const IndexType i) { return outputs_m[i].get(); }
     void event(EventType type,
                const Sector* sector_from,
                const Region* region_from,

@@ -63,7 +63,7 @@ void handle_sigterm(int /* signal */) { checkpoint_scheduled = true; }
 #endif
 
 Run::Run(const settings::SettingsNode& settings) {
-    step(IterationStep::INITIALIZATION);
+    set_step(IterationStep::INITIALIZATION);
 
 #ifdef ENABLE_DMTCP
     if (instantiated) {
@@ -147,7 +147,7 @@ int Run::run() {
 
     info_("Starting model run on max. " << thread_count() << " threads");
 
-    step(IterationStep::INITIALIZATION);
+    set_step(IterationStep::INITIALIZATION);
 
     for (const auto& scenario : scenarios_m) {
         scenario->start();
@@ -158,7 +158,7 @@ int Run::run() {
     }
     time_m = 0;
 
-    step(IterationStep::SCENARIO);
+    set_step(IterationStep::SCENARIO);
     auto t0 = std::chrono::high_resolution_clock::now();
 
     while (!model_m->done()) {
@@ -169,23 +169,23 @@ int Run::run() {
 
         model_m->switch_registers();
 
-        step(IterationStep::CONSUMPTION_AND_PRODUCTION);
+        set_step(IterationStep::CONSUMPTION_AND_PRODUCTION);
         model_m->iterate_consumption_and_production();
 
-        step(IterationStep::EXPECTATION);
+        set_step(IterationStep::EXPECTATION);
         model_m->iterate_expectation();
 
-        step(IterationStep::PURCHASE);
+        set_step(IterationStep::PURCHASE);
         model_m->iterate_purchase();
 
-        step(IterationStep::INVESTMENT);
+        set_step(IterationStep::INVESTMENT);
         model_m->iterate_investment();
 
         auto t1 = std::chrono::high_resolution_clock::now();
         duration_m = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
         t0 = t1;
 
-        step(IterationStep::OUTPUT);
+        set_step(IterationStep::OUTPUT);
         info_("Iteration took " << duration_m << " ms");
         for (const auto& output : outputs_m) {
             output->iterate();
@@ -227,7 +227,7 @@ int Run::run() {
         }
 #endif
 
-        step(IterationStep::SCENARIO);
+        set_step(IterationStep::SCENARIO);
         model_m->tick();
         ++time_m;
     }

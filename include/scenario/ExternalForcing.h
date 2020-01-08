@@ -37,6 +37,8 @@ class ExternalForcing {
     std::unique_ptr<netCDF::NcFile> file;
     netCDF::NcVar variable;
     netCDF::NcVar time_variable;
+
+  protected:
     virtual void read_data() = 0;
 
   public:

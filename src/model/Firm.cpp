@@ -153,6 +153,15 @@ const Flow& Firm::production_X() const {
     return production_X_;
 }
 
+Flow Firm::direct_loss() const {
+    return Flow(round(initial_production_X_star_.get_quantity() * Forcing(1.0 - forcing_)),
+                production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0), true);
+}
+Flow Firm::total_loss() const {
+    return Flow(round(initial_production_X_star_.get_quantity() - production_X_.get_quantity()),
+                production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0), true);
+}
+
 void Firm::print_details() const {
     if constexpr (DEBUG_MODE) {
         info(id() << ": X_star= " << initial_production_X_star_.get_quantity() << ":");

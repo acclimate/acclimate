@@ -45,42 +45,36 @@ class Region;
 class Sector;
 
 class ModelInitializer {
-  protected:
+  private:
     class TemporaryGeoEntity {
-      protected:
+      private:
         std::unique_ptr<GeoEntity> entity_m;
 
       public:
         bool used;
 
-        GeoEntity* entity() { return entity_m.get(); }
-
+      public:
         TemporaryGeoEntity(GeoEntity* entity_p, bool used_p) : entity_m(entity_p), used(used_p) {}
-
         ~TemporaryGeoEntity() {
             if (used) {
                 (void)entity_m.release();
             }
         }
+        GeoEntity* entity() { return entity_m.get(); }
     };
 
     class Path {
-      protected:
+      private:
         FloatType costs_m = 0;
         std::vector<TemporaryGeoEntity*> points_m;
 
       public:
         Path() = default;
-
         Path(FloatType costs_p, TemporaryGeoEntity* p1, TemporaryGeoEntity* p2, TemporaryGeoEntity* connection)
             : costs_m(costs_p), points_m({p1, connection, p2}) {}
-
-        inline FloatType costs() const { return costs_m; }
-
-        inline bool empty() const { return points_m.empty(); }
-
-        inline const std::vector<TemporaryGeoEntity*>& points() const { return points_m; }
-
+        FloatType costs() const { return costs_m; }
+        bool empty() const { return points_m.empty(); }
+        const std::vector<TemporaryGeoEntity*>& points() const { return points_m; }
         Path operator+(const Path& other) const {
             Path res;
             if (empty()) {
@@ -100,21 +94,19 @@ class ModelInitializer {
     };
 
   private:
+    Model* const model_m;
+    const settings::SettingsNode& settings;
+
+  private:
     settings::SettingsNode get_firm_property(const std::string& sector_name, const std::string& region_name, const std::string& property_name) const;
     settings::SettingsNode get_named_property(const settings::SettingsNode& node_settings,
                                               const std::string& node_name,
                                               const std::string& property_name) const;
-
-  protected:
-    Model* const model_m;
-    const settings::SettingsNode& settings;
-
     Sector* add_sector(const std::string& name);
     Region* add_region(const std::string& name);
     Firm* add_firm(Sector* sector, Region* region);
     Consumer* add_consumer(Region* region);
     void create_simple_transport_connection(Region* region_from, Region* region_to, TransportDelay transport_delay);
-    void initialize_connection(Sector* sector_from, Region* region_from, Sector* sector_to, Region* region_to, const Flow& flow);
     void initialize_connection(Firm* firm_from, EconomicAgent* economic_agent_to, const Flow& flow);
     void clean_network();
     void pre_initialize();
@@ -131,10 +123,8 @@ class ModelInitializer {
     ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p);
     void initialize();
     void print_network_characteristics() const;
-
-    inline Model* model() const { return model_m; }
-
-    inline std::string id() const { return "MODELINITIALIZER"; }
+    Model* model() const { return model_m; }
+    static std::string id() { return "MODELINITIALIZER"; }
 };
 }  // namespace acclimate
 

@@ -35,11 +35,6 @@ class PurchasingManager;
 class Sector;
 
 class Storage {
-  public:
-    Sector* const sector;
-    EconomicAgent* const economic_agent;
-    std::unique_ptr<PurchasingManager> const purchasing_manager;
-
   private:
     Flow input_flow_I_[3] = {Flow(0.0), Flow(0.0), Flow(0.0)};
     Forcing forcing_mu_ = Forcing(1.0);
@@ -52,29 +47,23 @@ class Storage {
     Parameters::StorageParameters parameters_;
 
   public:
-    const Stock& content_S() const;
-    const Flow& used_flow_U(const EconomicAgent* const caller = nullptr) const;
-    const Flow& desired_used_flow_U_tilde(const EconomicAgent* const caller = nullptr) const;
-
-    const Stock& initial_content_S_star() const { return initial_content_S_star_; }
-
-    const Flow& initial_input_flow_I_star() const { return initial_input_flow_I_star_; }
-
-    const Flow& initial_used_flow_U_star() const {
-        return initial_input_flow_I_star_;  // == initial_used_flow_U_star
-    }
-
-    const Forcing& forcing_mu() const { return forcing_mu_; }
+    Sector* const sector;
+    EconomicAgent* const economic_agent;
+    std::unique_ptr<PurchasingManager> const purchasing_manager;
 
   private:
     void calc_content_S();
 
   public:
-    inline const Parameters::StorageParameters& parameters() const { return parameters_; }
-    Parameters::StorageParameters& parameters_writable();
-
-  public:
     Storage(Sector* sector_p, EconomicAgent* economic_agent_p);
+    const Stock& content_S() const;
+    const Flow& used_flow_U(const EconomicAgent* const caller = nullptr) const;
+    const Flow& desired_used_flow_U_tilde(const EconomicAgent* const caller = nullptr) const;
+    const Stock& initial_content_S_star() const { return initial_content_S_star_; }
+    const Flow& initial_input_flow_I_star() const { return initial_input_flow_I_star_; }
+    const Flow& initial_used_flow_U_star() const { return initial_input_flow_I_star_; }  // == initial_used_flow_U_star
+    const Parameters::StorageParameters& parameters() const { return parameters_; }
+    Parameters::StorageParameters& parameters_writable();
     void set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p);
     void use_content_S(const Flow& used_flow_U_current);
     Flow estimate_possible_use_U_hat() const;

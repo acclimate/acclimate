@@ -33,13 +33,11 @@ namespace acclimate {
 class Firm;
 
 class EventSeriesScenario : public ExternalScenario {
-  protected:
-    using ExternalScenario::forcing;
-
+  private:
     class EventForcing : public ExternalForcing {
         friend class EventSeriesScenario;
 
-      protected:
+      private:
         using ExternalForcing::file;
         using ExternalForcing::time_index;
         using ExternalForcing::variable;
@@ -48,19 +46,24 @@ class EventSeriesScenario : public ExternalScenario {
         std::size_t regions_count;
         std::size_t sectors_count;
 
+      private:
         void read_data() override;
 
       public:
         EventForcing(const std::string& filename, const std::string& variable_name, const Model* model);
     };
 
+  private:
+    using ExternalScenario::forcing;
+
+  private:
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
 
   public:
+    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
     using ExternalScenario::id;
     using ExternalScenario::model;
-    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
 };
 }  // namespace acclimate
 

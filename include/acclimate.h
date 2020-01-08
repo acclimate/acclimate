@@ -30,12 +30,11 @@
 namespace acclimate {
 
 class Acclimate {
-  protected:
+  private:
     std::unique_ptr<Run> run_m;
 
   public:
     explicit Acclimate(const settings::SettingsNode& settings_p);
-
     int run();
 };
 }  // namespace acclimate

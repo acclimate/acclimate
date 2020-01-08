@@ -33,9 +33,51 @@ namespace acclimate {
 
 template<typename T>
 class RasteredData {
+  public:
+    class iterator {
+      private:
+        FloatType l;
+        std::size_t c;
+        const FloatType gridsize;
+        const std::size_t count;
+
+      public:
+        using iterator_category = std::forward_iterator_tag;
+        iterator(FloatType l_, const std::size_t& c_, FloatType gridsize_, const std::size_t& count_) : l(l_), c(c_), gridsize(gridsize_), count(count_) {}
+        iterator operator++() {
+            if (c < count) {
+                c++;
+                l += gridsize;
+            }
+            return *this;
+        }
+        FloatType operator*() const { return l; }
+        bool operator==(const iterator& rhs) const { return c == rhs.c; }
+        bool operator!=(const iterator& rhs) const { return c != rhs.c; }
+    };
+
+    class X {
+      protected:
+        const RasteredData& rd;
+
+      public:
+        explicit X(const RasteredData& rd_) : rd(rd_) {}
+        iterator begin() const { return iterator(rd.t_x_min, 0, rd.t_x_gridsize, rd.x_count); }
+        iterator end() const { return iterator(rd.t_x_max, rd.x_count, rd.t_x_gridsize, rd.x_count); }
+    };
+
+    class Y {
+      protected:
+        const RasteredData& rd;
+
+      public:
+        explicit Y(const RasteredData& rd_) : rd(rd_) {}
+        iterator begin() const { return iterator(rd.t_y_min, 0, rd.t_y_gridsize, rd.y_count); }
+        iterator end() const { return iterator(rd.t_y_max, rd.y_count, rd.t_y_gridsize, rd.y_count); }
+    };
+
   protected:
     std::unique_ptr<T[]> data;
-    unsigned int time_step = 0;
     FloatType x_min = 0;
     FloatType x_max = 0;
     FloatType x_gridsize = 0;
@@ -52,6 +94,11 @@ class RasteredData {
     std::size_t y_count = 0;
     const std::string filename;
 
+  public:
+    const X x;
+    const Y y;
+
+  protected:
     void read_boundaries(const netCDF::NcFile* file);
     unsigned int x_index(FloatType x_var) const;
     unsigned int y_index(FloatType y_var) const;
@@ -59,74 +106,16 @@ class RasteredData {
     explicit RasteredData(std::string filename_p);
 
   public:
-    class iterator {
-      private:
-        FloatType l;
-        std::size_t c;
-        const FloatType gridsize;
-        const std::size_t count;
-
-      public:
-        using iterator_category = std::forward_iterator_tag;
-
-        iterator(FloatType l_, const std::size_t& c_, FloatType gridsize_, const std::size_t& count_) : l(l_), c(c_), gridsize(gridsize_), count(count_) {}
-
-        iterator operator++() {
-            if (c < count) {
-                c++;
-                l += gridsize;
-            }
-            return *this;
-        }
-
-        FloatType operator*() const { return l; }
-
-        bool operator==(const iterator& rhs) const { return c == rhs.c; }
-
-        bool operator!=(const iterator& rhs) const { return c != rhs.c; }
-    };
-
-    class X {
-      protected:
-        const RasteredData& rd;
-
-      public:
-        explicit X(const RasteredData& rd_) : rd(rd_) {}
-
-        iterator begin() const { return iterator(rd.t_x_min, 0, rd.t_x_gridsize, rd.x_count); }
-
-        iterator end() const { return iterator(rd.t_x_max, rd.x_count, rd.t_x_gridsize, rd.x_count); }
-    };
-
-    const X x;
-
-    class Y {
-      protected:
-        const RasteredData& rd;
-
-      public:
-        explicit Y(const RasteredData& rd_) : rd(rd_) {}
-
-        iterator begin() const { return iterator(rd.t_y_min, 0, rd.t_y_gridsize, rd.y_count); }
-
-        iterator end() const { return iterator(rd.t_y_max, rd.y_count, rd.t_y_gridsize, rd.y_count); }
-    };
-
-    const Y y;
-
-    inline FloatType abs_x_gridsize() const { return t_x_gridsize; }
-
-    inline FloatType abs_y_gridsize() const { return t_y_gridsize; }
-
     RasteredData(std::string filename_p, const std::string& variable_name);
     virtual ~RasteredData() = default;
+    FloatType abs_x_gridsize() const { return t_x_gridsize; }
+    FloatType abs_y_gridsize() const { return t_y_gridsize; }
     template<typename T2>
     FloatType operator/(const RasteredData<T2>& other) const;
     template<typename T2>
     bool is_compatible(const RasteredData<T2>& other) const;
     T read(FloatType x_var, FloatType y_var) const;
-
-    virtual inline std::string id() const { return "RASTER " + filename; }
+    virtual std::string id() const { return "RASTER " + filename; }
 };
 }  // namespace acclimate
 

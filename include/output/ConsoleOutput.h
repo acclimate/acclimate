@@ -34,17 +34,16 @@ class Sector;
 class Scenario;
 
 class ConsoleOutput : public Output {
+  private:
+    unsigned char stack;
+    std::ostream* out;
+    std::unique_ptr<std::ofstream> outfile;
+
   public:
-    using Output::model;
     using Output::output_node;
     using Output::settings_string;
 
   private:
-    unsigned char stack;
-
-  protected:
-    std::ostream* out;
-    std::unique_ptr<std::ofstream> outfile;
     void internal_write_header(tm* timestamp, unsigned int max_threads) override;
     void internal_write_footer(tm* duration) override;
     void internal_write_settings() override;
@@ -61,6 +60,7 @@ class ConsoleOutput : public Output {
   public:
     ConsoleOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
+    using Output::model;
 };
 }  // namespace acclimate
 

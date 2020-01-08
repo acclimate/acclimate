@@ -29,10 +29,11 @@ namespace acclimate {
 
 class Model;
 class Region;
+
 using HeatLaborProductivityRegionForcingType = std::vector<FloatType>;
 
 class HeatLaborProductivity : public RasteredScenario<HeatLaborProductivityRegionForcingType> {
-  protected:
+  private:
     using RegionForcingType = HeatLaborProductivityRegionForcingType;
     RegionForcingType new_region_forcing(Region* region) const override;
     void set_region_forcing(Region* region, const RegionForcingType& forcing, FloatType proxy_sum) const override;

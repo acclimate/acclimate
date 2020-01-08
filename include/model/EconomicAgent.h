@@ -53,26 +53,20 @@ class EconomicAgent {
     std::vector<std::unique_ptr<Storage>> input_storages;
     const Type type;
 
-  public:
-    inline const Parameters::AgentParameters& parameters() const { return parameters_; }
-    Parameters::AgentParameters const& parameters_writable() const;
-
   protected:
     EconomicAgent(Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p);
 
   public:
-    inline const Forcing& forcing() const { return forcing_; }
-
-    void forcing(const Forcing& forcing_p);
+    virtual ~EconomicAgent() = default;
+    const Parameters::AgentParameters& parameters() const { return parameters_; }
+    Parameters::AgentParameters const& parameters_writable() const;
+    const Forcing& forcing() const { return forcing_; }
+    void set_forcing(const Forcing& forcing_p);
     virtual Firm* as_firm();
     virtual const Firm* as_firm() const;
     virtual Consumer* as_consumer();
-    virtual const Consumer* as_consumer() const;
-
-    inline bool is_firm() const { return type == Type::FIRM; }
-    inline bool is_consumer() const { return type == Type::CONSUMER; }
-
-    virtual ~EconomicAgent() = default;
+    bool is_firm() const { return type == Type::FIRM; }
+    bool is_consumer() const { return type == Type::CONSUMER; }
     virtual void iterate_consumption_and_production() = 0;
     virtual void iterate_expectation() = 0;
     virtual void iterate_purchase() = 0;

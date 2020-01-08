@@ -31,19 +31,21 @@ class Model;
 class Scenario;
 
 class JSONNetworkOutput : public Output {
-  public:
-    using Output::model;
-    using Output::output_node;
-
-  protected:
+  private:
     TimeStep timestep = 0;
     std::string filename;
     bool advanced = false;
+
+  public:
+    using Output::output_node;
+
+  private:
     void internal_iterate_end() override;
 
   public:
     JSONNetworkOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
+    using Output::model;
 };
 }  // namespace acclimate
 

@@ -31,38 +31,31 @@ class Firm;
 class Model;
 
 class CapacityManager {
-  public:
-    Firm* const firm;
-    const Ratio possible_overcapacity_ratio_beta;
-
   private:
     Flow desired_production_X_tilde_ = Flow(0.0);
     Flow possible_production_X_hat_ = Flow(0.0);
 
   public:
-    const Flow& desired_production_X_tilde() const { return desired_production_X_tilde_; }
+    Firm* const firm;
+    const Ratio possible_overcapacity_ratio_beta;
 
-    const Flow& possible_production_X_hat() const { return possible_production_X_hat_; }
-
-  protected:
-    virtual void calc_possible_and_desired_production();
+  private:
+    void calc_possible_and_desired_production();
+    Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const;
 
   public:
     CapacityManager(Firm* firm_p, Ratio possible_overcapacity_ratio_beta_p);
     ~CapacityManager() = default;
+    const Flow& desired_production_X_tilde() const { return desired_production_X_tilde_; }
+    const Flow& possible_production_X_hat() const { return possible_production_X_hat_; }
     Ratio get_production_capacity_p() const;
     Ratio get_desired_production_capacity_p_tilde() const;
     Ratio get_possible_production_capacity_p_hat() const;
-    Model* model() const;
-    std::string id() const;
-
-  private:
-    Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const;
-
-  public:
     Flow get_possible_production_X_hat() const;
     Flow estimate_possible_production_X_hat() const;
     Flow calc_production_X();
+    Model* model() const;
+    std::string id() const;
     // DEBUG
     void print_inputs() const;
 };

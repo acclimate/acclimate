@@ -35,23 +35,23 @@ class Sector;
 class Scenario;
 
 class GnuplotOutput : public Output {
-  public:
-    using Output::id;
-    using Output::model;
-    using Output::output_node;
-    using Output::settings_string;
+  private:
+    struct Target {
+        int region = 0;
+        int sector = 0;
+    };
 
   private:
     std::ofstream file;
     std::unordered_map<Region*, int> region_index;
     std::unordered_map<Sector*, int> sector_index;
-    struct Target {
-        int region = 0;
-        int sector = 0;
-    };
     std::vector<Target> stack;
 
-  protected:
+  public:
+    using Output::output_node;
+    using Output::settings_string;
+
+  private:
     void internal_write_header(tm* timestamp, unsigned int max_threads) override;
     void internal_write_footer(tm* duration) override;
     void internal_write_settings() override;
@@ -67,6 +67,8 @@ class GnuplotOutput : public Output {
   public:
     GnuplotOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
     void initialize() override;
+    using Output::id;
+    using Output::model;
 };
 }  // namespace acclimate
 

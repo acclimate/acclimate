@@ -38,6 +38,8 @@ class Scenario {
     settings::SettingsNode scenario_node;
     const settings::SettingsNode& settings;
     Model* const model_m;
+
+  protected:
     void set_firm_property(Firm* firm, const settings::SettingsNode& node, bool reset);
     void set_consumer_property(Consumer* consumer, const settings::SettingsNode& node, bool reset);
     void set_location_property(GeoLocation* location, const settings::SettingsNode& node, bool reset);
@@ -46,21 +48,14 @@ class Scenario {
   public:
     Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
     virtual ~Scenario() = default;
-
     virtual Time start() { return Time(0.0); }  // TODO eliminate return type
     virtual void end() {}
-
     virtual bool is_first_timestep() const;
-    virtual bool is_last_timestep() const;
     virtual bool iterate();
-
     virtual std::string calendar_str() const { return "standard"; }
-
     virtual std::string time_units_str() const;
-
-    inline Model* model() const { return model_m; }
-
-    virtual inline std::string id() const { return "SCENARIO"; }
+    Model* model() const { return model_m; }
+    virtual std::string id() const { return "SCENARIO"; }
 };
 }  // namespace acclimate
 

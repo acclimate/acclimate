@@ -32,9 +32,10 @@ class Model;
 class Region;
 
 class Flooding : public RasteredScenario<FloatType> {
-  protected:
-    using ExternalScenario::scenario_node;
+  private:
     std::vector<std::size_t> sectors;
+
+  private:
     FloatType new_region_forcing(Region* region) const override;
     void set_region_forcing(Region* region, const FloatType& forcing, FloatType proxy_sum) const override;
     void reset_forcing(Region* region, FloatType& forcing) const override;
@@ -42,8 +43,8 @@ class Flooding : public RasteredScenario<FloatType> {
         FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, FloatType& region_forcing) const override;
 
   public:
-    using RasteredScenario<FloatType>::id;
     Flooding(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    using RasteredScenario<FloatType>::id;
 };
 }  // namespace acclimate
 
