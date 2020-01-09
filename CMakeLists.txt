@@ -16,12 +16,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 include(cmake/helpers.cmake)
 include(cmake/libraries.cmake)
-add_system_paths()
 
 set_default_build_type(Release)
 
@@ -40,13 +39,11 @@ endif()
 target_include_directories(acclimate PRIVATE include lib/cpp-library)
 set_property(TARGET acclimate PROPERTY CXX_STANDARD 11)
 
+add_system_paths()
 add_doxygen_documentation(doc doc)
-set_ccache_use()
 set_advanced_cpp_warnings(acclimate)
 set_build_type_specifics(acclimate)
-add_git_version(acclimate
-  FALLBACK_VERSION 3.0.0
-  WITH_DIFF)
+add_git_version(acclimate WITH_DIFF)
 
 option(ACCLIMATE_PARALLELIZATION "" ON)
 if(ACCLIMATE_PARALLELIZATION)
