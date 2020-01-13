@@ -32,8 +32,7 @@
 namespace acclimate {
 
 CapacityManager::CapacityManager(Firm* firm_p, Ratio possible_overcapacity_ratio_beta_p)
-    : firm(firm_p), possible_overcapacity_ratio_beta(possible_overcapacity_ratio_beta_p) {
-}
+    : firm(firm_p), possible_overcapacity_ratio_beta(possible_overcapacity_ratio_beta_p) {}
 
 Ratio CapacityManager::get_production_capacity_p() const { return firm->production_X() / firm->initial_production_X_star(); }
 

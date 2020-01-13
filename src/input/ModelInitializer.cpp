@@ -319,8 +319,6 @@ void ModelInitializer::print_network_characteristics() const {
     }
 }
 
-#endif
-
 void ModelInitializer::read_transport_network_netcdf(const std::string& filename) {
     const settings::SettingsNode& transport = settings["transport"];
     const auto aviation_speed = transport["aviation_speed"].as<FloatType>();

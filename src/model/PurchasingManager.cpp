@@ -141,8 +141,6 @@ const Demand& PurchasingManager::demand_D(const EconomicAgent* const caller) con
     return demand_D_;
 }
 
-const Demand& PurchasingManager::initial_demand_D_star() const { return storage->initial_input_flow_I_star(); }
-
 Model* PurchasingManager::model() const { return storage->model(); }
 
 std::string PurchasingManager::id() const { return storage->sector->id() + "->" + storage->economic_agent->id(); }
@@ -217,7 +215,7 @@ inline FloatType PurchasingManager::scaled_D_r(FloatType D_r, const BusinessConn
 
 inline FloatType PurchasingManager::unscaled_D_r(FloatType x, const BusinessConnection* bc) const { return x * partial_D_r_scaled_D_r(bc); }
 
-inline FloatType PurchasingManager::partial_D_r_scaled_D_r(const BusinessConnection* bc) const { return to_float(bc->initial_flow_Z_star().get_quantity()); }
+inline FloatType PurchasingManager::partial_D_r_scaled_D_r(const BusinessConnection* bc) { return to_float(bc->initial_flow_Z_star().get_quantity()); }
 
 inline FloatType PurchasingManager::scaled_objective(FloatType obj) const { return obj / partial_objective_scaled_objective(); }
 
@@ -824,7 +822,7 @@ void PurchasingManager::calc_optimization_parameters(std::vector<FloatType>& dem
     }
 }
 
-FlowQuantity PurchasingManager::calc_analytical_approximation_X_max(const BusinessConnection* bc) const {
+FlowQuantity PurchasingManager::calc_analytical_approximation_X_max(const BusinessConnection* bc) {
     return bc->seller->communicated_parameters().possible_production_X_hat.get_quantity();
 }
 

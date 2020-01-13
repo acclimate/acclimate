@@ -66,6 +66,7 @@ class PurchasingManager {
     FloatType unscaled_objective(FloatType x) const;
     FloatType partial_objective_scaled_objective() const;
     FloatType scaled_use(FloatType use) const;
+    FloatType unscaled_use(FloatType use) const;
     FloatType partial_use_scaled_use() const;
     void calc_desired_purchase(const OptimizerData* data);
     FloatType n_r(FloatType D_r, const BusinessConnection* business_connection) const;
@@ -96,6 +97,8 @@ class PurchasingManager {
     const Demand& purchase() const;
     const FlowValue& expected_costs(const EconomicAgent* const caller = nullptr) const;
     const FlowValue& total_transport_penalty() const;
+    Flow get_disequilibrium() const;
+    FloatType get_stddeviation() const;
     void calc_optimization_parameters(std::vector<FloatType>& demand_requests_D_p,
                                       std::vector<BusinessConnection*>& zero_connections_p,
                                       OptimizerData& data_p) const;

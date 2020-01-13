@@ -50,6 +50,14 @@ class GeoLocation : public GeoEntity {
     void set_centroid(std::unique_ptr<GeoPoint>& centroid_p);
     const GeoPoint* centroid() const { return centroid_m.get(); }
     void remove_connection(const GeoConnection* connection);
+    virtual Region* as_region() {
+        assert(type == Type::REGION);
+        return nullptr;
+    }
+    virtual const Region* as_region() const {
+        assert(type == Type::REGION);
+        return nullptr;
+    }
     using GeoEntity::model;
     std::string id() const override { return id_m; }
 };

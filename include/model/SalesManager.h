@@ -65,23 +65,21 @@ class SalesManager {
   private:
     std::tuple<Flow, Price> calc_supply_distribution_scenario(const Flow& possible_production_X_hat_p);
     std::tuple<Flow, Price> calc_expected_supply_distribution_scenario(const Flow& possible_production_X_hat_p);
-    const FlowValue calc_total_production_costs(const Flow& production_X, const Price& unit_production_costs_n_c) const;
-    const FlowQuantity analytic_solution_in_production_extension(const Price& unit_production_costs_n_c,
-                                                                 const Price& price_demand_request_not_served_completely) const;
-    const FlowValue calc_additional_revenue_expectation(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const;
-    const Price calc_marginal_revenue_curve(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const;
-    const Price goal_fkt_marginal_costs_minus_marginal_revenue(const FlowQuantity& production_quantity_X_p,
-                                                               const Price& unit_production_costs_n_c,
-                                                               const Price& n_min_p) const;
-    const Price goal_fkt_marginal_costs_minus_price(const FlowQuantity& production_quantity_X_p,
-                                                    const Price& unit_production_costs_n_c,
-                                                    const Price& price) const;
-    const Flow search_root_bisec_expectation(const FlowQuantity& left,
-                                             const FlowQuantity& right,
-                                             const FlowQuantity& production_quantity_X_p,
-                                             const Price& unit_production_costs_n_c,
-                                             const Price& n_min_p,
-                                             const Price& precision_p) const;
+    FlowValue calc_total_production_costs(const Flow& production_X, const Price& unit_production_costs_n_c) const;
+    FlowQuantity analytic_solution_in_production_extension(const Price& unit_production_costs_n_c,
+                                                           const Price& price_demand_request_not_served_completely) const;
+    FlowValue calc_additional_revenue_expectation(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const;
+    Price calc_marginal_revenue_curve(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const;
+    Price goal_fkt_marginal_costs_minus_marginal_revenue(const FlowQuantity& production_quantity_X_p,
+                                                         const Price& unit_production_costs_n_c,
+                                                         const Price& n_min_p) const;
+    Price goal_fkt_marginal_costs_minus_price(const FlowQuantity& production_quantity_X_p, const Price& unit_production_costs_n_c, const Price& price) const;
+    Flow search_root_bisec_expectation(const FlowQuantity& left,
+                                       const FlowQuantity& right,
+                                       const FlowQuantity& production_quantity_X_p,
+                                       const Price& unit_production_costs_n_c,
+                                       const Price& n_min_p,
+                                       const Price& precision_p) const;
     void print_parameters() const;
     void print_connections(typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
                            typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const;
@@ -102,6 +100,7 @@ class SalesManager {
     void distribute(const Flow& _);
     void initialize();
     void iterate_expectation();
+    Flow get_transport_flow() const;
     Price get_initial_markup() const;
     Price get_initial_unit_variable_production_costs() const;
     Flow calc_production_X();

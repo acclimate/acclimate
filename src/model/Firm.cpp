@@ -109,7 +109,6 @@ void Firm::iterate_purchase() {
 }
 
 void Firm::iterate_investment() {
-    // TODO: why was it doing nothing?
     // assertstep(INVESTMENT);
     // for (const auto& is : input_storages) {
     //     is->purchasing_manager->iterate_investment();
@@ -118,24 +117,8 @@ void Firm::iterate_investment() {
 
 Flow Firm::maximal_production_beta_X_star() const { return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta); }
 
-Flow Firm::forced_maximal_production_lambda_beta_X_star() const {
-    return round(initial_production_X_star_ * forcing_ * capacity_manager->possible_overcapacity_ratio_beta);
-}
-
-FlowQuantity Firm::maximal_production_quantity_beta_X_star() const {
-    return round(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
-}
-
-FloatType Firm::maximal_production_quantity_beta_X_star_float() const {
-    return to_float(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
-}
-
 FlowQuantity Firm::forced_maximal_production_quantity_lambda_beta_X_star() const {
     return round(initial_production_X_star_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
-}
-
-FloatType Firm::forced_maximal_production_quantity_lambda_beta_X_star_float() const {
-    return to_float(initial_production_X_star_.get_quantity()) * (capacity_manager->possible_overcapacity_ratio_beta * forcing_);
 }
 
 const BusinessConnection* Firm::self_supply_connection() const {

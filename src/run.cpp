@@ -21,10 +21,12 @@
 #include "run.h"
 
 #include <unistd.h>
+
 #include <chrono>
 
 #ifdef ENABLE_DMTCP
 #include <dmtcp.h>
+
 #include <csignal>
 #include <thread>
 #endif  // TODO: remove conditionals
@@ -63,7 +65,7 @@ void handle_sigterm(int /* signal */) { checkpoint_scheduled = true; }
 #endif
 
 Run::Run(const settings::SettingsNode& settings) {
-    set_step(IterationStep::INITIALIZATION);
+    step(IterationStep::INITIALIZATION);
 
 #ifdef ENABLE_DMTCP
     if (instantiated) {
@@ -147,7 +149,7 @@ int Run::run() {
 
     info_("Starting model run on max. " << thread_count() << " threads");
 
-    set_step(IterationStep::INITIALIZATION);
+    step(IterationStep::INITIALIZATION);
 
     for (const auto& scenario : scenarios_m) {
         scenario->start();
@@ -158,7 +160,7 @@ int Run::run() {
     }
     time_m = 0;
 
-    set_step(IterationStep::SCENARIO);
+    step(IterationStep::SCENARIO);
     auto t0 = std::chrono::high_resolution_clock::now();
 
     while (!model_m->done()) {
@@ -169,23 +171,23 @@ int Run::run() {
 
         model_m->switch_registers();
 
-        set_step(IterationStep::CONSUMPTION_AND_PRODUCTION);
+        step(IterationStep::CONSUMPTION_AND_PRODUCTION);
         model_m->iterate_consumption_and_production();
 
-        set_step(IterationStep::EXPECTATION);
+        step(IterationStep::EXPECTATION);
         model_m->iterate_expectation();
 
-        set_step(IterationStep::PURCHASE);
+        step(IterationStep::PURCHASE);
         model_m->iterate_purchase();
 
-        set_step(IterationStep::INVESTMENT);
+        step(IterationStep::INVESTMENT);
         model_m->iterate_investment();
 
         auto t1 = std::chrono::high_resolution_clock::now();
         duration_m = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
         t0 = t1;
 
-        set_step(IterationStep::OUTPUT);
+        step(IterationStep::OUTPUT);
         info_("Iteration took " << duration_m << " ms");
         for (const auto& output : outputs_m) {
             output->iterate();
@@ -227,7 +229,7 @@ int Run::run() {
         }
 #endif
 
-        set_step(IterationStep::SCENARIO);
+        step(IterationStep::SCENARIO);
         model_m->tick();
         ++time_m;
     }
@@ -333,6 +335,7 @@ std::string Run::timeinfo() const {
         }
         return res;
     }
+    return "";
 }
 
 }  // namespace acclimate

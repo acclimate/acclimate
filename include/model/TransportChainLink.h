@@ -61,6 +61,8 @@ class TransportChainLink {
     TransportDelay transport_delay() const { return transport_queue.size(); }
     Flow get_total_flow() const;
     FloatType get_passage() const;
+    Flow get_disequilibrium() const;
+    FloatType get_stddeviation() const;
     FlowQuantity get_flow_deficit() const;
     void unregister_geoentity() { geo_entity = nullptr; }
     Model* model() const;

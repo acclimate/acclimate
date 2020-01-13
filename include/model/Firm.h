@@ -70,6 +70,7 @@ class Firm : public EconomicAgent {
     FlowQuantity forced_initial_production_quantity_lambda_X_star() const { return round(initial_production_X_star_.get_quantity() * forcing_); }
     FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_); }
     FlowQuantity forced_maximal_production_quantity_lambda_beta_X_star() const;
+    const Flow& initial_total_use_U_star() const { return initial_total_use_U_star_; }
     Flow direct_loss() const;
     Flow total_loss() const;
     FlowValue total_value_loss() const { return (initial_production_X_star_ - production_X_).get_value(); }

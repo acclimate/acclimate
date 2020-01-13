@@ -108,6 +108,7 @@ class ModelInitializer {
     Consumer* add_consumer(Region* region);
     void create_simple_transport_connection(Region* region_from, Region* region_to, TransportDelay transport_delay);
     void initialize_connection(Firm* firm_from, EconomicAgent* economic_agent_to, const Flow& flow);
+    void initialize_connection(Sector* sector_from, Region* region_from, Sector* sector_to, Region* region_to, const Flow& flow);
     void clean_network();
     void pre_initialize();
     void post_initialize();
