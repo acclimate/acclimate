@@ -78,17 +78,18 @@ void Model::start() {
 void Model::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (auto& sector : sectors) {
-        sector->iterate_consumption_and_production();
+    for (std::size_t i = 0; i < sectors.size(); ++i) {  // NOLINT(modernize-loop-convert)
+        sectors[i]->iterate_consumption_and_production();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (auto& region : regions) {
-        region->iterate_consumption_and_production();
+    for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
+        regions[i]->iterate_consumption_and_production();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (auto& p : economic_agents) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
+        auto& p = economic_agents[i];
         p.first->iterate_consumption_and_production();
     }
 }
