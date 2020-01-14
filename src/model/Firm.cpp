@@ -146,7 +146,7 @@ Flow Firm::total_loss() const {
 }
 
 void Firm::print_details() const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         info(id() << ": X_star= " << initial_production_X_star_.get_quantity() << ":");
         for (const auto& input_storage : input_storages) {
             input_storage->purchasing_manager->print_details();

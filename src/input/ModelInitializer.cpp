@@ -282,7 +282,7 @@ void ModelInitializer::clean_network() {
 }
 
 void ModelInitializer::print_network_characteristics() const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         FloatType average_transport_delay = 0;
         unsigned int region_wo_firm_count = 0;
         for (auto& region : model()->regions) {

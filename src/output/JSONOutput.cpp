@@ -55,7 +55,7 @@ void JSONOutput::internal_write_header(tm* timestamp, unsigned int max_threads) 
          << std::asctime(timestamp)
          << "\",\n"
             "    \"version\": \""
-         << ACCLIMATE_VERSION
+         << version
          << "\",\n"
             "    \"max_threads\": "
          << max_threads

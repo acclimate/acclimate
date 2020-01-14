@@ -57,31 +57,31 @@ if(ACCLIMATE_PARALLELIZATION)
 endif()
 
 
+set(ACCLIMATE_OPTIONS_FILE "")
 set(ACCLIMATE_OPTIONS "")
-function(acclimate_include_option OPTIONS_NAME NAME DESC STATE)
+function(acclimate_include_option NAME DESC STATE)
   option(ACCLIMATE_${NAME} ${DESC} ${STATE})
   if(ACCLIMATE_${NAME})
-    set(ACCLIMATE_${OPTIONS_NAME} ${ACCLIMATE_${OPTIONS_NAME}} ${NAME} PARENT_SCOPE)
+    set(VALUE "true")
     target_compile_definitions(acclimate PRIVATE ${NAME})
-    #    if(ACCLIMATE_${NAME})
-    #      target_compile_definitions(acclimate PRIVATE ${NAME}=1)
-    #    else()
-    #      target_compile_definitions(acclimate PRIVATE ${NAME}=0)
-    #    endif() // TODO: let cmake define boolean macros
+  else()
+    set(VALUE "false")
   endif()
+  set(ACCLIMATE_OPTIONS ${ACCLIMATE_OPTIONS} "Option{\"${NAME}\", ${VALUE}}" PARENT_SCOPE)
+  set(ACCLIMATE_OPTIONS_FILE "${ACCLIMATE_OPTIONS_FILE}static constexpr bool ${NAME}_MODE = ${VALUE};\n" PARENT_SCOPE)
 endfunction()
 
-acclimate_include_option(OPTIONS BASED_ON_INT "automatic rounding based on internal integers" ON)
+acclimate_include_option(BASED_ON_INT "automatic rounding based on internal integers" ON)
 mark_as_advanced(ACCLIMATE_BASED_ON_INT)
-acclimate_include_option(OPTIONS BANKERS_ROUNDING "bankers rounding" ON)
-acclimate_include_option(OPTIONS FLOATING_POINT_EXCEPTIONS "" OFF)
-acclimate_include_option(OPTIONS FATAL_FLOATING_POINT_EXCEPTIONS "" OFF)
-acclimate_include_option(OPTIONS STRICT_MIN_DERIVATIVE "" OFF)
-acclimate_include_option(OPTIONS CLEANUP_INFO "show additional information about the cleanup (only for Debug)" OFF)
-acclimate_include_option(OPTIONS OPTIMIZATION_WARNINGS "show warnings for optimization (only for Debug)" OFF)
-acclimate_include_option(OPTIONS OPTIMIZATION_PROBLEMS_FATAL "make optimization problems fatal (only for Debug)" OFF)
-acclimate_include_option(OPTIONS ENABLE_DMTCP "enable dmtcp checkpointing" OFF)
-acclimate_include_option(OPTIONS USE_MIN_PASSAGE_IN_EXPECTATION "enable minimum passage usage in expectation" ON)
+acclimate_include_option(BANKERS_ROUNDING "bankers rounding" ON)
+acclimate_include_option(FLOATING_POINT_EXCEPTIONS "" OFF)
+acclimate_include_option(FATAL_FLOATING_POINT_EXCEPTIONS "" OFF)
+acclimate_include_option(STRICT_MIN_DERIVATIVE "" OFF)
+acclimate_include_option(CLEANUP_INFO "show additional information about the cleanup (only for Debug)" OFF)
+acclimate_include_option(OPTIMIZATION_WARNINGS "show warnings for optimization (only for Debug)" OFF)
+acclimate_include_option(OPTIMIZATION_PROBLEMS_FATAL "make optimization problems fatal (only for Debug)" OFF)
+acclimate_include_option(ENABLE_DMTCP "enable dmtcp checkpointing" OFF)
+acclimate_include_option(USE_MIN_PASSAGE_IN_EXPECTATION "enable minimum passage usage in expectation" ON)
 
 if(ACCLIMATE_ENABLE_DMTCP)
   set_property(TARGET acclimate PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -91,8 +91,58 @@ if(ACCLIMATE_ENABLE_DMTCP)
     endif()
   endif()
 endif()
-string(REPLACE ";" ", " ACCLIMATE_OPTIONS "${ACCLIMATE_OPTIONS}")
-target_compile_definitions(acclimate PRIVATE ACCLIMATE_OPTIONS="${ACCLIMATE_OPTIONS}")
+
+list(LENGTH ACCLIMATE_OPTIONS ACCLIMATE_OPTIONS_LENGTH)
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/include/options.h "\
+#ifndef ACCLIMATE_OPTIONS_H
+#define ACCLIMATE_OPTIONS_H
+#include <array>
+
+namespace acclimate {
+namespace options {
+
+#ifdef DEBUG
+constexpr bool DEBUG_MODE = true;
+#else
+constexpr bool DEBUG_MODE = false;
+#endif
+#ifdef _OPENMP
+constexpr bool OPENMP_MODE = true;
+#else
+constexpr bool OPENMP_MODE = false;
+#endif
+
+${ACCLIMATE_OPTIONS_FILE}
+struct Option {
+    const char* name;
+    bool value;
+};
+extern const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options;
+
+}  // namespace options
+}  // namespace acclimate
+
+#endif
+"
+  )
+target_include_directories(acclimate PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include)
+
+string(REPLACE ";" ",\n    " ACCLIMATE_OPTIONS "${ACCLIMATE_OPTIONS}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp "\
+#include \"options.h\"
+
+namespace acclimate {
+namespace options {
+
+const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options = {
+    ${ACCLIMATE_OPTIONS}
+};
+
+}  // namespace options
+}  // namespace acclimate
+"
+  )
+target_sources(acclimate PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp)
 
 include_nlopt(acclimate ON "34fd7ce")
 

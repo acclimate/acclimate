@@ -51,7 +51,7 @@ Model* CapacityManager::model() const { return firm->model(); }
 std::string CapacityManager::id() const { return firm->id(); }
 
 void CapacityManager::print_inputs() const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         info(id() << ": " << firm->input_storages.size() << " inputs:");
         for (const auto& is : firm->input_storages) {
             Flow possible_use_U_hat = is->get_possible_use_U_hat();

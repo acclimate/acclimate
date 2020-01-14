@@ -27,27 +27,10 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include "options.h"
 
 #ifdef _OPENMP
 #include <omp.h>
-#endif
-
-#ifdef _OPENMP
-static constexpr bool OPENMP_MODE = true;
-#else
-static constexpr bool OPENMP_MODE = false;
-#endif
-
-#ifdef DEBUG
-static constexpr bool DEBUG_MODE = true;
-#else
-static constexpr bool DEBUG_MODE = false;
-#endif
-
-#ifdef BANKERS_ROUNDING
-static constexpr bool BANKERS_ROUNDING_MODE = true;
-#else
-static constexpr bool BANKERS_ROUNDING_MODE = false;
 #endif
 
 #define UNUSED(x) (void)(x)
@@ -112,7 +95,7 @@ using Ratio = FloatType;
 using Forcing = Ratio;
 
 inline FloatType fround(FloatType x) {
-    if constexpr (BANKERS_ROUNDING_MODE) {
+    if constexpr (options::BANKERS_ROUNDING_MODE) {
         return std::rint(x);
     } else {
         return std::round(x);
@@ -120,7 +103,7 @@ inline FloatType fround(FloatType x) {
 }
 
 inline IntType iround(FloatType x) {
-    if constexpr (BANKERS_ROUNDING_MODE) {
+    if constexpr (options::BANKERS_ROUNDING_MODE) {
         return std::lrint(x);
     } else {
         return std::round(x);

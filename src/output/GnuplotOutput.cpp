@@ -45,7 +45,7 @@ void GnuplotOutput::initialize() {
 }
 
 void GnuplotOutput::internal_write_header(tm* timestamp, unsigned int max_threads) {
-    file << "# Start time: " << std::asctime(timestamp) << "# Version: " << ACCLIMATE_VERSION << "\n"
+    file << "# Start time: " << std::asctime(timestamp) << "# Version: " << version << "\n"
          << "# Max number of threads: " << max_threads << "\n";
 }
 

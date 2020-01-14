@@ -195,7 +195,7 @@ std::string BusinessConnection::id() const {
 }
 
 const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller) const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         if (caller != seller) {
             assertstepnot(CONSUMPTION_AND_PRODUCTION);
         }
@@ -206,7 +206,7 @@ const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller
 }
 
 const Flow& BusinessConnection::last_delivery_Z(const SalesManager* const caller) const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         if (caller != seller) {
             assertstepnot(CONSUMPTION_AND_PRODUCTION);
         }
@@ -217,7 +217,7 @@ const Flow& BusinessConnection::last_delivery_Z(const SalesManager* const caller
 }
 
 const Demand& BusinessConnection::last_demand_request_D(const PurchasingManager* const caller) const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         if (caller != buyer) {
             assertstepnot(PURCHASE);
         }

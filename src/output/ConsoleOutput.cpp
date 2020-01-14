@@ -54,7 +54,7 @@ void ConsoleOutput::internal_write_header(tm* timestamp, unsigned int max_thread
     *out << "Start time " << std::asctime(timestamp)
          << "\n"
             "Version "
-         << ACCLIMATE_VERSION
+         << version
          << "\n"
             "Max "
          << max_threads << " threads" << std::endl;

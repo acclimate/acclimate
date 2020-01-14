@@ -131,7 +131,7 @@ PurchasingManager::~PurchasingManager() {
 }
 
 const Demand& PurchasingManager::demand_D(const EconomicAgent* const caller) const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         if (caller != storage->economic_agent) {
             assertstepnot(PURCHASE);
         }
@@ -166,7 +166,7 @@ const FlowValue& PurchasingManager::total_transport_penalty() const {
 }
 
 const FlowValue& PurchasingManager::expected_costs(const EconomicAgent* const caller) const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         if (caller != storage->economic_agent) {
             assertstepnot(PURCHASE);
         }
@@ -711,7 +711,7 @@ void PurchasingManager::optimize_purchase(std::vector<FloatType>& demand_request
 
     } catch (const nlopt::roundoff_limited& exc) {
         if constexpr (!IGNORE_ROUNDOFFLIMITED) {
-            if constexpr (DEBUG_MODE) {
+            if constexpr (options::DEBUG_MODE) {
                 print_distribution(&demand_requests_D_p[0], &data_p, false);
             }
             model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, nullptr, storage->economic_agent);
@@ -724,7 +724,7 @@ void PurchasingManager::optimize_purchase(std::vector<FloatType>& demand_request
 
 #if !(defined(DEBUG) && defined(OPTIMIZATION_PROBLEMS_FATAL))
     } catch (const std::exception& exc) {
-        if constexpr (DEBUG_MODE) {
+        if constexpr (options::DEBUG_MODE) {
             print_distribution(&demand_requests_D_p[0], &data_p, false);
         }
         model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
@@ -736,7 +736,7 @@ void PurchasingManager::optimize_purchase(std::vector<FloatType>& demand_request
 #endif  // TODO: rewrite the conditional code
     }
     if (result < nlopt::SUCCESS) {
-        if constexpr (DEBUG_MODE) {
+        if constexpr (options::DEBUG_MODE) {
             print_distribution(&demand_requests_D_p[0], &data_p, false);
         }
         model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
@@ -750,7 +750,7 @@ void PurchasingManager::optimize_purchase(std::vector<FloatType>& demand_request
             }
         }
     } else if (result == nlopt::MAXTIME_REACHED) {
-        if constexpr (DEBUG_MODE) {
+        if constexpr (options::DEBUG_MODE) {
             print_distribution(&demand_requests_D_p[0], &data_p, false);
         }
         model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, nullptr, storage->economic_agent);
@@ -799,7 +799,7 @@ void PurchasingManager::calc_optimization_parameters(std::vector<FloatType>& dem
             }
             const FloatType ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
             const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
-            if constexpr (DEBUG_MODE) {
+            if constexpr (options::DEBUG_MODE) {
                 const FloatType X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
                 assert(X_max <= X_hat);
             }
@@ -827,7 +827,7 @@ FlowQuantity PurchasingManager::calc_analytical_approximation_X_max(const Busine
 }
 
 void PurchasingManager::print_details() const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         info(business_connections.size() << " inputs:  I_star= " << storage->initial_input_flow_I_star().get_quantity());
         for (const auto& bc : business_connections) {
             info("    " << bc->id() << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity() << "  X_star= " << std::setw(11)
@@ -839,7 +839,7 @@ void PurchasingManager::print_details() const {
 void PurchasingManager::print_distribution(const FloatType demand_requests_D_p[], const OptimizerData* data, bool connection_details) const {
 #define PRINT_ROW1(a, b) "      " << std::setw(14) << a << " = " << std::setw(14) << b << '\n'
 #define PRINT_ROW2(a, b, c) "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n"
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
 #pragma omp critical(output)
         {
             std::vector<FloatType> demand_requests_D(data->business_connections.size());

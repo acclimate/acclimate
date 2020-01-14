@@ -81,7 +81,7 @@ Run::Run(const settings::SettingsNode& settings) {
     {
         ModelInitializer model_initializer(model, settings);
         model_initializer.initialize();
-        if constexpr (DEBUG_MODE) {
+        if constexpr (options::DEBUG_MODE) {
             model_initializer.print_network_characteristics();
         }
         model_m.reset(model);
@@ -193,7 +193,7 @@ int Run::run() {
             output->iterate();
         }
 
-        if constexpr (DEBUG_MODE) {
+        if constexpr (options::DEBUG_MODE) {
             auto t2 = std::chrono::high_resolution_clock::now();
             info_("Output took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count() << " ms");
             t0 = t2;
@@ -289,15 +289,15 @@ void Run::event(EventType type, const EconomicAgent* economic_agent_from, const 
 }
 
 unsigned int Run::thread_count() const {
-    if constexpr (OPENMP_MODE) {
-        return omp_get_max_threads();
-    } else {
-        return 1;
-    }
+#ifdef _OPENMP
+    return omp_get_max_threads();
+#else
+    return 1;
+#endif
 }
 
 std::string Run::timeinfo() const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         std::string res;
         if (step_m != IterationStep::INITIALIZATION) {
             res = std::to_string(time_m) + " ";

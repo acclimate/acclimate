@@ -33,10 +33,6 @@
 #include "settingsnode.h"
 #include "version.h"
 
-#ifdef ACCLIMATE_HAS_DIFF
-extern const char* acclimate_git_diff;
-#endif
-
 namespace acclimate {
 
 NetCDFOutput::NetCDFOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
@@ -110,11 +106,14 @@ void NetCDFOutput::internal_write_header(tm* timestamp, unsigned int max_threads
     str.erase(str.end() - 1);
     file->putAtt("start_time", str);
     file->putAtt("max_threads", netCDF::NcType::nc_INT, max_threads);
-    file->putAtt("version", ACCLIMATE_VERSION);
-    file->putAtt("options", ACCLIMATE_OPTIONS);
-#ifdef ACCLIMATE_HAS_DIFF
-    file->putAtt("diff", acclimate_git_diff);
-#endif
+    file->putAtt("version", version);
+    auto options_group = file->addGroup("options");
+    for (const auto& option : options::options) {
+        options_group.putAtt(option.name, netCDF::NcType::nc_BYTE, option.value);
+    }
+    if (has_diff) {
+        file->putAtt("diff", git_diff);
+    }
 }
 
 void NetCDFOutput::internal_write_footer(tm* duration) { file->putAtt("duration", netCDF::NcType::nc_INT, std::mktime(duration)); }

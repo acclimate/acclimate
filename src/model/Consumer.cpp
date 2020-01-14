@@ -73,7 +73,6 @@ void Consumer::iterate_purchase() {
 }
 
 void Consumer::iterate_investment() {
-    // TODO: why was it doing nothing for VariantPrices?
     // assertstep(INVESTMENT);
     // for (const auto& is : input_storages) {
     //     is->purchasing_manager->iterate_investment();
@@ -81,7 +80,7 @@ void Consumer::iterate_investment() {
 }
 
 void Consumer::print_details() const {
-    if constexpr (DEBUG_MODE) {
+    if constexpr (options::DEBUG_MODE) {
         info(id() << ":");
         for (const auto& is : input_storages) {
             is->purchasing_manager->print_details();
