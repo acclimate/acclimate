@@ -37,7 +37,11 @@ else()
 endif()
 
 target_include_directories(acclimate PRIVATE include lib/cpp-library)
-set_property(TARGET acclimate PROPERTY CXX_STANDARD 17)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Intel") # icc 19 does not yet fully support c++17, but we only need features it does support
+  target_compile_options(acclimate PUBLIC -std=c++17)
+else()
+  target_compile_features(acclimate PUBLIC cxx_std_17)
+endif()
 
 add_system_paths()
 add_doxygen_documentation(doc doc)
