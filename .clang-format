@@ -1,7 +1,7 @@
 AccessModifierOffset: -2
 AllowShortFunctionsOnASingleLine: All
-AllowShortIfStatementsOnASingleLine: Never
-AlwaysBreakTemplateDeclarations: Yes
+AllowShortIfStatementsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: true
 BasedOnStyle: Google
 BinPackParameters: false
 BreakBeforeBinaryOperators: NonAssignment
