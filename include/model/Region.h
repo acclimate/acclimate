@@ -40,6 +40,7 @@ class Model;
 class ModelInitializer;
 
 class Region : public GeoLocation {
+    friend class Model;
     friend class ModelInitializer;
 
   private:
@@ -66,8 +67,10 @@ class Region : public GeoLocation {
     using GeoLocation::connections;
     std::vector<std::unique_ptr<EconomicAgent>> economic_agents;
 
-  public:
+ private:
     Region(Model* model_p, std::string id_p, IndexType index_p);
+
+  public:
     ~Region() override = default;
     const Flow& consumption_C() const;
     const Flow& import_flow_Z() const;
