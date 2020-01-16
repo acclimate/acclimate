@@ -84,7 +84,7 @@ template<typename T>
 RasteredData<T>::RasteredData(std::string filename_p, const std::string& variable_name) : filename(std::move(filename_p)), x(*this), y(*this) {
     std::unique_ptr<netCDF::NcFile> file;
     try {
-        file.reset(new netCDF::NcFile(filename, netCDF::NcFile::read));
+        file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::read);
     } catch (netCDF::exceptions::NcException& ex) {
         error("Could not open '" + filename + "'");
     }
@@ -105,7 +105,7 @@ FloatType RasteredData<T>::operator/(const RasteredData<T2>& other) const {
 
 template<typename T>
 template<typename T2>
-bool RasteredData<T>::is_compatible(const RasteredData<T2>& other) const {
+[[nodiscard]] bool RasteredData<T>::is_compatible(const RasteredData<T2>& other) const {
     return std::abs(t_x_gridsize - other.abs_x_gridsize()) < 1e-5 && std::abs(t_y_gridsize - other.abs_y_gridsize()) < 1e-5;
 }
 

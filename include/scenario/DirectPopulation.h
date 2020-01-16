@@ -37,7 +37,7 @@ class DirectPopulation : public RasteredScenario<FloatType> {
         FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, FloatType& region_forcing) const override;
 
   public:
-    DirectPopulation(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    DirectPopulation(const settings::SettingsNode& settings_p, const settings::SettingsNode& scenario_node_p, Model* model_p);
 };
 }  // namespace acclimate
 

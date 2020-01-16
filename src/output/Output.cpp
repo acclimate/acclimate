@@ -168,7 +168,7 @@ bool Output::write_firm_parameter(const Firm* p, const hstring& name) {
 bool Output::write_economic_agent_parameter(const EconomicAgent* p, const hstring& name) {
     switch (name) {
         case hstring::hash("demand"): {
-            Demand demand = Demand(0.0);
+            auto demand = Demand(0.0);
             for (const auto& is : p->input_storages) {
                 demand += is->purchasing_manager->demand_D();
             }
@@ -197,7 +197,7 @@ bool Output::write_economic_agent_parameter(const EconomicAgent* p, const hstrin
             internal_write_value(name, business_connections);
         } break;
         case hstring::hash("storage"): {
-            Stock sum_storage_content = Stock(0.0);
+            auto sum_storage_content = Stock(0.0);
             for (const auto& is : p->input_storages) {
                 sum_storage_content += is->content_S();
             }

@@ -52,7 +52,7 @@ class RasteredScenario : public ExternalScenario {
     FloatType total_current_proxy_sum_ = 0;
 
   protected:
-    RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    RasteredScenario(const settings::SettingsNode& settings_p, const settings::SettingsNode& scenario_node_p, Model* model_p);
     virtual RegionForcingType new_region_forcing(Region* region) const = 0;
     virtual void set_region_forcing(Region* region, const RegionForcingType& forcing, FloatType proxy_sum) const = 0;
     virtual void reset_forcing(Region* region, RegionForcingType& forcing) const = 0;

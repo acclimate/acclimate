@@ -67,7 +67,7 @@ class Region : public GeoLocation {
     using GeoLocation::connections;
     std::vector<std::unique_ptr<EconomicAgent>> economic_agents;
 
- private:
+  private:
     Region(Model* model_p, std::string id_p, IndexType index_p);
 
   public:

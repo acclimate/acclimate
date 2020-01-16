@@ -124,7 +124,7 @@ FloatType TransportChainLink::get_stddeviation() const {
 
 FlowQuantity TransportChainLink::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    FlowQuantity res = FlowQuantity(0.0);
+    auto res = FlowQuantity(0.0);
     for (const auto& f : transport_queue) {
         res += round(f.initial - f.current.get_quantity());
     }

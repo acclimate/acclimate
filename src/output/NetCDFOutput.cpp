@@ -52,7 +52,7 @@ void NetCDFOutput::initialize() {
     } else {
         filename = output_node["file"].template as<std::string>();
     }
-    file.reset(new netCDF::NcFile(filename, netCDF::NcFile::replace, netCDF::NcFile::nc4));
+    file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::replace, netCDF::NcFile::nc4);
     if (!file) {
         error("Could not create output file " << filename);
     }
@@ -109,7 +109,7 @@ void NetCDFOutput::internal_write_header(tm* timestamp, unsigned int max_threads
     file->putAtt("version", version);
     auto options_group = file->addGroup("options");
     for (const auto& option : options::options) {
-        options_group.putAtt(option.name, netCDF::NcType::nc_BYTE, option.value);
+        options_group.putAtt(option.name, netCDF::NcType::nc_BYTE, option.value ? 1 : 0);
     }
     if (has_diff) {
         file->putAtt("diff", git_diff);
@@ -196,7 +196,7 @@ void NetCDFOutput::checkpoint_stop() {
 }
 
 void NetCDFOutput::checkpoint_resume() {
-    file.reset(new netCDF::NcFile(filename, netCDF::NcFile::write, netCDF::NcFile::nc4));
+    file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::write, netCDF::NcFile::nc4);
     if (!file) {
         error("Could not open output file " << filename);
     }

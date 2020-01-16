@@ -38,7 +38,7 @@ namespace acclimate {
 
 Scenario::Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
     : model_m(model_p), scenario_node(std::move(scenario_node_p)), settings(settings_p) {
-    srand(0);  // NOLINT(cert-msc32-c)
+    srand(0);  // NOLINT(cert-msc32-c,cert-msc51-cpp)
 }
 
 void Scenario::set_firm_property(Firm* firm, const settings::SettingsNode& node, bool reset) {

@@ -41,8 +41,8 @@ void DamageOutput::initialize() {
     if (!output_node.has("file")) {
         out = &std::cout;
     } else {
-        std::string filename = output_node["file"].template as<std::string>();
-        outfile.reset(new std::ofstream());
+        const auto filename = output_node["file"].template as<std::string>();
+        outfile = std::make_unique<std::ofstream>();
         outfile->open(filename.c_str(), std::ofstream::out);
         out = outfile.get();
     }

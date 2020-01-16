@@ -31,8 +31,8 @@
 namespace acclimate {
 
 template<class RegionForcingType>
-RasteredScenario<RegionForcingType>::RasteredScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-    : ExternalScenario(settings_p, std::move(scenario_node_p), model_p) {}
+RasteredScenario<RegionForcingType>::RasteredScenario(const settings::SettingsNode& settings_p, const settings::SettingsNode& scenario_node_p, Model* model_p)
+    : ExternalScenario(settings_p, scenario_node_p, model_p) {}
 
 template<class RegionForcingType>
 ExternalForcing* RasteredScenario<RegionForcingType>::read_forcing_file(const std::string& filename, const std::string& variable_name) {

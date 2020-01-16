@@ -35,7 +35,7 @@ ProgressOutput::ProgressOutput(const settings::SettingsNode& settings_p, Model* 
 
 void ProgressOutput::initialize() {
     const auto total = output_node["total"].template as<std::size_t>();
-    bar.reset(new progressbar::ProgressBar(total));
+    bar = std::make_unique<progressbar::ProgressBar>(total);
 }
 
 void ProgressOutput::checkpoint_stop() {

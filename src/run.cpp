@@ -61,7 +61,7 @@ static bool instantiated = false;
 static volatile bool checkpoint_scheduled = false;
 
 #ifdef ENABLE_DMTCP
-void handle_sigterm(int /* signal */) { checkpoint_scheduled = true; }
+static void handle_sigterm(int /* signal */) { checkpoint_scheduled = true; }
 #endif
 
 Run::Run(const settings::SettingsNode& settings) {
@@ -88,7 +88,7 @@ Run::Run(const settings::SettingsNode& settings) {
     }
 
     Scenario* scenario = nullptr;  // TODO put in scope below!
-    for (auto scenario_node : settings["scenarios"].as_sequence()) {
+    for (const auto& scenario_node : settings["scenarios"].as_sequence()) {
         const std::string& type = scenario_node["type"].template as<std::string>();
         // TODO use switch
         if (type == "events") {

@@ -69,7 +69,7 @@ void CapacityManager::print_inputs() const {
 Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
     assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
-    Price unit_commodity_costs = Price(0.0);
+    auto unit_commodity_costs = Price(0.0);
 
     for (auto& input_storage : firm->input_storages) {
         Flow possible_use_U_hat(0.0);

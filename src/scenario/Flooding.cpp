@@ -32,8 +32,8 @@
 
 namespace acclimate {
 
-Flooding::Flooding(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-    : RasteredScenario<FloatType>(settings_p, std::move(scenario_node_p), model_p) {
+Flooding::Flooding(const settings::SettingsNode& settings_p, const settings::SettingsNode& scenario_node_p, Model* model_p)
+    : RasteredScenario<FloatType>(settings_p, scenario_node_p, model_p) {
     if (scenario_node.has("sectors")) {
         for (const auto& sector_node : scenario_node["sectors"].as_sequence()) {
             const auto& sector_name = sector_node.as<std::string>();

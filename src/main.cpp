@@ -103,14 +103,14 @@ int main(int argc, char* argv[]) {
 #endif
             if (arg == "-") {
                 std::cin >> std::noskipws;
-                acclimate::Acclimate acclimate(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(std::cin))));
+                acclimate::Acclimate acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
                 return acclimate.run();
             }
             std::ifstream settings_file(arg);
             if (!settings_file) {
                 throw std::runtime_error("Cannot open " + arg);
             }
-            acclimate::Acclimate acclimate(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(settings_file))));
+            acclimate::Acclimate acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(settings_file)));
             return acclimate.run();
 #ifndef DEBUG
         } catch (std::runtime_error& ex) {

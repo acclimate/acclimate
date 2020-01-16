@@ -44,7 +44,7 @@ void HistogramOutput::initialize() {
     max = output_node["windows"]["max"].template as<double>();
     exclude_max = output_node["windows"]["exclude_max"].template as<bool>();
     windows = output_node["windows"]["count"].template as<int>();
-    const std::string filename = output_node["file"].template as<std::string>();
+    const auto filename = output_node["file"].template as<std::string>();
     file.open(filename.c_str(), std::ofstream::out);
     count.resize(windows);
 }

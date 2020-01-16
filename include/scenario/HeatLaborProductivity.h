@@ -42,7 +42,7 @@ class HeatLaborProductivity : public RasteredScenario<HeatLaborProductivityRegio
         FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, RegionForcingType& region_forcing) const override;
 
   public:
-    HeatLaborProductivity(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    HeatLaborProductivity(const settings::SettingsNode& settings_p, const settings::SettingsNode& scenario_node_p, Model* model_p);
 };
 }  // namespace acclimate
 

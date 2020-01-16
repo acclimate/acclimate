@@ -98,8 +98,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/include/options.h "\
 #define ACCLIMATE_OPTIONS_H
 #include <array>
 
-namespace acclimate {
-namespace options {
+namespace acclimate::options {
 
 #ifdef DEBUG
 constexpr bool DEBUG_MODE = true;
@@ -119,8 +118,7 @@ struct Option {
 };
 extern const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options;
 
-}  // namespace options
-}  // namespace acclimate
+}  // namespace acclimate::options
 
 #endif
 "
@@ -131,15 +129,13 @@ string(REPLACE ";" ",\n    " ACCLIMATE_OPTIONS "${ACCLIMATE_OPTIONS}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp "\
 #include \"options.h\"
 
-namespace acclimate {
-namespace options {
+namespace acclimate::options {
 
 const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options = {
     ${ACCLIMATE_OPTIONS}
 };
 
-}  // namespace options
-}  // namespace acclimate
+}  // namespace acclimate::options
 "
   )
 target_sources(acclimate PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp)

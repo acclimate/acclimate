@@ -199,7 +199,7 @@ void ModelInitializer::clean_network() {
                 if ((*economic_agent)->type == EconomicAgent::Type::FIRM) {
                     Firm* firm = (*economic_agent)->as_firm();
 
-                    FlowQuantity input = FlowQuantity(0.0);
+                    auto input = FlowQuantity(0.0);
                     for (const auto& input_storage : firm->input_storages) {
                         input += input_storage->initial_input_flow_I_star().get_quantity();
                     }
@@ -213,8 +213,8 @@ void ModelInitializer::clean_network() {
                         if constexpr (options::CLEANUP_INFO_MODE) {
                             if (value_added <= 0.0) {
                                 warning(firm->id() << ": removed (value added only " << value_added << ")");
-                            } else if (firm->sales_manager->business_connections.size() == 0
-                                       || (firm->sales_manager->business_connections.size() == 1 && firm->self_supply_connection())) {
+                            } else if (firm->sales_manager->business_connections.empty()
+                                       || (firm->sales_manager->business_connections.size() == 1 && firm->self_supply_connection() != nullptr)) {
                                 warning(firm->id() << ": removed (no outgoing connection)");
                             } else {
                                 warning(firm->id() << ": removed (no incoming connection)");

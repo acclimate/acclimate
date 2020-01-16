@@ -34,6 +34,7 @@
 #include <omp.h>
 #endif
 
+// TODO replace by comments of respective parameter names
 #define UNUSED(x) (void)(x)
 
 #ifdef DEBUG
@@ -306,6 +307,7 @@ class PricedQuantity {
     constexpr PricedQuantity() : quantity(0.0), value(0.0) {}
 
   public:
+    // TODO use static function for maybe_negative == true
     PricedQuantity(const Q& quantity_p, const V& value_p, const bool maybe_negative = false) : quantity(quantity_p), value(value_p) {
         typeassert(!isnan(quantity));
         typeassert(!isnan(value));

@@ -66,7 +66,7 @@ class PurchasingManager {
     FloatType unscaled_objective(FloatType x) const;
     FloatType partial_objective_scaled_objective() const;
     FloatType scaled_use(FloatType use) const;
-    FloatType unscaled_use(FloatType use) const;
+    FloatType unscaled_use(FloatType x) const;
     FloatType partial_use_scaled_use() const;
     void calc_desired_purchase(const OptimizerData* data);
     FloatType n_r(FloatType D_r, const BusinessConnection* business_connection) const;
