@@ -125,7 +125,7 @@ class ModelInitializer {
     void initialize();
     void print_network_characteristics() const;
     Model* model() const { return model_m; }
-    static std::string id() { return "MODELINITIALIZER"; }
+    std::string id() const { return "MODELINITIALIZER"; }
 };
 }  // namespace acclimate
 

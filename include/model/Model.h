@@ -98,12 +98,12 @@ class Model {
     Region* find_region(const std::string& name) const;
     Sector* find_sector(const std::string& name) const;
     Firm* find_firm(const std::string& sector_name, const std::string& region_name) const;
-    static Firm* find_firm(Sector* sector, const std::string& region_name);
-    static Consumer* find_consumer(Region* region);
+    Firm* find_firm(Sector* sector, const std::string& region_name) const;
+    Consumer* find_consumer(Region* region) const;
     Consumer* find_consumer(const std::string& region_name) const;
     GeoLocation* find_location(const std::string& name) const;
     Run* run() const { return run_m; }
-    static std::string id() { return "MODEL"; }
+    std::string id() const { return "MODEL"; }
 };
 }  // namespace acclimate
 

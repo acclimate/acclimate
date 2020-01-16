@@ -166,7 +166,7 @@ Firm* Model::find_firm(const std::string& sector_name, const std::string& region
     return nullptr;
 }
 
-Firm* Model::find_firm(Sector* sector, const std::string& region_name) {
+Firm* Model::find_firm(Sector* sector, const std::string& region_name) const {
     auto it = std::find_if(sector->firms.begin(), sector->firms.end(), [region_name](const Firm* it) { return it->region->id() == region_name; });
     if (it == sector->firms.end()) {
         return nullptr;
@@ -174,7 +174,7 @@ Firm* Model::find_firm(Sector* sector, const std::string& region_name) {
     return *it;
 }
 
-Consumer* Model::find_consumer(Region* region) {
+Consumer* Model::find_consumer(Region* region) const {
     auto it = std::find_if(region->economic_agents.begin(), region->economic_agents.end(),
                            [](const std::unique_ptr<EconomicAgent>& it) { return it->type == EconomicAgent::Type::CONSUMER; });
     if (it == region->economic_agents.end()) {
