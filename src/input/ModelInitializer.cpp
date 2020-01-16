@@ -46,13 +46,6 @@
 #include "optimization.h"
 #include "run.h"
 
-// TODO Set directly
-#ifdef CLEANUP_INFO
-static constexpr bool CLEANUP_INFO_MODE = true;
-#else
-static constexpr bool CLEANUP_INFO_MODE = false;
-#endif
-
 namespace acclimate {
 
 ModelInitializer::ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p) : model_m(model_p), settings(settings_p) {
@@ -198,7 +191,7 @@ void ModelInitializer::clean_network() {
         firm_count = 0;
         consumer_count = 0;
         needs_cleaning = false;
-        if constexpr (CLEANUP_INFO_MODE) {
+        if constexpr (options::CLEANUP_INFO_MODE) {
             info("Cleaning up...");
         }
         for (auto& region : model()->regions) {
@@ -217,7 +210,7 @@ void ModelInitializer::clean_network() {
                         || (firm->input_storages.size() == 1 && firm->self_supply_connection() != nullptr)) {
                         needs_cleaning = true;
 
-                        if constexpr (CLEANUP_INFO_MODE) {
+                        if constexpr (options::CLEANUP_INFO_MODE) {
                             if (value_added <= 0.0) {
                                 warning(firm->id() << ": removed (value added only " << value_added << ")");
                             } else if (firm->sales_manager->business_connections.size() == 0
@@ -259,7 +252,7 @@ void ModelInitializer::clean_network() {
                     Consumer* consumer = (*economic_agent)->as_consumer();
 
                     if (consumer->input_storages.empty()) {
-                        if constexpr (CLEANUP_INFO_MODE) {
+                        if constexpr (options::CLEANUP_INFO_MODE) {
                             warning(consumer->id() << ": removed (no incoming connection)");
                         }
                         // Clean up memory of consumer
@@ -303,7 +296,7 @@ void ModelInitializer::print_network_characteristics() const {
             }
             if (firm_count > 0) {
                 average_transport_delay_region /= FloatType(firm_count);
-                if constexpr (CLEANUP_INFO_MODE) {
+                if constexpr (options::CLEANUP_INFO_MODE) {
                     info(region->id() << ": number of firms: " << firm_count << " average transport delay: " << average_transport_delay_region);
                 }
                 average_transport_delay += average_transport_delay_region;
@@ -313,7 +306,7 @@ void ModelInitializer::print_network_characteristics() const {
             }
         }
         average_transport_delay /= FloatType(model()->regions.size() - region_wo_firm_count);
-        if constexpr (CLEANUP_INFO_MODE) {
+        if constexpr (options::CLEANUP_INFO_MODE) {
             info("Average transport delay: " << average_transport_delay);
         }
     }

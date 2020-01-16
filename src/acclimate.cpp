@@ -31,42 +31,42 @@
 
 namespace acclimate {
 
-#ifdef FLOATING_POINT_EXCEPTIONS
-void handle_fpe_error(int /* signal */) {
-    int exceptions = fetestexcept(FE_ALL_EXCEPT);
-    feclearexcept(FE_ALL_EXCEPT);
-    if (exceptions == 0) {
-        return;
+static void handle_fpe_error(int /* signal */) {
+    if constexpr (options::FLOATING_POINT_EXCEPTIONS_MODE) {
+        unsigned int exceptions = fetestexcept(FE_ALL_EXCEPT);  // NOLINT(hicpp-signed-bitwise)
+        feclearexcept(FE_ALL_EXCEPT);                           // NOLINT(hicpp-signed-bitwise)
+        if (exceptions == 0) {
+            return;
+        }
+        if ((exceptions & FE_OVERFLOW) != 0) {  // NOLINT(hicpp-signed-bitwise)
+            warning_("FPE_OVERFLOW");
+        }
+        if ((exceptions & FE_INVALID) != 0) {  // NOLINT(hicpp-signed-bitwise)
+            warning_("FPE_INVALID");
+        }
+        if ((exceptions & FE_DIVBYZERO) != 0) {  // NOLINT(hicpp-signed-bitwise)
+            warning_("FPE_DIVBYZERO");
+        }
+        if ((exceptions & FE_INEXACT) != 0) {  // NOLINT(hicpp-signed-bitwise)
+            warning_("FE_INEXACT");
+        }
+        if ((exceptions & FE_UNDERFLOW) != 0) {  // NOLINT(hicpp-signed-bitwise)
+            warning_("FE_UNDERFLOW");
+        }
+        if constexpr (options::FATAL_FLOATING_POINT_EXCEPTIONS_MODE) {
+            error_("Floating point exception");
+        }
     }
-    if (exceptions & FE_OVERFLOW) {
-        warning_("FPE_OVERFLOW");
-    }
-    if (exceptions & FE_INVALID) {
-        warning_("FPE_INVALID");
-    }
-    if (exceptions & FE_DIVBYZERO) {
-        warning_("FPE_DIVBYZERO");
-    }
-    if (exceptions & FE_INEXACT) {
-        warning_("FE_INEXACT");
-    }
-    if (exceptions & FE_UNDERFLOW) {
-        warning_("FE_UNDERFLOW");
-    }
-#ifdef FATAL_FLOATING_POINT_EXCEPTIONS
-    error_("Floating point exception");
-#endif
 }
-#endif
 
 Acclimate::Acclimate(const settings::SettingsNode& settings_p) {
-#ifdef BANKERS_ROUNDING
-    fesetround(FE_TONEAREST);
-#endif
-#ifdef FLOATING_POINT_EXCEPTIONS
-    signal(SIGFPE, handle_fpe_error);
-    feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);
-#endif
+    if constexpr (options::BANKERS_ROUNDING_MODE) {
+        fesetround(FE_TONEAREST);
+    }
+    if constexpr (options::FLOATING_POINT_EXCEPTIONS_MODE) {
+        signal(SIGFPE, handle_fpe_error);
+        feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);  // NOLINT(hicpp-signed-bitwise)
+    }
     run_m = std::make_unique<Run>(settings_p);
 }
 
