@@ -79,8 +79,8 @@ inline void Output::internal_write_value(const hstring& name, const Flow& v) {
     internal_write_value(name, v.get_value(), hstring("_value"));
 }
 
-template<int precision_digits_p>
-inline void Output::internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix) {
+template<int precision_digits_p, bool rounded>
+inline void Output::internal_write_value(const hstring& name, const Type<precision_digits_p, rounded>& v, const hstring& suffix) {
     internal_write_value(name, to_float(v), suffix);
 }
 

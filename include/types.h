@@ -27,6 +27,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+
 #include "options.h"
 
 #ifdef _OPENMP
@@ -110,39 +111,65 @@ inline IntType iround(FloatType x) {
     }
 }
 
-template<class T>
-constexpr FloatType to_float(T&& a) {
-    return a.get_float();
-}
+template<bool rounded>
+struct InternalType {};
 
-template<int precision_digits_p>
+template<>
+struct InternalType<true> {
+    using type = IntType;
+};
+template<>
+struct InternalType<false> {
+    using type = FloatType;
+};
+
+template<int precision_digits_p, bool rounded_p>
 class Type {
   protected:
-    static constexpr FloatType precision_from_digits(const unsigned char precision_digits_p_) noexcept {
+    static constexpr FloatType precision_from_digits(const unsigned char precision_digits_p_) {
         return precision_digits_p_ == 0 ? 1 : 0.1 * precision_from_digits(precision_digits_p_ - 1);
     }
-
-    virtual void set_float(FloatType f) = 0;
+    static constexpr typename InternalType<rounded_p>::type maybe_round(FloatType f) {
+        if constexpr (rounded) {
+            return iround(f / precision);
+        } else {
+            return f;
+        }
+    }
 
   public:
-    using base_type = FloatType;
+    using base_type = FloatType;  // used for SettingsNode when reading from config
+    static constexpr bool rounded = rounded_p;
     static constexpr int precision_digits = precision_digits_p;
     static constexpr FloatType precision = precision_from_digits(precision_digits_p);
-    virtual FloatType get_float() const = 0;
-    friend std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
-        return lhs << std::setprecision(precision_digits_p) << std::fixed << rhs.get_float();
+
+  protected:
+    typename InternalType<rounded_p>::type t;
+
+  protected:
+    Type() : t(0) {}
+    inline FloatType get_float() const {
+        if constexpr (rounded) {
+            return t * precision;
+        } else {
+            return t;
+        }
     }
-    virtual ~Type() = default;
+
+  public:
+    explicit Type(FloatType f) : t(maybe_round(f)) {}
+    friend std::ostream& operator<<(std::ostream& lhs, const Type& rhs) { return lhs << std::setprecision(precision_digits_p) << std::fixed << to_float(rhs); }
+    friend constexpr FloatType to_float(const Type& other) { return other.get_float(); }
 };
 
 #define INCLUDE_STANDARD_OPS(T)                                                                                          \
-  protected:                                                                                                             \
-    T() {}                                                                                                               \
-                                                                                                                         \
-  public:                                                                                                                \
-    explicit T(FloatType t_) { set_float(t_); }                                                                          \
+    using Type<precision_digits, rounded>::Type;                                                                         \
     T(const T& other) = default;                                                                                         \
     T(T&& other) = default;                                                                                              \
+    T& operator=(const T& other) {                                                                                       \
+        t = other.t;                                                                                                     \
+        return *this;                                                                                                    \
+    }                                                                                                                    \
     T operator+(const T& other) const {                                                                                  \
         T res;                                                                                                           \
         res.t = t + other.t;                                                                                             \
@@ -157,10 +184,6 @@ class Type {
         T res;                                                                                                           \
         res.t = std::numeric_limits<decltype(t)>::quiet_NaN();                                                           \
         return res;                                                                                                      \
-    }                                                                                                                    \
-    T& operator=(const T& other) {                                                                                       \
-        t = other.t;                                                                                                     \
-        return *this;                                                                                                    \
     }                                                                                                                    \
     T& operator+=(const T& rhs) {                                                                                        \
         t += rhs.t;                                                                                                      \
@@ -180,10 +203,17 @@ class Type {
     bool operator<=(const T& other) const { return t <= other.t; }                                                       \
     T operator*(FloatType other) const { return T(get_float() * other); }                                                \
     T operator/(FloatType other) const { return T(get_float() / other); }                                                \
-    friend T operator*(FloatType lhs, const T& rhs) { return T(lhs * rhs.get_float()); }                                 \
+    friend T operator*(FloatType lhs, const T& rhs) { return T(lhs * to_float(rhs)); }                                   \
     Ratio operator/(const T& other) const { return Ratio(static_cast<FloatType>(t) / static_cast<FloatType>(other.t)); } \
     friend bool same_sgn(const T& lhs, const T& rhs) { return (lhs.t >= 0) == (rhs.t >= 0); }                            \
     friend bool isnan(const T& other) { return std::isnan(other.t); }                                                    \
+    friend inline T round(const T& other) {                                                                              \
+        if constexpr (options::BASED_ON_INT_MODE && rounded) {                                                           \
+            return other;                                                                                                \
+        } else {                                                                                                         \
+            return T(fround(other.t / precision) * precision);                                                           \
+        }                                                                                                                \
+    }                                                                                                                    \
     friend T abs(const T& other) {                                                                                       \
         T res;                                                                                                           \
         res.t = std::abs(other.t);                                                                                       \
@@ -191,62 +221,25 @@ class Type {
     }
 
 template<int precision_digits_p>
-class NonRoundedType : public Type<precision_digits_p> {
-  protected:
-    FloatType t = 0;
-    inline void set_float(FloatType f) override { t = f; }
-
-  public:
-    FloatType get_float() const override { return t; }
-};
-
-#ifdef BASED_ON_INT
-
+using NonRoundedType = Type<precision_digits_p, false>;
 template<int precision_digits_p>
-class RoundedType : public Type<precision_digits_p> {
-  protected:
-    IntType t = 0;
-    inline void set_float(FloatType f) override { t = iround(f / precision); }
-
-  public:
-    using Type<precision_digits_p>::precision;
-    FloatType get_float() const override { return t * precision; }
-};
-
-#define INCLUDE_ROUNDED_OPS(T)                              \
-    friend inline T round(const T& other) { return other; } \
-    INCLUDE_STANDARD_OPS(T)
-
-#else  // !def BASED_ON_INT
-
-template<int precision_digits_p>
-using RoundedType = NonRoundedType<precision_digits_p>;
-
-#define INCLUDE_ROUNDED_OPS(T)                                                                   \
-    friend inline T round(const T& other) { return T(fround(other.t / precision) * precision); } \
-    INCLUDE_STANDARD_OPS(T)
-
-#endif
-
-#define INCLUDE_NONROUNDED_OPS(T) INCLUDE_STANDARD_OPS(T)
+using RoundedType = Type<precision_digits_p, options::BASED_ON_INT_MODE>;
 
 class Time : public RoundedType<0> {
   public:
     inline bool operator==(const Time& other) const { return t <= other.t && t >= other.t; }
-    INCLUDE_ROUNDED_OPS(Time);
+    INCLUDE_STANDARD_OPS(Time);
 };
 
 class Value;
-
 class FlowQuantity;
-
 class Price;
 
 class FlowValue : public NonRoundedType<8> {
   public:
     Value operator*(const Time& other) const;
     FlowQuantity operator/(const Price& other) const;
-    INCLUDE_NONROUNDED_OPS(FlowValue);
+    INCLUDE_STANDARD_OPS(FlowValue);
 };
 
 class Quantity;
@@ -255,7 +248,7 @@ class Value : public NonRoundedType<8> {
   public:
     Quantity operator/(const Price& other) const;
     FlowValue operator/(const Time& other) const;
-    INCLUDE_NONROUNDED_OPS(Value);
+    INCLUDE_STANDARD_OPS(Value);
 };
 
 class PriceGrad;
@@ -264,47 +257,45 @@ class FlowQuantity;
 class Price : public RoundedType<6> {
   public:
     PriceGrad operator/(const FlowQuantity& other) const;
-    INCLUDE_ROUNDED_OPS(Price);
+    INCLUDE_STANDARD_OPS(Price);
 };
 
 class FlowQuantity : public RoundedType<3> {
   public:
-    FlowValue operator*(const Price& other) const { return FlowValue(get_float() * other.get_float()); }
-    friend FlowValue operator*(const Price& lhs, const FlowQuantity& rhs) { return FlowValue(lhs.get_float() * rhs.get_float()); }
-    friend Price operator/(const FlowValue& lhs, const FlowQuantity& rhs) { return Price(lhs.get_float() / rhs.get_float()); }
+    FlowValue operator*(const Price& other) const { return FlowValue(get_float() * to_float(other)); }
+    friend FlowValue operator*(const Price& lhs, const FlowQuantity& rhs) { return FlowValue(to_float(lhs) * to_float(rhs)); }
+    friend Price operator/(const FlowValue& lhs, const FlowQuantity& rhs) { return Price(to_float(lhs) / to_float(rhs)); }
     Quantity operator*(const Time& other) const;
-    INCLUDE_ROUNDED_OPS(FlowQuantity);
+    INCLUDE_STANDARD_OPS(FlowQuantity);
 };
 
 class PriceGrad : public NonRoundedType<8> {
   public:
-    Price operator*(const FlowQuantity& other) const { return Price(get_float() * other.get_float()); }
-    INCLUDE_ROUNDED_OPS(PriceGrad);
+    Price operator*(const FlowQuantity& other) const { return Price(get_float() * to_float(other)); }
+    INCLUDE_STANDARD_OPS(PriceGrad);
 };
 
 class Quantity : public RoundedType<3> {
   public:
-    Value operator*(const Price& other) const { return Value(get_float() * other.get_float()); }
-    friend Price operator/(const Value& lhs, const Quantity& rhs) { return Price(lhs.get_float() / rhs.get_float()); }
-    FlowQuantity operator/(const Time& other) const { return FlowQuantity(get_float() / other.get_float()); }
-    INCLUDE_ROUNDED_OPS(Quantity);
+    Value operator*(const Price& other) const { return Value(get_float() * to_float(other)); }
+    friend Price operator/(const Value& lhs, const Quantity& rhs) { return Price(to_float(lhs) / to_float(rhs)); }
+    FlowQuantity operator/(const Time& other) const { return FlowQuantity(get_float() / to_float(other)); }
+    INCLUDE_STANDARD_OPS(Quantity);
 };
 
 #undef INCLUDE_STANDARD_OPS
-#undef INCLUDE_ROUNDED_OPS
-#undef INCLUDE_NONROUNDED_OPS
 
-inline PriceGrad Price::operator/(const FlowQuantity& other) const { return PriceGrad(get_float() / other.get_float()); }
+inline PriceGrad Price::operator/(const FlowQuantity& other) const { return PriceGrad(get_float() / to_float(other)); }
 
-inline FlowQuantity FlowValue::operator/(const Price& other) const { return FlowQuantity(get_float() / other.get_float()); }
+inline FlowQuantity FlowValue::operator/(const Price& other) const { return FlowQuantity(get_float() / to_float(other)); }
 
-inline FlowValue Value::operator/(const Time& other) const { return FlowValue(t / other.get_float()); }
+inline FlowValue Value::operator/(const Time& other) const { return FlowValue(t / to_float(other)); }
 
-inline Value FlowValue::operator*(const Time& other) const { return Value(t * other.get_float()); }
+inline Value FlowValue::operator*(const Time& other) const { return Value(t * to_float(other)); }
 
-inline Quantity FlowQuantity::operator*(const Time& other) const { return Quantity(get_float() * other.get_float()); }
+inline Quantity FlowQuantity::operator*(const Time& other) const { return Quantity(get_float() * to_float(other)); }
 
-inline Quantity Value::operator/(const Price& other) const { return Quantity(get_float() / other.get_float()); }
+inline Quantity Value::operator/(const Price& other) const { return Quantity(get_float() / to_float(other)); }
 
 template<typename Q, typename V>
 class PricedQuantity {
@@ -428,29 +419,24 @@ class PricedQuantity {
     }
     friend std::ostream& operator<<(std::ostream& os, const PricedQuantity& op) { return os << op.quantity << " [@" << op.get_price() << "]"; }
 
-#ifdef BASED_ON_INT
-
-    friend inline const PricedQuantity& round(const PricedQuantity& flow, bool maybe_negative = false) {
-        UNUSED(maybe_negative);
-        return flow;
-    }
-
-#else
-    friend const PricedQuantity round(const PricedQuantity& flow, bool maybe_negative = false) {
-        if (round(flow.get_quantity()) <= 0.0) {
-            return PricedQuantity();
+    friend inline PricedQuantity round(const PricedQuantity& flow, bool maybe_negative = false) {
+        if constexpr (options::BASED_ON_INT_MODE) {
+            return std::move(flow);
         } else {
-            Price p = round(flow.get_price());
-            Q rounded_quantity = round(flow.get_quantity());
-            PricedQuantity rounded_flow = PricedQuantity(rounded_quantity, rounded_quantity * p, maybe_negative);
-            if ((rounded_flow.get_quantity() > 0.0 && rounded_flow.get_value() <= 0.0)
-                || (rounded_flow.get_quantity() <= 0.0 && rounded_flow.get_value() > 0.0)) {
-                rounded_flow = PricedQuantity();
+            if (round(flow.get_quantity()) <= 0.0) {
+                return PricedQuantity();
+            } else {
+                Price p = round(flow.get_price());
+                Q rounded_quantity = round(flow.get_quantity());
+                PricedQuantity rounded_flow = PricedQuantity(rounded_quantity, rounded_quantity * p, maybe_negative);
+                if ((rounded_flow.get_quantity() > 0.0 && rounded_flow.get_value() <= 0.0)
+                    || (rounded_flow.get_quantity() <= 0.0 && rounded_flow.get_value() > 0.0)) {
+                    rounded_flow = PricedQuantity();
+                }
+                return rounded_flow;
             }
-            return rounded_flow;
         }
     }
-#endif
 
     friend const PricedQuantity absdiff(const PricedQuantity& a, const PricedQuantity& b) {
         if (a.quantity < b.quantity) {

@@ -73,8 +73,8 @@ class Output {
     void internal_write_value(const hstring& name, const Stock& v);
     void internal_write_value(const hstring& name, const Flow& v);
     void internal_write_value(const hstring& name, FloatType v);
-    template<int precision_digits_p>
-    void internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix = hstring::null());
+    template<int precision_digits_p, bool rounded>
+    void internal_write_value(const hstring& name, const Type<precision_digits_p, rounded>& v, const hstring& suffix = hstring::null());
 
   protected:
     bool is_first_timestep() const;
