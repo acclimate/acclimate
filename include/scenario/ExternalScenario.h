@@ -64,7 +64,6 @@ class ExternalScenario : public Scenario {
   public:
     ~ExternalScenario() override = default;
     using Scenario::id;
-    using Scenario::is_first_timestep;
     using Scenario::model;
     bool iterate() override;
     Time start() override;

@@ -39,13 +39,11 @@
 #include "model/SalesManager.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
-#include "scenario/RasteredScenario.h"
-#include "scenario/Scenario.h"
 
 namespace acclimate {
 
-Output::Output(const settings::SettingsNode& settings, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
-    : model_m(model_p), scenario(scenario_p), output_node(std::move(output_node_p)) {
+Output::Output(const settings::SettingsNode& settings, Model* model_p, settings::SettingsNode output_node_p)
+    : model_m(model_p), output_node(std::move(output_node_p)) {
     start_time = 0;
     std::ostringstream ss;
     ss << settings;
@@ -61,7 +59,7 @@ void Output::start() {
 
 inline void Output::parameter_not_found(const std::string& name) const {
     UNUSED(name);
-    if (is_first_timestep()) {
+    if (model()->is_first_timestep()) {
         warning("Parameter '" << name << "' unknown");
     }
 }
@@ -344,7 +342,7 @@ void Output::write_connection_parameters(const BusinessConnection* b, const sett
                 internal_write_value(name, b->get_flow_mean());
                 break;
             case hstring::hash("initial_flow"):
-                if (is_first_timestep()) {
+                if (model()->is_first_timestep()) {
                     internal_write_value(name, b->initial_flow_Z_star());
                 }
                 break;
@@ -701,7 +699,7 @@ void Output::iterate() {
                             const hstring& name = observable.as<hstring>();
                             switch (name) {
                                 case hstring::hash("total_current_proxy_sum"):
-                                    error("total_current_proxy_sum not supported anymore"); // TODO Remove after scenario cleanup
+                                    error("total_current_proxy_sum not supported anymore");  // TODO Remove after scenario cleanup
                             }
                         }
                         for (const auto& region : model()->regions) {
@@ -830,7 +828,5 @@ void Output::event(EventType type, const EconomicAgent* economic_agent_from, con
     event(type, economic_agent_from == nullptr ? nullptr : economic_agent_from->sector, economic_agent_from == nullptr ? nullptr : economic_agent_from->region,
           sector_to, region_to, value);
 }
-
-bool Output::is_first_timestep() const { return scenario->is_first_timestep(); }
 
 }  // namespace acclimate

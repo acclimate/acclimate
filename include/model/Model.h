@@ -74,6 +74,7 @@ class Model {
     const TimeStep& timestep() const { return timestep_; }
     const Time& delta_t() const { return delta_t_; }
     bool done() const { return time() > stop_time(); };
+    bool is_first_timestep() const { return timestep_ == 0; }
     void switch_registers();
     void tick();
     const bool& no_self_supply() const { return no_self_supply_; }

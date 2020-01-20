@@ -108,8 +108,8 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
         model_m.reset(model);
     }
 
-    Scenario* scenario = nullptr;  // TODO put in scope below!
     for (const auto& scenario_node : settings["scenarios"].as_sequence()) {
+        Scenario* scenario = nullptr;
         const std::string& type = scenario_node["type"].template as<std::string>();
         // TODO use switch
         if (type == "events") {
@@ -137,23 +137,23 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
         const std::string& type = node["format"].template as<std::string>();
         // TODO use switch
         if (type == "console") {
-            output = new ConsoleOutput(settings, model, scenario, node);
+            output = new ConsoleOutput(settings, model, node);
         } else if (type == "json") {
-            output = new JSONOutput(settings, model, scenario, node);
+            output = new JSONOutput(settings, model, node);
         } else if (type == "json_network") {
-            output = new JSONNetworkOutput(settings, model, scenario, node);
+            output = new JSONNetworkOutput(settings, model, node);
         } else if (type == "netcdf") {
-            output = new NetCDFOutput(settings, model, scenario, node);
+            output = new NetCDFOutput(settings, model, node);
         } else if (type == "histogram") {
-            output = new HistogramOutput(settings, model, scenario, node);
+            output = new HistogramOutput(settings, model, node);
         } else if (type == "gnuplot") {
-            output = new GnuplotOutput(settings, model, scenario, node);
+            output = new GnuplotOutput(settings, model, node);
         } else if (type == "damage") {
-            output = new DamageOutput(settings, model, scenario, node);
+            output = new DamageOutput(settings, model, node);
         } else if (type == "array") {
-            output = new ArrayOutput(settings, model, scenario, node);
+            output = new ArrayOutput(settings, model, node);
         } else if (type == "progress") {
-            output = new ProgressOutput(settings, model, scenario, node);
+            output = new ProgressOutput(settings, model, node);
         } else {
             error_("Unknown output format '" << type << "'");
         }

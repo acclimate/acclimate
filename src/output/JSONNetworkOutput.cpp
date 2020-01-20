@@ -38,8 +38,8 @@
 
 namespace acclimate {
 
-JSONNetworkOutput::JSONNetworkOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
-    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
+JSONNetworkOutput::JSONNetworkOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, std::move(output_node_p)) {}
 
 void JSONNetworkOutput::initialize() {
     timestep = output_node["timestep"].template as<TimeStep>();

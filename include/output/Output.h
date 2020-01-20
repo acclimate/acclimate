@@ -38,7 +38,6 @@ enum class EventType : unsigned char;
 class Firm;
 class Model;
 class Region;
-class Scenario;
 class Sector;
 class Storage;
 
@@ -48,9 +47,6 @@ class Output {
     settings::SettingsNode output_node;
     Model* const model_m;
     std::time_t start_time;
-
-  public:
-    Scenario* const scenario;
 
   private:
     bool write_connection_parameter(const BusinessConnection* b, const settings::hstring& name);
@@ -77,7 +73,6 @@ class Output {
     void internal_write_value(const hstring& name, const Type<precision_digits_p, rounded>& v, const hstring& suffix = hstring::null());
 
   protected:
-    bool is_first_timestep() const;
     void parameter_not_found(const std::string& name) const;
     virtual void internal_write_header(tm* timestamp, unsigned int max_threads);
     virtual void internal_write_footer(tm* duration);
@@ -94,7 +89,7 @@ class Output {
     virtual void internal_end_target();
 
   public:
-    Output(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
+    Output(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);
     virtual void initialize() = 0;
     virtual void event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value);
     virtual void event(EventType type, const Sector* sector_from, const Region* region_from, const EconomicAgent* economic_agent_to, FloatType value);

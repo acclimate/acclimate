@@ -36,7 +36,6 @@ namespace acclimate {
 class Model;
 class Region;
 class Sector;
-class Scenario;
 
 class ArrayOutput : public Output {
   protected:
@@ -80,10 +79,6 @@ class ArrayOutput : public Output {
     bool include_events;
     bool over_time;
 
-  public:
-    using Output::output_node;
-    using Output::scenario;
-
   protected:
     void internal_write_value(const hstring& name, FloatType v, const hstring& suffix) override;
     void internal_start_target(const hstring& name, Sector* sector, Region* region) override;
@@ -106,7 +101,7 @@ class ArrayOutput : public Output {
     }
 
   public:
-    ArrayOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p, bool over_time_p = true);
+    ArrayOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p, bool over_time_p = true);
     ~ArrayOutput() override = default;
     void event(
         EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) override;

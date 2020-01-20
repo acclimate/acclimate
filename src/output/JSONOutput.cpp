@@ -28,14 +28,13 @@
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
-#include "scenario/Scenario.h"
 #include "settingsnode.h"
 #include "version.h"
 
 namespace acclimate {
 
-JSONOutput::JSONOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
-    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
+JSONOutput::JSONOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, std::move(output_node_p)) {}
 
 void JSONOutput::initialize() {
     if (!output_node.has("file")) {

@@ -167,7 +167,7 @@ bool ExternalScenario::iterate() {
     if (stop_time_known && model()->time() > model()->stop_time()) {
         return false;
     }
-    if (is_first_timestep()) {
+    if (model()->is_first_timestep()) {
         iterate_first_timestep();
     }
 

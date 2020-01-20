@@ -35,8 +35,6 @@ namespace acclimate {
 
 class Model;
 
-class Scenario;
-
 class NetCDFOutput : public ArrayOutput {
   private:
     struct VariableMeta {
@@ -63,10 +61,11 @@ class NetCDFOutput : public ArrayOutput {
     unsigned int event_cnt;
     std::string filename;
     OpenMPLock netcdf_event_lock;
+    std::string calendar;
+    std::string time_units;
 
   public:
     using Output::output_node;
-    using Output::scenario;
     using Output::settings_string;
 
   private:
@@ -75,14 +74,13 @@ class NetCDFOutput : public ArrayOutput {
     void internal_write_settings() override;
     void internal_iterate_begin() override;
     void internal_iterate_end() override;
-    void internal_start() override;
     void internal_end() override;
     netCDF::NcGroup& create_group(const hstring& name);
     void create_variable_meta(typename ArrayOutput::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) override;
     bool internal_handle_event(typename ArrayOutput::Event& event) override;
 
   public:
-    NetCDFOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
+    NetCDFOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);
     ~NetCDFOutput() override;
     void initialize() override;
     void flush() override;

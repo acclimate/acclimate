@@ -31,7 +31,6 @@ namespace acclimate {
 class Model;
 class Region;
 class Sector;
-class Scenario;
 
 class ConsoleOutput : public Output {
   private:
@@ -58,7 +57,7 @@ class ConsoleOutput : public Output {
     void internal_end_target() override;
 
   public:
-    ConsoleOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
+    ConsoleOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);
     void initialize() override;
     using Output::model;
 };

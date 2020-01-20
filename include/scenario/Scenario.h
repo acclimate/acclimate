@@ -50,7 +50,6 @@ class Scenario {
     virtual ~Scenario() = default;
     virtual Time start() { return Time(0.0); }  // TODO eliminate return type
     virtual void end() {}
-    virtual bool is_first_timestep() const;
     virtual bool iterate();
     virtual std::string calendar_str() const { return "standard"; }
     virtual std::string time_units_str() const;

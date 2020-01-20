@@ -30,16 +30,22 @@
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
-#include "scenario/Scenario.h"
 #include "settingsnode.h"
 #include "version.h"
 
 namespace acclimate {
 
-NetCDFOutput::NetCDFOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
-    : ArrayOutput(settings_p, model_p, scenario_p, std::move(output_node_p), false) {
+NetCDFOutput::NetCDFOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)
+    : ArrayOutput(settings_p, model_p, std::move(output_node_p), false) {
     flush_freq = 1;
     event_cnt = 0;
+    const settings::SettingsNode& run = settings_p["run"];
+    calendar = run["calendar"].as<std::string>("standard");
+    if (run.has("baseyear")) {
+        time_units = std::string("days since ") + std::to_string(run["baseyear"].template as<unsigned int>()) + "-1-1";
+    } else {
+        time_units = "days since 0-1-1";
+    }
 }
 
 void NetCDFOutput::initialize() {
@@ -76,6 +82,8 @@ void NetCDFOutput::initialize() {
 
     var_time_variable = file->addVar("time", netCDF::NcType::nc_INT, {dim_time});
     var_time_variable.setCompression(false, true, compression_level);
+    var_time_variable.putAtt("calendar", calendar);
+    var_time_variable.putAtt("units", time_units);
 
     include_events = true;
     const auto& event_type_var = file->addVar("event_types", netCDF::NcType::nc_STRING, {dim_event_type});
@@ -95,11 +103,6 @@ void NetCDFOutput::initialize() {
     for (std::size_t i = 0; i < model()->regions.size(); ++i) {
         region_var.putVar({i}, model()->regions[i]->id());
     }
-}
-
-void NetCDFOutput::internal_start() {
-    var_time_variable.putAtt("calendar", scenario->calendar_str());
-    var_time_variable.putAtt("units", scenario->time_units_str());
 }
 
 void NetCDFOutput::internal_write_header(tm* timestamp, unsigned int max_threads) {

@@ -33,8 +33,8 @@
 
 namespace acclimate {
 
-GnuplotOutput::GnuplotOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p)
-    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
+GnuplotOutput::GnuplotOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, std::move(output_node_p)) {}
 
 void GnuplotOutput::initialize() {
     if (!output_node.has("file")) {

@@ -30,8 +30,8 @@
 
 namespace acclimate {
 
-ArrayOutput::ArrayOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p, bool over_time_p)
-    : Output(settings_p, model_p, scenario_p, std::move(output_node_p)), over_time(over_time_p) {
+ArrayOutput::ArrayOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p, bool over_time_p)
+    : Output(settings_p, model_p, std::move(output_node_p)), over_time(over_time_p) {
     include_events = false;
 }
 

@@ -32,7 +32,6 @@ namespace acclimate {
 class Model;
 class Region;
 class Sector;
-class Scenario;
 
 class GnuplotOutput : public Output {
   private:
@@ -65,7 +64,7 @@ class GnuplotOutput : public Output {
     void internal_end_target() override;
 
   public:
-    GnuplotOutput(const settings::SettingsNode& settings_p, Model* model_p, Scenario* scenario_p, settings::SettingsNode output_node_p);
+    GnuplotOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);
     void initialize() override;
     using Output::id;
     using Output::model;

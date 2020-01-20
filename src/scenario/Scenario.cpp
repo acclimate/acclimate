@@ -171,6 +171,4 @@ std::string Scenario::time_units_str() const {
     return "days since 0-1-1";
 }
 
-bool Scenario::is_first_timestep() const { return model()->timestep() == 0; }
-
 }  // namespace acclimate
