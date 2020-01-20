@@ -80,7 +80,7 @@ void Consumer::iterate_investment() {
 }
 
 void Consumer::print_details() const {
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
         info(id() << ":");
         for (const auto& is : input_storages) {
             is->purchasing_manager->print_details();

@@ -81,7 +81,7 @@ Run::Run(const settings::SettingsNode& settings) {
     {
         ModelInitializer model_initializer(model, settings);
         model_initializer.initialize();
-        if constexpr (options::DEBUG_MODE) {
+        if constexpr (options::DEBUGGING) {
             model_initializer.print_network_characteristics();
         }
         model_m.reset(model);
@@ -193,7 +193,7 @@ int Run::run() {
             output->iterate();
         }
 
-        if constexpr (options::DEBUG_MODE) {
+        if constexpr (options::DEBUGGING) {
             auto t2 = std::chrono::high_resolution_clock::now();
             info_("Output took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count() << " ms");
             t0 = t2;
@@ -297,7 +297,7 @@ unsigned int Run::thread_count() const {
 }
 
 std::string Run::timeinfo() const {
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
         std::string res;
         if (step_m != IterationStep::INITIALIZATION) {
             res = std::to_string(time_m) + " ";

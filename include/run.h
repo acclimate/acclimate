@@ -191,14 +191,10 @@ class Run {
     _Pragma("omp critical (output)") { std::cout << model()->run()->timeinfo() << ", " << id() << ": " << a << std::endl; }
 #define debug(a) \
     _Pragma("omp critical (output)") { std::cout << model()->run()->timeinfo() << ", " << id() << ": " << __STRING(a) << " = " << a << std::endl; }
-#define errinfo_(a) \
-    _Pragma("omp critical (output)") { std::cerr << model()->run()->timeinfo() << ", " << a << std::endl; }
 #define warning_(a) \
     _Pragma("omp critical (output)") { std::cout << "Warning: " << a << std::endl; }
 #define info_(a) \
     _Pragma("omp critical (output)") { std::cout << a << std::endl; }
-#define debug_(a) \
-    _Pragma("omp critical (output)") { std::cout << __STRING(a) << " = " << a << std::endl; }
 
 #else  // !def DEBUG
 
@@ -233,10 +229,6 @@ class Run {
 #define warning_(a) \
     {}
 #define info_(a) \
-    {}
-#define errinfo_(a) \
-    {}
-#define debug_(a) \
     {}
 
 #endif

@@ -102,14 +102,14 @@ void RasteredScenario<RegionForcingType>::iterate_first_timestep() {
             }
         }
     }
-#ifdef DEBUG
-    for (auto& r : region_forcings) {
-        if (r.region) {
-            info(r.region->id() << ": proxy sum: " << r.proxy_sum);
+    if constexpr (options::DEBUGGING) {
+        for (auto& r : region_forcings) {
+            if (r.region) {
+                info(r.region->id() << ": proxy sum: " << r.proxy_sum);
+            }
         }
+        info("Total proxy sum: " << total_proxy_sum << " (" << total_proxy_sum_all << ")");
     }
-    info("Total proxy sum: " << total_proxy_sum << " (" << total_proxy_sum_all << ")");
-#endif
 }
 
 template<class RegionForcingType>

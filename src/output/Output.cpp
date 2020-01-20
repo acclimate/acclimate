@@ -696,7 +696,7 @@ void Output::iterate() {
                         if (it.has("name")) {
                             region_name = it["name"].as<std::string>().c_str();
                         }
-                        if (dynamic_cast<RasteredScenario<FloatType>*>(scenario) != nullptr) {
+                        if (static_cast<RasteredScenario<FloatType>*>(scenario) != nullptr) {
                             for (const auto& observable : it["parameters"].as_sequence()) {
                                 const hstring& name = observable.as<hstring>();
                                 switch (name) {

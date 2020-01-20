@@ -111,7 +111,7 @@ PurchasingManager::~PurchasingManager() {
 }
 
 const Demand& PurchasingManager::demand_D(const EconomicAgent* const caller) const {
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
         if (caller != storage->economic_agent) {
             assertstepnot(PURCHASE);
         }
@@ -146,7 +146,7 @@ const FlowValue& PurchasingManager::total_transport_penalty() const {
 }
 
 const FlowValue& PurchasingManager::expected_costs(const EconomicAgent* const caller) const {
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
         if (caller != storage->economic_agent) {
             assertstepnot(PURCHASE);
         }
@@ -232,87 +232,69 @@ void PurchasingManager::calc_desired_purchase(const OptimizerData* data) {
 FloatType PurchasingManager::purchase_constraint(const FloatType x[],  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
                                                  FloatType grad[],     // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
                                                  const OptimizerData* data) const {
-#ifdef DEBUG
-    try {
-#endif
-        // has to be in the form g(D_r) <= 0
-        FloatType use = 0.0;
+    // has to be in the form g(D_r) <= 0
+    FloatType use = 0.0;
+    for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
+        FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
+        assert(!std::isnan(D_r));
+        use += D_r;
+    }
+    if (grad != nullptr) {
         for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
-            FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
-            assert(!std::isnan(D_r));
-            use += D_r;
-        }
-        if (grad != nullptr) {
-            for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
-                grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r]) * 1.0 / partial_use_scaled_use();
-                if constexpr (options::OPTIMIZATION_WARNINGS_MODE) {
-                    if (grad[r] > MAX_GRADIENT) {
-                        warning(data->business_connections[r]->id() << ": large gradient of " << grad[r]);
-                    }
+            grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r]) * 1.0 / partial_use_scaled_use();
+            if constexpr (options::OPTIMIZATION_WARNINGS) {
+                if (grad[r] > MAX_GRADIENT) {
+                    warning(data->business_connections[r]->id() << ": large gradient of " << grad[r]);
                 }
             }
         }
-        return scaled_use(to_float(desired_purchase_) - use);
-#ifdef DEBUG
-    } catch (std::exception& e) {
-        errinfo_(e.what() << " (in optimization)");
-        throw;
     }
-#endif  // TODO: rewrite conditional code without preprocessor directives
+    return scaled_use(to_float(desired_purchase_) - use);
 }
 
 FloatType PurchasingManager::objective_costs(const FloatType x[],  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
                                              FloatType grad[],     // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
                                              const OptimizerData* data) const {
-#ifdef DEBUG
-    try {
-#endif
-        FloatType costs = 0.0;
-        FloatType purchase = 0.0;
+    FloatType costs = 0.0;
+    FloatType purchase = 0.0;
+    for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
+        FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
+        assert(!std::isnan(D_r));
+        costs += n_r(D_r, data->business_connections[r]) * D_r + transport_penalty(D_r, data->business_connections[r]);
+        purchase += D_r;
+    }
+    FloatType partial_correction = 0;
+    if (model()->parameters().cost_correction) {
+        FloatType correction = purchase - to_float(storage->initial_used_flow_U_star().get_quantity());
+        if (correction < 0) {
+            partial_correction = to_float(model()->parameters().transport_penalty_small);
+        } else {
+            partial_correction = to_float(model()->parameters().transport_penalty_large);
+        }
+        costs -= std::abs(partial_correction * correction);
+    }
+    if (grad != nullptr) {
         for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
             FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
-            assert(!std::isnan(D_r));
-            costs += n_r(D_r, data->business_connections[r]) * D_r + transport_penalty(D_r, data->business_connections[r]);
-            purchase += D_r;
-        }
-        FloatType partial_correction = 0;
-        if (model()->parameters().cost_correction) {
-            FloatType correction = purchase - to_float(storage->initial_used_flow_U_star().get_quantity());
-            if (correction < 0) {
-                partial_correction = to_float(model()->parameters().transport_penalty_small);
-            } else {
-                partial_correction = to_float(model()->parameters().transport_penalty_large);
-            }
-            costs -= std::abs(partial_correction * correction);
-        }
-        if (grad != nullptr) {
-            for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
-                FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
-                grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r])
-                          * (grad_n_r(D_r, data->business_connections[r]) * D_r + n_r(D_r, data->business_connections[r]) - partial_correction
-                             + partial_D_r_transport_penalty(D_r, data->business_connections[r]))
-                          / partial_objective_scaled_objective();
-                if constexpr (options::OPTIMIZATION_WARNINGS_MODE) {
-                    if (grad[r] > MAX_GRADIENT) {
-                        warning(data->business_connections[r]->id() << ": large gradient of " << grad[r]);
-                    }
+            grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r])
+                      * (grad_n_r(D_r, data->business_connections[r]) * D_r + n_r(D_r, data->business_connections[r]) - partial_correction
+                         + partial_D_r_transport_penalty(D_r, data->business_connections[r]))
+                      / partial_objective_scaled_objective();
+            if constexpr (options::OPTIMIZATION_WARNINGS) {
+                if (grad[r] > MAX_GRADIENT) {
+                    warning(data->business_connections[r]->id() << ": large gradient of " << grad[r]);
                 }
             }
         }
-        return scaled_objective(-costs);
-#ifdef DEBUG
-    } catch (std::exception& e) {
-        errinfo_(e.what() << " (in optimization)");
-        throw;
     }
-#endif  // TODO: rewrite conditional code without preprocessor directives
+    return scaled_objective(-costs);
 }
 
 FloatType PurchasingManager::expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const {
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X == X_expected
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X == X_expected
-    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION_MODE) {
+    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
         X_expected = business_connection->get_minimum_passage() * X_expected;
     }
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
@@ -322,7 +304,7 @@ FloatType PurchasingManager::expected_average_price_E_n_r(FloatType D_r, const B
     assert(X_new >= 0.0);
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity())) {
-        if constexpr (options::OPTIMIZATION_WARNINGS_MODE) {
+        if constexpr (options::OPTIMIZATION_WARNINGS) {
             warning("X_new > X_hat: X_new = " << FlowQuantity(X_new) << " X_hat = "
                                               << business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
         }
@@ -359,7 +341,7 @@ FloatType PurchasingManager::n_r(FloatType D_r, const BusinessConnection* busine
     FloatType X_expected = 0.0;
     X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());
     X_expected = to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());
-    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION_MODE) {
+    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
         X_expected = business_connection->get_minimum_passage() * X_expected;
     }
 
@@ -393,7 +375,7 @@ FloatType PurchasingManager::grad_expected_average_price_E_n_r(FloatType D_r, co
     FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
-    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION_MODE) {
+    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
         X_expected = business_connection->get_minimum_passage() * X_expected;
     }
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
@@ -401,7 +383,7 @@ FloatType PurchasingManager::grad_expected_average_price_E_n_r(FloatType D_r, co
     FloatType X_new = D_r + ratio_X_expected_to_X * (X - Z_last);
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity())) {
-        if constexpr (options::OPTIMIZATION_WARNINGS_MODE) {
+        if constexpr (options::OPTIMIZATION_WARNINGS) {
             warning("X_new > X_hat: X_new = " << FlowQuantity(X_new) << " X_hat = "
                                               << business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
         }
@@ -432,7 +414,7 @@ FloatType PurchasingManager::grad_n_r(FloatType D_r, const BusinessConnection* b
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;
     FloatType X_expected =
         to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
-    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION_MODE) {
+    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
         X_expected = business_connection->get_minimum_passage() * X_expected;
     }
     FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
@@ -588,7 +570,7 @@ void PurchasingManager::iterate_purchase() {
             assert(!std::isnan(n_r(D_r, data.business_connections[r])));
             demand_request_D.set_price(round(Price(n_r(D_r, data.business_connections[r]))));
 
-            if constexpr (options::OPTIMIZATION_WARNINGS_MODE) {
+            if constexpr (options::OPTIMIZATION_WARNINGS) {
                 if (round(demand_request_D.get_quantity()) > round(FlowQuantity(unscaled_D_r(data.upper_bounds[r], data.business_connections[r])))) {
                     warning(data.business_connections[r]->id()
                             << ": upper limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_max: " << data.upper_bounds[r]
@@ -691,11 +673,11 @@ void PurchasingManager::optimize_purchase(std::vector<FloatType>& demand_request
 
     } catch (const nlopt::roundoff_limited& exc) {
         if constexpr (!IGNORE_ROUNDOFFLIMITED) {
-            if constexpr (options::DEBUG_MODE) {
+            if constexpr (options::DEBUGGING) {
                 print_distribution(&demand_requests_D_p[0], &data_p, false);
             }
             model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, nullptr, storage->economic_agent);
-            if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL_MODE) {
+            if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                 error("optimization is roundoff limited (for " << data_p.business_connections.size() << " inputs)");
             } else {
                 warning("optimization is roundoff limited (for " << data_p.business_connections.size() << " inputs)");
@@ -703,11 +685,11 @@ void PurchasingManager::optimize_purchase(std::vector<FloatType>& demand_request
         }
 
     } catch (const std::exception& exc) {
-        if constexpr (options::DEBUG_MODE) {
+        if constexpr (options::DEBUGGING) {
             print_distribution(&demand_requests_D_p[0], &data_p, false);
         }
         model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
-        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL_MODE) {
+        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
             error("optimization failed, " << exc.what() << " (for " << data_p.business_connections.size() << " inputs)");
         } else {
             warning("optimization failed, " << exc.what() << " (for " << data_p.business_connections.size() << " inputs)");
@@ -715,11 +697,11 @@ void PurchasingManager::optimize_purchase(std::vector<FloatType>& demand_request
     }
 
     if (result < nlopt::SUCCESS) {
-        if constexpr (options::DEBUG_MODE) {
+        if constexpr (options::DEBUGGING) {
             print_distribution(&demand_requests_D_p[0], &data_p, false);
         }
         model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
-        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL_MODE) {
+        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
             error("optimization failed, " << get_optimization_results(result) << " (for " << data_p.business_connections.size() << " inputs)");
         } else {
             if (result == nlopt::INVALID_ARGS) {
@@ -729,11 +711,11 @@ void PurchasingManager::optimize_purchase(std::vector<FloatType>& demand_request
             }
         }
     } else if (result == nlopt::MAXTIME_REACHED) {
-        if constexpr (options::DEBUG_MODE) {
+        if constexpr (options::DEBUGGING) {
             print_distribution(&demand_requests_D_p[0], &data_p, false);
         }
         model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, nullptr, storage->economic_agent);
-        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL_MODE) {
+        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
             error("optimization timed out (for " << data_p.business_connections.size() << " inputs)");
         } else {
             warning("optimization timed out (for " << data_p.business_connections.size() << " inputs)");
@@ -773,12 +755,12 @@ void PurchasingManager::calc_optimization_parameters(std::vector<FloatType>& dem
             const FloatType X = to_float(bc->seller->communicated_parameters().production_X.get_quantity());
             const FloatType Z_last = to_float(bc->last_shipment_Z().get_quantity());
             FloatType X_expected = to_float(bc->seller->communicated_parameters().expected_production_X.get_quantity());  // wo expectation X_expected = X
-            if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION_MODE) {
+            if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
                 X_expected *= bc->get_minimum_passage();
             }
             const FloatType ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
             const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
-            if constexpr (options::DEBUG_MODE) {
+            if constexpr (options::DEBUGGING) {
                 const FloatType X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
                 assert(X_max <= X_hat);
             }
@@ -806,7 +788,7 @@ FlowQuantity PurchasingManager::calc_analytical_approximation_X_max(const Busine
 }
 
 void PurchasingManager::print_details() const {
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
         info(business_connections.size() << " inputs:  I_star= " << storage->initial_input_flow_I_star().get_quantity());
         for (const auto& bc : business_connections) {
             info("    " << bc->id() << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity() << "  X_star= " << std::setw(11)
@@ -829,7 +811,7 @@ void PurchasingManager::print_distribution(
     const FloatType demand_requests_D_p[],  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
     const OptimizerData* data,
     bool connection_details) const {
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
         {
             std::vector<FloatType> demand_requests_D(data->business_connections.size());
@@ -861,7 +843,7 @@ void PurchasingManager::print_distribution(
                 last_demand_requests[r] = to_float(data->business_connections[r]->last_demand_request_D(this).get_quantity());
 
                 bool print_connection_details = true;
-                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL_MODE) {
+                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                     UNUSED(connection_details);
                 } else {
                     print_connection_details = connection_details;

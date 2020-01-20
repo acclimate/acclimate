@@ -98,9 +98,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     } else {
-#ifndef DEBUG
         try {
-#endif
             if (arg == "-") {
                 std::cin >> std::noskipws;
                 acclimate::Acclimate acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
@@ -112,12 +110,10 @@ int main(int argc, char* argv[]) {
             }
             acclimate::Acclimate acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(settings_file)));
             return acclimate.run();
-#ifndef DEBUG
-        } catch (std::runtime_error& ex) {
+        } catch (const std::exception& ex) {
             std::cerr << ex.what() << std::endl;
             return 255;
         }
-#endif
     }
     return 0;
 }

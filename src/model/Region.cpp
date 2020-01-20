@@ -123,11 +123,11 @@ const Flow& Region::export_flow_Z() const {
 
 void Region::set_government(Government* government_p) {
     assertstep(INITIALIZATION);
-#ifdef DEBUG
-    if (government_m) {
-        error("Government already set");
+    if constexpr (options::DEBUGGING) {
+        if (government_m) {
+            error("Government already set");
+        }
     }
-#endif
     government_m.reset(government_p);
 }
 

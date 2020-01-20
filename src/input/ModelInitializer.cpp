@@ -149,14 +149,6 @@ void ModelInitializer::initialize_connection(Firm* firm_from, EconomicAgent* eco
     if (model()->no_self_supply() && (static_cast<void*>(firm_from) == static_cast<void*>(economic_agent_to))) {
         return;
     }
-#ifdef DEBUG
-#define SKIP(a)                                                    \
-    if (firm_from->id() + "->" + economic_agent_to->id() == (a)) { \
-        warning("skipping " << (a));                               \
-        return;                                                    \
-    }
-// use SKIP("...:...->...:..."); to skip connections
-#endif
     Sector* sector_from = firm_from->sector;
     Storage* input_storage = economic_agent_to->find_input_storage(sector_from->id());
     if (input_storage == nullptr) {
@@ -191,7 +183,7 @@ void ModelInitializer::clean_network() {
         firm_count = 0;
         consumer_count = 0;
         needs_cleaning = false;
-        if constexpr (options::CLEANUP_INFO_MODE) {
+        if constexpr (options::CLEANUP_INFO) {
             info("Cleaning up...");
         }
         for (auto& region : model()->regions) {
@@ -210,7 +202,7 @@ void ModelInitializer::clean_network() {
                         || (firm->input_storages.size() == 1 && firm->self_supply_connection() != nullptr)) {
                         needs_cleaning = true;
 
-                        if constexpr (options::CLEANUP_INFO_MODE) {
+                        if constexpr (options::CLEANUP_INFO) {
                             if (value_added <= 0.0) {
                                 warning(firm->id() << ": removed (value added only " << value_added << ")");
                             } else if (firm->sales_manager->business_connections.empty()
@@ -252,7 +244,7 @@ void ModelInitializer::clean_network() {
                     Consumer* consumer = (*economic_agent)->as_consumer();
 
                     if (consumer->input_storages.empty()) {
-                        if constexpr (options::CLEANUP_INFO_MODE) {
+                        if constexpr (options::CLEANUP_INFO) {
                             warning(consumer->id() << ": removed (no incoming connection)");
                         }
                         // Clean up memory of consumer
@@ -275,7 +267,7 @@ void ModelInitializer::clean_network() {
 }
 
 void ModelInitializer::print_network_characteristics() const {
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
         FloatType average_transport_delay = 0;
         unsigned int region_wo_firm_count = 0;
         for (auto& region : model()->regions) {
@@ -296,7 +288,7 @@ void ModelInitializer::print_network_characteristics() const {
             }
             if (firm_count > 0) {
                 average_transport_delay_region /= FloatType(firm_count);
-                if constexpr (options::CLEANUP_INFO_MODE) {
+                if constexpr (options::CLEANUP_INFO) {
                     info(region->id() << ": number of firms: " << firm_count << " average transport delay: " << average_transport_delay_region);
                 }
                 average_transport_delay += average_transport_delay_region;
@@ -306,7 +298,7 @@ void ModelInitializer::print_network_characteristics() const {
             }
         }
         average_transport_delay /= FloatType(model()->regions.size() - region_wo_firm_count);
-        if constexpr (options::CLEANUP_INFO_MODE) {
+        if constexpr (options::CLEANUP_INFO) {
             info("Average transport delay: " << average_transport_delay);
         }
     }

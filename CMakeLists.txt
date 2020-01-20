@@ -37,7 +37,8 @@ else()
 endif()
 
 target_include_directories(acclimate PRIVATE include lib/cpp-library)
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Intel") # icc 19 does not yet fully support c++17, but we only need features it does support
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel"
+)# icc 19 does not yet fully support c++17, but we only need features it does support
   target_compile_options(acclimate PUBLIC -std=c++17)
 else()
   target_compile_features(acclimate PUBLIC cxx_std_17)
@@ -56,19 +57,23 @@ if(ACCLIMATE_PARALLELIZATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-
 set(ACCLIMATE_OPTIONS_FILE "")
 set(ACCLIMATE_OPTIONS "")
 function(acclimate_include_option NAME DESC STATE)
   option(ACCLIMATE_${NAME} ${DESC} ${STATE})
   if(ACCLIMATE_${NAME})
     set(VALUE "true")
-    target_compile_definitions(acclimate PRIVATE ${NAME})
   else()
     set(VALUE "false")
   endif()
-  set(ACCLIMATE_OPTIONS ${ACCLIMATE_OPTIONS} "Option{\"${NAME}\", ${VALUE}}" PARENT_SCOPE)
-  set(ACCLIMATE_OPTIONS_FILE "${ACCLIMATE_OPTIONS_FILE}static constexpr bool ${NAME}_MODE = ${VALUE};\n" PARENT_SCOPE)
+  set(ACCLIMATE_OPTIONS
+      ${ACCLIMATE_OPTIONS} "Option{\"${NAME}\", ${VALUE}}"
+      PARENT_SCOPE
+  )
+  set(ACCLIMATE_OPTIONS_FILE
+      "${ACCLIMATE_OPTIONS_FILE}static constexpr bool ${NAME} = ${VALUE};\n"
+      PARENT_SCOPE
+  )
 endfunction()
 
 acclimate_include_option(BASED_ON_INT "automatic rounding based on internal integers" ON)
@@ -85,15 +90,22 @@ acclimate_include_option(USE_MIN_PASSAGE_IN_EXPECTATION "enable minimum passage 
 
 if(ACCLIMATE_ENABLE_DMTCP)
   set_property(TARGET acclimate PROPERTY POSITION_INDEPENDENT_CODE ON)
+  target_compile_definitions(acclimate PRIVATE ENABLE_DMTCP)
   if(ACCLIMATE_PARALLELIZATION)
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-      set_property(TARGET acclimate APPEND_STRING PROPERTY LINK_FLAGS " -qopenmp-link=static")
+      set_property(
+        TARGET acclimate
+        APPEND_STRING
+        PROPERTY LINK_FLAGS " -qopenmp-link=static"
+      )
     endif()
   endif()
 endif()
 
 list(LENGTH ACCLIMATE_OPTIONS ACCLIMATE_OPTIONS_LENGTH)
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/include/options.h "\
+file(
+  WRITE ${CMAKE_CURRENT_BINARY_DIR}/include/options.h
+  "\
 #ifndef ACCLIMATE_OPTIONS_H
 #define ACCLIMATE_OPTIONS_H
 #include <array>
@@ -101,14 +113,14 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/include/options.h "\
 namespace acclimate::options {
 
 #ifdef DEBUG
-constexpr bool DEBUG_MODE = true;
+constexpr bool DEBUGGING = true;
 #else
-constexpr bool DEBUG_MODE = false;
+constexpr bool DEBUGGING = false;
 #endif
 #ifdef _OPENMP
-constexpr bool OPENMP_MODE = true;
+constexpr bool PARALLELIZATION = true;
 #else
-constexpr bool OPENMP_MODE = false;
+constexpr bool PARALLELIZATION = false;
 #endif
 
 ${ACCLIMATE_OPTIONS_FILE}
@@ -122,11 +134,13 @@ extern const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options;
 
 #endif
 "
-  )
+)
 target_include_directories(acclimate PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include)
 
 string(REPLACE ";" ",\n    " ACCLIMATE_OPTIONS "${ACCLIMATE_OPTIONS}")
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp "\
+file(
+  WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp
+  "\
 #include \"options.h\"
 
 namespace acclimate::options {
@@ -137,7 +151,7 @@ const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options = {
 
 }  // namespace acclimate::options
 "
-  )
+)
 target_sources(acclimate PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp)
 
 include_nlopt(acclimate ON "34fd7ce")

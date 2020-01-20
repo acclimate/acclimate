@@ -67,7 +67,7 @@ void Model::start() {
             }
         }
     }
-    if constexpr (options::OPENMP_MODE) {
+    if constexpr (options::PARALLELIZATION) {
         std::random_device rd;
         std::mt19937 g(rd());
         std::shuffle(std::begin(economic_agents), std::end(economic_agents), g);
@@ -122,7 +122,7 @@ void Model::iterate_purchase() {
         auto t2 = std::chrono::high_resolution_clock::now();
         p.second = (t2 - t1).count();
     }
-    if constexpr (options::OPENMP_MODE) {
+    if constexpr (options::PARALLELIZATION) {
         std::sort(std::begin(purchasing_managers), std::end(purchasing_managers),
                   [](const std::pair<PurchasingManager*, std::size_t>& a, const std::pair<PurchasingManager*, std::size_t>& b) { return b.second > a.second; });
     }

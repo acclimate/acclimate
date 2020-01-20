@@ -97,7 +97,7 @@ using Ratio = FloatType;
 using Forcing = Ratio;
 
 inline FloatType fround(FloatType x) {
-    if constexpr (options::BANKERS_ROUNDING_MODE) {
+    if constexpr (options::BANKERS_ROUNDING) {
         return std::rint(x);
     } else {
         return std::round(x);
@@ -105,7 +105,7 @@ inline FloatType fround(FloatType x) {
 }
 
 inline IntType iround(FloatType x) {
-    if constexpr (options::BANKERS_ROUNDING_MODE) {
+    if constexpr (options::BANKERS_ROUNDING) {
         return std::lrint(x);
     } else {
         return std::round(x);
@@ -209,7 +209,7 @@ class Type {
     friend bool same_sgn(const T& lhs, const T& rhs) { return (lhs.t >= 0) == (rhs.t >= 0); }                            \
     friend bool isnan(const T& other) { return std::isnan(other.t); }                                                    \
     friend inline T round(const T& other) {                                                                              \
-        if constexpr (options::BASED_ON_INT_MODE && rounded) {                                                           \
+        if constexpr (options::BASED_ON_INT && rounded) {                                                                \
             return other;                                                                                                \
         } else {                                                                                                         \
             return T(fround(other.t / precision) * precision);                                                           \
@@ -224,7 +224,7 @@ class Type {
 template<int precision_digits_p>
 using NonRoundedType = Type<precision_digits_p, false>;
 template<int precision_digits_p>
-using RoundedType = Type<precision_digits_p, options::BASED_ON_INT_MODE>;
+using RoundedType = Type<precision_digits_p, options::BASED_ON_INT>;
 
 class Time : public RoundedType<0> {
   public:
@@ -422,7 +422,7 @@ class PricedQuantity {
     friend std::ostream& operator<<(std::ostream& os, const PricedQuantity& op) { return os << op.quantity << " [@" << op.get_price() << "]"; }
 
     friend inline PricedQuantity round(const PricedQuantity& flow, bool maybe_negative = false) {
-        if constexpr (options::BASED_ON_INT_MODE) {
+        if constexpr (options::BASED_ON_INT) {
             return std::move(flow);
         } else {
             if (round(flow.get_quantity()) <= 0.0) {

@@ -32,7 +32,7 @@
 namespace acclimate {
 
 static void handle_fpe_error(int /* signal */) {
-    if constexpr (options::FLOATING_POINT_EXCEPTIONS_MODE) {
+    if constexpr (options::FLOATING_POINT_EXCEPTIONS) {
         unsigned int exceptions = fetestexcept(FE_ALL_EXCEPT);  // NOLINT(hicpp-signed-bitwise)
         feclearexcept(FE_ALL_EXCEPT);                           // NOLINT(hicpp-signed-bitwise)
         if (exceptions == 0) {
@@ -53,17 +53,17 @@ static void handle_fpe_error(int /* signal */) {
         if ((exceptions & FE_UNDERFLOW) != 0) {  // NOLINT(hicpp-signed-bitwise)
             warning_("FE_UNDERFLOW");
         }
-        if constexpr (options::FATAL_FLOATING_POINT_EXCEPTIONS_MODE) {
+        if constexpr (options::FATAL_FLOATING_POINT_EXCEPTIONS) {
             error_("Floating point exception");
         }
     }
 }
 
 Acclimate::Acclimate(const settings::SettingsNode& settings_p) {
-    if constexpr (options::BANKERS_ROUNDING_MODE) {
+    if constexpr (options::BANKERS_ROUNDING) {
         fesetround(FE_TONEAREST);
     }
-    if constexpr (options::FLOATING_POINT_EXCEPTIONS_MODE) {
+    if constexpr (options::FLOATING_POINT_EXCEPTIONS) {
         signal(SIGFPE, handle_fpe_error);
         feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);  // NOLINT(hicpp-signed-bitwise)
     }

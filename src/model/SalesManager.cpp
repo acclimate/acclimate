@@ -68,7 +68,7 @@ bool SalesManager::remove_business_connection(BusinessConnection* business_conne
         error("Business connection " << business_connection->id() << " not found");
     }
     business_connections.erase(it);
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
         if (business_connections.empty()) {
             assertstep(INITIALIZATION);
             return true;
@@ -168,7 +168,7 @@ void SalesManager::distribute(const Flow& _) {
                     assert((*served_bc)->last_demand_request_D().get_quantity() <= communicated_parameters_.production_X.get_quantity());
                     (*served_bc)->push_flow_Z(round((*served_bc)->last_demand_request_D()));
                     production_without_cheapest_price_range += round((*served_bc)->last_demand_request_D());
-                    if constexpr (options::DEBUG_MODE) {
+                    if constexpr (options::DEBUGGING) {
                         ++pushed_flows;
                     }
                     begin_cheapest_price_range = served_bc + 1;
@@ -181,13 +181,13 @@ void SalesManager::distribute(const Flow& _) {
                     end_cheapest_price_range = served_bc + 1;
                 } else {  // price lower than in cheapest price range
                     (*served_bc)->push_flow_Z(Flow(0.0));
-                    if constexpr (options::DEBUG_MODE) {
+                    if constexpr (options::DEBUGGING) {
                         ++pushed_flows;
                     }
                 }
             } else {  // demand request is zero
                 (*served_bc)->push_flow_Z(Flow(0.0));
-                if constexpr (options::DEBUG_MODE) {
+                if constexpr (options::DEBUGGING) {
                     ++pushed_flows;
                 }
             }
@@ -222,7 +222,7 @@ void SalesManager::distribute(const Flow& _) {
                     assert(flow_Z.get_quantity() <= (*served_bc)->last_demand_request_D().get_quantity());
                     (*served_bc)->push_flow_Z(flow_Z);
                     total_revenue_R_ += flow_Z.get_value();
-                    if constexpr (options::DEBUG_MODE) {
+                    if constexpr (options::DEBUGGING) {
                         ++pushed_flows;
                     }
                 }
@@ -231,7 +231,7 @@ void SalesManager::distribute(const Flow& _) {
                 for (auto served_bc = begin_cheapest_price_range; served_bc != end_cheapest_price_range; ++served_bc) {
                     assert((*served_bc)->last_demand_request_D().get_quantity() <= communicated_parameters_.production_X.get_quantity());
                     (*served_bc)->push_flow_Z(round((*served_bc)->last_demand_request_D()));
-                    if constexpr (options::DEBUG_MODE) {
+                    if constexpr (options::DEBUGGING) {
                         ++pushed_flows;
                     }
                 }
@@ -239,7 +239,7 @@ void SalesManager::distribute(const Flow& _) {
         } else {
             total_revenue_R_ = communicated_parameters_.production_X.get_value();
         }
-        if constexpr (options::DEBUG_MODE) {
+        if constexpr (options::DEBUGGING) {
             if (pushed_flows < business_connections.size()) {
                 debug(pushed_flows);
                 debug(business_connections.size());
@@ -800,7 +800,7 @@ void SalesManager::impose_tax(const Ratio tax_p) {
 FlowValue SalesManager::get_tax() const { return tax_ * firm->production_X().get_value(); }
 
 void SalesManager::print_details() const {
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
         info(business_connections.size() << " outputs:");
         for (const auto& bc : business_connections) {
             info("    " << bc->id() << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
@@ -819,7 +819,7 @@ static void print_row(T1 a, T2 b, T3 c) {
 }
 
 void SalesManager::print_parameters() const {
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
         info("parameters:");
         print_row("X", communicated_parameters_.production_X.get_quantity());
         print_row("X_exp", communicated_parameters_.expected_production_X.get_quantity());
@@ -842,7 +842,7 @@ void SalesManager::print_parameters() const {
 
 void SalesManager::print_connections(typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
                                      typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const {
-    if constexpr (options::DEBUG_MODE) {
+    if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
         {
             std::cout << model()->run()->timeinfo() << ", " << id() << ": supply distribution for " << business_connections.size() << " outputs:\n";
