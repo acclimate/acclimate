@@ -91,8 +91,8 @@ class Region : public GeoLocation {
     void iterate_purchase();
     void iterate_investment();
     const GeoRoute& find_path_to(Region* region, typename Sector::TransportType transport_type) const;
-    Region* as_region() override;
-    const Region* as_region() const override;
+    Region* as_region() override { return this; }
+    const Region* as_region() const override { return this; }
     using GeoLocation::id;
     using GeoLocation::model;
     void remove_economic_agent(EconomicAgent* economic_agent);

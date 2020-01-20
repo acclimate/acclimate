@@ -62,7 +62,7 @@ class ExternalScenario : public Scenario {
     virtual void read_forcings() = 0;
 
   public:
-    ~ExternalScenario() override = default;
+    virtual ~ExternalScenario() override = default;
     using Scenario::id;
     using Scenario::model;
     bool iterate() override;

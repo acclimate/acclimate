@@ -56,7 +56,7 @@ void SalesManager::subtract_initial_demand_request_D_star(const Demand& initial_
 Flow SalesManager::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
-    for (const auto& bc : business_connections) {
+    for (const auto& bc : business_connections) {  // TODO use std::accumulate
         res += bc->get_transport_flow();
     }
     return res;
@@ -148,7 +148,7 @@ void SalesManager::distribute(const Flow& _) {
         unsigned int pushed_flows = 0;
         //
         assert(!isnan(supply_distribution_scenario.price_cheapest_buyer_accepted_in_optimization));
-        auto cheapest_price_range_half_width = Price(0.0);
+        Price cheapest_price_range_half_width(0.0);
         if (model()->parameters().cheapest_price_range_generic_size) {
             cheapest_price_range_half_width = firm->sector->parameters().price_increase_production_extension / 2
                                               * (firm->capacity_manager->possible_overcapacity_ratio_beta - 1)
@@ -504,7 +504,7 @@ std::tuple<Flow, Price> SalesManager::calc_expected_supply_distribution_scenario
         // Expectations: the demand curves have to be extended
         // check that we reach the regime where X > sum_of_demand_requests
 
-        const bool respect_markup_in_extension_of_revenue_curve = true;
+        constexpr bool respect_markup_in_extension_of_revenue_curve = true;
 
         if ((model()->parameters().always_extend_expected_demand_curve                                           // we always want to attract more demand
              || expected_production_X.get_quantity() < firm->forced_initial_production_quantity_lambda_X_star()  // ... production is below lambda * X_star

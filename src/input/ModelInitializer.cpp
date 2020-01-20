@@ -192,7 +192,7 @@ void ModelInitializer::clean_network() {
                     Firm* firm = (*economic_agent)->as_firm();
 
                     auto input = FlowQuantity(0.0);
-                    for (const auto& input_storage : firm->input_storages) {
+                    for (const auto& input_storage : firm->input_storages) {  // TODO use std::accumulate
                         input += input_storage->initial_input_flow_I_star().get_quantity();
                     }
                     FloatType value_added = to_float(firm->initial_production_X_star().get_quantity() - input);
@@ -290,15 +290,15 @@ void ModelInitializer::print_network_characteristics() const {
                 average_transport_delay_region /= FloatType(firm_count);
                 if constexpr (options::CLEANUP_INFO) {
                     info(region->id() << ": number of firms: " << firm_count << " average transport delay: " << average_transport_delay_region);
+                    average_transport_delay += average_transport_delay_region;
                 }
-                average_transport_delay += average_transport_delay_region;
             } else {
                 ++region_wo_firm_count;
                 warning(region->id() << ": no firm");
             }
         }
-        average_transport_delay /= FloatType(model()->regions.size() - region_wo_firm_count);
         if constexpr (options::CLEANUP_INFO) {
+            average_transport_delay /= FloatType(model()->regions.size() - region_wo_firm_count);
             info("Average transport delay: " << average_transport_delay);
         }
     }
@@ -700,8 +700,8 @@ void ModelInitializer::build_artificial_network() {
     for (std::size_t i = 0; i < regions_cnt; ++i) {
         Region* region = add_region("RG" + std::to_string(i));
         add_consumer(region);
-        for (std::size_t i = 0; i < sectors_cnt; ++i) {
-            add_firm(model()->sectors[i + 1].get(), region);
+        for (std::size_t j = 0; j < sectors_cnt; ++j) {
+            add_firm(model()->sectors[j + 1].get(), region);
         }
     }
     build_transport_network();

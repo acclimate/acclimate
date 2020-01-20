@@ -58,7 +58,7 @@ FloatType TransportChainLink::get_passage() const { return forcing_nu; }
 
 void TransportChainLink::push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star) {
     assertstep(CONSUMPTION_AND_PRODUCTION);
-    Flow flow_to_push = Flow(0.0);
+    Flow flow_to_push(0.0);
     if (!transport_queue.empty()) {
         auto front_flow_Z = transport_queue[pos];
         transport_queue[pos] = AnnotatedFlow(flow_Z, initial_flow_Z_star);
@@ -97,8 +97,8 @@ void TransportChainLink::set_forcing_nu(Forcing forcing_nu_p) {
 
 Flow TransportChainLink::get_total_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    Flow res = Flow(0.0);
-    for (const auto& f : transport_queue) {
+    Flow res(0.0);
+    for (const auto& f : transport_queue) {  // TODO use std::accumulate
         res += f.current;
     }
     return res + overflow;
@@ -116,7 +116,7 @@ Flow TransportChainLink::get_disequilibrium() const {
 FloatType TransportChainLink::get_stddeviation() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     FloatType res = 0.0;
-    for (const auto& f : transport_queue) {
+    for (const auto& f : transport_queue) {  // TODO use std::accumulate
         res += to_float((absdiff(f.current, f.initial)).get_quantity()) * to_float((absdiff(f.current, f.initial)).get_quantity());
     }
     return res;
@@ -124,8 +124,8 @@ FloatType TransportChainLink::get_stddeviation() const {
 
 FlowQuantity TransportChainLink::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    auto res = FlowQuantity(0.0);
-    for (const auto& f : transport_queue) {
+    FlowQuantity res(0.0);
+    for (const auto& f : transport_queue) {  // TODO use std::accumulate
         res += round(f.initial - f.current.get_quantity());
     }
     return round(res - overflow.get_quantity());

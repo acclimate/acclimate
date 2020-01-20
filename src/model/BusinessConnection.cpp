@@ -64,9 +64,8 @@ BusinessConnection::BusinessConnection(PurchasingManager* buyer_p, SalesManager*
 FloatType BusinessConnection::get_minimum_passage() const {
     TransportChainLink* link = first_transport_link.get();
     FloatType minimum_passage = 1.0;
-    FloatType link_passage;
     while (link != nullptr) {
-        link_passage = link->get_passage();
+        FloatType link_passage = link->get_passage();
         if (link_passage >= 0.0 && link_passage < minimum_passage) {
             minimum_passage = link_passage;
         }

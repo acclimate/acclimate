@@ -55,7 +55,7 @@ inline const Consumer* EconomicAgent::as_consumer() const {
 }
 
 Storage* EconomicAgent::find_input_storage(const std::string& sector_name) const {
-    for (const auto& is : input_storages) {
+    for (const auto& is : input_storages) {  // TODO use find_if
         if (is->sector->id() == sector_name) {
             return is.get();
         }

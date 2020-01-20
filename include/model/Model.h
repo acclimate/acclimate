@@ -68,6 +68,8 @@ class Model {
     Model* model() { return this; }
 
   public:
+    Model(const Model& other) = delete;
+    Model(Model&& other) = default;
     const Time& time() const { return time_; }
     const Time& start_time() const { return start_time_; };
     const Time& stop_time() const { return stop_time_; };

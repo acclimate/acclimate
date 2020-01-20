@@ -93,11 +93,15 @@ void RasteredScenario<RegionForcingType>::iterate_first_timestep() {
         for (const auto& y : iso_raster->y) {
             const FloatType proxy_value = proxy->read(x, y);
             if (proxy_value > 0) {
-                total_proxy_sum_all += proxy_value;
+                if constexpr (options::DEBUGGING) {
+                    total_proxy_sum_all += proxy_value;
+                }
                 const int i = iso_raster->read(x, y);
                 if (i >= 0) {
                     region_forcings[i].proxy_sum += proxy_value;
-                    total_proxy_sum += proxy_value;
+                    if constexpr (options::DEBUGGING) {
+                        total_proxy_sum += proxy_value;
+                    }
                 }
             }
         }

@@ -57,9 +57,9 @@ void JSONNetworkOutput::internal_iterate_end() {
             for (const auto& ea : region->economic_agents) {
                 out << "\n  {";
                 std::string sector;
-                Flow out_flow = Flow(0.0);
-                Flow in_flow = Flow(0.0);
-                Flow used_flow = Flow(0.0);
+                Flow out_flow(0.0);
+                Flow in_flow(0.0);
+                Flow used_flow(0.0);
                 if (ea->type == EconomicAgent::Type::FIRM) {
                     Firm* ps = ea->as_firm();
                     sector = ps->sector->id();

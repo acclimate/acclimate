@@ -63,7 +63,7 @@ bool PurchasingManager::remove_business_connection(const BusinessConnection* bus
 FlowQuantity PurchasingManager::get_flow_deficit() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     auto res = FlowQuantity(0.0);
-    for (const auto& bc : business_connections) {
+    for (const auto& bc : business_connections) {  // TODO use std::accumulate
         res += bc->get_flow_deficit();
     }
     return round(res);
@@ -72,7 +72,7 @@ FlowQuantity PurchasingManager::get_flow_deficit() const {
 Flow PurchasingManager::get_transport_flow() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     auto res = Flow(0.0);
-    for (const auto& bc : business_connections) {
+    for (const auto& bc : business_connections) {  // TODO use std::accumulate
         res += bc->get_transport_flow();
     }
     return res;
@@ -90,7 +90,7 @@ Flow PurchasingManager::get_disequilibrium() const {
 FloatType PurchasingManager::get_stddeviation() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     FloatType res = 0.0;
-    for (const auto& bc : business_connections) {
+    for (const auto& bc : business_connections) {  // TODO use std::accumulate
         res += bc->get_stddeviation();
     }
     return res;
@@ -99,7 +99,7 @@ FloatType PurchasingManager::get_stddeviation() const {
 Flow PurchasingManager::get_sum_of_last_shipments() const {
     assertstepnot(CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
-    for (const auto& bc : business_connections) {
+    for (const auto& bc : business_connections) {  // TODO use std::accumulate
         res += bc->last_shipment_Z();
     }
     return res;
@@ -538,9 +538,6 @@ void PurchasingManager::iterate_purchase() {
     std::vector<FloatType> demand_requests_D;  // demand requests considered in optimization
     OptimizerData data;
     std::vector<BusinessConnection*> zero_connections;
-    // sets upper_limits, pushes_back corresponding upper bound and sets the corresponding initial value demand_requests_D, and adds upper limit to
-    // max_possible_demand_quantity with profit optimization: demand is not needed anymore for calculation of E_i, and can be used to determine upper bound for
-    // sum_r D_r
     calc_optimization_parameters(demand_requests_D, zero_connections, data);
 
     optimized_value_ = 0.0;
@@ -585,7 +582,9 @@ void PurchasingManager::iterate_purchase() {
             }
             data.business_connections[r]->send_demand_request_D(round(demand_request_D));
 
-            use += D_r;
+            if constexpr (options::DEBUGGING) {
+                use += D_r;
+            }
             demand_D_ += round(demand_request_D);
             costs += n_r(D_r, data.business_connections[r]) * D_r + transport_penalty(D_r, data.business_connections[r]);
             total_transport_penalty_ += FlowValue(transport_penalty(D_r, data.business_connections[r]));
@@ -732,7 +731,7 @@ void PurchasingManager::calc_optimization_parameters(std::vector<FloatType>& dem
                                                      OptimizerData& data_p) const {
     if (storage->desired_used_flow_U_tilde().get_quantity() <= 0.0) {
         warning("desired_used_flow_U_tilde is zero : no purchase");
-        for (const auto& bc : business_connections) {
+        for (const auto& bc : business_connections) {  // TODO use std::transform
             zero_connections_p.push_back(bc.get());
         }
         return;
@@ -744,9 +743,6 @@ void PurchasingManager::calc_optimization_parameters(std::vector<FloatType>& dem
     data_p.lower_bounds.reserve(business_connections.size());
     data_p.upper_bounds.reserve(business_connections.size());
 
-    FloatType max_possible_demand_quantity = 0.0;
-    FloatType total_upper_limit = 0.0;
-    FloatType total_initial_value = 0.0;
     for (const auto& bc : business_connections) {
         if (bc->seller->communicated_parameters().possible_production_X_hat.get_quantity() <= 0.0) {
             zero_connections_p.push_back(bc.get());
@@ -774,9 +770,6 @@ void PurchasingManager::calc_optimization_parameters(std::vector<FloatType>& dem
                 data_p.lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
                 data_p.upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
                 demand_requests_D_p.push_back(scaled_D_r(initial_value, bc.get()));
-                total_upper_limit += upper_limit;
-                total_initial_value += initial_value;
-                max_possible_demand_quantity += upper_limit;
             } else {
                 zero_connections_p.push_back(bc.get());
             }

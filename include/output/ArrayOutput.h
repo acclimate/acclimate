@@ -103,7 +103,7 @@ class ArrayOutput : public Output {
 
   public:
     ArrayOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p, bool over_time_p = true);
-    ~ArrayOutput() override = default;
+    virtual ~ArrayOutput() override = default;
     void event(
         EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) override;
     void initialize() override;

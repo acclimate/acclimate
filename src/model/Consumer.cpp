@@ -39,7 +39,7 @@ void Consumer::iterate_consumption_and_production() {
     assertstep(CONSUMPTION_AND_PRODUCTION);
     for (const auto& is : input_storages) {
         Flow possible_used_flow_U_hat = is->get_possible_use_U_hat();  // Price(U_hat) = Price of used flow
-        auto reservation_price = Price(0.0);
+        Price reservation_price(0.0);
         if (possible_used_flow_U_hat.get_quantity() > 0.0) {
             // we have to purchase with the average price of input and storage
             reservation_price = possible_used_flow_U_hat.get_price();

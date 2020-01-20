@@ -66,7 +66,7 @@ class RasteredScenario : public ExternalScenario {
     void read_forcings() override;
 
   public:
-    ~RasteredScenario() override = default;
+    virtual ~RasteredScenario() override = default;
     using ExternalScenario::id;
     using ExternalScenario::model;
     const std::vector<RegionInfo>& forcings() const { return region_forcings; }

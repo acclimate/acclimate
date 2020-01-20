@@ -65,8 +65,8 @@ void HeatLaborProductivity::add_cell_forcing(FloatType x,
     UNUSED(y);
     for (std::size_t i = 0; i < region->economic_agents.size(); ++i) {
         const std::string& sector_name = region->economic_agents[i]->sector->id();
-        FloatType alpha;
         if (cell_forcing > 300.14) {
+            FloatType alpha;
             switch (settings::hstring::hash(sector_name.c_str())) {
                 case settings::hstring::hash("AGRI"):
                     alpha = 0.008;

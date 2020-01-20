@@ -94,10 +94,6 @@ const GeoRoute& Region::find_path_to(Region* region, typename Sector::TransportT
     return it->second;
 }
 
-inline Region* Region::as_region() { return this; }
-
-inline const Region* Region::as_region() const { return this; }
-
 void Region::remove_economic_agent(EconomicAgent* economic_agent) {
     economic_agents_lock.call([&]() {
         auto it = std::find_if(economic_agents.begin(), economic_agents.end(),

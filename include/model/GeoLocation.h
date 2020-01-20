@@ -46,7 +46,7 @@ class GeoLocation : public GeoEntity {
 
   public:
     GeoLocation(Model* model_m, TransportDelay delay_p, Type type_p, std::string id_p);
-    ~GeoLocation() override;
+    virtual ~GeoLocation() override;
     void set_centroid(std::unique_ptr<GeoPoint>& centroid_p);
     const GeoPoint* centroid() const { return centroid_m.get(); }
     void remove_connection(const GeoConnection* connection);

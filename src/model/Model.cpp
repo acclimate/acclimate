@@ -62,7 +62,7 @@ void Model::start() {
     for (const auto& region : regions) {
         for (const auto& economic_agent : region->economic_agents) {
             economic_agents.emplace_back(std::make_pair(economic_agent.get(), 0));
-            for (const auto& is : economic_agent->input_storages) {
+            for (const auto& is : economic_agent->input_storages) {  // TODO use std::transform
                 purchasing_managers.emplace_back(std::make_pair(is->purchasing_manager.get(), 0));
             }
         }

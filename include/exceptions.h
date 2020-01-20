@@ -33,7 +33,7 @@ class exception : public std::runtime_error {
     explicit exception(const char* s) : std::runtime_error(s) {}
 };
 
-class return_after_checkpoint {};
+class return_after_checkpoint : public std::exception {};
 
 };  // namespace acclimate
 

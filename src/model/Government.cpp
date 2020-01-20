@@ -33,7 +33,7 @@ Government::Government(Region* region_p) : region(region_p), budget_(0.0) {}
 
 void Government::collect_tax() {
     assertstep(EXPECTATION);
-    for (const auto& ps : taxed_firms) {
+    for (const auto& ps : taxed_firms) {  // TODO use std::accumulate
         budget_ += ps.first->sales_manager->get_tax() * model()->delta_t();
     }
 }

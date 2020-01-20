@@ -43,8 +43,7 @@
 namespace acclimate {
 
 Output::Output(const settings::SettingsNode& settings, Model* model_p, settings::SettingsNode output_node_p)
-    : model_m(model_p), output_node(std::move(output_node_p)) {
-    start_time = 0;
+    : model_m(model_p), output_node(std::move(output_node_p)), start_time(0) {
     std::ostringstream ss;
     ss << settings;
     settings_string = ss.str();
@@ -168,14 +167,14 @@ bool Output::write_economic_agent_parameter(const EconomicAgent* p, const hstrin
     switch (name) {
         case hstring::hash("demand"): {
             auto demand = Demand(0.0);
-            for (const auto& is : p->input_storages) {
+            for (const auto& is : p->input_storages) {  // TODO use std::accumulate
                 demand += is->purchasing_manager->demand_D();
             }
             internal_write_value(name, demand);
         } break;
         case hstring::hash("input_flow"): {
             Flow input_flow = Flow(0.0);
-            for (const auto& is : p->input_storages) {
+            for (const auto& is : p->input_storages) {  // TODO use std::accumulate
                 input_flow += is->last_input_flow_I();
             }
             internal_write_value(name, input_flow);
@@ -183,21 +182,21 @@ bool Output::write_economic_agent_parameter(const EconomicAgent* p, const hstrin
         case hstring::hash("used_flow"):
         case hstring::hash("consumption"): {
             Flow used_flow = Flow(0.0);
-            for (const auto& is : p->input_storages) {
+            for (const auto& is : p->input_storages) {  // TODO use std::accumulate
                 used_flow += is->used_flow_U();
             }
             internal_write_value(name, used_flow);
         } break;
         case hstring::hash("business_connections"): {
             int business_connections = 0;
-            for (const auto& is : p->input_storages) {
+            for (const auto& is : p->input_storages) {  // TODO use std::accumulate
                 business_connections += is->purchasing_manager->business_connections.size();
             }
             internal_write_value(name, business_connections);
         } break;
         case hstring::hash("storage"): {
             auto sum_storage_content = Stock(0.0);
-            for (const auto& is : p->input_storages) {
+            for (const auto& is : p->input_storages) {  // TODO use std::accumulate
                 sum_storage_content += is->content_S();
             }
             internal_write_value(name, sum_storage_content);
@@ -695,8 +694,8 @@ void Output::iterate() {
                         if (it.has("name")) {
                             region_name = it["name"].as<std::string>().c_str();
                         }
-                        for (const auto& observable : it["parameters"].as_sequence()) {
-                            const hstring& name = observable.as<hstring>();
+                        for (const auto& observable2 : it["parameters"].as_sequence()) {
+                            const hstring& name = observable2.as<hstring>();
                             switch (name) {
                                 case hstring::hash("total_current_proxy_sum"):
                                     error("total_current_proxy_sum not supported anymore");  // TODO Remove after scenario cleanup
@@ -730,8 +729,8 @@ void Output::iterate() {
 
                     case hstring::hash("meta"): {
                         internal_start_target(hstring("meta"));
-                        for (const auto& observable : it["parameters"].as_sequence()) {
-                            const hstring& name = observable.as<hstring>();
+                        for (const auto& observable2 : it["parameters"].as_sequence()) {
+                            const hstring& name = observable2.as<hstring>();
                             switch (name) {
                                 case hstring::hash("duration"):
                                     internal_write_value(name, model()->run()->duration());

@@ -50,7 +50,7 @@ void DamageOutput::initialize() {
 
 void DamageOutput::internal_iterate_end() {
     for (const auto& sector : model()->sectors) {
-        for (const auto& firm : sector->firms) {
+        for (const auto& firm : sector->firms) {  // TODO use std::accumulate
             damage += firm->total_loss().get_quantity();
         }
     }
