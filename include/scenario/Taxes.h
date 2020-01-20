@@ -32,7 +32,7 @@ class Taxes : public Scenario {
 
   public:
     Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
-    Time start() override;
+    void start() override;
     bool iterate() override;
     using Scenario::id;
     using Scenario::model;

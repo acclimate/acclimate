@@ -122,7 +122,7 @@ bool ExternalScenario::next_forcing_file() {
     return true;
 }
 
-Time ExternalScenario::start() {
+void ExternalScenario::start() {
     if (model()->stop_time() > Time(0.0)) {
         stop_time_known = true;
     } else {
@@ -152,8 +152,6 @@ Time ExternalScenario::start() {
     if (!next_forcing_file()) {
         error("Empty forcing");
     }
-
-    return model()->start_time();
 }
 
 void ExternalScenario::end() {

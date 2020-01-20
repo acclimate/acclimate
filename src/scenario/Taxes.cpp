@@ -33,11 +33,10 @@ namespace acclimate {
 Taxes::Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
     : Scenario(settings_p, std::move(scenario_node_p), model_p) {}
 
-Time Taxes::start() {
+void Taxes::start() {
     for (auto& region : model()->regions) {
         region->set_government(new Government(region.get()));
     }
-    return model()->start_time();
 }
 
 bool Taxes::iterate() {

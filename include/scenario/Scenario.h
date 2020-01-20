@@ -48,7 +48,7 @@ class Scenario {
   public:
     Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
     virtual ~Scenario() = default;
-    virtual Time start() { return Time(0.0); }  // TODO eliminate return type
+    virtual void start() {}
     virtual void end() {}
     virtual bool iterate();
     virtual std::string calendar_str() const { return "standard"; }

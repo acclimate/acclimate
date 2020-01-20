@@ -66,7 +66,7 @@ class ExternalScenario : public Scenario {
     using Scenario::id;
     using Scenario::model;
     bool iterate() override;
-    Time start() override;
+    void start() override;
     void end() override;
     std::string calendar_str() const override { return calendar_str_; }
     std::string time_units_str() const override { return time_units_str_; }
