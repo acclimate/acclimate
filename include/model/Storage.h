@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 
+#include "openmp.h"
 #include "parameters.h"
 #include "types.h"
 

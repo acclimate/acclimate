@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include "openmp.h"
 #include "parameters.h"
 #include "settingsnode.h"
 #include "types.h"

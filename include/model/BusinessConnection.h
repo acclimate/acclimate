@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 
+#include "openmp.h"
 #include "types.h"
 
 namespace acclimate {

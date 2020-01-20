@@ -29,6 +29,7 @@
 #include "model/GeoLocation.h"
 #include "model/GeoRoute.h"
 #include "model/Sector.h"
+#include "openmp.h"
 #include "parameters.h"
 #include "types.h"
 

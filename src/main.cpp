@@ -102,14 +102,17 @@ int main(int argc, char* argv[]) {
             if (arg == "-") {
                 std::cin >> std::noskipws;
                 acclimate::ModelRun acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
-                return acclimate.run();
+                acclimate.run();
+            } else {
+                std::ifstream settings_file(arg);
+                if (!settings_file) {
+                    throw std::runtime_error("Cannot open " + arg);
+                }
+                acclimate::ModelRun acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(settings_file)));
+                acclimate.run();
             }
-            std::ifstream settings_file(arg);
-            if (!settings_file) {
-                throw std::runtime_error("Cannot open " + arg);
-            }
-            acclimate::ModelRun acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(settings_file)));
-            return acclimate.run();
+        } catch (const acclimate::return_after_checkpoint&) {
+            return 7;
         } catch (const std::exception& ex) {
             std::cerr << ex.what() << std::endl;
             return 255;

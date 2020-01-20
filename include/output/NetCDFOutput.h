@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "netcdftools.h"
+#include "openmp.h"
 #include "output/ArrayOutput.h"
 
 namespace acclimate {

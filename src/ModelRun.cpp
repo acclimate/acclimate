@@ -20,8 +20,6 @@
 
 #include "ModelRun.h"
 
-#include <unistd.h>
-
 #include <cfenv>
 #include <chrono>
 #include <csignal>
@@ -29,13 +27,7 @@
 #include <string>
 #include <utility>
 
-#ifdef ENABLE_DMTCP
-#include <dmtcp.h>
-
-#include <csignal>
-#include <thread>
-#endif  // TODO: remove conditionals
-
+#include "checkpointing.h"
 #include "input/ModelInitializer.h"
 #include "model/EconomicAgent.h"
 #include "model/Government.h"
@@ -61,11 +53,6 @@
 #include "scenario/Taxes.h"
 
 namespace acclimate {
-
-static bool instantiated = false;  // TODO use atomic int and move to class
-static volatile bool checkpoint_scheduled = false;
-
-static void handle_sigterm(int /* signal */) { checkpoint_scheduled = true; }
 
 static void handle_fpe_error(int /* signal */) {
     if constexpr (options::FLOATING_POINT_EXCEPTIONS) {
@@ -107,16 +94,9 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
         feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);  // NOLINT(hicpp-signed-bitwise)
     }
 
-    if constexpr (options::ENABLE_DMTCP) {
-        if (instantiated) {
-            error_("Only one run instance supported when checkpointing");
-        }
-        std::signal(SIGTERM, handle_sigterm);
-        close(10);
-        close(11);
+    if constexpr (options::CHECKPOINTING) {
+        checkpoint::initialize();
     }
-
-    instantiated = true;
 
     auto model = new Model(this);
     {
@@ -182,7 +162,7 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
     }
 }
 
-int ModelRun::run() {
+void ModelRun::run() {
     if (has_run) {
         error_("model has already run");
     }
@@ -240,45 +220,31 @@ int ModelRun::run() {
             t0 = t2;
         }
 
-#ifdef ENABLE_DMTCP
-        if (checkpoint_scheduled) {
-            info_("Writing checkpoint");
-            std::size_t original_generation = dmtcp_get_generation();
-            for (const auto& output : outputs_m) {
-                output->checkpoint_stop();
-            }
-            int retval = dmtcp_checkpoint();
-            switch (retval) {
-                case DMTCP_AFTER_CHECKPOINT:
-                    do {
-                        std::this_thread::sleep_for(std::chrono::seconds(1));
-                    } while (dmtcp_get_generation() == original_generation);
-                    return 7;
-                case DMTCP_AFTER_RESTART:
-                    checkpoint_scheduled = false;
-                    info_("Resuming from checkpoint");
-                    t0 = std::chrono::high_resolution_clock::now();
-                    for (const auto& output : outputs_m) {
-                        output->checkpoint_resume();
-                    }
-                    break;
-                case DMTCP_NOT_PRESENT:
-                    error_("dmtcp not present");
-                default:
-                    error_("unknown dmtcp result " << retval);
+        if constexpr (options::CHECKPOINTING) {
+            if (checkpoint::is_scheduled) {
+                info_("Writing checkpoint");
+                for (const auto& output : outputs_m) {
+                    output->checkpoint_stop();
+                }
+
+                checkpoint::write();
+
+                info_("Resuming from checkpoint");
+                t0 = std::chrono::high_resolution_clock::now();
+                for (const auto& output : outputs_m) {
+                    output->checkpoint_resume();
+                }
             }
         }
-#endif
 
         step(IterationStep::SCENARIO);
         model_m->tick();
         ++time_m;
     }
-    return 0;
 }
 
 ModelRun::~ModelRun() {
-    if (!checkpoint_scheduled) {
+    if (!options::CHECKPOINTING || !checkpoint::is_scheduled) {
         for (auto& scenario : scenarios_m) {
             scenario->end();
         }
@@ -289,7 +255,6 @@ ModelRun::~ModelRun() {
     outputs_m.clear();
     scenarios_m.clear();
     model_m.reset();
-    instantiated = false;
 }
 
 void ModelRun::event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) {

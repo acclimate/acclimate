@@ -97,7 +97,7 @@ class ModelRun {
   public:
     explicit ModelRun(const settings::SettingsNode& settings);
     ~ModelRun();
-    int run();
+    void run();
     IterationStep step() const { return step_m; }
     unsigned int time() const { return time_m; }
     const std::size_t& duration() const { return duration_m; }
