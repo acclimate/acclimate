@@ -20,8 +20,8 @@
 
 #include "model/GeoConnection.h"
 
+#include "acclimate.h"
 #include "model/GeoLocation.h"
-#include "run.h"
 
 namespace acclimate {
 

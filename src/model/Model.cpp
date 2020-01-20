@@ -24,6 +24,7 @@
 #include <chrono>
 #include <random>
 
+#include "acclimate.h"
 #include "model/Consumer.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
@@ -33,11 +34,10 @@
 #include "model/PurchasingManager.h"
 #include "model/Region.h"
 #include "model/Storage.h"
-#include "run.h"
 
 namespace acclimate {
 
-Model::Model(Run* const run_p) : run_m(run_p), consumption_sector(new Sector(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector::TransportType::IMMEDIATE)) {
+Model::Model(ModelRun* const run_p) : run_m(run_p), consumption_sector(new Sector(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector::TransportType::IMMEDIATE)) {
     sectors.emplace_back(consumption_sector);
 }
 

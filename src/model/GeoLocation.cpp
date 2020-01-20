@@ -23,10 +23,10 @@
 #include <algorithm>
 #include <memory>
 
+#include "acclimate.h"
 #include "model/GeoConnection.h"
 #include "model/GeoPoint.h"
 #include "model/Model.h"
-#include "run.h"
 
 namespace acclimate {
 

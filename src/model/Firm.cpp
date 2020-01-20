@@ -22,6 +22,7 @@
 
 #include <vector>
 
+#include "acclimate.h"
 #include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
 #include "model/GeoRoute.h"
@@ -31,7 +32,6 @@
 #include "model/SalesManager.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
-#include "run.h"
 
 namespace acclimate {
 

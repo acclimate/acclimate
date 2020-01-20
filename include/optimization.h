@@ -21,12 +21,16 @@
 #ifndef OPTIMIZATION_H
 #define OPTIMIZATION_H
 
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wswitch-enum"
+#endif
 
 #include <nlopt.hpp>
 
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 
 #endif

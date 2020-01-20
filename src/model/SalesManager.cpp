@@ -24,13 +24,14 @@
 #include <iomanip>
 #include <iostream>
 
+#include "ModelRun.h"
+#include "acclimate.h"
 #include "model/BusinessConnection.h"
 #include "model/CapacityManager.h"
 #include "model/Firm.h"
 #include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/Storage.h"
-#include "run.h"
 
 namespace acclimate {
 

@@ -24,6 +24,7 @@
 #include <random>
 #include <utility>
 
+#include "acclimate.h"
 #include "model/CapacityManager.h"
 #include "model/Consumer.h"
 #include "model/EconomicAgent.h"
@@ -31,7 +32,6 @@
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
-#include "run.h"
 #include "settingsnode.h"
 
 namespace acclimate {

@@ -27,6 +27,7 @@
 
 #include "MRIOIndexSet.h"
 #include "MRIOTable.h"
+#include "acclimate.h"
 #include "model/BusinessConnection.h"
 #include "model/Consumer.h"
 #include "model/EconomicAgent.h"
@@ -44,7 +45,6 @@
 #include "model/TransportChainLink.h"
 #include "netcdftools.h"
 #include "optimization.h"
-#include "run.h"
 
 namespace acclimate {
 

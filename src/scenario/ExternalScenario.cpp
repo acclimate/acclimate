@@ -22,12 +22,12 @@
 
 #include <cstring>
 
+#include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "netcdftools.h"
-#include "run.h"
 #include "scenario/ExternalForcing.h"
 
 namespace acclimate {

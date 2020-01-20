@@ -22,12 +22,13 @@
 
 #include <algorithm>
 
+#include "ModelRun.h"
+#include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/Sector.h"
-#include "run.h"
 
 namespace acclimate {
 

@@ -24,21 +24,21 @@
 #include <ctime>
 #include <string>
 
-#include "run.h"
+#include "acclimate.h"
 #include "settingsnode.h"
-#include "types.h"
 
 namespace acclimate {
 
 using hstring = settings::hstring;
 
-class Scenario;
 class BusinessConnection;
 class Consumer;
 class EconomicAgent;
-class Model;
+enum class EventType : unsigned char;
 class Firm;
+class Model;
 class Region;
+class Scenario;
 class Sector;
 class Storage;
 

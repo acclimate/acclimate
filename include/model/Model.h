@@ -33,16 +33,16 @@
 
 namespace acclimate {
 
-class Run;
 class Consumer;
 class EconomicAgent;
-class GeoLocation;
 class Firm;
+class GeoLocation;
+class ModelRun;
 class PurchasingManager;
 class Region;
 
 class Model {
-    friend class Run;
+    friend class ModelRun;
 
   private:
     Time time_ = Time(0.0);
@@ -55,7 +55,7 @@ class Model {
     bool no_self_supply_ = false;
     std::vector<std::pair<PurchasingManager*, std::size_t>> purchasing_managers;
     std::vector<std::pair<EconomicAgent*, std::size_t>> economic_agents;
-    Run* const run_m;
+    ModelRun* const run_m;
 
   public:
     std::vector<std::unique_ptr<Sector>> sectors;
@@ -64,7 +64,7 @@ class Model {
     Sector* const consumption_sector;
 
   private:
-    explicit Model(Run* run_p);
+    explicit Model(ModelRun* run_p);
     Model* model() { return this; }
 
   public:
@@ -102,7 +102,7 @@ class Model {
     Consumer* find_consumer(Region* region) const;
     Consumer* find_consumer(const std::string& region_name) const;
     GeoLocation* find_location(const std::string& name) const;
-    Run* run() const { return run_m; }
+    ModelRun* run() const { return run_m; }
     std::string id() const { return "MODEL"; }
 };
 }  // namespace acclimate

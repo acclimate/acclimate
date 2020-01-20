@@ -18,11 +18,16 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "run.h"
+#include "ModelRun.h"
 
 #include <unistd.h>
 
+#include <cfenv>
 #include <chrono>
+#include <csignal>
+#include <ostream>
+#include <string>
+#include <utility>
 
 #ifdef ENABLE_DMTCP
 #include <dmtcp.h>
@@ -57,24 +62,60 @@
 
 namespace acclimate {
 
-static bool instantiated = false;
+static bool instantiated = false;  // TODO use atomic int and move to class
 static volatile bool checkpoint_scheduled = false;
 
-#ifdef ENABLE_DMTCP
 static void handle_sigterm(int /* signal */) { checkpoint_scheduled = true; }
-#endif
 
-Run::Run(const settings::SettingsNode& settings) {
+static void handle_fpe_error(int /* signal */) {
+    if constexpr (options::FLOATING_POINT_EXCEPTIONS) {
+        unsigned int exceptions = fetestexcept(FE_ALL_EXCEPT);  // NOLINT(hicpp-signed-bitwise)
+        feclearexcept(FE_ALL_EXCEPT);                           // NOLINT(hicpp-signed-bitwise)
+        if (exceptions == 0) {
+            return;
+        }
+        if ((exceptions & FE_OVERFLOW) != 0) {  // NOLINT(hicpp-signed-bitwise)
+            warning_("FPE_OVERFLOW");
+        }
+        if ((exceptions & FE_INVALID) != 0) {  // NOLINT(hicpp-signed-bitwise)
+            warning_("FPE_INVALID");
+        }
+        if ((exceptions & FE_DIVBYZERO) != 0) {  // NOLINT(hicpp-signed-bitwise)
+            warning_("FPE_DIVBYZERO");
+        }
+        if ((exceptions & FE_INEXACT) != 0) {  // NOLINT(hicpp-signed-bitwise)
+            warning_("FE_INEXACT");
+        }
+        if ((exceptions & FE_UNDERFLOW) != 0) {  // NOLINT(hicpp-signed-bitwise)
+            warning_("FE_UNDERFLOW");
+        }
+        if constexpr (options::FATAL_FLOATING_POINT_EXCEPTIONS) {
+            error_("Floating point exception");
+        }
+    }
+}
+
+ModelRun::ModelRun(const settings::SettingsNode& settings) {
     step(IterationStep::INITIALIZATION);
 
-#ifdef ENABLE_DMTCP
-    if (instantiated) {
-        error_("Only one run instance supported when checkpointing");
+    if constexpr (options::BANKERS_ROUNDING) {
+        fesetround(FE_TONEAREST);
     }
-    std::signal(SIGTERM, handle_sigterm);
-    close(10);
-    close(11);
-#endif
+
+    if constexpr (options::FLOATING_POINT_EXCEPTIONS) {
+        signal(SIGFPE, handle_fpe_error);
+        feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);  // NOLINT(hicpp-signed-bitwise)
+    }
+
+    if constexpr (options::ENABLE_DMTCP) {
+        if (instantiated) {
+            error_("Only one run instance supported when checkpointing");
+        }
+        std::signal(SIGTERM, handle_sigterm);
+        close(10);
+        close(11);
+    }
+
     instantiated = true;
 
     auto model = new Model(this);
@@ -141,7 +182,7 @@ Run::Run(const settings::SettingsNode& settings) {
     }
 }
 
-int Run::run() {
+int ModelRun::run() {
     if (has_run) {
         error_("model has already run");
     }
@@ -236,7 +277,7 @@ int Run::run() {
     return 0;
 }
 
-Run::~Run() {
+ModelRun::~ModelRun() {
     if (!checkpoint_scheduled) {
         for (auto& scenario : scenarios_m) {
             scenario->end();
@@ -251,7 +292,7 @@ Run::~Run() {
     instantiated = false;
 }
 
-void Run::event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) {
+void ModelRun::event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) {
     info_(EVENT_NAMES[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
                                  << (region_from == nullptr ? "" : region_from->id()) << "->" << (sector_to == nullptr ? "" : sector_to->id())
                                  << (sector_to != nullptr && region_to != nullptr ? ":" : "") << (region_to == nullptr ? "" : region_to->id())
@@ -261,7 +302,7 @@ void Run::event(EventType type, const Sector* sector_from, const Region* region_
     }
 }
 
-void Run::event(EventType type, const Sector* sector_from, const Region* region_from, const EconomicAgent* economic_agent_to, FloatType value) {
+void ModelRun::event(EventType type, const Sector* sector_from, const Region* region_from, const EconomicAgent* economic_agent_to, FloatType value) {
     info_(EVENT_NAMES[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
                                  << (region_from == nullptr ? "" : region_from->id()) << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
@@ -270,7 +311,7 @@ void Run::event(EventType type, const Sector* sector_from, const Region* region_
     }
 }
 
-void Run::event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) {
+void ModelRun::event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) {
     info_(EVENT_NAMES[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id())
                                  << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
@@ -279,7 +320,7 @@ void Run::event(EventType type, const EconomicAgent* economic_agent_from, const 
     }
 }
 
-void Run::event(EventType type, const EconomicAgent* economic_agent_from, const Sector* sector_to, const Region* region_to, FloatType value) {
+void ModelRun::event(EventType type, const EconomicAgent* economic_agent_from, const Sector* sector_to, const Region* region_to, FloatType value) {
     info_(EVENT_NAMES[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->")
                                  << (sector_to == nullptr ? "" : sector_to->id() + ":") << (region_to == nullptr ? "" : region_to->id())
                                  << (std::isnan(value) ? "" : " = " + std::to_string(value)));
@@ -288,7 +329,7 @@ void Run::event(EventType type, const EconomicAgent* economic_agent_from, const 
     }
 }
 
-unsigned int Run::thread_count() const {
+unsigned int ModelRun::thread_count() const {
 #ifdef _OPENMP
     return omp_get_max_threads();
 #else
@@ -296,7 +337,7 @@ unsigned int Run::thread_count() const {
 #endif
 }
 
-std::string Run::timeinfo() const {
+std::string ModelRun::timeinfo() const {
     if constexpr (options::DEBUGGING) {
         std::string res;
         if (step_m != IterationStep::INITIALIZATION) {

@@ -27,7 +27,7 @@ set_default_build_type(Release)
 project(acclimate)
 
 file(GLOB ACCLIMATE_SOURCES src/**/*.cpp)
-set(ACCLIMATE_SOURCES ${ACCLIMATE_SOURCES} src/acclimate.cpp src/info.cpp src/run.cpp)
+set(ACCLIMATE_SOURCES ${ACCLIMATE_SOURCES} src/info.cpp src/ModelRun.cpp)
 
 option(ACCLIMATE_SHARED_LIBRARY "" OFF)
 if(ACCLIMATE_SHARED_LIBRARY)

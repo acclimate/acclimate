@@ -22,12 +22,12 @@
 
 #include <iomanip>
 
+#include "acclimate.h"
 #include "model/Firm.h"
 #include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/SalesManager.h"
 #include "model/Storage.h"
-#include "run.h"
 
 namespace acclimate {
 

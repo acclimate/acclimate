@@ -20,6 +20,7 @@
 
 #include "model/BusinessConnection.h"
 
+#include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Model.h"
@@ -28,7 +29,6 @@
 #include "model/SalesManager.h"
 #include "model/Storage.h"
 #include "model/TransportChainLink.h"
-#include "run.h"
 
 namespace acclimate {
 

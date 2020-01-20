@@ -23,6 +23,7 @@
 #include <limits>
 #include <utility>
 
+#include "ModelRun.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "settingsnode.h"

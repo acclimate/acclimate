@@ -23,11 +23,11 @@
 #include <algorithm>
 #include <string>
 
+#include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Model.h"
 #include "model/Region.h"
-#include "run.h"
 #include "settingsnode.h"
 
 namespace acclimate {

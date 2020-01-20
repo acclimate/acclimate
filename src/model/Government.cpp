@@ -20,12 +20,12 @@
 
 #include "model/Government.h"
 
+#include "acclimate.h"
 #include "model/Firm.h"
 #include "model/GeoRoute.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/SalesManager.h"
-#include "run.h"
 
 namespace acclimate {
 

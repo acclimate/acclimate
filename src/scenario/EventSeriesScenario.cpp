@@ -22,10 +22,10 @@
 
 #include <memory>
 
+#include "acclimate.h"
 #include "model/Firm.h"
 #include "model/Model.h"
 #include "model/Sector.h"
-#include "run.h"
 
 namespace acclimate {
 

@@ -23,11 +23,11 @@
 #include <memory>
 #include <string>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "settingsnode.h"
 #include "settingsnode/inner.h"
 #include "settingsnode/yaml.h"
-#include "types.h"
 #include "version.h"
 
 namespace acclimate {
@@ -101,14 +101,14 @@ int main(int argc, char* argv[]) {
         try {
             if (arg == "-") {
                 std::cin >> std::noskipws;
-                acclimate::Acclimate acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
+                acclimate::ModelRun acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
                 return acclimate.run();
             }
             std::ifstream settings_file(arg);
             if (!settings_file) {
                 throw std::runtime_error("Cannot open " + arg);
             }
-            acclimate::Acclimate acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(settings_file)));
+            acclimate::ModelRun acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(settings_file)));
             return acclimate.run();
         } catch (const std::exception& ex) {
             std::cerr << ex.what() << std::endl;

@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "ModelRun.h"
 #include "model/BusinessConnection.h"
 #include "model/CapacityManager.h"
 #include "model/Consumer.h"
