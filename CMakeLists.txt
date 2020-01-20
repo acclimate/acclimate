@@ -173,6 +173,6 @@ mark_as_advanced(LIBMRIO_WITH_NETCDF)
 
 include(lib/settingsnode/settingsnode.cmake)
 include_settingsnode(acclimate)
-include_yaml_cpp(acclimate ON "yaml-cpp-0.6.2")
+include_yaml_cpp(acclimate ON "yaml-cpp-0.6.3")
 
 add_cpp_tools(acclimate STD c++17)
