@@ -36,6 +36,15 @@ else()
   add_executable(acclimate ${ACCLIMATE_SOURCES} src/main.cpp)
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  target_compile_options(acclimate PUBLIC -fno-math-errno -fno-rtti)
+  add_custom_command(
+    TARGET acclimate
+    POST_BUILD
+    COMMAND ${CMAKE_STRIP} acclimate
+  )
+endif()
+
 target_include_directories(acclimate PRIVATE include lib/cpp-library)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel"
 )# icc 19 does not yet fully support c++17, but we only need features it does support

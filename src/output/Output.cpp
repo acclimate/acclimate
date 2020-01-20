@@ -697,22 +697,11 @@ void Output::iterate() {
                         if (it.has("name")) {
                             region_name = it["name"].as<std::string>().c_str();
                         }
-                        if (static_cast<RasteredScenario<FloatType>*>(scenario) != nullptr) {
-                            for (const auto& observable : it["parameters"].as_sequence()) {
-                                const hstring& name = observable.as<hstring>();
-                                switch (name) {
-                                    case hstring::hash("total_current_proxy_sum"):
-                                        for (const auto& forcing :
-                                             static_cast<RasteredScenario<FloatType>*>(scenario)  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
-                                                 ->forcings()) {
-                                            if (forcing.region != nullptr && ((region_name == nullptr) || forcing.region->id() == region_name)) {
-                                                internal_start_target(hstring("regions"), forcing.region);
-                                                internal_write_value(name, forcing.forcing);
-                                                internal_end_target();
-                                            }
-                                        }
-                                        break;
-                                }
+                        for (const auto& observable : it["parameters"].as_sequence()) {
+                            const hstring& name = observable.as<hstring>();
+                            switch (name) {
+                                case hstring::hash("total_current_proxy_sum"):
+                                    error("total_current_proxy_sum not supported anymore"); // TODO Remove after scenario cleanup
                             }
                         }
                         for (const auto& region : model()->regions) {
