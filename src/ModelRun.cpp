@@ -110,52 +110,68 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
 
     for (const auto& scenario_node : settings["scenarios"].as_sequence()) {
         Scenario* scenario = nullptr;
-        const std::string& type = scenario_node["type"].template as<std::string>();
-        // TODO use switch
-        if (type == "events") {
-            scenario = new Scenario(settings, scenario_node, model);
-        } else if (type == "taxes") {
-            scenario = new Taxes(settings, scenario_node, model);
-        } else if (type == "flooding") {
-            scenario = new Flooding(settings, scenario_node, model);
-        } else if (type == "hurricanes") {
-            scenario = new Hurricanes(settings, scenario_node, model);
-        } else if (type == "direct_population") {
-            scenario = new DirectPopulation(settings, scenario_node, model);
-        } else if (type == "heat_labor_productivity") {
-            scenario = new HeatLaborProductivity(settings, scenario_node, model);
-        } else if (type == "event_series") {
-            scenario = new EventSeriesScenario(settings, scenario_node, model);
-        } else {
-            error_("Unknown scenario type '" << type << "'");
+        const auto& type = scenario_node["type"].template as<hstring>();
+        switch (type) {
+            case hstring::hash("events"):
+                scenario = new Scenario(settings, scenario_node, model);
+                break;
+            case hstring::hash("taxes"):
+                scenario = new Taxes(settings, scenario_node, model);
+                break;
+            case hstring::hash("flooding"):
+                scenario = new Flooding(settings, scenario_node, model);
+                break;
+            case hstring::hash("hurricanes"):
+                scenario = new Hurricanes(settings, scenario_node, model);
+                break;
+            case hstring::hash("direct_population"):
+                scenario = new DirectPopulation(settings, scenario_node, model);
+                break;
+            case hstring::hash("heat_labor_productivity"):
+                scenario = new HeatLaborProductivity(settings, scenario_node, model);
+                break;
+            case hstring::hash("event_series"):
+                scenario = new EventSeriesScenario(settings, scenario_node, model);
+                break;
+            default:
+                error_("Unknown scenario type '" << type << "'");
         }
         scenarios_m.emplace_back(scenario);
     }
 
     for (const auto& node : settings["outputs"].as_sequence()) {
         Output* output = nullptr;
-        const std::string& type = node["format"].template as<std::string>();
-        // TODO use switch
-        if (type == "console") {
-            output = new ConsoleOutput(settings, model, node);
-        } else if (type == "json") {
-            output = new JSONOutput(settings, model, node);
-        } else if (type == "json_network") {
-            output = new JSONNetworkOutput(settings, model, node);
-        } else if (type == "netcdf") {
-            output = new NetCDFOutput(settings, model, node);
-        } else if (type == "histogram") {
-            output = new HistogramOutput(settings, model, node);
-        } else if (type == "gnuplot") {
-            output = new GnuplotOutput(settings, model, node);
-        } else if (type == "damage") {
-            output = new DamageOutput(settings, model, node);
-        } else if (type == "array") {
-            output = new ArrayOutput(settings, model, node);
-        } else if (type == "progress") {
-            output = new ProgressOutput(settings, model, node);
-        } else {
-            error_("Unknown output format '" << type << "'");
+        const auto& type = node["format"].template as<hstring>();
+        switch (type) {
+            case hstring::hash("console"):
+                output = new ConsoleOutput(settings, model, node);
+                break;
+            case hstring::hash("json"):
+                output = new JSONOutput(settings, model, node);
+                break;
+            case hstring::hash("json_network"):
+                output = new JSONNetworkOutput(settings, model, node);
+                break;
+            case hstring::hash("netcdf"):
+                output = new NetCDFOutput(settings, model, node);
+                break;
+            case hstring::hash("histogram"):
+                output = new HistogramOutput(settings, model, node);
+                break;
+            case hstring::hash("gnuplot"):
+                output = new GnuplotOutput(settings, model, node);
+                break;
+            case hstring::hash("damage"):
+                output = new DamageOutput(settings, model, node);
+                break;
+            case hstring::hash("array"):
+                output = new ArrayOutput(settings, model, node);
+                break;
+            case hstring::hash("progress"):
+                output = new ProgressOutput(settings, model, node);
+                break;
+            default:
+                error_("Unknown output format '" << type << "'");
         }
         output->initialize();
         outputs_m.emplace_back(output);
