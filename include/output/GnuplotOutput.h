@@ -41,14 +41,12 @@ class GnuplotOutput : public Output {
     };
 
   private:
+    using Output::output_node;
+    using Output::settings_string;
     std::ofstream file;
     std::unordered_map<Region*, int> region_index;
     std::unordered_map<Sector*, int> sector_index;
     std::vector<Target> stack;
-
-  public:
-    using Output::output_node;
-    using Output::settings_string;
 
   private:
     void internal_write_header(tm* timestamp, unsigned int max_threads) override;

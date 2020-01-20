@@ -49,6 +49,8 @@ class NetCDFOutput : public ArrayOutput {
     using ArrayOutput::sectors_size;
     using ArrayOutput::stack;
     using ArrayOutput::variables;
+    using Output::output_node;
+    using Output::settings_string;
     static constexpr auto compression_level = 7;
     netCDF::NcDim dim_time;
     netCDF::NcDim dim_sector;
@@ -63,10 +65,6 @@ class NetCDFOutput : public ArrayOutput {
     OpenMPLock netcdf_event_lock;
     std::string calendar;
     std::string time_units;
-
-  public:
-    using Output::output_node;
-    using Output::settings_string;
 
   private:
     void internal_write_header(tm* timestamp, unsigned int max_threads) override;

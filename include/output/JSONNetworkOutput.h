@@ -31,12 +31,10 @@ class Model;
 
 class JSONNetworkOutput : public Output {
   private:
+    using Output::output_node;
     TimeStep timestep = 0;
     std::string filename;
     bool advanced = false;
-
-  public:
-    using Output::output_node;
 
   private:
     void internal_iterate_end() override;

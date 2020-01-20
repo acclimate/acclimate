@@ -34,12 +34,10 @@ class Sector;
 
 class JSONOutput : public Output {
   private:
-    std::ostream* out = nullptr;
-    std::unique_ptr<std::ofstream> outfile;
-
-  public:
     using Output::output_node;
     using Output::settings_string;
+    std::ostream* out = nullptr;
+    std::unique_ptr<std::ofstream> outfile;
 
   private:
     void internal_write_header(tm* timestamp, unsigned int max_threads) override;

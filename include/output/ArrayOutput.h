@@ -71,6 +71,7 @@ class ArrayOutput : public Output {
     };
 
   protected:
+    using Output::output_node;
     std::size_t sectors_size = 0;
     std::size_t regions_size = 0;
     std::unordered_map<hstring::hash_type, Variable> variables;

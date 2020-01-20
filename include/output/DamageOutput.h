@@ -33,10 +33,8 @@ class Region;
 class Sector;
 
 class DamageOutput : public Output {
-  public:
-    using Output::output_node;
-
   private:
+    using Output::output_node;
     FlowQuantity damage;
     std::ostream* out;
     std::unique_ptr<std::ofstream> outfile;

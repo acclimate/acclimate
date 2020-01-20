@@ -34,13 +34,11 @@ class Sector;
 
 class ConsoleOutput : public Output {
   private:
+    using Output::output_node;
+    using Output::settings_string;
     unsigned char stack;
     std::ostream* out;
     std::unique_ptr<std::ofstream> outfile;
-
-  public:
-    using Output::output_node;
-    using Output::settings_string;
 
   private:
     void internal_write_header(tm* timestamp, unsigned int max_threads) override;

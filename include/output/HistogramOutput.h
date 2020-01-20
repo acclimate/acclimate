@@ -32,15 +32,13 @@ class Model;
 
 class HistogramOutput : public Output {
   private:
+    using Output::output_node;
+    using Output::settings_string;
     std::ofstream file;
     bool exclude_max;
     unsigned int windows;
     double min, max;
     std::vector<unsigned int> count;
-
-  public:
-    using Output::output_node;
-    using Output::settings_string;
 
   private:
     void internal_write_header(tm* timestamp, unsigned int max_threads) override;
