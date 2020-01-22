@@ -26,8 +26,11 @@
 #include <memory>
 #include <string>
 
-#include "netcdftools.h"
-#include "types.h"
+#include "acclimate.h"
+
+namespace netCDF {
+class NcFile;
+}  // namespace netCDF
 
 namespace acclimate {
 

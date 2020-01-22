@@ -20,8 +20,6 @@
 
 #include "model/Storage.h"
 
-#include <algorithm>
-
 #include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"

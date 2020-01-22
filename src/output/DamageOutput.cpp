@@ -23,10 +23,10 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "model/Firm.h"
 #include "model/Model.h"
-#include "model/Region.h"
 #include "model/Sector.h"
 #include "settingsnode.h"
 

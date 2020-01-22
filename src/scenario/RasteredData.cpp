@@ -20,11 +20,15 @@
 
 #include "scenario/RasteredData.h"
 
-#include <algorithm>
+#include <algorithm>  // IWYU pragma: keep
+#include <cmath>
+#include <cstdlib>
 #include <limits>
+#include <ostream>
 #include <utility>
 
 #include "acclimate.h"
+#include "netcdftools.h"
 
 namespace acclimate {
 

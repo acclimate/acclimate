@@ -21,17 +21,20 @@
 #ifndef ACCLIMATE_RUN_H
 #define ACCLIMATE_RUN_H
 
+#include <features.h>  // for __STRING
+
 #include <array>
 #include <cstddef>
-#include <iostream>
 #include <limits>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <vector>
 
 #include "acclimate.h"
-#include "settingsnode.h"
+
+namespace settings {
+class SettingsNode;
+}
 
 namespace acclimate {
 
@@ -69,7 +72,7 @@ enum class EventType : unsigned char { ACCLIMATE_ADD_EVENTS };
 #undef ADD_EVENT
 
 #define ADD_EVENT(e) __STRING(e),
-static constexpr std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> EVENT_NAMES = {ACCLIMATE_ADD_EVENTS};
+constexpr std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> EVENT_NAMES = {ACCLIMATE_ADD_EVENTS};
 #undef ADD_EVENT
 
 class Model;

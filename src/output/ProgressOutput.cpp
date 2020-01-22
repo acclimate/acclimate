@@ -20,13 +20,11 @@
 
 #include "output/ProgressOutput.h"
 
-#include <iostream>
-#include <string>
+#include <cstddef>
 #include <utility>
 
-#include "model/Model.h"
-#include "model/Sector.h"
 #include "progressbar.h"
+#include "settingsnode.h"
 
 namespace acclimate {
 

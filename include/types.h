@@ -27,8 +27,12 @@
 #include <limits>
 #include <string>
 
+// IWYU pragma: private, include "acclimate.h"
+
+// IWYU pragma: begin_exports
 #include "exceptions.h"
 #include "options.h"
+// IWYU pragma: end_exports
 
 // TODO replace by comments of respective parameter names
 #define UNUSED(x) (void)(x)

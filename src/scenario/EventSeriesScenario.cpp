@@ -20,14 +20,19 @@
 
 #include "scenario/EventSeriesScenario.h"
 
+#include <algorithm>
+#include <cmath>
 #include <memory>
+#include <utility>
 
 #include "acclimate.h"
 #include "model/Firm.h"
 #include "model/Model.h"
-#include "model/Sector.h"
+#include "netcdftools.h"
+#include "settingsnode.h"
 
 namespace acclimate {
+class Sector;
 
 EventSeriesScenario::EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
     : ExternalScenario(settings_p, std::move(scenario_node_p), model_p) {}

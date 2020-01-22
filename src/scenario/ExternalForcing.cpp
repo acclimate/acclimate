@@ -20,10 +20,12 @@
 
 #include "scenario/ExternalForcing.h"
 
+#include <cstddef>
 #include <ostream>
 #include <utility>
 
 #include "acclimate.h"
+#include "netcdftools.h"
 
 namespace acclimate {
 

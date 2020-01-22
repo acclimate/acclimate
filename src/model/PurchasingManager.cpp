@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <stdexcept>
 
 #include "ModelRun.h"
@@ -36,6 +37,7 @@
 #include "model/Sector.h"
 #include "model/Storage.h"
 #include "optimization.h"
+#include "parameters.h"
 
 static constexpr auto MAX_GRADIENT = 1e3;
 static constexpr bool IGNORE_ROUNDOFFLIMITED = true;

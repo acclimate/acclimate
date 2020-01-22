@@ -27,7 +27,7 @@
 #pragma GCC diagnostic ignored "-Wswitch-enum"
 #endif
 
-#include <nlopt.hpp>
+#include "nlopt.hpp"  // IWYU pragma: export
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

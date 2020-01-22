@@ -22,10 +22,12 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <string>
 
 #include "model/EconomicAgent.h"
 #include "model/Region.h"
+#include "model/Sector.h"
 #include "settingsnode.h"
 
 namespace acclimate {

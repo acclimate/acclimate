@@ -24,8 +24,8 @@
 #include <memory>
 #include <string>
 
+#include "acclimate.h"
 #include "netcdftools.h"
-#include "types.h"
 
 namespace acclimate {
 

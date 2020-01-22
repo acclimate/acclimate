@@ -24,7 +24,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "types.h"
+#include "acclimate.h"
 
 namespace acclimate {
 

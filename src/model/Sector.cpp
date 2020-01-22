@@ -23,7 +23,7 @@
 #include <utility>
 
 #include "acclimate.h"
-#include "model/Model.h"
+#include "settingsnode.h"
 
 namespace acclimate {
 

@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-#include "types.h"
+#include "acclimate.h"
 
 namespace acclimate {
 

@@ -20,15 +20,18 @@
 
 #include "scenario/Scenario.h"
 
+#include <cstdlib>
 #include <memory>
-#include <random>
+#include <ostream>
 #include <utility>
+#include <vector>
 
 #include "acclimate.h"
 #include "model/CapacityManager.h"
 #include "model/Consumer.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
+#include "model/GeoLocation.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"

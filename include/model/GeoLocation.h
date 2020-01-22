@@ -21,15 +21,18 @@
 #ifndef ACCLIMATE_GEOLOCATION_H
 #define ACCLIMATE_GEOLOCATION_H
 
-#include <cassert>
 #include <memory>
+#include <string>
+#include <vector>
 
+#include "acclimate.h"
 #include "model/GeoEntity.h"
 
 namespace acclimate {
 
 class GeoConnection;
 class GeoPoint;
+class Model;
 class Region;
 
 class GeoLocation : public GeoEntity {

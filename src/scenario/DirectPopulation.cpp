@@ -21,10 +21,16 @@
 #include "scenario/DirectPopulation.h"
 
 #include <algorithm>
+#include <memory>
+#include <vector>
 
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Region.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
 

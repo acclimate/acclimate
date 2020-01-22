@@ -28,8 +28,11 @@
 
 #include "model/Model.h"
 #include "model/Region.h"
+#include "model/Sector.h"
 #include "settingsnode.h"
 #include "version.h"
+
+struct tm;
 
 namespace acclimate {
 

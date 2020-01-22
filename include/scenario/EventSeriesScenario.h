@@ -25,10 +25,16 @@
 #include <string>
 #include <vector>
 
+#include "acclimate.h"
 #include "scenario/ExternalForcing.h"
 #include "scenario/ExternalScenario.h"
 
+namespace settings {
+class SettingsNode;
+}  // namespace settings
+
 namespace acclimate {
+class Model;
 
 class Firm;
 

@@ -24,13 +24,16 @@
 #include <fstream>
 #include <memory>
 
+#include "acclimate.h"
 #include "output/Output.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
 
 class Model;
-class Region;
-class Sector;
 
 class DamageOutput : public Output {
   private:

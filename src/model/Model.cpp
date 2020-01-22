@@ -22,15 +22,14 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iterator>
 #include <random>
+#include <type_traits>
 
 #include "acclimate.h"
-#include "model/Consumer.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/GeoLocation.h"
-#include "model/GeoRoute.h"
-#include "model/Government.h"
 #include "model/PurchasingManager.h"
 #include "model/Region.h"
 #include "model/Storage.h"

@@ -20,9 +20,10 @@
 
 #include "output/JSONNetworkOutput.h"
 
-#include <algorithm>
 #include <fstream>
+#include <memory>
 #include <utility>
+#include <vector>
 
 #include "model/BusinessConnection.h"
 #include "model/EconomicAgent.h"
@@ -33,7 +34,6 @@
 #include "model/SalesManager.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
-#include "scenario/Scenario.h"
 #include "settingsnode.h"
 
 namespace acclimate {

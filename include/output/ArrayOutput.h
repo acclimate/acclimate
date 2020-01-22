@@ -22,9 +22,13 @@
 #define ACCLIMATE_ARRAYOUTPUT_H
 
 #include <cstddef>
+#include <memory>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include "ModelRun.h"
+#include "acclimate.h"
 #include "output/Output.h"
 
 namespace settings {

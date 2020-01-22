@@ -31,6 +31,8 @@
 #include "settingsnode.h"
 #include "version.h"
 
+struct tm;
+
 namespace acclimate {
 
 JSONOutput::JSONOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)

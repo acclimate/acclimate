@@ -21,7 +21,12 @@
 #ifndef ACCLIMATE_DIRECTPOPULATION_H
 #define ACCLIMATE_DIRECTPOPULATION_H
 
+#include "acclimate.h"
 #include "scenario/RasteredScenario.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
 

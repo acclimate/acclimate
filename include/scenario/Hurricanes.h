@@ -21,9 +21,12 @@
 #ifndef ACCLIMATE_HURRICANES_H
 #define ACCLIMATE_HURRICANES_H
 
-#include <vector>
-
+#include "acclimate.h"
 #include "scenario/RasteredScenario.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
 

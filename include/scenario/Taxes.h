@@ -23,7 +23,12 @@
 
 #include "scenario/Scenario.h"
 
+namespace settings {
+class SettingsNode;
+}  // namespace settings
+
 namespace acclimate {
+class Model;
 
 class Taxes : public Scenario {
   private:

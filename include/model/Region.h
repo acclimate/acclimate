@@ -21,24 +21,25 @@
 #ifndef ACCLIMATE_REGION_H
 #define ACCLIMATE_REGION_H
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include "acclimate.h"
+#include "model/EconomicAgent.h"
 #include "model/GeoLocation.h"
-#include "model/GeoRoute.h"
+#include "model/GeoRoute.h"  // IWYU pragma: keep
+#include "model/Government.h"
 #include "model/Sector.h"
 #include "openmp.h"
 #include "parameters.h"
-#include "types.h"
 
 namespace acclimate {
 
-class EconomicAgent;
-class Government;
 class Model;
-class ModelInitializer;
 
 class Region : public GeoLocation {
     friend class Model;

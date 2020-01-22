@@ -20,15 +20,17 @@
 
 #include "scenario/ExternalScenario.h"
 
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <ostream>
+#include <utility>
 
 #include "acclimate.h"
-#include "model/EconomicAgent.h"
 #include "model/Model.h"
-#include "model/Region.h"
-#include "model/Sector.h"
-#include "netcdftools.h"
 #include "scenario/ExternalForcing.h"
+#include "settingsnode.h"
 
 namespace acclimate {
 

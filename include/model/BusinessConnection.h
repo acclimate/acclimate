@@ -21,19 +21,19 @@
 #ifndef ACCLIMATE_BUSINESSCONNECTION_H
 #define ACCLIMATE_BUSINESSCONNECTION_H
 
+#include <cstddef>
 #include <memory>
 #include <string>
 
+#include "acclimate.h"
+#include "model/TransportChainLink.h"
 #include "openmp.h"
-#include "types.h"
 
 namespace acclimate {
 
-class GeoRoute;
 class Model;
 class PurchasingManager;
 class SalesManager;
-class TransportChainLink;
 
 class BusinessConnection {
   private:

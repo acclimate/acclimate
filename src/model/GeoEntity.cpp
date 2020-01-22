@@ -21,7 +21,8 @@
 #include "model/GeoEntity.h"
 
 #include <algorithm>
-#include <cstddef>
+#include <iterator>
+#include <ostream>
 
 #include "acclimate.h"
 #include "model/TransportChainLink.h"

@@ -22,7 +22,7 @@
 
 #include <memory>
 
-#include "types.h"
+#include "acclimate.h"
 
 namespace acclimate {
 

@@ -20,11 +20,13 @@
 
 #include "model/TransportChainLink.h"
 
+#include <algorithm>
+#include <memory>
+
 #include "acclimate.h"
 #include "model/BusinessConnection.h"
 #include "model/EconomicAgent.h"
 #include "model/GeoEntity.h"
-#include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/SalesManager.h"
 #include "model/Storage.h"

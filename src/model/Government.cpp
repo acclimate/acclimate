@@ -20,9 +20,11 @@
 
 #include "model/Government.h"
 
+#include <memory>
+#include <utility>
+
 #include "acclimate.h"
 #include "model/Firm.h"
-#include "model/GeoRoute.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/SalesManager.h"

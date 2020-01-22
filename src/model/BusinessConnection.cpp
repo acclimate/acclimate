@@ -20,13 +20,18 @@
 
 #include "model/BusinessConnection.h"
 
+#include <vector>
+
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
+#include "model/GeoEntity.h"
+#include "model/GeoRoute.h"
 #include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/Region.h"
 #include "model/SalesManager.h"
+#include "model/Sector.h"
 #include "model/Storage.h"
 #include "model/TransportChainLink.h"
 

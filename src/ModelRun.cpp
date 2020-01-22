@@ -20,21 +20,18 @@
 
 #include "ModelRun.h"
 
+#include <algorithm>
 #include <cfenv>
 #include <chrono>
 #include <csignal>
-#include <ostream>
+#include <iostream>
 #include <string>
-#include <utility>
 
+#include "acclimate.h"
 #include "checkpointing.h"
 #include "input/ModelInitializer.h"
-#include "model/EconomicAgent.h"
-#include "model/Government.h"
 #include "model/Model.h"
-#include "model/PurchasingManager.h"
-#include "model/Region.h"
-#include "model/Storage.h"
+#include "openmp.h"
 #include "output/ArrayOutput.h"
 #include "output/ConsoleOutput.h"
 #include "output/DamageOutput.h"
@@ -43,6 +40,7 @@
 #include "output/JSONNetworkOutput.h"
 #include "output/JSONOutput.h"
 #include "output/NetCDFOutput.h"
+#include "output/Output.h"
 #include "output/ProgressOutput.h"
 #include "scenario/DirectPopulation.h"
 #include "scenario/EventSeriesScenario.h"
@@ -51,6 +49,7 @@
 #include "scenario/Hurricanes.h"
 #include "scenario/Scenario.h"
 #include "scenario/Taxes.h"
+#include "settingsnode.h"
 
 namespace acclimate {
 

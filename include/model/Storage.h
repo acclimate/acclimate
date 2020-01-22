@@ -24,15 +24,15 @@
 #include <memory>
 #include <string>
 
+#include "acclimate.h"
+#include "model/PurchasingManager.h"
 #include "openmp.h"
 #include "parameters.h"
-#include "types.h"
 
 namespace acclimate {
 
 class EconomicAgent;
 class Model;
-class PurchasingManager;
 class Sector;
 
 class Storage {

@@ -26,8 +26,8 @@
 #include <tuple>
 #include <vector>
 
+#include "acclimate.h"
 #include "openmp.h"
-#include "types.h"
 
 namespace acclimate {
 

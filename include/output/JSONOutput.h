@@ -24,7 +24,13 @@
 #include <fstream>
 #include <memory>
 
+#include "acclimate.h"
 #include "output/Output.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
+struct tm;
 
 namespace acclimate {
 

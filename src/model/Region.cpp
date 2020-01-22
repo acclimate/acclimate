@@ -21,16 +21,14 @@
 #include "model/Region.h"
 
 #include <algorithm>
-#include <cstddef>
+#include <iterator>
+#include <ostream>
 #include <utility>
 
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
-#include "model/GeoRoute.h"
 #include "model/Government.h"
 #include "model/Model.h"
-#include "model/PurchasingManager.h"
-#include "model/Storage.h"
 
 namespace acclimate {
 

@@ -24,10 +24,13 @@
 #include <string>
 #include <vector>
 
+#include "acclimate.h"
 #include "openmp.h"
 #include "parameters.h"
-#include "settingsnode.h"
-#include "types.h"
+
+namespace settings {
+class hstring;
+}
 
 namespace acclimate {
 

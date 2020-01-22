@@ -24,7 +24,6 @@
 #include <string>
 
 #include "settingsnode.h"
-#include "types.h"
 
 namespace acclimate {
 

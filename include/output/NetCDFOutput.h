@@ -27,9 +27,17 @@
 #include <unordered_map>
 #include <vector>
 
+#include "acclimate.h"
 #include "netcdftools.h"
 #include "openmp.h"
 #include "output/ArrayOutput.h"
+#include "output/Output.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
+
+struct tm;
 
 namespace acclimate {
 

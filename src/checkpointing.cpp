@@ -23,7 +23,9 @@
 #include <dmtcp.h>
 #include <unistd.h>
 
+#include <chrono>
 #include <csignal>
+#include <ostream>
 #include <thread>
 
 #include "acclimate.h"

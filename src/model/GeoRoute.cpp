@@ -20,6 +20,8 @@
 
 #include "model/GeoRoute.h"
 
+#include <cstddef>
+
 #include "model/GeoEntity.h"
 
 namespace acclimate {

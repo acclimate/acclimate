@@ -18,9 +18,11 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
 
 #include "ModelRun.h"

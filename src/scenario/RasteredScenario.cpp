@@ -20,11 +20,14 @@
 
 #include "scenario/RasteredScenario.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <ostream>
 
 #include "acclimate.h"
-#include "model/Model.h"
-#include "model/Region.h"
+#include "model/Model.h"  // IWYU pragma: keep
+#include "netcdftools.h"
 #include "scenario/RasteredTimeData.h"
 #include "settingsnode.h"
 

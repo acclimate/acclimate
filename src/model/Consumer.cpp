@@ -20,16 +20,18 @@
 
 #include "model/Consumer.h"
 
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <vector>
 
 #include "ModelRun.h"
 #include "acclimate.h"
-#include "model/GeoRoute.h"
 #include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/Region.h"
 #include "model/Storage.h"
+#include "parameters.h"
 
 namespace acclimate {
 

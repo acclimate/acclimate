@@ -25,7 +25,13 @@
 #include <unordered_map>
 #include <vector>
 
+#include "acclimate.h"
 #include "output/Output.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
+struct tm;
 
 namespace acclimate {
 

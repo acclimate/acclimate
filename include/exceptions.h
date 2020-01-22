@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <string>
 
+// IWYU pragma: private, include "acclimate.h"
+
 namespace acclimate {
 
 class exception : public std::runtime_error {

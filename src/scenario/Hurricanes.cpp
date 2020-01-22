@@ -20,6 +20,9 @@
 
 #include "scenario/Hurricanes.h"
 
+#include <memory>
+#include <vector>
+
 #include "model/EconomicAgent.h"
 #include "model/Region.h"
 #include "settingsnode.h"

@@ -23,7 +23,12 @@
 
 #include <vector>
 
+#include "acclimate.h"
 #include "scenario/RasteredScenario.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
 

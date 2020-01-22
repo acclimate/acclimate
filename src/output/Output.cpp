@@ -40,6 +40,8 @@
 #include "model/Sector.h"
 #include "model/Storage.h"
 
+struct tm;
+
 namespace acclimate {
 
 Output::Output(const settings::SettingsNode& settings, Model* model_p, settings::SettingsNode output_node_p)

@@ -20,14 +20,18 @@
 
 #include "output/HistogramOutput.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <ctime>
+#include <iterator>
 #include <string>
 #include <utility>
 
 #include "model/Model.h"
 #include "settingsnode.h"
 #include "version.h"
+
+struct tm;
 
 namespace acclimate {
 

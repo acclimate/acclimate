@@ -27,6 +27,8 @@
 #include "acclimate.h"
 #include "settingsnode.h"
 
+struct tm;
+
 namespace acclimate {
 
 using hstring = settings::hstring;

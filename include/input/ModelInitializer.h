@@ -21,11 +21,16 @@
 #ifndef ACCLIMATE_MODELINITIALIZER_H
 #define ACCLIMATE_MODELINITIALIZER_H
 
+#include <algorithm>
+#include <cstddef>
+#include <iterator>
+#include <memory>
 #include <string>
-#include <unordered_map>
+#include <vector>
 
+#include "acclimate.h"
+#include "model/GeoEntity.h"
 #include "settingsnode.h"
-#include "types.h"
 
 namespace mrio {
 
@@ -38,7 +43,6 @@ namespace acclimate {
 
 class Consumer;
 class EconomicAgent;
-class GeoEntity;
 class Model;
 class Firm;
 class Region;

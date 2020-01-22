@@ -21,10 +21,11 @@
 #ifndef ACCLIMATE_TRANSPORTCHAINLINK_H
 #define ACCLIMATE_TRANSPORTCHAINLINK_H
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "types.h"
+#include "acclimate.h"
 
 namespace acclimate {
 

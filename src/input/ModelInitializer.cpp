@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <fstream>
 #include <memory>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "MRIOIndexSet.h"
@@ -33,7 +35,7 @@
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/GeoConnection.h"
-#include "model/GeoEntity.h"
+#include "model/GeoLocation.h"
 #include "model/GeoPoint.h"
 #include "model/GeoRoute.h"
 #include "model/Model.h"
@@ -42,9 +44,9 @@
 #include "model/SalesManager.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
-#include "model/TransportChainLink.h"
 #include "netcdftools.h"
 #include "optimization.h"
+#include "parameters.h"
 
 namespace acclimate {
 

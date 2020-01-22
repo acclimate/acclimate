@@ -25,8 +25,9 @@
 #include <string>
 #include <vector>
 
+#include "acclimate.h"
+#include "model/Storage.h"
 #include "parameters.h"
-#include "types.h"
 
 namespace acclimate {
 
@@ -35,7 +36,6 @@ class Firm;
 class Model;
 class Region;
 class Sector;
-class Storage;
 
 class EconomicAgent {
   public:

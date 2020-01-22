@@ -24,10 +24,16 @@
 #include <memory>
 #include <string>
 
+#include "acclimate.h"
 #include "scenario/ExternalForcing.h"
 #include "scenario/Scenario.h"
 
+namespace settings {
+class SettingsNode;
+}  // namespace settings
+
 namespace acclimate {
+class Model;
 
 class ExternalScenario : public Scenario {
   protected:

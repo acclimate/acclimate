@@ -21,14 +21,17 @@
 #ifndef ACCLIMATE_FIRM_H
 #define ACCLIMATE_FIRM_H
 
+#include <memory>
+
+#include "acclimate.h"
+#include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
+#include "model/SalesManager.h"
 
 namespace acclimate {
 
 class BusinessConnection;
-class CapacityManager;
 class Region;
-class SalesManager;
 class Sector;
 
 class Firm : public EconomicAgent {

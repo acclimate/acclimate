@@ -25,6 +25,8 @@
 
 namespace acclimate {
 
+class Model;
+
 GeoConnection::GeoConnection(Model* model_m, TransportDelay delay, Type type_p, const GeoLocation* location1_p, const GeoLocation* location2_p)
     : GeoEntity(model_m, delay, GeoEntity::Type::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
 

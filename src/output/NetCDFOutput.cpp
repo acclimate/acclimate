@@ -20,6 +20,7 @@
 
 #include "output/NetCDFOutput.h"
 
+#include <array>
 #include <ctime>
 #include <limits>
 #include <ostream>
@@ -32,6 +33,8 @@
 #include "model/Sector.h"
 #include "settingsnode.h"
 #include "version.h"
+
+struct tm;
 
 namespace acclimate {
 

@@ -24,15 +24,15 @@
 #include <memory>
 
 #include "output/Output.h"
+#include "progressbar.h"
 
-namespace progressbar {
-class ProgressBar;
-}  // namespace progressbar
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
 
 class Model;
-class Sector;
 
 class ProgressOutput : public Output {
   private:

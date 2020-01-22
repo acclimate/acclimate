@@ -21,7 +21,7 @@
 #ifndef ACCLIMATE_H
 #define ACCLIMATE_H
 
-#include "types.h"
+#include "types.h"  // IWYU pragma: export
 
 namespace acclimate {
 

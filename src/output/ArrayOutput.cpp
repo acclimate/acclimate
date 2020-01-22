@@ -21,11 +21,13 @@
 #include "output/ArrayOutput.h"
 
 #include <limits>
+#include <ostream>
 #include <utility>
 
 #include "ModelRun.h"
 #include "model/Model.h"
 #include "model/Region.h"
+#include "model/Sector.h"
 #include "settingsnode.h"
 
 namespace acclimate {

@@ -20,7 +20,11 @@
 
 #include "scenario/Taxes.h"
 
+#include <memory>
+#include <ostream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "acclimate.h"
 #include "model/Government.h"

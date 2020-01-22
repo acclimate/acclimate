@@ -20,11 +20,11 @@
 
 #include "model/CapacityManager.h"
 
-#include <iomanip>
+#include <memory>
+#include <vector>
 
 #include "acclimate.h"
 #include "model/Firm.h"
-#include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/SalesManager.h"
 #include "model/Storage.h"

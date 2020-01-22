@@ -27,19 +27,19 @@
 #include <utility>
 #include <vector>
 
+#include "acclimate.h"
+#include "model/GeoLocation.h"
+#include "model/Region.h"
 #include "model/Sector.h"
 #include "parameters.h"
-#include "types.h"
 
 namespace acclimate {
 
 class Consumer;
 class EconomicAgent;
 class Firm;
-class GeoLocation;
 class ModelRun;
 class PurchasingManager;
-class Region;
 
 class Model {
     friend class ModelRun;
