@@ -137,12 +137,13 @@ const Flow& Firm::production_X() const {
 }
 
 Flow Firm::direct_loss() const {
-    return Flow(round(initial_production_X_star_.get_quantity() * Forcing(1.0 - forcing_)),
-                production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0), true);
+    return Flow::possibly_negative(round(initial_production_X_star_.get_quantity() * Forcing(1.0 - forcing_)),
+                                   production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0));
 }
+
 Flow Firm::total_loss() const {
-    return Flow(round(initial_production_X_star_.get_quantity() - production_X_.get_quantity()),
-                production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0), true);
+    return Flow::possibly_negative(round(initial_production_X_star_.get_quantity() - production_X_.get_quantity()),
+                                   production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0));
 }
 
 void Firm::print_details() const {

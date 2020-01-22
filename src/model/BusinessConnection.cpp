@@ -173,7 +173,7 @@ Flow BusinessConnection::get_disequilibrium() const {
         res.add_possibly_negative(link->get_disequilibrium());
         link = link->next_transport_chain_link.get();
     }
-    return round(res, true);
+    return res;
 }
 
 FloatType BusinessConnection::get_stddeviation() const {
