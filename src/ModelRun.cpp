@@ -309,13 +309,7 @@ void ModelRun::event(EventType type, const EconomicAgent* economic_agent_from, c
     }
 }
 
-unsigned int ModelRun::thread_count() const {
-#ifdef _OPENMP
-    return omp_get_max_threads();
-#else
-    return 1;
-#endif
-}
+unsigned int ModelRun::thread_count() const { return openmp::get_thread_count(); }
 
 std::string ModelRun::timeinfo() const {
     if constexpr (options::DEBUGGING) {

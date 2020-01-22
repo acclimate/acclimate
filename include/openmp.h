@@ -25,21 +25,21 @@
 #include <omp.h>
 #endif
 
-namespace acclimate {
+namespace acclimate::openmp {
 
-class OpenMPLock {
+class Lock {
   protected:
 #ifdef _OPENMP
     omp_lock_t lock = {};
 #endif
   public:
-    OpenMPLock() {
+    Lock() {
 #ifdef _OPENMP
         omp_init_lock(&lock);
 #endif
     }
 
-    ~OpenMPLock() {
+    ~Lock() {
 #ifdef _OPENMP
         omp_destroy_lock(&lock);
 #endif
@@ -57,6 +57,14 @@ class OpenMPLock {
     }
 };
 
-};  // namespace acclimate
+inline unsigned int get_thread_count() {
+#ifdef _OPENMP
+    return omp_get_max_threads();
+#else
+    return 1;
+#endif
+}
+
+};  // namespace acclimate::openmp
 
 #endif

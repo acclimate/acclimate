@@ -47,9 +47,9 @@ class Sector {
     const IndexType index_m;
     const std::string id_m;
     Demand total_demand_D_ = Demand(0.0);
-    OpenMPLock total_demand_D_lock;
+    openmp::Lock total_demand_D_lock;
     Flow total_production_X_m = Flow(0.0);
-    OpenMPLock total_production_X_lock;
+    openmp::Lock total_production_X_lock;
     Flow last_total_production_X_m = Flow(0.0);
     Parameters::SectorParameters parameters_m;
     Model* const model_m;

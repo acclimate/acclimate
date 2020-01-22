@@ -44,7 +44,7 @@ class BusinessConnection {
     Price transport_costs = Price(0.0);
     Ratio demand_fulfill_history_ = Ratio(1.0);
     Time time_;
-    OpenMPLock seller_business_connections_lock;
+    openmp::Lock seller_business_connections_lock;
     std::unique_ptr<TransportChainLink> first_transport_link;
 
   public:

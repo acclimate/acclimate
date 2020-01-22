@@ -70,7 +70,7 @@ class NetCDFOutput : public ArrayOutput {
     TimeStep flush_freq;
     unsigned int event_cnt;
     std::string filename;
-    OpenMPLock netcdf_event_lock;
+    openmp::Lock netcdf_event_lock;
     std::string calendar;
     std::string time_units;
 

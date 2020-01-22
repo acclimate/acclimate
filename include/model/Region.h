@@ -54,16 +54,16 @@ class Region : public GeoLocation {
 
   private:
     Flow export_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
-    OpenMPLock export_flow_Z_lock;
+    openmp::Lock export_flow_Z_lock;
     Flow import_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
-    OpenMPLock import_flow_Z_lock;
+    openmp::Lock import_flow_Z_lock;
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
-    OpenMPLock consumption_flow_Y_lock;
+    openmp::Lock consumption_flow_Y_lock;
     std::unordered_map<std::pair<IndexType, typename Sector::TransportType>, GeoRoute, route_hash> routes;
     std::unique_ptr<Government> government_m;
     const IndexType index_m;
     Parameters::RegionParameters parameters_m;
-    OpenMPLock economic_agents_lock;
+    openmp::Lock economic_agents_lock;
 
   public:
     using GeoLocation::connections;

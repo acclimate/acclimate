@@ -45,7 +45,7 @@ struct SupplyParameters {
 class SalesManager {
   private:
     Demand sum_demand_requests_D_ = Demand(0.0);
-    OpenMPLock sum_demand_requests_D_lock;
+    openmp::Lock sum_demand_requests_D_lock;
     // For communicating certain quantities to (potential) buyers
     SupplyParameters communicated_parameters_;
     Price initial_unit_commodity_costs = Price(0.0);
