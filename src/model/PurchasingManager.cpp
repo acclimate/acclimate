@@ -549,7 +549,6 @@ void PurchasingManager::iterate_purchase() {
     assert(!business_connections.empty());
     std::vector<FloatType> demand_requests_D;  // demand requests considered in optimization
     OptimizerData data;
-    std::vector<BusinessConnection*> zero_connections;
 
     // calc_optimization_parameters(demand_requests_D, zero_connections, data);
     // void PurchasingManager::calc_optimization_parameters(std::vector<FloatType>& demand_requests_D,
@@ -558,8 +557,8 @@ void PurchasingManager::iterate_purchase() {
 
     if (storage->desired_used_flow_U_tilde().get_quantity() <= 0.0) {  // TODO CRITICAL What about storage refill?
         warning("desired_used_flow_U_tilde is zero : no purchase");
-        for (const auto& bc : business_connections) {  // TODO use std::transform
-            zero_connections.push_back(bc.get());
+        for (auto& bc : business_connections) {
+            bc->send_demand_request_D(Demand(0.0));
         }
     } else {
         demand_requests_D.reserve(business_connections.size());
@@ -569,9 +568,9 @@ void PurchasingManager::iterate_purchase() {
         data.lower_bounds.reserve(business_connections.size());
         data.upper_bounds.reserve(business_connections.size());
 
-        for (const auto& bc : business_connections) {
+        for (auto& bc : business_connections) {
             if (bc->seller->communicated_parameters().possible_production_X_hat.get_quantity() <= 0.0) {
-                zero_connections.push_back(bc.get());
+                bc->send_demand_request_D(Demand(0.0));
             } else {  // this supplier can deliver a non-zero amount
                 // assumption, we cannot crowd out other purchasers given that our maximum offer price is n_max, calculate analytical approximation for maximal
                 // deliverable amount of purchaser X_max(n_max) and consider boundary conditions
@@ -597,7 +596,7 @@ void PurchasingManager::iterate_purchase() {
                     data.upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
                     demand_requests_D.push_back(scaled_D_r(initial_value, bc.get()));
                 } else {
-                    zero_connections.push_back(bc.get());
+                    bc->send_demand_request_D(Demand(0.0));
                 }
             }
         }
@@ -614,8 +613,9 @@ void PurchasingManager::iterate_purchase() {
     // calc_desired_purchase(data);
     // void PurchasingManager::calc_desired_purchase(const OptimizerData& data) {
 
-    Quantity S_shortage =
-        data.transport_flow_deficit * model()->delta_t() + (storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity());
+    Quantity S_shortage = data.transport_flow_deficit * model()->delta_t()
+                          + (storage->initial_content_S_star().get_quantity()
+                             - storage->content_S().get_quantity());  // TODO CRITICAL data.transport_flow_deficit might not be set
     auto maximal_possible_purchase = FlowQuantity(0.0);
     for (std::size_t r = 0; r < data.business_connections.size(); ++r) {
         auto D_r_max = FlowQuantity(unscaled_D_r(data.upper_bounds[r], data.business_connections[r]));
@@ -635,8 +635,8 @@ void PurchasingManager::iterate_purchase() {
     // } // former PurchasingManager::calc_desired_purchase
 
     if (round(desired_purchase_) <= 0.0) {
-        for (auto& zero_connection : business_connections) {
-            zero_connection->send_demand_request_D(Demand(0.0));
+        for (auto bc : data.business_connections) {  // all other bc in this->business_connections have already received demand request 0.0
+            bc->send_demand_request_D(Demand(0.0));
         }
         return;
     }
@@ -774,10 +774,6 @@ void PurchasingManager::iterate_purchase() {
 
     } else {
         warning("possible demand is zero (no supplier with possible production capacity > 0.0)");
-    }
-    // push zero demand request to the purchasers we do consult in this timestep
-    for (auto& zero_connection : zero_connections) {
-        zero_connection->send_demand_request_D(Demand(0.0));
     }
 }
 
