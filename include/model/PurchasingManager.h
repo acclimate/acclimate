@@ -68,7 +68,6 @@ class PurchasingManager {
     FloatType scaled_use(FloatType use) const;
     FloatType unscaled_use(FloatType x) const;
     FloatType partial_use_scaled_use() const;
-    void calc_desired_purchase(const OptimizerData* data);
     FloatType n_r(FloatType D_r, const BusinessConnection* business_connection) const;
     FloatType estimate_production_extension_penalty(const BusinessConnection* bc, FloatType production_quantity_X) const;
     FloatType estimate_marginal_production_costs(const BusinessConnection* bc, FloatType production_quantity_X, FloatType unit_production_costs_n_c) const;
@@ -80,7 +79,6 @@ class PurchasingManager {
     FloatType grad_expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const;
     FloatType partial_D_r_transport_penalty(FloatType D_r, const BusinessConnection* business_connection) const;
     static FlowQuantity calc_analytical_approximation_X_max(const BusinessConnection* bc);
-    void optimize_purchase(std::vector<FloatType>& demand_requests_D_p, OptimizerData& data_p);
     void print_distribution(const FloatType demand_requests_D_p[], const OptimizerData* data, bool connection_details) const;
 
   public:
@@ -99,9 +97,6 @@ class PurchasingManager {
     const FlowValue& total_transport_penalty() const;
     Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
-    void calc_optimization_parameters(std::vector<FloatType>& demand_requests_D_p,
-                                      std::vector<BusinessConnection*>& zero_connections_p,
-                                      OptimizerData& data_p) const;
     void iterate_purchase();
     void add_initial_demand_D_star(const Demand& demand_D_p);
     void subtract_initial_demand_D_star(const Demand& demand_D_p);
