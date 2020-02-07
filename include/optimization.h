@@ -21,16 +21,138 @@
 #ifndef OPTIMIZATION_H
 #define OPTIMIZATION_H
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wswitch-enum"
-#endif
+#include <nlopt.h>
 
-#include "nlopt.hpp"  // IWYU pragma: export
+#include <stdexcept>
 
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
+#include "settingsnode.h"
+
+namespace acclimate::optimization {
+
+static int get_algorithm(const settings::hstring& name) {
+    switch (name) {
+        case settings::hstring::hash("slsqp"):
+            return NLOPT_LD_SLSQP;
+        case settings::hstring::hash("mma"):
+            return NLOPT_LD_MMA;
+        case settings::hstring::hash("ccsaq"):
+            return NLOPT_LD_CCSAQ;
+        case settings::hstring::hash("lbfgs"):
+            return NLOPT_LD_LBFGS;
+        case settings::hstring::hash("tnewton_precond_restart"):
+            return NLOPT_LD_TNEWTON_PRECOND_RESTART;
+        case settings::hstring::hash("tnewton_precond"):
+            return NLOPT_LD_TNEWTON_PRECOND;
+        case settings::hstring::hash("tnewton_restart"):
+            return NLOPT_LD_TNEWTON_RESTART;
+        case settings::hstring::hash("tnewton"):
+            return NLOPT_LD_TNEWTON;
+        case settings::hstring::hash("var1"):
+            return NLOPT_LD_VAR1;
+        case settings::hstring::hash("var2"):
+            return NLOPT_LD_VAR2;
+        default:
+            error_("unknown optimization alorithm '" << name << "'");
+    }
+}
+
+static const char* get_result_description(nlopt_result result, nlopt_opt opt) {
+    switch (result) {
+        case NLOPT_SUCCESS:
+            return "Generic success";
+        case NLOPT_STOPVAL_REACHED:
+            return "Optimization stopped because stopval was reached";
+        case NLOPT_FTOL_REACHED:
+            return "Optimization stopped because ftol_rel or ftol_abs was reached";
+        case NLOPT_XTOL_REACHED:
+            return "Optimization stopped because xtol_rel or xtol_abs was reached";
+        case NLOPT_MAXEVAL_REACHED:
+            return "Optimization stopped because maxeval was reached";
+        case NLOPT_MAXTIME_REACHED:
+            return "Optimization stopped because maxtime was reached";
+        case NLOPT_FAILURE: {
+            const auto err = opt == nullptr ? nullptr : nlopt_get_errmsg(opt);
+            return err == nullptr ? "Generic failure" : err;
+        }
+        case NLOPT_INVALID_ARGS: {
+            const auto err = opt == nullptr ? nullptr : nlopt_get_errmsg(opt);
+            return err == nullptr ? "Invalid arguments" : err;
+        }
+        case NLOPT_OUT_OF_MEMORY:
+            return "Out of memory";
+        case NLOPT_ROUNDOFF_LIMITED:
+            return "Roundoff limited";  // "Halted because roundoff errors limited progress. (In this case, the optimization still typically returns a useful
+                                        // result.)"
+        case NLOPT_FORCED_STOP:
+            return "Forced stop";
+        default:
+            return "Unknown optimization result";
+    }
+}
+
+class failure : public std::runtime_error {
+  public:
+    explicit failure(const std::string& s) : std::runtime_error(s) {}
+    explicit failure(const char* s) : std::runtime_error(s) {}
+};
+
+class Optimization {
+  private:
+    nlopt_opt opt;
+    nlopt_result last_result;
+    double optimized_value_m;
+    unsigned int dim_m;
+
+    void check(nlopt_result result) {
+        if (result < NLOPT_SUCCESS && result != NLOPT_ROUNDOFF_LIMITED) {
+            throw failure(get_result_description(result, opt));
+        }
+    }
+
+  public:
+    Optimization(nlopt_algorithm algorithm, unsigned int dim_p) : opt(nlopt_create(algorithm, dim_p)), dim_m(dim_p) {}
+    ~Optimization() { nlopt_destroy(opt); }
+
+    // double& xtol(std::size_t i) { return opt->xtol_abs[i]; }
+    // double& lower_bounds(std::size_t i) { return opt->lb[i]; }
+    // double& upper_bounds(std::size_t i) { return opt->ub[i]; }
+    void xtol(const std::vector<double>& v) { check(nlopt_set_xtol_abs(opt, &v[0])); }
+    void lower_bounds(const std::vector<double>& v) { check(nlopt_set_lower_bounds(opt, &v[0])); }
+    void upper_bounds(const std::vector<double>& v) { check(nlopt_set_upper_bounds(opt, &v[0])); }
+    void maxeval(int v) { check(nlopt_set_maxeval(opt, v)); }
+    void maxtime(double v) { check(nlopt_set_maxtime(opt, v)); }  // timeout given in sec
+
+    unsigned int dim() const { return dim_m; }
+    double optimized_value() const { return optimized_value_m; }
+    bool roundoff_limited() const { return last_result == NLOPT_ROUNDOFF_LIMITED; }
+    bool stopval_reached() const { return last_result == NLOPT_STOPVAL_REACHED; }
+    bool ftol_reached() const { return last_result == NLOPT_FTOL_REACHED; }
+    bool xtol_reached() const { return last_result == NLOPT_XTOL_REACHED; }
+    bool maxeval_reached() const { return last_result == NLOPT_MAXEVAL_REACHED; }
+    bool maxtime_reached() const { return last_result == NLOPT_MAXTIME_REACHED; }
+
+    const char* last_result_description() const { return get_result_description(last_result, opt); }
+
+    bool optimize(std::vector<double>& x) {  // returns true for "generic success" and false otherwise (for "real" errors, an exception is thrown)
+        last_result = nlopt_optimize(opt, &x[0], &optimized_value_m);
+        check(last_result);
+        return last_result == NLOPT_SUCCESS;
+    }
+
+    template<class Handler>
+    void add_equality_constraint(Handler* handler, double precision = 0) {
+        check(nlopt_add_equality_constraint(
+            opt, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->equality_constraint(x, grad); }, handler,
+            precision));
+    }
+
+    template<class Handler>
+    void add_max_objective(Handler* handler) {
+        check(nlopt_set_max_objective(
+            opt, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->max_objective(x, grad); }, handler));
+    }
+};
+
+}  // namespace acclimate::optimization
 
 #endif

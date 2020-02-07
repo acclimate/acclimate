@@ -877,41 +877,7 @@ void ModelInitializer::pre_initialize() {
         model()->parameters_writable().cheapest_price_range_width = parameters["cheapest_price_range_width"].as<Price>();
     }
     model()->parameters_writable().relative_transport_penalty = parameters["relative_transport_penalty"].as<bool>();
-    const auto& optimization_algorithm = parameters["optimization_algorithm"].as<settings::hstring>("slsqp");
-    switch (optimization_algorithm) {
-        case settings::hstring::hash("slsqp"):
-            model()->parameters_writable().optimization_algorithm = nlopt::LD_SLSQP;
-            break;
-        case settings::hstring::hash("mma"):
-            model()->parameters_writable().optimization_algorithm = nlopt::LD_MMA;
-            break;
-        case settings::hstring::hash("ccsaq"):
-            model()->parameters_writable().optimization_algorithm = nlopt::LD_CCSAQ;
-            break;
-        case settings::hstring::hash("lbfgs"):
-            model()->parameters_writable().optimization_algorithm = nlopt::LD_LBFGS;
-            break;
-        case settings::hstring::hash("tnewton_precond_restart"):
-            model()->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON_PRECOND_RESTART;
-            break;
-        case settings::hstring::hash("tnewton_precond"):
-            model()->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON_PRECOND;
-            break;
-        case settings::hstring::hash("tnewton_restart"):
-            model()->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON_RESTART;
-            break;
-        case settings::hstring::hash("tnewton"):
-            model()->parameters_writable().optimization_algorithm = nlopt::LD_TNEWTON;
-            break;
-        case settings::hstring::hash("var1"):
-            model()->parameters_writable().optimization_algorithm = nlopt::LD_VAR1;
-            break;
-        case settings::hstring::hash("var2"):
-            model()->parameters_writable().optimization_algorithm = nlopt::LD_VAR2;
-            break;
-        default:
-            error("unknown optimization alorithm '" << optimization_algorithm << "'");
-    }
+    model()->parameters_writable().optimization_algorithm = optimization::get_algorithm(parameters["optimization_algorithm"].as<settings::hstring>("slsqp"));
 }
 
 void ModelInitializer::post_initialize() {

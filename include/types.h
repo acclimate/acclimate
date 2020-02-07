@@ -312,21 +312,21 @@ class PricedQuantity {
         return price;
     }
     constexpr void set_price(const Price& price) {
-        typeassert(price > 0.0);
+        typeassert(price > 0.0);  // implies !isnan
         if (quantity <= 0.0) {
             value = V(0.0);
         } else {
             value = quantity * price;
         }
-        typeassert(value >= 0.0);
+        typeassert(value >= 0.0);  // implies !isnan
     }
     constexpr void set_quantity_keep_value(const Q& quantity_p) {
         quantity = quantity_p;
-        typeassert(quantity >= 0);
+        typeassert(quantity >= 0);  // implies !isnan
     }
     constexpr void set_value(const V& value_p) {
         value = value_p;
-        typeassert(value >= 0);
+        typeassert(value >= 0);  // implies !isnan
     }
     constexpr PricedQuantity operator+(const PricedQuantity& other) const {
         return PricedQuantity::possibly_negative(quantity + other.quantity, value + other.value);

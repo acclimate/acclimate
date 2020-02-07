@@ -212,22 +212,20 @@ inline FloatType PurchasingManager::unscaled_use(FloatType x) const { return x *
 
 inline FloatType PurchasingManager::partial_use_scaled_use() const { return to_float(storage->initial_used_flow_U_star().get_quantity()); }
 
-FloatType PurchasingManager::purchase_constraint(const FloatType x[],  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
-                                                 FloatType grad[],     // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
-                                                 const OptimizerData* data) const {
+FloatType PurchasingManager::equality_constraint(const double* x, double* grad) const {
     // has to be in the form g(D_r) <= 0
     FloatType use = 0.0;
-    for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
-        FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
+    for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
+        const auto D_r = unscaled_D_r(x[r], purchasing_connections[r]);
         assert(!std::isnan(D_r));
         use += D_r;
     }
     if (grad != nullptr) {
-        for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
-            grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r]) * 1.0 / partial_use_scaled_use();
+        for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {  // TODO merge with loop above
+            grad[r] = -partial_D_r_scaled_D_r(purchasing_connections[r]) / partial_use_scaled_use();
             if constexpr (options::OPTIMIZATION_WARNINGS) {
                 if (grad[r] > MAX_GRADIENT) {
-                    warning(data->business_connections[r]->id() << ": large gradient of " << grad[r]);
+                    warning(purchasing_connections[r]->id() << ": large gradient of " << grad[r]);
                 }
             }
         }
@@ -235,19 +233,17 @@ FloatType PurchasingManager::purchase_constraint(const FloatType x[],  // NOLINT
     return scaled_use(to_float(desired_purchase_) - use);
 }
 
-FloatType PurchasingManager::objective_costs(const FloatType x[],  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
-                                             FloatType grad[],     // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
-                                             const OptimizerData* data) const {
+FloatType PurchasingManager::max_objective(const double* x, double* grad) const {
     FloatType costs = 0.0;
     FloatType purchase = 0.0;
-    for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
-        FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
+    for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
+        const auto D_r = unscaled_D_r(x[r], purchasing_connections[r]);
         assert(!std::isnan(D_r));
-        costs += n_r(D_r, data->business_connections[r]) * D_r + transport_penalty(D_r, data->business_connections[r]);
+        costs += n_r(D_r, purchasing_connections[r]) * D_r + transport_penalty(D_r, purchasing_connections[r]);
         purchase += D_r;
     }
     FloatType partial_correction = 0;
-    if (model()->parameters().cost_correction) {
+    if (model()->parameters().cost_correction) {  // TODO still needed?
         FloatType correction = purchase - to_float(storage->initial_used_flow_U_star().get_quantity());
         if (correction < 0) {
             partial_correction = to_float(model()->parameters().transport_penalty_small);
@@ -257,15 +253,15 @@ FloatType PurchasingManager::objective_costs(const FloatType x[],  // NOLINT(cpp
         costs -= std::abs(partial_correction * correction);
     }
     if (grad != nullptr) {
-        for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
-            FloatType D_r = unscaled_D_r(x[r], data->business_connections[r]);
-            grad[r] = -partial_D_r_scaled_D_r(data->business_connections[r])
-                      * (grad_n_r(D_r, data->business_connections[r]) * D_r + n_r(D_r, data->business_connections[r]) - partial_correction
-                         + partial_D_r_transport_penalty(D_r, data->business_connections[r]))
+        for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {  // TODO merge with loop above
+            FloatType D_r = unscaled_D_r(x[r], purchasing_connections[r]);
+            grad[r] = -partial_D_r_scaled_D_r(purchasing_connections[r])
+                      * (grad_n_r(D_r, purchasing_connections[r]) * D_r + n_r(D_r, purchasing_connections[r]) - partial_correction
+                         + partial_D_r_transport_penalty(D_r, purchasing_connections[r]))
                       / partial_objective_scaled_objective();
             if constexpr (options::OPTIMIZATION_WARNINGS) {
                 if (grad[r] > MAX_GRADIENT) {
-                    warning(data->business_connections[r]->id() << ": large gradient of " << grad[r]);
+                    warning(purchasing_connections[r]->id() << ": large gradient of " << grad[r]);
                 }
             }
         }
@@ -514,46 +510,18 @@ void PurchasingManager::subtract_initial_demand_D_star(const Demand& demand_D_p)
     expected_costs_ -= demand_D_p.get_value();
 }
 
-static const char* get_optimization_results(const int result_p) {
-    switch (result_p) {
-        case 1:
-            return "Generic success";
-        case 2:
-            return "Optimization stopped because stopval was reached";
-        case 3:
-            return "Optimization stopped because ftol_rel or ftol_abs was reached";
-        case 4:
-            return "Optimization stopped because xtol_rel or xtol_abs was reached";
-        case 5:
-            return "Optimization stopped because maxeval was reached";
-        case 6:
-            return "Optimization stopped because maxtime was reached";
-        case -1:
-            return "Generic failure code";
-        case -2:
-            return "Invalid arguments(e.g. lower bounds are bigger than upper bounds, an unknown algorithm was specified, etc.";
-        case -3:
-            return "Ran out of memory";
-        case -4:
-            return "Halted because roundoff errors limited progress.(In this case, the optimization still typically returns a useful result.) ";
-        case -5:
-            return "Halted because of a forced termination: the user called nlopt_force_stop(opt) on the optimization’s nlopt_opt object opt from the user’s "
-                   "objective function or constraints.";
-        default:
-            return "Unknown optimization result";
-    }
-}
-
 void PurchasingManager::iterate_purchase() {
     assertstep(PURCHASE);
     assert(!business_connections.empty());
     std::vector<FloatType> demand_requests_D;  // demand requests considered in optimization
-    OptimizerData data;
-
-    // calc_optimization_parameters(demand_requests_D, zero_connections, data);
-    // void PurchasingManager::calc_optimization_parameters(std::vector<FloatType>& demand_requests_D,
-    //                                                  std::vector<BusinessConnection*>& zero_connections,
-    //                                                  OptimizerData& data) const {
+    demand_requests_D.reserve(business_connections.size());
+    purchasing_connections.clear();
+    purchasing_connections.reserve(business_connections.size());
+    lower_bounds.clear();
+    lower_bounds.reserve(business_connections.size());
+    upper_bounds.clear();
+    upper_bounds.reserve(business_connections.size());
+    xtol_abs.clear();
 
     if (storage->desired_used_flow_U_tilde().get_quantity() <= 0.0) {  // TODO CRITICAL What about storage refill?
         warning("desired_used_flow_U_tilde is zero : no purchase");
@@ -561,13 +529,6 @@ void PurchasingManager::iterate_purchase() {
             bc->send_demand_request_D(Demand(0.0));
         }
     } else {
-        demand_requests_D.reserve(business_connections.size());
-        data.transport_flow_deficit = get_flow_deficit();
-        data.purchasing_manager = this;
-        data.business_connections.reserve(business_connections.size());
-        data.lower_bounds.reserve(business_connections.size());
-        data.upper_bounds.reserve(business_connections.size());
-
         for (auto& bc : business_connections) {
             if (bc->seller->communicated_parameters().possible_production_X_hat.get_quantity() <= 0.0) {
                 bc->send_demand_request_D(Demand(0.0));
@@ -591,9 +552,10 @@ void PurchasingManager::iterate_purchase() {
                 // in expected_average_price_E_n_r may happen, but it could also be the case that the optimizer does not respect D_r in [D_r_min,D_r_max]
                 if (upper_limit > 0.0) {
                     const FloatType initial_value = std::min(upper_limit, std::max(lower_limit, ratio_X_expected_to_X * Z_last));
-                    data.business_connections.push_back(bc.get());
-                    data.lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
-                    data.upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
+                    purchasing_connections.push_back(bc.get());
+                    lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
+                    upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
+                    xtol_abs.push_back(scaled_D_r(FlowQuantity::precision, bc.get()));
                     demand_requests_D.push_back(scaled_D_r(initial_value, bc.get()));
                 } else {
                     bc->send_demand_request_D(Demand(0.0));
@@ -602,23 +564,18 @@ void PurchasingManager::iterate_purchase() {
         }
     }
 
-    // } // former PurchasingManager::calc_optimization_parameters
-
     optimized_value_ = 0.0;
     purchase_ = Demand(0.0);
     desired_purchase_ = FlowQuantity(0.0);
     expected_costs_ = FlowValue(0.0);
     total_transport_penalty_ = FlowValue(0.0);
 
-    // calc_desired_purchase(data);
-    // void PurchasingManager::calc_desired_purchase(const OptimizerData& data) {
-
-    Quantity S_shortage = data.transport_flow_deficit * model()->delta_t()
-                          + (storage->initial_content_S_star().get_quantity()
-                             - storage->content_S().get_quantity());  // TODO CRITICAL data.transport_flow_deficit might not be set
+    const auto transport_flow_deficit = get_flow_deficit();
+    Quantity S_shortage =
+        transport_flow_deficit * model()->delta_t() + (storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity());
     auto maximal_possible_purchase = FlowQuantity(0.0);
-    for (std::size_t r = 0; r < data.business_connections.size(); ++r) {
-        auto D_r_max = FlowQuantity(unscaled_D_r(data.upper_bounds[r], data.business_connections[r]));
+    for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
+        auto D_r_max = FlowQuantity(unscaled_D_r(upper_bounds[r], purchasing_connections[r]));
         assert(!isnan(D_r_max));
         maximal_possible_purchase += D_r_max;
     }
@@ -632,141 +589,98 @@ void PurchasingManager::iterate_purchase() {
                                      maximal_possible_purchase);
     }
 
-    // } // former PurchasingManager::calc_desired_purchase
-
     if (round(desired_purchase_) <= 0.0) {
-        for (auto bc : data.business_connections) {  // all other bc in this->business_connections have already received demand request 0.0
+        for (auto bc : purchasing_connections) {  // all other bc in this->business_connections have already received demand request 0.0
             bc->send_demand_request_D(Demand(0.0));
         }
         return;
     }
 
     demand_D_ = Demand(0.0);
-    if (!data.business_connections.empty()) {
-        // optimize_purchase(demand_requests_D, data);
-        // void PurchasingManager::optimize_purchase(std::vector<FloatType>& demand_requests_D, OptimizerData& data) {
-
-        const unsigned int dimensions_optimization_problem = data.business_connections.size();
-        nlopt::result result = nlopt::SUCCESS;
+    if (!purchasing_connections.empty()) {
         try {
-            nlopt::opt opt(static_cast<nlopt::algorithm>(model()->parameters().optimization_algorithm), dimensions_optimization_problem);
+            optimization::Optimization opt(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
+                                           purchasing_connections.size());  // TODO keep and only recreate when resize is needed
 
-            std::vector<FloatType> xtol_abs(data.business_connections.size());
-            for (std::size_t i = 0; i < data.business_connections.size(); ++i) {
-                xtol_abs[i] = scaled_D_r(FlowQuantity::precision, data.business_connections[i]);
-            }
+            opt.add_equality_constraint(this, FlowQuantity::precision);
+            opt.add_max_objective(this);
 
-            opt.add_equality_constraint(
-                [](unsigned n, const double* x, double* grad, void* data_p) {
-                    UNUSED(n);
-                    const OptimizerData* d = static_cast<OptimizerData*>(data_p);
-                    return d->purchasing_manager->purchase_constraint(x, grad, d);
-                },
-                &data, FlowQuantity::precision);
-
-            opt.set_max_objective(
-                [](unsigned n, const double* x, double* grad, void* data_p) {
-                    UNUSED(n);
-                    const OptimizerData* d = static_cast<OptimizerData*>(data_p);
-                    return d->purchasing_manager->objective_costs(x, grad, d);
-                },
-                &data);
-
-            opt.set_xtol_abs(xtol_abs);
-            opt.set_lower_bounds(data.lower_bounds);
-            opt.set_upper_bounds(data.upper_bounds);
-            opt.set_maxeval(model()->parameters().optimization_maxiter);
-            opt.set_maxtime(model()->parameters().optimization_timeout);  // timeout given in sec
-            result = opt.optimize(demand_requests_D,
-                                  optimized_value_);  // note: optimized_value_is value of objective function
-            optimized_value_ = unscaled_objective(optimized_value_);
-
-        } catch (const nlopt::roundoff_limited& exc) {
-            if constexpr (!IGNORE_ROUNDOFFLIMITED) {
-                if constexpr (options::DEBUGGING) {
-                    print_distribution(&demand_requests_D[0], &data, false);
-                }
-                model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, nullptr, storage->economic_agent);
-                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                    error("optimization is roundoff limited (for " << data.business_connections.size() << " inputs)");
+            opt.xtol(xtol_abs);
+            opt.lower_bounds(lower_bounds);
+            opt.upper_bounds(upper_bounds);
+            opt.maxeval(model()->parameters().optimization_maxiter);
+            opt.maxtime(model()->parameters().optimization_timeout);  // timeout given in sec
+            if (!opt.optimize(demand_requests_D) && !opt.xtol_reached()) {
+                if (opt.roundoff_limited()) {
+                    if constexpr (!IGNORE_ROUNDOFFLIMITED) {
+                        if constexpr (options::DEBUGGING) {
+                            print_distribution(demand_requests_D);
+                        }
+                        model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, nullptr, storage->economic_agent);
+                        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                            error("optimization is roundoff limited (for " << purchasing_connections.size() << " inputs)");
+                        } else {
+                            warning("optimization is roundoff limited (for " << purchasing_connections.size() << " inputs)");
+                        }
+                    }
+                } else if (opt.maxtime_reached()) {
+                    if constexpr (options::DEBUGGING) {
+                        print_distribution(demand_requests_D);
+                    }
+                    model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, nullptr, storage->economic_agent);
+                    if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                        error("optimization timed out (for " << purchasing_connections.size() << " inputs)");
+                    } else {
+                        warning("optimization timed out (for " << purchasing_connections.size() << " inputs)");
+                    }
                 } else {
-                    warning("optimization is roundoff limited (for " << data.business_connections.size() << " inputs)");
+                    warning("optimization finished with " << opt.last_result_description());
                 }
             }
+            optimized_value_ = unscaled_objective(opt.optimized_value());
 
-        } catch (const std::exception& exc) {
+        } catch (const optimization::failure& ex) {
             if constexpr (options::DEBUGGING) {
-                print_distribution(&demand_requests_D[0], &data, false);
+                print_distribution(demand_requests_D);
             }
             model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
             if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                error("optimization failed, " << exc.what() << " (for " << data.business_connections.size() << " inputs)");
+                error("optimization failed, " << ex.what() << " (for " << purchasing_connections.size() << " inputs)");
             } else {
-                warning("optimization failed, " << exc.what() << " (for " << data.business_connections.size() << " inputs)");
+                warning("optimization failed, " << ex.what() << " (for " << purchasing_connections.size() << " inputs)");
             }
         }
-
-        if (result < nlopt::SUCCESS) {
-            if constexpr (options::DEBUGGING) {
-                print_distribution(&demand_requests_D[0], &data, false);
-            }
-            model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
-            if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                error("optimization failed, " << get_optimization_results(result) << " (for " << data.business_connections.size() << " inputs)");
-            } else {
-                if (result == nlopt::INVALID_ARGS) {
-                    error("optimization failed, " << get_optimization_results(result) << " (for " << data.business_connections.size() << " inputs)");
-                } else {
-                    warning("optimization failed, " << get_optimization_results(result) << " (for " << data.business_connections.size() << " inputs)");
-                }
-            }
-        } else if (result == nlopt::MAXTIME_REACHED) {
-            if constexpr (options::DEBUGGING) {
-                print_distribution(&demand_requests_D[0], &data, false);
-            }
-            model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, nullptr, storage->economic_agent);
-            if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                error("optimization timed out (for " << data.business_connections.size() << " inputs)");
-            } else {
-                warning("optimization timed out (for " << data.business_connections.size() << " inputs)");
-            }
-        }
-        if (result != nlopt::XTOL_REACHED) {
-            warning("optimization finished with " << get_optimization_results(result));
-        }
-
-        // } // former PurchasingManager::optimize_purchase
 
         FloatType costs = 0.0;
         FloatType use = 0.0;
         // distribute demand requests
-        for (std::size_t r = 0; r < data.business_connections.size(); ++r) {
+        for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
             FloatType D_r;
-            D_r = unscaled_D_r(demand_requests_D[r], data.business_connections[r]);
+            D_r = unscaled_D_r(demand_requests_D[r], purchasing_connections[r]);
             Demand demand_request_D = Demand(FlowQuantity(D_r), FlowValue(D_r));
-            assert(!std::isnan(n_r(D_r, data.business_connections[r])));
-            demand_request_D.set_price(round(Price(n_r(D_r, data.business_connections[r]))));
+            assert(!std::isnan(n_r(D_r, purchasing_connections[r])));
+            demand_request_D.set_price(round(Price(n_r(D_r, purchasing_connections[r]))));
 
             if constexpr (options::OPTIMIZATION_WARNINGS) {
-                if (round(demand_request_D.get_quantity()) > round(FlowQuantity(unscaled_D_r(data.upper_bounds[r], data.business_connections[r])))) {
-                    warning(data.business_connections[r]->id()
-                            << ": upper limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_max: " << data.upper_bounds[r]
-                            << " D_star: " << data.business_connections[r]->initial_flow_Z_star().get_quantity());
+                if (round(demand_request_D.get_quantity()) > round(FlowQuantity(unscaled_D_r(upper_bounds[r], purchasing_connections[r])))) {
+                    warning(purchasing_connections[r]->id()
+                            << ": upper limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_max: " << upper_bounds[r]
+                            << " D_star: " << purchasing_connections[r]->initial_flow_Z_star().get_quantity());
                 }
-                if (round(demand_request_D.get_quantity()) < round(FlowQuantity(unscaled_D_r(data.lower_bounds[r], data.business_connections[r])))) {
-                    warning(data.business_connections[r]->id()
-                            << ": lower limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_min: " << data.lower_bounds[r]
-                            << " D_star: " << data.business_connections[r]->initial_flow_Z_star().get_quantity());
+                if (round(demand_request_D.get_quantity()) < round(FlowQuantity(unscaled_D_r(lower_bounds[r], purchasing_connections[r])))) {
+                    warning(purchasing_connections[r]->id()
+                            << ": lower limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_min: " << lower_bounds[r]
+                            << " D_star: " << purchasing_connections[r]->initial_flow_Z_star().get_quantity());
                 }
             }
-            data.business_connections[r]->send_demand_request_D(round(demand_request_D));
+            purchasing_connections[r]->send_demand_request_D(round(demand_request_D));
 
             if constexpr (options::DEBUGGING) {
                 use += D_r;
             }
             demand_D_ += round(demand_request_D);
-            costs += n_r(D_r, data.business_connections[r]) * D_r + transport_penalty(D_r, data.business_connections[r]);
-            total_transport_penalty_ += FlowValue(transport_penalty(D_r, data.business_connections[r]));
+            costs += n_r(D_r, purchasing_connections[r]) * D_r + transport_penalty(D_r, purchasing_connections[r]);
+            total_transport_penalty_ += FlowValue(transport_penalty(D_r, purchasing_connections[r]));
         }
         expected_costs_ = FlowValue(costs);
         assert(FlowQuantity(use) >= 0.0);
@@ -801,72 +715,61 @@ static void print_row(T1 a, T2 b, T3 c) {
     std::cout << "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n";
 }
 
-void PurchasingManager::print_distribution(
-    const FloatType demand_requests_D_p[],  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
-    const OptimizerData* data,
-    bool connection_details) const {
+void PurchasingManager::print_distribution(const std::vector<double>& demand_requests_D) const {
     if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
         {
-            std::vector<FloatType> demand_requests_D(data->business_connections.size());
-            std::copy(demand_requests_D_p, demand_requests_D_p + data->business_connections.size(), std::begin(demand_requests_D));
-            std::cout << model()->run()->timeinfo() << ", " << id() << ": demand distribution for " << data->business_connections.size() << " inputs :\n";
+            std::cout << model()->run()->timeinfo() << ", " << id() << ": demand distribution for " << purchasing_connections.size() << " inputs :\n";
             FloatType purchasing_quantity = 0.0;
             FloatType purchasing_value = 0.0;
             FloatType initial_sum = 0.0;
-            std::vector<FloatType> last_demand_requests(data->business_connections.size());
-            std::vector<FloatType> grad(data->business_connections.size());
+            std::vector<FloatType> last_demand_requests(purchasing_connections.size());
+            std::vector<FloatType> grad(purchasing_connections.size());
 
-            FloatType obj = 0;
-            obj = objective_costs(&demand_requests_D[0], &grad[0], data);
+            const auto obj = max_objective(&demand_requests_D[0], &grad[0]);
             FloatType total_upper_bound = 0.0;
             FloatType T_penalty = 0.0;
-            for (std::size_t r = 0; r < data->business_connections.size(); ++r) {
-                FloatType D_r = unscaled_D_r(demand_requests_D[r], data->business_connections[r]);
-                FloatType lower_bound_D_r = unscaled_D_r(data->lower_bounds[r], data->business_connections[r]);
-                FloatType upper_bound_D_r = unscaled_D_r(data->upper_bounds[r], data->business_connections[r]);
-                FloatType X = to_float(data->business_connections[r]->seller->communicated_parameters().production_X.get_quantity());
-                FloatType X_hat = to_float(data->business_connections[r]->seller->communicated_parameters().possible_production_X_hat.get_quantity());
-                FloatType X_star = to_float(data->business_connections[r]->seller->firm->initial_production_X_star().get_quantity());
+            for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
+                const auto bc = purchasing_connections[r];
+                FloatType D_r = unscaled_D_r(demand_requests_D[r], bc);
+                FloatType lower_bound_D_r = unscaled_D_r(lower_bounds[r], bc);
+                FloatType upper_bound_D_r = unscaled_D_r(upper_bounds[r], bc);
+                FloatType X = to_float(bc->seller->communicated_parameters().production_X.get_quantity());
+                FloatType X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
+                FloatType X_star = to_float(bc->seller->firm->initial_production_X_star().get_quantity());
 
                 total_upper_bound += X_hat;
-                FloatType n_bar = to_float(data->business_connections[r]->seller->communicated_parameters().offer_price_n_bar);
-                FloatType n_r_l = n_r(D_r, data->business_connections[r]);
-                FloatType n_r_tc_l = transport_penalty(D_r, data->business_connections[r]);
+                FloatType n_bar = to_float(bc->seller->communicated_parameters().offer_price_n_bar);
+                FloatType n_r_l = n_r(D_r, bc);
+                FloatType n_r_tc_l = transport_penalty(D_r, bc);
                 T_penalty += n_r_tc_l;
-                last_demand_requests[r] = to_float(data->business_connections[r]->last_demand_request_D(this).get_quantity());
+                last_demand_requests[r] = to_float(bc->last_demand_request_D(this).get_quantity());
 
-                bool print_connection_details = true;
-                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                    UNUSED(connection_details);
-                } else {
-                    print_connection_details = connection_details;
-                }
-                if (print_connection_details) {
-                    std::cout << "      " << data->business_connections[r]->id() << " :\n";
+                constexpr bool print_connection_details = options::OPTIMIZATION_PROBLEMS_FATAL;
+                if constexpr (print_connection_details) {
+                    std::cout << "      " << bc->id() << " :\n";
                     print_row("X", FlowQuantity(X));
                     print_row("X_star", FlowQuantity(X_star));
                     print_row("X_hat", FlowQuantity(X_hat));
                     print_row("n_bar", FlowQuantity(n_bar));
                     print_row("n_r(D_r)", FlowQuantity(n_r_l));
                     print_row("penalty_t", FlowQuantity(n_r_tc_l), scaled_objective(n_r_tc_l));
-                    print_row("Z_last", data->business_connections[r]->last_shipment_Z().get_quantity(),
-                              scaled_D_r(to_float(data->business_connections[r]->last_shipment_Z().get_quantity()), data->business_connections[r]));
-                    print_row("D_star", data->business_connections[r]->initial_flow_Z_star().get_quantity());
-                    print_row("out_share",
-                              data->business_connections[r]->initial_flow_Z_star() / data->business_connections[r]->seller->firm->initial_production_X_star());
+                    print_row("Z_last", bc->last_shipment_Z().get_quantity(), scaled_D_r(to_float(bc->last_shipment_Z().get_quantity()), bc));
+                    print_row("D_star", bc->initial_flow_Z_star().get_quantity());
+                    print_row("out_share", bc->initial_flow_Z_star() / bc->seller->firm->initial_production_X_star());
                     print_row("grad", grad[r]);
-                    print_row("D_lower", FlowQuantity(lower_bound_D_r), scaled_D_r(lower_bound_D_r, data->business_connections[r]));
-                    print_row("D_r", FlowQuantity(D_r), scaled_D_r(D_r, data->business_connections[r]));
-                    print_row("D_upper", FlowQuantity(upper_bound_D_r), scaled_D_r(upper_bound_D_r, data->business_connections[r]));
+                    print_row("D_lower", FlowQuantity(lower_bound_D_r), scaled_D_r(lower_bound_D_r, bc));
+                    print_row("D_r", FlowQuantity(D_r), scaled_D_r(D_r, bc));
+                    print_row("D_upper", FlowQuantity(upper_bound_D_r), scaled_D_r(upper_bound_D_r, bc));
                     std::cout << '\n';
                 }
                 purchasing_quantity += D_r;
                 purchasing_value += n_r_l * D_r;
-                initial_sum += to_float(data->business_connections[r]->initial_flow_Z_star().get_quantity());
+                initial_sum += to_float(bc->initial_flow_Z_star().get_quantity());
             }
-            FloatType use = purchasing_quantity;
-            FloatType S_shortage = to_float(data->transport_flow_deficit)
+            const auto use = purchasing_quantity;
+            const auto transport_flow_deficit = get_flow_deficit();
+            FloatType S_shortage = to_float(transport_flow_deficit)
                                    + to_float((storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity()) / model()->delta_t());
             FloatType n_r_bar = (purchasing_quantity > 0.0) ? purchasing_value / purchasing_quantity : 0.0;
             std::cout << "      Storage :\n";
@@ -874,7 +777,7 @@ void PurchasingManager::print_distribution(
             print_row("S", storage->content_S().get_quantity());
             print_row("S_star", storage->initial_content_S_star().get_quantity());
             print_row("S_shortage", Quantity(S_shortage));
-            print_row("T_def", data->transport_flow_deficit, scaled_use(to_float(data->transport_flow_deficit)));
+            print_row("T_def", transport_flow_deficit, scaled_use(to_float(transport_flow_deficit)));
             print_row("T_penalty", FlowValue(T_penalty), scaled_objective(T_penalty));
             std::cout << "\n";
 

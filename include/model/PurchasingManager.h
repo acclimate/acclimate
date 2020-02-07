@@ -35,15 +35,13 @@ class Model;
 class PurchasingManager;
 class Storage;
 
-struct OptimizerData {
-    const PurchasingManager* purchasing_manager = nullptr;
-    std::vector<BusinessConnection*> business_connections;
-    std::vector<FloatType> upper_bounds;
-    std::vector<FloatType> lower_bounds;
-    FlowQuantity transport_flow_deficit = FlowQuantity(0.0);
-};
+namespace optimization {
+class Optimization;
+}
 
 class PurchasingManager {
+    friend class optimization::Optimization;
+
   private:
     Demand demand_D_ = Demand(0.0);
     FloatType optimized_value_ = 0.0;
@@ -51,14 +49,18 @@ class PurchasingManager {
     FlowQuantity desired_purchase_ = FlowQuantity(0.0);
     FlowValue expected_costs_ = FlowValue(0.0);
     FlowValue total_transport_penalty_ = FlowValue(0.0);
+    std::vector<BusinessConnection*> purchasing_connections;
+    std::vector<double> upper_bounds;
+    std::vector<double> lower_bounds;
+    std::vector<double> xtol_abs;
 
   public:
     Storage* const storage;
     std::vector<std::shared_ptr<BusinessConnection>> business_connections;
 
   private:
-    FloatType purchase_constraint(const FloatType x[], FloatType grad[], const OptimizerData* data) const;
-    FloatType objective_costs(const FloatType x[], FloatType grad[], const OptimizerData* data) const;
+    FloatType equality_constraint(const double* x, double* grad) const;
+    FloatType max_objective(const double* x, double* grad) const;
     FloatType scaled_D_r(FloatType D_r, const BusinessConnection* bc) const;
     FloatType unscaled_D_r(FloatType x, const BusinessConnection* bc) const;
     static FloatType partial_D_r_scaled_D_r(const BusinessConnection* bc);
@@ -79,7 +81,8 @@ class PurchasingManager {
     FloatType grad_expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const;
     FloatType partial_D_r_transport_penalty(FloatType D_r, const BusinessConnection* business_connection) const;
     static FlowQuantity calc_analytical_approximation_X_max(const BusinessConnection* bc);
-    void print_distribution(const FloatType demand_requests_D_p[], const OptimizerData* data, bool connection_details) const;
+    // DEBUG
+    void print_distribution(const std::vector<double>& demand_requests_D) const;
 
   public:
     explicit PurchasingManager(Storage* storage_p);
