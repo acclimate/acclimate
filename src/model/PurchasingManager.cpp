@@ -513,182 +513,173 @@ void PurchasingManager::subtract_initial_demand_D_star(const Demand& demand_D_p)
 void PurchasingManager::iterate_purchase() {
     assertstep(PURCHASE);
     assert(!business_connections.empty());
-    std::vector<FloatType> demand_requests_D;  // demand requests considered in optimization
+
+    demand_D_ = Demand(0.0);
+    expected_costs_ = FlowValue(0.0);
+    optimized_value_ = 0.0;
+    purchase_ = Demand(0.0);
+    total_transport_penalty_ = FlowValue(0.0);
+
+    demand_requests_D.clear();
     demand_requests_D.reserve(business_connections.size());
-    purchasing_connections.clear();
-    purchasing_connections.reserve(business_connections.size());
     lower_bounds.clear();
     lower_bounds.reserve(business_connections.size());
+    purchasing_connections.clear();
+    purchasing_connections.reserve(business_connections.size());
     upper_bounds.clear();
     upper_bounds.reserve(business_connections.size());
     xtol_abs.clear();
+    xtol_abs.reserve(business_connections.size());
 
-    if (storage->desired_used_flow_U_tilde().get_quantity() <= 0.0) {  // TODO CRITICAL What about storage refill?
-        warning("desired_used_flow_U_tilde is zero : no purchase");
-        for (auto& bc : business_connections) {
-            bc->send_demand_request_D(Demand(0.0));
-        }
-    } else {
-        for (auto& bc : business_connections) {
-            if (bc->seller->communicated_parameters().possible_production_X_hat.get_quantity() <= 0.0) {
-                bc->send_demand_request_D(Demand(0.0));
-            } else {  // this supplier can deliver a non-zero amount
-                // assumption, we cannot crowd out other purchasers given that our maximum offer price is n_max, calculate analytical approximation for maximal
-                // deliverable amount of purchaser X_max(n_max) and consider boundary conditions
-                const FloatType X = to_float(bc->seller->communicated_parameters().production_X.get_quantity());
-                const FloatType Z_last = to_float(bc->last_shipment_Z().get_quantity());
-                FloatType X_expected = to_float(bc->seller->communicated_parameters().expected_production_X.get_quantity());  // wo expectation X_expected = X
-                if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
-                    X_expected *= bc->get_minimum_passage();
-                }
-                const FloatType ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
-                const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
-                if constexpr (options::DEBUGGING) {
-                    const FloatType X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
-                    assert(X_max <= X_hat);
-                }
-                const FloatType lower_limit = 0.0;
-                const FloatType upper_limit = X_max - ratio_X_expected_to_X * (X - Z_last);
-                // in expected_average_price_E_n_r may happen, but it could also be the case that the optimizer does not respect D_r in [D_r_min,D_r_max]
-                if (upper_limit > 0.0) {
-                    const FloatType initial_value = std::min(upper_limit, std::max(lower_limit, ratio_X_expected_to_X * Z_last));
-                    purchasing_connections.push_back(bc.get());
-                    lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
-                    upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
-                    xtol_abs.push_back(scaled_D_r(FlowQuantity::precision, bc.get()));
-                    demand_requests_D.push_back(scaled_D_r(initial_value, bc.get()));
-                } else {
-                    bc->send_demand_request_D(Demand(0.0));
-                }
-            }
-        }
-    }
+    const auto S_shortage = get_flow_deficit() * model()->delta_t() + storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity();
 
-    optimized_value_ = 0.0;
-    purchase_ = Demand(0.0);
-    desired_purchase_ = FlowQuantity(0.0);
-    expected_costs_ = FlowValue(0.0);
-    total_transport_penalty_ = FlowValue(0.0);
-
-    const auto transport_flow_deficit = get_flow_deficit();
-    Quantity S_shortage =
-        transport_flow_deficit * model()->delta_t() + (storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity());
-    auto maximal_possible_purchase = FlowQuantity(0.0);
-    for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
-        auto D_r_max = FlowQuantity(unscaled_D_r(upper_bounds[r], purchasing_connections[r]));
-        assert(!isnan(D_r_max));
-        maximal_possible_purchase += D_r_max;
-    }
-    FlowQuantity desired_use = storage->desired_used_flow_U_tilde().get_quantity();  // desired used flow is either last or expected flow
-
-    if (S_shortage > 0.0) {  // storage level low
-        desired_purchase_ = std::min(std::max(desired_use + S_shortage / storage->sector->parameters().target_storage_refill_time, FlowQuantity(0.0)),
-                                     maximal_possible_purchase);
-    } else {  // storage level high
-        desired_purchase_ = std::min(std::max(desired_use + S_shortage / storage->sector->parameters().target_storage_withdraw_time, FlowQuantity(0.0)),
-                                     maximal_possible_purchase);
-    }
+    desired_purchase_ = storage->desired_used_flow_U_tilde().get_quantity()  // desired used flow is either last or expected flow
+                        + S_shortage
+                              / (S_shortage > 0.0 ? storage->sector->parameters().target_storage_refill_time    // storage level low
+                                                  : storage->sector->parameters().target_storage_withdraw_time  // storage level high
+                              );
 
     if (round(desired_purchase_) <= 0.0) {
-        for (auto bc : purchasing_connections) {  // all other bc in this->business_connections have already received demand request 0.0
+        for (auto& bc : business_connections) {
             bc->send_demand_request_D(Demand(0.0));
         }
         return;
     }
 
-    demand_D_ = Demand(0.0);
-    if (!purchasing_connections.empty()) {
-        try {
-            optimization::Optimization opt(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
-                                           purchasing_connections.size());  // TODO keep and only recreate when resize is needed
+    FlowQuantity maximal_possible_purchase(0.0);
+    for (auto& bc : business_connections) {
+        if (bc->seller->communicated_parameters().possible_production_X_hat.get_quantity() <= 0.0) {
+            bc->send_demand_request_D(Demand(0.0));
+        } else {  // this supplier can deliver a non-zero amount
+            // assumption, we cannot crowd out other purchasers given that our maximum offer price is n_max, calculate analytical approximation for maximal
+            // deliverable amount of purchaser X_max(n_max) and consider boundary conditions
+            const FloatType X = to_float(bc->seller->communicated_parameters().production_X.get_quantity());
+            const FloatType Z_last = to_float(bc->last_shipment_Z().get_quantity());
+            FloatType X_expected = to_float(bc->seller->communicated_parameters().expected_production_X.get_quantity());  // wo expectation X_expected = X
+            if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
+                X_expected *= bc->get_minimum_passage();
+            }
+            const FloatType ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
+            const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
+            if constexpr (options::DEBUGGING) {
+                const FloatType X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
+                assert(X_max <= X_hat);
+            }
+            const FloatType lower_limit = 0.0;
+            const FloatType upper_limit = X_max - ratio_X_expected_to_X * (X - Z_last);
+            const auto D_r_max = round(FlowQuantity(upper_limit));
+            if (D_r_max > 0.0) {
+                const FloatType initial_value = std::min(upper_limit, std::max(lower_limit, ratio_X_expected_to_X * Z_last));
+                purchasing_connections.push_back(bc.get());
+                lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
+                upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
+                xtol_abs.push_back(scaled_D_r(FlowQuantity::precision, bc.get()));
+                demand_requests_D.push_back(scaled_D_r(initial_value, bc.get()));
+                maximal_possible_purchase += D_r_max;
+            } else {
+                bc->send_demand_request_D(Demand(0.0));
+            }
+        }
+    }
 
-            opt.add_equality_constraint(this, FlowQuantity::precision);
-            opt.add_max_objective(this);
+    if (purchasing_connections.empty()) {
+        warning("possible demand is zero (no supplier with possible production capacity > 0.0)");
+        return;
+    }
+    assert(maximal_possible_purchase > 0.0);
 
-            opt.xtol(xtol_abs);
-            opt.lower_bounds(lower_bounds);
-            opt.upper_bounds(upper_bounds);
-            opt.maxeval(model()->parameters().optimization_maxiter);
-            opt.maxtime(model()->parameters().optimization_timeout);  // timeout given in sec
-            if (!opt.optimize(demand_requests_D) && !opt.xtol_reached()) {
-                if (opt.roundoff_limited()) {
-                    if constexpr (!IGNORE_ROUNDOFFLIMITED) {
-                        if constexpr (options::DEBUGGING) {
-                            print_distribution(demand_requests_D);
-                        }
-                        model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, nullptr, storage->economic_agent);
-                        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                            error("optimization is roundoff limited (for " << purchasing_connections.size() << " inputs)");
-                        } else {
-                            warning("optimization is roundoff limited (for " << purchasing_connections.size() << " inputs)");
-                        }
-                    }
-                } else if (opt.maxtime_reached()) {
+    if (desired_purchase_ > maximal_possible_purchase) {
+        desired_purchase_ = maximal_possible_purchase;
+    }
+
+    try {
+        optimization::Optimization opt(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
+                                       purchasing_connections.size());  // TODO keep and only recreate when resize is needed
+
+        opt.add_equality_constraint(this, FlowQuantity::precision);
+        opt.add_max_objective(this);
+
+        opt.xtol(xtol_abs);
+        opt.lower_bounds(lower_bounds);
+        opt.upper_bounds(upper_bounds);
+        opt.maxeval(model()->parameters().optimization_maxiter);
+        opt.maxtime(model()->parameters().optimization_timeout);
+        const auto res = opt.optimize(demand_requests_D);
+        if (!res && !opt.xtol_reached()) {
+            if (opt.roundoff_limited()) {
+                if constexpr (!IGNORE_ROUNDOFFLIMITED) {
                     if constexpr (options::DEBUGGING) {
                         print_distribution(demand_requests_D);
                     }
-                    model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, nullptr, storage->economic_agent);
+                    model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, nullptr, storage->economic_agent);
                     if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                        error("optimization timed out (for " << purchasing_connections.size() << " inputs)");
+                        error("optimization is roundoff limited (for " << purchasing_connections.size() << " inputs)");
                     } else {
-                        warning("optimization timed out (for " << purchasing_connections.size() << " inputs)");
+                        warning("optimization is roundoff limited (for " << purchasing_connections.size() << " inputs)");
                     }
+                }
+            } else if (opt.maxtime_reached()) {
+                if constexpr (options::DEBUGGING) {
+                    print_distribution(demand_requests_D);
+                }
+                model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, nullptr, storage->economic_agent);
+                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                    error("optimization timed out (for " << purchasing_connections.size() << " inputs)");
                 } else {
-                    warning("optimization finished with " << opt.last_result_description());
+                    warning("optimization timed out (for " << purchasing_connections.size() << " inputs)");
                 }
-            }
-            optimized_value_ = unscaled_objective(opt.optimized_value());
-
-        } catch (const optimization::failure& ex) {
-            if constexpr (options::DEBUGGING) {
-                print_distribution(demand_requests_D);
-            }
-            model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
-            if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                error("optimization failed, " << ex.what() << " (for " << purchasing_connections.size() << " inputs)");
             } else {
-                warning("optimization failed, " << ex.what() << " (for " << purchasing_connections.size() << " inputs)");
+                warning("optimization finished with " << opt.last_result_description());
             }
         }
+        optimized_value_ = unscaled_objective(opt.optimized_value());
 
-        FloatType costs = 0.0;
-        FloatType use = 0.0;
-        // distribute demand requests
-        for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
-            FloatType D_r;
-            D_r = unscaled_D_r(demand_requests_D[r], purchasing_connections[r]);
-            Demand demand_request_D = Demand(FlowQuantity(D_r), FlowValue(D_r));
-            assert(!std::isnan(n_r(D_r, purchasing_connections[r])));
-            demand_request_D.set_price(round(Price(n_r(D_r, purchasing_connections[r]))));
-
-            if constexpr (options::OPTIMIZATION_WARNINGS) {
-                if (round(demand_request_D.get_quantity()) > round(FlowQuantity(unscaled_D_r(upper_bounds[r], purchasing_connections[r])))) {
-                    warning(purchasing_connections[r]->id()
-                            << ": upper limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_max: " << upper_bounds[r]
-                            << " D_star: " << purchasing_connections[r]->initial_flow_Z_star().get_quantity());
-                }
-                if (round(demand_request_D.get_quantity()) < round(FlowQuantity(unscaled_D_r(lower_bounds[r], purchasing_connections[r])))) {
-                    warning(purchasing_connections[r]->id()
-                            << ": lower limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_min: " << lower_bounds[r]
-                            << " D_star: " << purchasing_connections[r]->initial_flow_Z_star().get_quantity());
-                }
-            }
-            purchasing_connections[r]->send_demand_request_D(round(demand_request_D));
-
-            if constexpr (options::DEBUGGING) {
-                use += D_r;
-            }
-            demand_D_ += round(demand_request_D);
-            costs += n_r(D_r, purchasing_connections[r]) * D_r + transport_penalty(D_r, purchasing_connections[r]);
-            total_transport_penalty_ += FlowValue(transport_penalty(D_r, purchasing_connections[r]));
+    } catch (const optimization::failure& ex) {
+        if constexpr (options::DEBUGGING) {
+            print_distribution(demand_requests_D);
         }
-        expected_costs_ = FlowValue(costs);
-        assert(FlowQuantity(use) >= 0.0);
-        purchase_ = demand_D_;
-
-    } else {
-        warning("possible demand is zero (no supplier with possible production capacity > 0.0)");
+        model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
+        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {  // TODO these should always be fatal
+            error("optimization failed, " << ex.what() << " (for " << purchasing_connections.size() << " inputs)");
+        } else {
+            warning("optimization failed, " << ex.what() << " (for " << purchasing_connections.size() << " inputs)");
+        }
     }
+
+    FloatType costs = 0.0;
+    FloatType use = 0.0;
+    // distribute demand requests
+    for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
+        FloatType D_r;
+        D_r = unscaled_D_r(demand_requests_D[r], purchasing_connections[r]);
+        Demand demand_request_D = Demand(FlowQuantity(D_r), FlowValue(D_r));
+        assert(!std::isnan(n_r(D_r, purchasing_connections[r])));
+        demand_request_D.set_price(round(Price(n_r(D_r, purchasing_connections[r]))));
+
+        if constexpr (options::OPTIMIZATION_WARNINGS) {
+            if (round(demand_request_D.get_quantity()) > round(FlowQuantity(unscaled_D_r(upper_bounds[r], purchasing_connections[r])))) {
+                warning(purchasing_connections[r]->id() << ": upper limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_max: "
+                                                        << upper_bounds[r] << " D_star: " << purchasing_connections[r]->initial_flow_Z_star().get_quantity());
+            }
+            if (round(demand_request_D.get_quantity()) < round(FlowQuantity(unscaled_D_r(lower_bounds[r], purchasing_connections[r])))) {
+                warning(purchasing_connections[r]->id() << ": lower limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_min: "
+                                                        << lower_bounds[r] << " D_star: " << purchasing_connections[r]->initial_flow_Z_star().get_quantity());
+            }
+        }
+        purchasing_connections[r]->send_demand_request_D(round(demand_request_D));
+
+        if constexpr (options::DEBUGGING) {
+            use += D_r;
+        }
+        demand_D_ += round(demand_request_D);
+        costs += n_r(D_r, purchasing_connections[r]) * D_r + transport_penalty(D_r, purchasing_connections[r]);
+        total_transport_penalty_ += FlowValue(transport_penalty(D_r, purchasing_connections[r]));
+    }
+    expected_costs_ = FlowValue(costs);
+    if constexpr (options::DEBUGGING) {
+        assert(FlowQuantity(use) >= 0.0);
+    }
+    purchase_ = demand_D_;
 }
 
 FlowQuantity PurchasingManager::calc_analytical_approximation_X_max(const BusinessConnection* bc) {

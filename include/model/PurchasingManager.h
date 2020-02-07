@@ -50,6 +50,7 @@ class PurchasingManager {
     FlowValue expected_costs_ = FlowValue(0.0);
     FlowValue total_transport_penalty_ = FlowValue(0.0);
     std::vector<BusinessConnection*> purchasing_connections;
+    std::vector<FloatType> demand_requests_D;  // demand requests considered in optimization
     std::vector<double> upper_bounds;
     std::vector<double> lower_bounds;
     std::vector<double> xtol_abs;
