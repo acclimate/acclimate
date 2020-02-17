@@ -163,7 +163,7 @@ const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options = {
 )
 target_sources(acclimate PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp)
 
-include_nlopt(acclimate ON "34fd7ce")
+include_nlopt(acclimate ON "v2.6.1")
 
 include_netcdf_cxx4(acclimate ON v4.3.0)
 
