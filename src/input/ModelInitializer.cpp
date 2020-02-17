@@ -870,7 +870,6 @@ void ModelInitializer::pre_initialize() {
     model()->parameters_writable().always_extend_expected_demand_curve = parameters["always_extend_expected_demand_curve"].as<bool>();
     model()->parameters_writable().naive_expectations = parameters["naive_expectations"].as<bool>();
     model()->parameters_writable().deviation_penalty = parameters["deviation_penalty"].as<bool>(false);
-    model()->parameters_writable().cost_correction = parameters["cost_correction"].as<bool>();
     model()->parameters_writable().min_storage = parameters["min_storage"].as<Ratio>(0.0);
     model()->parameters_writable().cheapest_price_range_preserve_seller_price = parameters["cheapest_price_range_preserve_seller_price"].as<bool>(false);
     model()->parameters_writable().cheapest_price_range_generic_size = (parameters["cheapest_price_range_width"].as<std::string>() == "auto");
@@ -879,6 +878,9 @@ void ModelInitializer::pre_initialize() {
     }
     model()->parameters_writable().relative_transport_penalty = parameters["relative_transport_penalty"].as<bool>();
     model()->parameters_writable().optimization_algorithm = optimization::get_algorithm(parameters["optimization_algorithm"].as<settings::hstring>("slsqp"));
+    if (parameters["cost_correction"].as<bool>(false)) {
+        throw log::error(this, "parameter cost_correction not supported anymore");
+    }
 }
 
 void ModelInitializer::post_initialize() {

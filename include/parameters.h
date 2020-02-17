@@ -36,7 +36,6 @@ struct Parameters {
         bool always_extend_expected_demand_curve;  // extend incoming demand in expectation step with certain elasticity
         bool cheapest_price_range_generic_size;
         bool cheapest_price_range_preserve_seller_price;
-        bool cost_correction;
         bool deviation_penalty;
         bool maximal_decrease_reservation_price_limited_by_markup;
         bool naive_expectations;           // incoming demand is never extended

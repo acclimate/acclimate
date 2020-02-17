@@ -135,7 +135,7 @@ Flow SalesManager::calc_production_X() {
     return communicated_parameters_.production_X;
 }
 
-void SalesManager::distribute(const Flow&) {
+void SalesManager::distribute() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     assert(!business_connections.empty());
     // push all flows

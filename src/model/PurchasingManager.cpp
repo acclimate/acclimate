@@ -198,15 +198,12 @@ inline FloatType PurchasingManager::unscaled_use(FloatType x) const { return x *
 inline FloatType PurchasingManager::partial_use_scaled_use() const { return to_float(storage->initial_used_flow_U_star().get_quantity()); }
 
 FloatType PurchasingManager::equality_constraint(const double* x, double* grad) const {
-    // has to be in the form g(D_r) <= 0
     FloatType use = 0.0;
     for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
         const auto D_r = unscaled_D_r(x[r], purchasing_connections[r]);
         assert(!std::isnan(D_r));
         use += D_r;
-    }
-    if (grad != nullptr) {
-        for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {  // TODO merge with loop above
+        if (grad != nullptr) {
             grad[r] = -partial_D_r_scaled_D_r(purchasing_connections[r]) / partial_use_scaled_use();
             if constexpr (options::OPTIMIZATION_WARNINGS) {
                 if (grad[r] > MAX_GRADIENT) {
@@ -226,22 +223,9 @@ FloatType PurchasingManager::max_objective(const double* x, double* grad) const 
         assert(!std::isnan(D_r));
         costs += n_r(D_r, purchasing_connections[r]) * D_r + transport_penalty(D_r, purchasing_connections[r]);
         purchase += D_r;
-    }
-    FloatType partial_correction = 0;
-    if (model()->parameters().cost_correction) {  // TODO still needed?
-        FloatType correction = purchase - to_float(storage->initial_used_flow_U_star().get_quantity());
-        if (correction < 0) {
-            partial_correction = to_float(model()->parameters().transport_penalty_small);
-        } else {
-            partial_correction = to_float(model()->parameters().transport_penalty_large);
-        }
-        costs -= std::abs(partial_correction * correction);
-    }
-    if (grad != nullptr) {
-        for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {  // TODO merge with loop above
-            FloatType D_r = unscaled_D_r(x[r], purchasing_connections[r]);
+        if (grad != nullptr) {
             grad[r] = -partial_D_r_scaled_D_r(purchasing_connections[r])
-                      * (grad_n_r(D_r, purchasing_connections[r]) * D_r + n_r(D_r, purchasing_connections[r]) - partial_correction
+                      * (grad_n_r(D_r, purchasing_connections[r]) * D_r + n_r(D_r, purchasing_connections[r])
                          + partial_D_r_transport_penalty(D_r, purchasing_connections[r]))
                       / partial_objective_scaled_objective();
             if constexpr (options::OPTIMIZATION_WARNINGS) {
@@ -623,12 +607,7 @@ void PurchasingManager::iterate_purchase() {
         if constexpr (options::DEBUGGING) {
             print_distribution(demand_requests_D);
         }
-        model()->run()->event(EventType::OPTIMIZER_FAILURE, storage->sector, nullptr, storage->economic_agent);
-        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {  // TODO these should always be fatal
-            error("optimization failed, " << ex.what() << " (for " << purchasing_connections.size() << " inputs)");
-        } else {
-            warning("optimization failed, " << ex.what() << " (for " << purchasing_connections.size() << " inputs)");
-        }
+        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
     }
 
     FloatType costs = 0.0;
@@ -721,8 +700,7 @@ void PurchasingManager::print_distribution(const std::vector<double>& demand_req
                 T_penalty += n_r_tc_l;
                 last_demand_requests[r] = to_float(bc->last_demand_request_D(this).get_quantity());
 
-                constexpr bool print_connection_details = options::OPTIMIZATION_PROBLEMS_FATAL;
-                if constexpr (print_connection_details) {
+                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                     std::cout << "      " << bc->id() << " :\n";
                     print_row("X", FlowQuantity(X));
                     print_row("X_star", FlowQuantity(X_star));
