@@ -21,113 +21,135 @@
 #ifndef ACCLIMATE_H
 #define ACCLIMATE_H
 
+#include <features.h>  // for __STRING
+
+#include <cassert>
+#include <memory>
+
 #include "types.h"  // IWYU pragma: export
 
 namespace acclimate {
 
-#undef assert
-#ifdef DEBUG
-#define error(a)                                                                        \
-    {                                                                                   \
-        std::ostringstream ss;                                                          \
-        ss << id() << " error: " << a << " (" << __FILE__ << ", l." << __LINE__ << ")"; \
-        throw acclimate::exception(ss.str());                                           \
-    }
-#define error_(a)                                                              \
-    {                                                                          \
-        std::ostringstream ss;                                                 \
-        ss << "error: " << a << " (" << __FILE__ << ", l." << __LINE__ << ")"; \
-        throw acclimate::exception(ss.str());                                  \
-    }
-#define assert_(expr)                                                                                  \
-    if (!(expr)) {                                                                                     \
-        std::ostringstream ss;                                                                         \
-        ss << "assertion failed: " << __STRING(expr) << " (" << __FILE__ << ", l." << __LINE__ << ")"; \
-        throw acclimate::exception(ss.str());                                                          \
-    }
-#define assert(expr)                                                                                            \
-    if (!(expr)) {                                                                                              \
-        std::ostringstream ss;                                                                                  \
-        ss << id() << " assertion failed: " << __STRING(expr) << " (" << __FILE__ << ", l." << __LINE__ << ")"; \
-        throw acclimate::exception(ss.str());                                                                   \
-    }
-#ifndef TEST
-#define assertstep(a)                                                   \
-    if (model()->run()->step() != IterationStep::a) {                   \
-        std::ostringstream ss;                                          \
-        ss << id() << " error: should be in " << __STRING(a) << " step" \
-           << " (" << __FILE__ << ", l." << __LINE__ << ")";            \
-        throw acclimate::exception(ss.str());                           \
-    }
-#define assertstepor(a, b)                                                                          \
-    if (model()->run()->step() != IterationStep::a && model()->run()->step() != IterationStep::b) { \
-        std::ostringstream ss;                                                                      \
-        ss << id() << " error: should be in " << __STRING(a) << " or " << __STRING(b) << " step"    \
-           << " (" << __FILE__ << ", l." << __LINE__ << ")";                                        \
-        throw acclimate::exception(ss.str());                                                       \
-    }
-#define assertstepnot(a)                                                    \
-    if (model()->run()->step() == IterationStep::a) {                       \
-        std::ostringstream ss;                                              \
-        ss << id() << " error: should NOT be in " << __STRING(a) << " step" \
-           << " (" << __FILE__ << ", l." << __LINE__ << ")";                \
-        throw acclimate::exception(ss.str());                               \
-    }
-#else
-#define assertstep(a) \
-    {}
-#define assertstepor(a, b) \
-    {}
-#define assertstepnot(a) \
-    {}
-#endif
-#define warning(a) \
-    _Pragma("omp critical (output)") { std::cout << model()->run()->timeinfo() << ", " << id() << ": Warning: " << a << std::endl; }
-#define info(a) \
-    _Pragma("omp critical (output)") { std::cout << model()->run()->timeinfo() << ", " << id() << ": " << a << std::endl; }
-#define debug(a) \
-    _Pragma("omp critical (output)") { std::cout << model()->run()->timeinfo() << ", " << id() << ": " << __STRING(a) << " = " << a << std::endl; }
-#define warning_(a) \
-    _Pragma("omp critical (output)") { std::cout << "Warning: " << a << std::endl; }
-#define info_(a) \
-    _Pragma("omp critical (output)") { std::cout << a << std::endl; }
+#define ACCLIMATE_ADD_ITERATION_STEPS         \
+    ADD_ENUM_ITEM(INITIALIZATION)             \
+    ADD_ENUM_ITEM(SCENARIO)                   \
+    ADD_ENUM_ITEM(CONSUMPTION_AND_PRODUCTION) \
+    ADD_ENUM_ITEM(EXPECTATION)                \
+    ADD_ENUM_ITEM(PURCHASE)                   \
+    ADD_ENUM_ITEM(INVESTMENT)                 \
+    ADD_ENUM_ITEM(OUTPUT)                     \
+    ADD_ENUM_ITEM(CLEANUP)                    \
+    ADD_ENUM_ITEM(UNDEFINED)  // to be used when function is not used yet
 
-#else  // !def DEBUG
+#define ADD_ENUM_ITEM(e) e,
+enum class IterationStep : unsigned char { ACCLIMATE_ADD_ITERATION_STEPS };
+#undef ADD_ENUM_ITEM
 
-#define error(a)                              \
-    {                                         \
-        std::ostringstream ss;                \
-        ss << a;                              \
-        throw acclimate::exception(ss.str()); \
-    }
-#define error_(a)                             \
-    {                                         \
-        std::ostringstream ss;                \
-        ss << a;                              \
-        throw acclimate::exception(ss.str()); \
-    }
-#define assert_(a) \
-    {}
-#define assert(a) \
-    {}
-#define assertstep(a) \
-    {}
-#define assertstepor(a, b) \
-    {}
-#define assertstepnot(a) \
-    {}
-#define warning(a) \
-    {}
-#define info(a) \
-    {}
-#define debug(a) \
-    {}
-#define warning_(a) \
-    {}
-#define info_(a) \
-    {}
+#define ADD_ENUM_ITEM(e) __STRING(e),
+constexpr std::array<const char*, static_cast<int>(IterationStep::UNDEFINED) + 1> ITERATION_STEP_NAMES = {ACCLIMATE_ADD_ITERATION_STEPS};
+#undef ADD_ENUM_ITEM
 
-#endif
+#undef ACCLIMATE_ADD_ITERATIONS_STEPS
+
+namespace log {
+
+namespace detail {
+
+template<class Stream, typename Arg>
+inline void to_stream(Stream& s, Arg&& arg) {
+    s << arg;
+}
+
+template<class Stream, typename Arg, typename... Args>
+inline void to_stream(Stream& s, Arg&& arg, Args&&... args) {
+    s << arg;
+    to_stream(s, args...);
+}
+
+template<class>
+struct to_void {
+    typedef void type;
+};
+template<class T, class = void>
+struct is_acclimate_class : std::false_type {};
+template<class T>
+struct is_acclimate_class<T, typename to_void<decltype(std::declval<T>().id())>::type> : std::true_type {};
+
+}  // namespace detail
+
+template<typename Arg, typename... Args>
+inline acclimate::exception error(Arg&& arg, Args&&... args) {
+    std::ostringstream ss;
+    if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
+        detail::to_stream(ss, arg->model()->run()->timeinfo(), ", ", arg->id(), ": ", std::forward<Args>(args)...);
+    } else {
+        detail::to_stream(ss, std::forward<Arg>(arg), std::forward<Args>(args)...);
+    }
+    return acclimate::exception(ss.str());
+}
+
+template<typename Arg, typename... Args>
+inline void warning(Arg&& arg, Args&&... args) {
+    if constexpr (options::DEBUGGING) {
+#pragma omp critical(output)
+        {
+            if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
+                detail::to_stream(std::cout, arg->model()->run()->timeinfo(), ", ", arg->id(), " Warning: ", std::forward<Args>(args)...);
+            } else {
+                detail::to_stream(std::cout, "Warning: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
+            }
+            std::cout << std::endl;
+        }
+    }
+}
+
+template<typename Arg, typename... Args>
+inline void info(Arg&& arg, Args&&... args) {
+    if constexpr (options::DEBUGGING) {
+#pragma omp critical(output)
+        {
+            if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
+                detail::to_stream(std::cout, arg->model()->run()->timeinfo(), ", ", arg->id(), ": ", std::forward<Args>(args)...);
+            } else {
+                detail::to_stream(std::cout, std::forward<Arg>(arg), std::forward<Args>(args)...);
+            }
+            std::cout << std::endl;
+        }
+    }
+}
+
+}  // namespace log
+
+namespace debug {
+
+template<class Caller>
+inline void assertstep(const Caller* c, IterationStep s) {
+    if constexpr (options::DEBUGGING) {
+        if (c->model()->run()->step() != s) {
+            throw log::error(c, "should be in ", ITERATION_STEP_NAMES[static_cast<int>(s)], " step");
+        }
+    }
+}
+
+template<class Caller>
+inline void assertstepnot(const Caller* c, IterationStep s) {
+    if constexpr (options::DEBUGGING) {
+        if (c->model()->run()->step() == s) {
+            throw log::error(c, "should NOT be in ", ITERATION_STEP_NAMES[static_cast<int>(s)], " step");
+        }
+    }
+}
+
+template<class Caller>
+inline void assertstepor(const Caller* c, IterationStep s1, IterationStep s2) {
+    if constexpr (options::DEBUGGING) {
+        if (c->model()->run()->step() != s1 && c->model()->run()->step() != s2) {
+            throw log::error(c, "should be in ", ITERATION_STEP_NAMES[static_cast<int>(s1)], " or ", ITERATION_STEP_NAMES[static_cast<int>(s2)], " step");
+        }
+    }
+}
+
+}  // namespace debug
 
 }  // namespace acclimate
 

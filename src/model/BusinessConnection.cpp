@@ -22,6 +22,7 @@
 
 #include <vector>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
@@ -85,7 +86,7 @@ FloatType BusinessConnection::get_minimum_passage() const {
 bool BusinessConnection::get_domestic() const { return (buyer->storage->economic_agent->region == seller->firm->region); }
 
 void BusinessConnection::push_flow_Z(const Flow& flow_Z) {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     last_shipment_Z_ = round(flow_Z);
     first_transport_link->push_flow_Z(last_shipment_Z_, initial_flow_Z_star_.get_quantity());
     if (!get_domestic()) {
@@ -104,7 +105,7 @@ TransportDelay BusinessConnection::get_transport_delay_tau() const {
 }
 
 void BusinessConnection::deliver_flow_Z(const Flow& flow_Z) {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     buyer->storage->push_flow_Z(flow_Z);
     last_delivery_Z_ = flow_Z;
     if (!get_domestic()) {
@@ -125,13 +126,13 @@ std::size_t BusinessConnection::get_id(const TransportChainLink* transport_chain
 }
 
 void BusinessConnection::send_demand_request_D(const Demand& demand_request_D) {
-    assertstep(PURCHASE);
+    debug::assertstep(this, IterationStep::PURCHASE);
     last_demand_request_D_ = round(demand_request_D);
     seller->add_demand_request_D(last_demand_request_D_);
 }
 
 Flow BusinessConnection::get_flow_mean() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     Flow res = last_delivery_Z_;
     TransportDelay delay = 0;
@@ -144,7 +145,7 @@ Flow BusinessConnection::get_flow_mean() const {
 }
 
 FlowQuantity BusinessConnection::get_flow_deficit() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     FlowQuantity res = initial_flow_Z_star_.get_quantity() - last_delivery_Z_.get_quantity();
     while (link != nullptr) {
@@ -155,12 +156,12 @@ FlowQuantity BusinessConnection::get_flow_deficit() const {
 }
 
 Flow BusinessConnection::get_total_flow() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return round(get_transport_flow() + last_delivery_Z_);
 }
 
 Flow BusinessConnection::get_transport_flow() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     Flow res = Flow(0.0);
     while (link != nullptr) {
@@ -171,7 +172,7 @@ Flow BusinessConnection::get_transport_flow() const {
 }
 
 Flow BusinessConnection::get_disequilibrium() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     Flow res = Flow(0.0);
     while (link != nullptr) {
@@ -182,7 +183,7 @@ Flow BusinessConnection::get_disequilibrium() const {
 }
 
 FloatType BusinessConnection::get_stddeviation() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
     FloatType res = 0.0;
     while (link != nullptr) {
@@ -201,10 +202,8 @@ std::string BusinessConnection::id() const {
 const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != seller) {
-            assertstepnot(CONSUMPTION_AND_PRODUCTION);
+            debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
         }
-    } else {
-        UNUSED(caller);
     }
     return last_shipment_Z_;
 }
@@ -212,10 +211,8 @@ const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller
 const Flow& BusinessConnection::last_delivery_Z(const SalesManager* const caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != seller) {
-            assertstepnot(CONSUMPTION_AND_PRODUCTION);
+            debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
         }
-    } else {
-        UNUSED(caller);
     }
     return last_delivery_Z_;
 }
@@ -223,16 +220,14 @@ const Flow& BusinessConnection::last_delivery_Z(const SalesManager* const caller
 const Demand& BusinessConnection::last_demand_request_D(const PurchasingManager* const caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != buyer) {
-            assertstepnot(PURCHASE);
+            debug::assertstepnot(this, IterationStep::PURCHASE);
         }
-    } else {
-        UNUSED(caller);
     }
     return last_demand_request_D_;
 }
 
 void BusinessConnection::initial_flow_Z_star(const Flow& new_initial_flow_Z_star) {
-    assertstep(INVESTMENT);
+    debug::assertstep(this, IterationStep::INVESTMENT);
     initial_flow_Z_star_ = new_initial_flow_Z_star;
 }
 

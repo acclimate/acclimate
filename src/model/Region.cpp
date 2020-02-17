@@ -25,6 +25,7 @@
 #include <ostream>
 #include <utility>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Government.h"
@@ -35,17 +36,17 @@ namespace acclimate {
 Region::Region(Model* model_p, std::string id_p, IndexType index_p) : GeoLocation(model_p, 0, GeoLocation::Type::REGION, std::move(id_p)), index_m(index_p) {}
 
 void Region::add_export_Z(const Flow& export_flow_Z_p) {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     export_flow_Z_lock.call([&]() { export_flow_Z_[model()->current_register()] += export_flow_Z_p; });
 }
 
 void Region::add_import_Z(const Flow& import_flow_Z_p) {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     import_flow_Z_lock.call([&]() { import_flow_Z_[model()->current_register()] += import_flow_Z_p; });
 }
 
 void Region::add_consumption_flow_Y(const Flow& consumption_flow_Y_p) {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     consumption_flow_Y_lock.call([&]() { consumption_flow_Y_[model()->current_register()] += consumption_flow_Y_p; });
 }
 
@@ -54,7 +55,7 @@ Flow Region::get_gdp() const {
 }
 
 void Region::iterate_consumption_and_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     export_flow_Z_[model()->other_register()] = Flow(0.0);
     import_flow_Z_[model()->other_register()] = Flow(0.0);
     consumption_flow_Y_[model()->other_register()] = Flow(0.0);
@@ -64,21 +65,21 @@ void Region::iterate_consumption_and_production() {
 }
 
 void Region::iterate_expectation() {
-    assertstep(EXPECTATION);
+    debug::assertstep(this, IterationStep::EXPECTATION);
     if (government_m) {
         government_m->iterate_expectation();
     }
 }
 
 void Region::iterate_purchase() {
-    assertstep(PURCHASE);
+    debug::assertstep(this, IterationStep::PURCHASE);
     if (government_m) {
         government_m->iterate_purchase();
     }
 }
 
 void Region::iterate_investment() {
-    assertstep(INVESTMENT);
+    debug::assertstep(this, IterationStep::INVESTMENT);
     if (government_m) {
         government_m->iterate_investment();
     }
@@ -87,39 +88,41 @@ void Region::iterate_investment() {
 const GeoRoute& Region::find_path_to(Region* region, typename Sector::TransportType transport_type) const {
     const auto& it = routes.find(std::make_pair(region->index(), transport_type));
     if (it == std::end(routes)) {
-        error("No transport data from " << id() << " to " << region->id() << " via " << Sector::unmap_transport_type(transport_type));
+        throw log::error(this, "No transport data from ", id(), " to ", region->id(), " via ", Sector::unmap_transport_type(transport_type));
     }
     return it->second;
 }
 
 void Region::remove_economic_agent(EconomicAgent* economic_agent) {
     economic_agents_lock.call([&]() {
-        auto it = std::find_if(economic_agents.begin(), economic_agents.end(),
-                               [economic_agent](const std::unique_ptr<EconomicAgent>& it) { return it.get() == economic_agent; });
+        auto it = std::find_if(std::begin(economic_agents), std::end(economic_agents), [economic_agent](const auto& ea) { return ea.get() == economic_agent; });
+        if (it == std::end(economic_agents)) {
+            throw log::error(this, "Agent ", economic_agent->id(), " not found");
+        }
         economic_agents.erase(it);
     });
 }
 
 const Flow& Region::consumption_C() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return consumption_flow_Y_[model()->current_register()];
 }
 
 const Flow& Region::import_flow_Z() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return import_flow_Z_[model()->current_register()];
 }
 
 const Flow& Region::export_flow_Z() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return export_flow_Z_[model()->current_register()];
 }
 
 void Region::set_government(Government* government_p) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     if constexpr (options::DEBUGGING) {
         if (government_m) {
-            error("Government already set");
+            throw log::error(this, "Government already set");
         }
     }
     government_m.reset(government_p);
@@ -130,7 +133,7 @@ Government* Region::government() { return government_m.get(); }
 Government const* Region::government() const { return government_m.get(); }
 
 const Parameters::RegionParameters& Region::parameters_writable() const {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     return parameters_m;
 }
 

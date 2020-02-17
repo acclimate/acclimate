@@ -25,6 +25,7 @@
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <numeric>
 #include <stdexcept>
 
 #include "ModelRun.h"
@@ -46,13 +47,13 @@ namespace acclimate {
 
 PurchasingManager::PurchasingManager(Storage* storage_p) : storage(storage_p) {}
 
-void PurchasingManager::iterate_consumption_and_production() { assertstep(CONSUMPTION_AND_PRODUCTION); }
+void PurchasingManager::iterate_consumption_and_production() { debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION); }
 
 bool PurchasingManager::remove_business_connection(const BusinessConnection* business_connection) {
     auto it = std::find_if(business_connections.begin(), business_connections.end(),
                            [business_connection](const std::shared_ptr<BusinessConnection>& it) { return it.get() == business_connection; });
     if (it == std::end(business_connections)) {
-        error("Business connection " << business_connection->id() << " not found");
+        throw log::error(this, "Business connection ", business_connection->id(), " not found");
     }
     business_connections.erase(it);
     if (business_connections.empty()) {
@@ -63,25 +64,19 @@ bool PurchasingManager::remove_business_connection(const BusinessConnection* bus
 }
 
 FlowQuantity PurchasingManager::get_flow_deficit() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    auto res = FlowQuantity(0.0);
-    for (const auto& bc : business_connections) {  // TODO use std::accumulate
-        res += bc->get_flow_deficit();
-    }
-    return round(res);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    return round(std::accumulate(std::begin(business_connections), std::end(business_connections), FlowQuantity(0.0),
+                                 [](FlowQuantity q, const auto& bc) { return std::move(q) + bc->get_flow_deficit(); }));
 }
 
 Flow PurchasingManager::get_transport_flow() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    auto res = Flow(0.0);
-    for (const auto& bc : business_connections) {  // TODO use std::accumulate
-        res += bc->get_transport_flow();
-    }
-    return res;
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    return std::accumulate(std::begin(business_connections), std::end(business_connections), Flow(0.0),
+                           [](Flow f, const auto& bc) { return std::move(f) + bc->get_transport_flow(); });
 }
 
 Flow PurchasingManager::get_disequilibrium() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& bc : business_connections) {
         res.add_possibly_negative(bc->get_disequilibrium());
@@ -90,21 +85,15 @@ Flow PurchasingManager::get_disequilibrium() const {
 }
 
 FloatType PurchasingManager::get_stddeviation() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    FloatType res = 0.0;
-    for (const auto& bc : business_connections) {  // TODO use std::accumulate
-        res += bc->get_stddeviation();
-    }
-    return res;
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    return std::accumulate(std::begin(business_connections), std::end(business_connections), 0.0,
+                           [](FloatType v, const auto& bc) { return v + bc->get_stddeviation(); });
 }
 
 Flow PurchasingManager::get_sum_of_last_shipments() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    Flow res = Flow(0.0);
-    for (const auto& bc : business_connections) {  // TODO use std::accumulate
-        res += bc->last_shipment_Z();
-    }
-    return res;
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    return std::accumulate(std::begin(business_connections), std::end(business_connections), Flow(0.0),
+                           [](Flow f, const auto& bc) { return std::move(f) + bc->last_shipment_Z(); });
 }
 
 PurchasingManager::~PurchasingManager() {
@@ -116,10 +105,8 @@ PurchasingManager::~PurchasingManager() {
 const Demand& PurchasingManager::demand_D(const EconomicAgent* const caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != storage->economic_agent) {
-            assertstepnot(PURCHASE);
+            debug::assertstepnot(this, IterationStep::PURCHASE);
         }
-    } else {
-        UNUSED(caller);
     }
     return demand_D_;
 }
@@ -129,32 +116,30 @@ Model* PurchasingManager::model() const { return storage->model(); }
 std::string PurchasingManager::id() const { return storage->sector->id() + "->" + storage->economic_agent->id(); }
 
 FloatType PurchasingManager::optimized_value() const {
-    assertstepnot(PURCHASE);
+    debug::assertstepnot(this, IterationStep::PURCHASE);
     return optimized_value_;
 }
 
 Demand PurchasingManager::storage_demand() const {
-    assertstepnot(PURCHASE);
+    debug::assertstepnot(this, IterationStep::PURCHASE);
     return demand_D_ - purchase_;
 }
 
 const Demand& PurchasingManager::purchase() const {
-    assertstepnot(PURCHASE);
+    debug::assertstepnot(this, IterationStep::PURCHASE);
     return purchase_;
 }
 
 const FlowValue& PurchasingManager::total_transport_penalty() const {
-    assertstepnot(PURCHASE);
+    debug::assertstepnot(this, IterationStep::PURCHASE);
     return total_transport_penalty_;
 }
 
 const FlowValue& PurchasingManager::expected_costs(const EconomicAgent* const caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != storage->economic_agent) {
-            assertstepnot(PURCHASE);
+            debug::assertstepnot(this, IterationStep::PURCHASE);
         }
-    } else {
-        UNUSED(caller);
     }
     return expected_costs_;
 }
@@ -225,7 +210,7 @@ FloatType PurchasingManager::equality_constraint(const double* x, double* grad) 
             grad[r] = -partial_D_r_scaled_D_r(purchasing_connections[r]) / partial_use_scaled_use();
             if constexpr (options::OPTIMIZATION_WARNINGS) {
                 if (grad[r] > MAX_GRADIENT) {
-                    warning(purchasing_connections[r]->id() << ": large gradient of " << grad[r]);
+                    log::warning(this, purchasing_connections[r]->id(), ": large gradient of ", grad[r]);
                 }
             }
         }
@@ -261,7 +246,7 @@ FloatType PurchasingManager::max_objective(const double* x, double* grad) const 
                       / partial_objective_scaled_objective();
             if constexpr (options::OPTIMIZATION_WARNINGS) {
                 if (grad[r] > MAX_GRADIENT) {
-                    warning(purchasing_connections[r]->id() << ": large gradient of " << grad[r]);
+                    log::warning(this, purchasing_connections[r]->id(), ": large gradient of ", grad[r]);
                 }
             }
         }
@@ -284,8 +269,8 @@ FloatType PurchasingManager::expected_average_price_E_n_r(FloatType D_r, const B
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity())) {
         if constexpr (options::OPTIMIZATION_WARNINGS) {
-            warning("X_new > X_hat: X_new = " << FlowQuantity(X_new) << " X_hat = "
-                                              << business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
+            log::warning(this, "X_new > X_hat: X_new = ", FlowQuantity(X_new),
+                         " X_hat = ", business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
         }
         X_new = to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     }
@@ -363,8 +348,8 @@ FloatType PurchasingManager::grad_expected_average_price_E_n_r(FloatType D_r, co
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity())) {
         if constexpr (options::OPTIMIZATION_WARNINGS) {
-            warning("X_new > X_hat: X_new = " << FlowQuantity(X_new) << " X_hat = "
-                                              << business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
+            log::warning(this, "X_new > X_hat: X_new = ", FlowQuantity(X_new),
+                         " X_hat = ", business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
         }
         X_new = to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     }
@@ -499,19 +484,19 @@ FloatType PurchasingManager::partial_D_r_transport_penalty(FloatType D_r, const 
 }
 
 void PurchasingManager::add_initial_demand_D_star(const Demand& demand_D_p) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     demand_D_ += demand_D_p;
     expected_costs_ += demand_D_p.get_value();
 }
 
 void PurchasingManager::subtract_initial_demand_D_star(const Demand& demand_D_p) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     demand_D_ -= demand_D_p;
     expected_costs_ -= demand_D_p.get_value();
 }
 
 void PurchasingManager::iterate_purchase() {
-    assertstep(PURCHASE);
+    debug::assertstep(this, IterationStep::PURCHASE);
     assert(!business_connections.empty());
 
     demand_D_ = Demand(0.0);
@@ -583,7 +568,7 @@ void PurchasingManager::iterate_purchase() {
     }
 
     if (purchasing_connections.empty()) {
-        warning("possible demand is zero (no supplier with possible production capacity > 0.0)");
+        log::warning(this, "possible demand is zero (no supplier with possible production capacity > 0.0)");
         return;
     }
     assert(maximal_possible_purchase > 0.0);
@@ -613,9 +598,9 @@ void PurchasingManager::iterate_purchase() {
                     }
                     model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, nullptr, storage->economic_agent);
                     if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                        error("optimization is roundoff limited (for " << purchasing_connections.size() << " inputs)");
+                        throw log::error(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
                     } else {
-                        warning("optimization is roundoff limited (for " << purchasing_connections.size() << " inputs)");
+                        log::warning(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
                     }
                 }
             } else if (opt.maxtime_reached()) {
@@ -624,12 +609,12 @@ void PurchasingManager::iterate_purchase() {
                 }
                 model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, nullptr, storage->economic_agent);
                 if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                    error("optimization timed out (for " << purchasing_connections.size() << " inputs)");
+                    throw log::error(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
                 } else {
-                    warning("optimization timed out (for " << purchasing_connections.size() << " inputs)");
+                    log::warning(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
                 }
             } else {
-                warning("optimization finished with " << opt.last_result_description());
+                log::warning(this, "optimization finished with ", opt.last_result_description());
             }
         }
         optimized_value_ = unscaled_objective(opt.optimized_value());
@@ -658,12 +643,12 @@ void PurchasingManager::iterate_purchase() {
 
         if constexpr (options::OPTIMIZATION_WARNINGS) {
             if (round(demand_request_D.get_quantity()) > round(FlowQuantity(unscaled_D_r(upper_bounds[r], purchasing_connections[r])))) {
-                warning(purchasing_connections[r]->id() << ": upper limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_max: "
-                                                        << upper_bounds[r] << " D_star: " << purchasing_connections[r]->initial_flow_Z_star().get_quantity());
+                log::warning(this, purchasing_connections[r]->id(), ": upper limit overshot in optimization D_r: ", demand_request_D.get_quantity(),
+                             " D_max: ", upper_bounds[r], " D_star: ", purchasing_connections[r]->initial_flow_Z_star().get_quantity());
             }
             if (round(demand_request_D.get_quantity()) < round(FlowQuantity(unscaled_D_r(lower_bounds[r], purchasing_connections[r])))) {
-                warning(purchasing_connections[r]->id() << ": lower limit overshot in optimization D_r: " << demand_request_D.get_quantity() << " D_min: "
-                                                        << lower_bounds[r] << " D_star: " << purchasing_connections[r]->initial_flow_Z_star().get_quantity());
+                log::warning(this, purchasing_connections[r]->id(), ": lower limit overshot in optimization D_r: ", demand_request_D.get_quantity(),
+                             " D_min: ", lower_bounds[r], " D_star: ", purchasing_connections[r]->initial_flow_Z_star().get_quantity());
             }
         }
         purchasing_connections[r]->send_demand_request_D(round(demand_request_D));
@@ -688,10 +673,10 @@ FlowQuantity PurchasingManager::calc_analytical_approximation_X_max(const Busine
 
 void PurchasingManager::print_details() const {
     if constexpr (options::DEBUGGING) {
-        info(business_connections.size() << " inputs:  I_star= " << storage->initial_input_flow_I_star().get_quantity());
+        log::info(this, business_connections.size(), " inputs:  I_star= ", storage->initial_input_flow_I_star().get_quantity());
         for (const auto& bc : business_connections) {
-            info("    " << bc->id() << ":  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity() << "  X_star= " << std::setw(11)
-                        << bc->seller->firm->initial_production_X_star().get_quantity());
+            log::info(this, "    ", bc->id(), ":  Z_star= ", std::setw(11), bc->initial_flow_Z_star().get_quantity(), "  X_star= ", std::setw(11),
+                      bc->seller->firm->initial_production_X_star().get_quantity());
         }
     }
 }

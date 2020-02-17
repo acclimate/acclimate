@@ -24,9 +24,11 @@
 #include <memory>
 #include <utility>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/GeoConnection.h"
 #include "model/GeoPoint.h"
+#include "model/Model.h"
 
 namespace acclimate {
 
@@ -45,7 +47,7 @@ GeoLocation::~GeoLocation() {
 }
 
 void GeoLocation::set_centroid(std::unique_ptr<GeoPoint>& centroid_p) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     centroid_m = std::move(centroid_p);
 }
 

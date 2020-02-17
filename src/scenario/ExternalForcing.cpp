@@ -33,7 +33,7 @@ ExternalForcing::ExternalForcing(std::string filename_p, const std::string& vari
     try {
         file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::read, netCDF::NcFile::nc4);
     } catch (netCDF::exceptions::NcException& ex) {
-        error_("Could not open '" + filename + "'");
+        throw log::error("Could not open '", filename, "'");
     }
     variable = file->getVar(variable_name);
     time_variable = file->getVar("time");
@@ -58,7 +58,7 @@ std::string ExternalForcing::calendar_str() const {
         time_variable.getAtt("calendar").getValues(res);
         return res;
     } catch (netCDF::exceptions::NcException& e) {
-        error_("Could not read calendar attribute in " << filename << ": " << e.what());
+        throw log::error("Could not read calendar attribute in ", filename, ": ", e.what());
     }
 }
 
@@ -68,7 +68,7 @@ std::string ExternalForcing::time_units_str() const {
         time_variable.getAtt("units").getValues(res);
         return res;
     } catch (netCDF::exceptions::NcException& e) {
-        error_("could not read time units attribute in " << filename << ": " << e.what());
+        throw log::error("could not read time units attribute in ", filename, ": ", e.what());
     }
 }
 }  // namespace acclimate

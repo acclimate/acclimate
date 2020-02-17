@@ -52,7 +52,7 @@ static int get_algorithm(const settings::hstring& name) {
         case settings::hstring::hash("var2"):
             return NLOPT_LD_VAR2;
         default:
-            error_("unknown optimization alorithm '" << name << "'");
+            throw log::error("unknown optimization alorithm '", name, "'");
     }
 }
 

@@ -23,12 +23,14 @@
 #include <algorithm>
 #include <fstream>
 #include <memory>
+#include <numeric>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "MRIOIndexSet.h"
 #include "MRIOTable.h"
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/BusinessConnection.h"
 #include "model/Consumer.h"
@@ -186,7 +188,7 @@ void ModelInitializer::clean_network() {
         consumer_count = 0;
         needs_cleaning = false;
         if constexpr (options::CLEANUP_INFO) {
-            info("Cleaning up...");
+            log::info(this, "Cleaning up...");
         }
         for (auto& region : model()->regions) {
             for (auto economic_agent = region->economic_agents.begin(); economic_agent != region->economic_agents.end();) {
@@ -206,18 +208,18 @@ void ModelInitializer::clean_network() {
 
                         if constexpr (options::CLEANUP_INFO) {
                             if (value_added <= 0.0) {
-                                warning(firm->id() << ": removed (value added only " << value_added << ")");
+                                log::warning(this, firm->id(), ": removed (value added only ", value_added, ")");
                             } else if (firm->sales_manager->business_connections.empty()
                                        || (firm->sales_manager->business_connections.size() == 1 && firm->self_supply_connection() != nullptr)) {
-                                warning(firm->id() << ": removed (no outgoing connection)");
+                                log::warning(this, firm->id(), ": removed (no outgoing connection)");
                             } else {
-                                warning(firm->id() << ": removed (no incoming connection)");
+                                log::warning(this, firm->id(), ": removed (no incoming connection)");
                             }
                         }
                         // Alter initial_input_flow of buying economic agents
                         for (auto& business_connection : firm->sales_manager->business_connections) {
                             if (business_connection->buyer == nullptr) {
-                                error("Buyer invalid");
+                                throw log::error(this, "Buyer invalid");
                             }
                             if (!business_connection->buyer->storage->subtract_initial_flow_Z_star(business_connection->initial_flow_Z_star())) {
                                 business_connection->buyer->remove_business_connection(business_connection.get());
@@ -228,7 +230,7 @@ void ModelInitializer::clean_network() {
                         for (auto& storage : firm->input_storages) {
                             for (auto& business_connection : storage->purchasing_manager->business_connections) {
                                 if (business_connection->seller == nullptr) {
-                                    error("Seller invalid");
+                                    throw log::error(this, "Seller invalid");
                                 }
                                 business_connection->seller->firm->subtract_initial_production_X_star(business_connection->initial_flow_Z_star());
                                 business_connection->seller->remove_business_connection(business_connection.get());
@@ -247,7 +249,7 @@ void ModelInitializer::clean_network() {
 
                     if (consumer->input_storages.empty()) {
                         if constexpr (options::CLEANUP_INFO) {
-                            warning(consumer->id() << ": removed (no incoming connection)");
+                            log::warning(this, consumer->id(), ": removed (no incoming connection)");
                         }
                         // Clean up memory of consumer
                         economic_agent = region->economic_agents.erase(economic_agent);
@@ -256,15 +258,15 @@ void ModelInitializer::clean_network() {
                         ++consumer_count;
                     }
                 } else {
-                    error("Unknown economic agent type");
+                    throw log::error(this, "Unknown economic agent type");
                 }
             }
         }
     }
-    info("Number of firms: " << firm_count);
-    info("Number of consumers: " << consumer_count);
+    log::info(this, "Number of firms: ", firm_count);
+    log::info(this, "Number of consumers: ", consumer_count);
     if (firm_count == 0 && consumer_count == 0) {
-        error("No economic agents present");
+        throw log::error(this, "No economic agents present");
     }
 }
 
@@ -291,17 +293,17 @@ void ModelInitializer::print_network_characteristics() const {
             if (firm_count > 0) {
                 average_transport_delay_region /= FloatType(firm_count);
                 if constexpr (options::CLEANUP_INFO) {
-                    info(region->id() << ": number of firms: " << firm_count << " average transport delay: " << average_transport_delay_region);
+                    log::info(this, region->id(), ": number of firms: ", firm_count, " average transport delay: ", average_transport_delay_region);
                     average_transport_delay += average_transport_delay_region;
                 }
             } else {
                 ++region_wo_firm_count;
-                warning(region->id() << ": no firm");
+                log::warning(this, region->id(), ": no firm");
             }
         }
         if constexpr (options::CLEANUP_INFO) {
             average_transport_delay /= FloatType(model()->regions.size() - region_wo_firm_count);
-            info("Average transport delay: " << average_transport_delay);
+            log::info(this, "Average transport delay: ", average_transport_delay);
         }
     }
 }
@@ -337,17 +339,17 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
         } else if (s == "region") {
             type_region = i;
         } else {
-            error("Unknown transport node type '" << s << "'");
+            throw log::error(this, "Unknown transport node type '", s, "'");
         }
     }
     if (type_port < 0) {
-        error("No transport node type for ports found");
+        throw log::error(this, "No transport node type for ports found");
     }
     if (type_region < 0) {
-        error("No transport node type for regions found");
+        throw log::error(this, "No transport node type for regions found");
     }
     if (type_sea < 0) {
-        error("No transport node type for seas found");
+        throw log::error(this, "No transport node type for seas found");
     }
 
     const auto input_size = file.getDim("index").getSize();
@@ -417,7 +419,7 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
     // find cheapest connections
     bool done = false;
     while (!done) {
-        info("Find cheapest paths iteration...");
+        log::info(this, "Find cheapest paths iteration...");
         done = true;
         for (std::size_t i = 0; i < size; ++i) {
             for (std::size_t j = 0; j < size; ++j) {
@@ -451,12 +453,11 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
                     if (p2->used) {  // regions are already marked used
                         auto& path = paths[i * size + j].points();
                         if (path.empty()) {
-                            error("No roadsea transport connection from " << ids[input_indices[i]] << " to " << ids[input_indices[j]]);
-                        } else {
-                            for (std::size_t k = 1; k < path.size() - 1; ++k) {
-                                found = found || !path[k]->used;
-                                path[k]->used = true;
-                            }
+                            throw log::error(this, "No roadsea transport connection from ", ids[input_indices[i]], " to ", ids[input_indices[j]]);
+                        }
+                        for (std::size_t k = 1; k < path.size() - 1; ++k) {
+                            found = found || !path[k]->used;
+                            path[k]->used = true;
                         }
                     }
                 }
@@ -551,7 +552,7 @@ void ModelInitializer::read_centroids_netcdf(const std::string& filename) {
 
     for (auto& region_from : model()->regions) {
         if (region_from->centroid() == nullptr) {
-            error("Centroid for " << region_from->id() << " not found");
+            throw log::error(this, "Centroid for ", region_from->id(), " not found");
         }
         for (auto& region_to : model()->regions) {
             if (region_from == region_to) {
@@ -617,7 +618,7 @@ void ModelInitializer::read_transport_times_csv(const std::string& index_filenam
     std::vector<Region*> regions;
     std::ifstream index_file(index_filename.c_str());
     if (!index_file) {
-        error("Could not open index file '" << index_filename << "'");
+        throw log::error(this, "Could not open index file '", index_filename, "'");
     }
     unsigned int index = 0;
     while (true) {
@@ -632,7 +633,7 @@ void ModelInitializer::read_transport_times_csv(const std::string& index_filenam
 
         std::string region_name;
         if (!getline(ss, region_name, ',')) {
-            error("Unexpected end in index file");
+            throw log::error(this, "Unexpected end in index file");
         }
         if (!region_name.empty() && region_name[region_name.size() - 1] == '\r') {
             region_name.erase(region_name.size() - 1);
@@ -645,7 +646,7 @@ void ModelInitializer::read_transport_times_csv(const std::string& index_filenam
 
     std::ifstream transport_delays_file(filename.c_str());
     if (!transport_delays_file) {
-        error("Could not open transport delays file '" << filename << "'");
+        throw log::error(this, "Could not open transport delays file '", filename, "'");
     }
 
     TransportDelay transport_delay_tau = 1;
@@ -653,7 +654,7 @@ void ModelInitializer::read_transport_times_csv(const std::string& index_filenam
 
     for (std::size_t row = 0; row < regions.size(); ++row) {
         if (!getline(transport_delays_file, transport_line)) {
-            error("Index and transport_delays are not consistent: Not enough rows");
+            throw log::error(this, "Index and transport_delays are not consistent: Not enough rows");
         }
         if (transport_line.empty() || (transport_line.length() == 1 && transport_line[0] == '\r')) {
             --row;
@@ -667,7 +668,7 @@ void ModelInitializer::read_transport_times_csv(const std::string& index_filenam
 
             for (std::size_t col = 0; col < row; ++col) {
                 if (!getline(transport_string_stream, transport_str, ',')) {
-                    error("Index and transport_delays are not consistent: Not enough columns in row " << row);
+                    throw log::error(this, "Index and transport_delays are not consistent: Not enough columns in row ", row);
                 }
                 if (!transport_str.empty() && transport_str[transport_str.size() - 1] == '\r') {
                     transport_str.erase(transport_str.size() - 1);
@@ -677,7 +678,7 @@ void ModelInitializer::read_transport_times_csv(const std::string& index_filenam
                 if (region_to != nullptr && region_from != region_to) {
                     transport_delay_tau = std::stoi(transport_str);
                     if (transport_delay_tau <= 0) {
-                        error("Transport delay not valid: " << transport_delay_tau << " in col " << col << " in row " << row);
+                        throw log::error(this, "Transport delay not valid: ", transport_delay_tau, " in col ", col, " in row ", row);
                     }
                     create_simple_transport_connection(region_from, region_to,
                                                        transport_delay_tau - 1);  // -1 for backwards compatibility
@@ -692,7 +693,7 @@ void ModelInitializer::build_artificial_network() {
     const auto closed = network["closed"].as<bool>(false);
     const auto skewness = network["skewness"].as<unsigned int>();
     if (skewness < 1) {
-        error("Skewness must be >= 1");
+        throw log::error(this, "Skewness must be >= 1");
     }
     const auto sectors_cnt = network["sectors"].as<unsigned int>();
     for (std::size_t i = 0; i < sectors_cnt; ++i) {
@@ -711,21 +712,21 @@ void ModelInitializer::build_artificial_network() {
     const Flow double_flow = Flow(FlowQuantity(2.0), Price(1.0));
     for (std::size_t r = 0; r < regions_cnt; ++r) {
         for (std::size_t i = 0; i < sectors_cnt; ++i) {
-            info(model()->sectors[i + 1]->firms[r]->id()
-                 << "->" << model()->sectors[(i + 1) % sectors_cnt + 1]->firms[r]->id() << " = " << flow.get_quantity());
+            log::info(this, model()->sectors[i + 1]->firms[r]->id(), "->", model()->sectors[(i + 1) % sectors_cnt + 1]->firms[r]->id(), " = ",
+                      flow.get_quantity());
             initialize_connection(model()->sectors[i + 1]->firms[r], model()->sectors[(i + 1) % sectors_cnt + 1]->firms[r], flow);
             if (!closed && r == regions_cnt - 1) {
-                info(model()->sectors[i + 1]->firms[r]->id()
-                     << "->" << model()->find_consumer(model()->regions[r].get())->id() << " = " << double_flow.get_quantity());
+                log::info(this, model()->sectors[i + 1]->firms[r]->id(), "->", model()->find_consumer(model()->regions[r].get())->id(), " = ",
+                          double_flow.get_quantity());
                 initialize_connection(model()->sectors[i + 1]->firms[r], model()->find_consumer(model()->regions[r].get()), double_flow);
             } else {
-                info(model()->sectors[i + 1]->firms[r]->id()
-                     << "->" << model()->find_consumer(model()->regions[r].get())->id() << " = " << flow.get_quantity());
+                log::info(this, model()->sectors[i + 1]->firms[r]->id(), "->", model()->find_consumer(model()->regions[r].get())->id(), " = ",
+                          flow.get_quantity());
                 initialize_connection(model()->sectors[i + 1]->firms[r], model()->find_consumer(model()->regions[r].get()), flow);
             }
             if (closed || r < regions_cnt - 1) {
-                info(model()->sectors[i + 1]->firms[r]->id()
-                     << "->" << model()->sectors[(i + skewness) % sectors_cnt + 1]->firms[(r + 1) % regions_cnt]->id() << " = " << flow.get_quantity());
+                log::info(this, model()->sectors[i + 1]->firms[r]->id(), "->",
+                          model()->sectors[(i + skewness) % sectors_cnt + 1]->firms[(r + 1) % regions_cnt]->id(), " = ", flow.get_quantity());
                 initialize_connection(model()->sectors[i + 1]->firms[r], model()->sectors[(i + skewness) % sectors_cnt + 1]->firms[(r + 1) % regions_cnt],
                                       flow);
             }
@@ -747,7 +748,7 @@ void ModelInitializer::build_agent_network_from_table(const mrio::Table<FloatTyp
                 consumer = add_consumer(region);
                 economic_agents.push_back(consumer);
             } else {
-                error("Duplicate consumer for region " << region_name);
+                throw log::error(this, "Duplicate consumer for region ", region_name);
             }
         } else {
             Sector* sector = add_sector(sector_name);
@@ -755,7 +756,7 @@ void ModelInitializer::build_agent_network_from_table(const mrio::Table<FloatTyp
             if (firm == nullptr) {
                 firm = add_firm(sector, region);
                 if (firm == nullptr) {
-                    error("Could not add firm");
+                    throw log::error(this, "Could not add firm");
                 }
             }
             economic_agents.push_back(firm);
@@ -791,12 +792,12 @@ void ModelInitializer::build_agent_network() {
             const auto& index_filename = network["index"].as<std::string>();
             std::ifstream index_file(index_filename.c_str(), std::ios::in | std::ios::binary);
             if (!index_file) {
-                error("Could not open index file '" << index_filename << "'");
+                throw log::error(this, "Could not open index file '", index_filename, "'");
             }
             const auto& filename = network["file"].as<std::string>();
             std::ifstream flows_file(filename.c_str(), std::ios::in | std::ios::binary);
             if (!flows_file) {
-                error("Could not open flows file '" << filename << "'");
+                throw log::error(this, "Could not open flows file '", filename, "'");
             }
             mrio::Table<FloatType, std::size_t> table;
             const auto flow_threshold = network["threshold"].as<FloatType>();
@@ -817,7 +818,7 @@ void ModelInitializer::build_agent_network() {
             return;
         } break;
         default:
-            error("Unknown network type '" << type << "'");
+            throw log::error(this, "Unknown network type '", type, "'");
     }
 }
 
@@ -846,7 +847,7 @@ void ModelInitializer::build_transport_network() {
             read_transport_network_netcdf(transport["file"].as<std::string>());
             break;
         default:
-            error("Unknown transport type '" << type << "'");
+            throw log::error(this, "Unknown transport type '", type, "'");
     }
 }
 

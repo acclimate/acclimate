@@ -69,12 +69,12 @@ EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, con
     for (const auto& sector_name : sectors) {
         Sector* sector = model->find_sector(sector_name);
         if (sector == nullptr) {
-            error_("sector '" + std::string(sector_name) + "' not found");
+            throw log::error(this, "sector '", sector_name, "' not found");
         }
         for (const auto& region_name : regions) {
             Firm* firm = model->find_firm(sector, region_name);
             if (firm == nullptr) {
-                warning_("firm '" + std::string(sector_name) + ":" + std::string(region_name) + "' not found");
+                log::warning(this, "firm '", sector_name, ":", region_name, "' not found");
             }
             firms.push_back(firm);
             forcings.push_back(1.0);

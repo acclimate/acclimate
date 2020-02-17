@@ -27,7 +27,9 @@
 #include <ostream>
 #include <utility>
 
+#include "ModelRun.h"
 #include "acclimate.h"
+#include "model/Model.h"
 #include "netcdftools.h"
 
 namespace acclimate {
@@ -41,7 +43,7 @@ void RasteredData<T>::read_boundaries(const netCDF::NcFile* file) {
             if (x_var.isNull()) {
                 x_var = file->getVar("longitude");
                 if (x_var.isNull()) {
-                    error("No longitude variable found in '" << filename << "'");
+                    throw log::error("No longitude variable found in '", filename, "'");
                 }
             }
         }
@@ -62,7 +64,7 @@ void RasteredData<T>::read_boundaries(const netCDF::NcFile* file) {
             if (y_var.isNull()) {
                 y_var = file->getVar("latitude");
                 if (y_var.isNull()) {
-                    error("No latitude variable found in '" << filename << "'");
+                    throw log::error("No latitude variable found in '", filename, "'");
                 }
             }
         }
@@ -90,11 +92,11 @@ RasteredData<T>::RasteredData(std::string filename_p, const std::string& variabl
     try {
         file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::read);
     } catch (netCDF::exceptions::NcException& ex) {
-        error("Could not open '" + filename + "'");
+        throw log::error("Could not open '", filename, "'");
     }
     netCDF::NcVar variable = file->getVar(variable_name);
     if (variable.isNull()) {
-        error("Cannot find variable '" << variable_name << "' in '" << filename << "'");
+        throw log::error("Cannot find variable '", variable_name, "' in '", filename, "'");
     }
     read_boundaries(file.get());
     data.reset(new T[y_count * x_count]);

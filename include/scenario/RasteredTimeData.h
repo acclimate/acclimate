@@ -33,7 +33,6 @@ class RasteredTimeData : public RasteredData<T>, public ExternalForcing {
   private:
     using RasteredData<T>::read_boundaries;
     using RasteredData<T>::data;
-    using RasteredData<T>::id;
     using RasteredData<T>::x_count;
     using RasteredData<T>::y_count;
     using RasteredData<T>::filename;

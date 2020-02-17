@@ -23,10 +23,12 @@
 #include <algorithm>
 #include <memory>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/BusinessConnection.h"
 #include "model/EconomicAgent.h"
 #include "model/GeoEntity.h"
+#include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/SalesManager.h"
 #include "model/Storage.h"
@@ -59,7 +61,7 @@ TransportChainLink::~TransportChainLink() {
 FloatType TransportChainLink::get_passage() const { return forcing_nu; }
 
 void TransportChainLink::push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star) {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     Flow flow_to_push(0.0);
     if (!transport_queue.empty()) {
         auto front_flow_Z = transport_queue[pos];
@@ -93,21 +95,18 @@ void TransportChainLink::push_flow_Z(const Flow& flow_Z, const FlowQuantity& ini
 }
 
 void TransportChainLink::set_forcing_nu(Forcing forcing_nu_p) {
-    assertstep(SCENARIO);
+    debug::assertstep(this, IterationStep::SCENARIO);
     forcing_nu = forcing_nu_p;
 }
 
 Flow TransportChainLink::get_total_flow() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    Flow res(0.0);
-    for (const auto& f : transport_queue) {  // TODO use std::accumulate
-        res += f.current;
-    }
-    return res + overflow;
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    return overflow
+           + std::accumulate(std::begin(transport_queue), std::end(transport_queue), Flow(0.0), [](Flow f, const auto& q) { return std::move(f) + q.current; });
 }
 
 Flow TransportChainLink::get_disequilibrium() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
     for (const auto& f : transport_queue) {
         res.add_possibly_negative(absdiff(f.current, f.initial));
@@ -116,21 +115,17 @@ Flow TransportChainLink::get_disequilibrium() const {
 }
 
 FloatType TransportChainLink::get_stddeviation() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    FloatType res = 0.0;
-    for (const auto& f : transport_queue) {  // TODO use std::accumulate
-        res += to_float((absdiff(f.current, f.initial)).get_quantity()) * to_float((absdiff(f.current, f.initial)).get_quantity());
-    }
-    return res;
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    return std::accumulate(std::begin(transport_queue), std::end(transport_queue), 0.0, [](FloatType v, const auto& q) {
+        return v + to_float((absdiff(q.current, q.initial)).get_quantity()) * to_float((absdiff(q.current, q.initial)).get_quantity());
+    });
 }
 
 FlowQuantity TransportChainLink::get_flow_deficit() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    FlowQuantity res(0.0);
-    for (const auto& f : transport_queue) {  // TODO use std::accumulate
-        res += round(f.initial - f.current.get_quantity());
-    }
-    return round(res - overflow.get_quantity());
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    return round(std::accumulate(std::begin(transport_queue), std::end(transport_queue), FlowQuantity(0.0),
+                                 [](FlowQuantity v, const auto& q) { return std::move(v) + round(q.initial - q.current.get_quantity()); })
+                 - overflow.get_quantity());
 }
 
 Model* TransportChainLink::model() const { return business_connection->model(); }

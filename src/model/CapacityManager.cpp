@@ -23,8 +23,10 @@
 #include <memory>
 #include <vector>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/Firm.h"
+#include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/SalesManager.h"
 #include "model/Storage.h"
@@ -41,7 +43,7 @@ Ratio CapacityManager::get_desired_production_capacity_p_tilde() const { return 
 Ratio CapacityManager::get_possible_production_capacity_p_hat() const { return possible_production_X_hat_ / firm->initial_production_X_star(); }
 
 void CapacityManager::calc_possible_and_desired_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     possible_production_X_hat_ = get_possible_production_X_hat();
     desired_production_X_tilde_ = firm->sales_manager->sum_demand_requests_D();
 }
@@ -52,22 +54,25 @@ std::string CapacityManager::id() const { return firm->id(); }
 
 void CapacityManager::print_inputs() const {
     if constexpr (options::DEBUGGING) {
-        info(id() << ": " << firm->input_storages.size() << " inputs:");
+        log::info(this, firm->input_storages.size(), " inputs:");
         for (const auto& is : firm->input_storages) {
             Flow possible_use_U_hat = is->get_possible_use_U_hat();
-            info("    " << is->id() << ":"
+            log::info("    ", is->id(), ":"
 
-                        << "  U_hat= " << std::setw(11) << possible_use_U_hat.get_quantity()
+                      ,
+                      "  U_hat= ", std::setw(11), possible_use_U_hat.get_quantity()
 
-                        << "  n_hat= " << std::setw(11) << possible_use_U_hat.get_price()
+                                                      ,
+                      "  n_hat= ", std::setw(11), possible_use_U_hat.get_price()
 
-                        << "  n_hat*a= " << std::setw(11) << (possible_use_U_hat.get_price() * is->get_technology_coefficient_a()));
+                                                      ,
+                      "  n_hat*a= ", std::setw(11), (possible_use_U_hat.get_price() * is->get_technology_coefficient_a()));
         }
     }
 }
 
 Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
-    assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
+    debug::assertstepor(this, IterationStep::CONSUMPTION_AND_PRODUCTION, IterationStep::EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     auto unit_commodity_costs = Price(0.0);
 
@@ -99,19 +104,19 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
 }
 
 Flow CapacityManager::get_possible_production_X_hat() const {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     bool consider_transport_in_production_costs = false;
     return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false);
 }
 
 Flow CapacityManager::estimate_possible_production_X_hat() const {
-    assertstep(EXPECTATION);
+    debug::assertstep(this, IterationStep::EXPECTATION);
     bool consider_transport_in_production_costs = true;
     return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true);
 }
 
 Flow CapacityManager::calc_production_X() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     calc_possible_and_desired_production();
     return firm->sales_manager->calc_production_X();
 }

@@ -111,7 +111,7 @@ void ArrayOutput::internal_iterate_begin() {
 const typename ArrayOutput::Variable& ArrayOutput::get_variable(const hstring& fullname) const {
     const auto it = variables.find(fullname);
     if (it == variables.end()) {
-        error("Variable '" << fullname << "' not found");
+        throw log::error(this, "Variable '", fullname, "' not found");
     }
     return it->second;
 }

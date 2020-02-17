@@ -38,7 +38,7 @@ namespace acclimate {
 Consumer::Consumer(Region* region_p) : EconomicAgent(region_p->model()->consumption_sector, region_p, EconomicAgent::Type::CONSUMER) {}
 
 void Consumer::iterate_consumption_and_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     for (const auto& is : input_storages) {
         Flow possible_used_flow_U_hat = is->get_possible_use_U_hat();  // Price(U_hat) = Price of used flow
         Price reservation_price(0.0);
@@ -65,17 +65,17 @@ void Consumer::iterate_consumption_and_production() {
     }
 }
 
-void Consumer::iterate_expectation() { assertstep(EXPECTATION); }
+void Consumer::iterate_expectation() { debug::assertstep(this, IterationStep::EXPECTATION); }
 
 void Consumer::iterate_purchase() {
-    assertstep(PURCHASE);
+    debug::assertstep(this, IterationStep::PURCHASE);
     for (const auto& is : input_storages) {
         is->purchasing_manager->iterate_purchase();
     }
 }
 
 void Consumer::iterate_investment() {
-    // assertstep(INVESTMENT);
+    // debug::assertstep(this, IterationStep::INVESTMENT);
     // for (const auto& is : input_storages) {
     //     is->purchasing_manager->iterate_investment();
     // }
@@ -83,7 +83,7 @@ void Consumer::iterate_investment() {
 
 void Consumer::print_details() const {
     if constexpr (options::DEBUGGING) {
-        info(id() << ":");
+        log::info(this);
         for (const auto& is : input_storages) {
             is->purchasing_manager->print_details();
         }

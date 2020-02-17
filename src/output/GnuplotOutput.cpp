@@ -26,6 +26,7 @@
 #include <string>
 #include <utility>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/Model.h"
 #include "model/Region.h"
@@ -42,7 +43,7 @@ GnuplotOutput::GnuplotOutput(const settings::SettingsNode& settings_p, Model* mo
 
 void GnuplotOutput::initialize() {
     if (!output_node.has("file")) {
-        error("Output file name not given");
+        throw log::error(this, "Output file name not given");
     }
     const auto filename = output_node["file"].template as<std::string>();
     file.open(filename.c_str(), std::ofstream::out);

@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <string>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
@@ -40,7 +41,7 @@ Flooding::Flooding(const settings::SettingsNode& settings_p, const settings::Set
             const auto& sector_name = sector_node.as<std::string>();
             const auto& sector = model_p->find_sector(sector_name);
             if (sector == nullptr) {
-                error("could not find sector " << sector_name);
+                throw log::error(this, "could not find sector ", sector_name);
             }
             sectors.push_back(sector->index());
         }

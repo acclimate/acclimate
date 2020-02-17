@@ -64,7 +64,7 @@ void NetCDFOutput::initialize() {
     }
     file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::replace, netCDF::NcFile::nc4);
     if (!file) {
-        error("Could not create output file " << filename);
+        throw log::error(this, "Could not create output file ", filename);
     }
 
     dim_time = file->addDim("time");
@@ -205,7 +205,7 @@ void NetCDFOutput::checkpoint_stop() {
 void NetCDFOutput::checkpoint_resume() {
     file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::write, netCDF::NcFile::nc4);
     if (!file) {
-        error("Could not open output file " << filename);
+        throw log::error(this, "Could not open output file ", filename);
     }
 }
 

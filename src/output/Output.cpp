@@ -61,7 +61,7 @@ void Output::start() {
 inline void Output::parameter_not_found(const std::string& name) const {
     UNUSED(name);
     if (model()->is_first_timestep()) {
-        warning("Parameter '" << name << "' unknown");
+        log::warning(this, "Parameter '", name, "' unknown");
     }
 }
 
@@ -577,7 +577,7 @@ void Output::iterate() {
                                             }
                                         }
                                     } else {
-                                        warning("Region " << it["region"].as<std::string>() << " not found");
+                                        log::warning(this, "Region ", it["region"].as<std::string>(), " not found");
                                     }
                                 }
                             } else {
@@ -590,7 +590,7 @@ void Output::iterate() {
                                             internal_end_target();
                                         }
                                     } else {
-                                        warning("Sector " << it["sector"].as<std::string>() << " not found");
+                                        log::warning(this, "Sector ", it["sector"].as<std::string>(), " not found");
                                     }
                                 } else {
                                     const Firm* p = model()->find_firm(it["sector"].as<std::string>(), it["region"].as<std::string>());
@@ -599,7 +599,7 @@ void Output::iterate() {
                                         write_firm_parameters(p, it);
                                         internal_end_target();
                                     } else {
-                                        warning("Firm " << it["sector"].as<std::string>() << ":" << it["region"].as<std::string>() << " not found");
+                                        log::warning(this, "Firm ", it["sector"].as<std::string>(), ":", it["region"].as<std::string>(), " not found");
                                     }
                                 }
                             }
@@ -618,7 +618,7 @@ void Output::iterate() {
                                     write_firm_parameters(p, it);
                                     internal_end_target();
                                 } else {
-                                    warning("Firm " << it["sector"].as<std::string>() << ":" << it["region"].as<std::string>() << " not found");
+                                    log::warning(this, "Firm ", it["sector"].as<std::string>(), ":", it["region"].as<std::string>(), " not found");
                                 }
                             }
                         }
@@ -643,7 +643,7 @@ void Output::iterate() {
                                 write_consumer_parameters(c, it);
                                 internal_end_target();
                             } else {
-                                warning("Consumer " << it["region"].as<std::string>() << " not found");
+                                log::warning(this, "Consumer ", it["region"].as<std::string>(), " not found");
                             }
                         }
                     } break;
@@ -700,7 +700,7 @@ void Output::iterate() {
                             const hstring& name = observable2.as<hstring>();
                             switch (name) {
                                 case hstring::hash("total_current_proxy_sum"):
-                                    error("total_current_proxy_sum not supported anymore");  // TODO Remove after scenario cleanup
+                                    throw log::error(this, "total_current_proxy_sum not supported anymore");  // TODO Remove after scenario cleanup
                             }
                         }
                         for (const auto& region : model()->regions) {

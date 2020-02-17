@@ -42,40 +42,37 @@ namespace acclimate {
 SalesManager::SalesManager(Firm* firm_p) : firm(firm_p) {}
 
 void SalesManager::add_demand_request_D(const Demand& demand_request_D) {
-    assertstep(PURCHASE);
+    debug::assertstep(this, IterationStep::PURCHASE);
     firm->sector->add_demand_request_D(demand_request_D);
     sum_demand_requests_D_lock.call([&]() { sum_demand_requests_D_ += demand_request_D; });
 }
 
 void SalesManager::add_initial_demand_request_D_star(const Demand& initial_demand_request_D_star) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     sum_demand_requests_D_ += initial_demand_request_D_star;
 }
 
 void SalesManager::subtract_initial_demand_request_D_star(const Demand& initial_demand_request_D_star) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     sum_demand_requests_D_ -= initial_demand_request_D_star;
 }
 
 Flow SalesManager::get_transport_flow() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
-    Flow res = Flow(0.0);
-    for (const auto& bc : business_connections) {  // TODO use std::accumulate
-        res += bc->get_transport_flow();
-    }
-    return res;
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    return std::accumulate(std::begin(business_connections), std::end(business_connections), Flow(0.0),
+                           [](Flow f, const auto& bc) { return std::move(f) + bc->get_transport_flow(); });
 }
 
 bool SalesManager::remove_business_connection(BusinessConnection* business_connection) {
     auto it = std::find_if(business_connections.begin(), business_connections.end(),
                            [business_connection](const std::shared_ptr<BusinessConnection>& it) { return it.get() == business_connection; });
     if (it == std::end(business_connections)) {
-        error("Business connection " << business_connection->id() << " not found");
+        throw log::error(this, "Business connection ", business_connection->id(), " not found");
     }
     business_connections.erase(it);
     if constexpr (options::DEBUGGING) {
         if (business_connections.empty()) {
-            assertstep(INITIALIZATION);
+            debug::assertstep(this, IterationStep::INITIALIZATION);
             return true;
         }
     }
@@ -93,12 +90,12 @@ Model* SalesManager::model() const { return firm->model(); }
 std::string SalesManager::id() const { return firm->id(); }
 
 const Demand& SalesManager::sum_demand_requests_D() const {
-    assertstepnot(PURCHASE);
+    debug::assertstepnot(this, IterationStep::PURCHASE);
     return sum_demand_requests_D_;
 }
 
 Flow SalesManager::calc_production_X() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     assert(!business_connections.empty());
     sum_demand_requests_D_ = round(sum_demand_requests_D_);
 
@@ -138,9 +135,8 @@ Flow SalesManager::calc_production_X() {
     return communicated_parameters_.production_X;
 }
 
-void SalesManager::distribute(const Flow& _) {
-    UNUSED(_);
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+void SalesManager::distribute(const Flow&) {
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     assert(!business_connections.empty());
     // push all flows
     if (communicated_parameters_.production_X.get_quantity() <= 0.0) {  // no production
@@ -246,8 +242,8 @@ void SalesManager::distribute(const Flow& _) {
         }
         if constexpr (options::DEBUGGING) {
             if (pushed_flows < business_connections.size()) {
-                debug(pushed_flows);
-                debug(business_connections.size());
+                log::info(this, pushed_flows);
+                log::info(this, business_connections.size());
             }
             assert(pushed_flows == business_connections.size());
         }
@@ -255,7 +251,7 @@ void SalesManager::distribute(const Flow& _) {
 }
 
 std::tuple<Flow, Price> SalesManager::calc_supply_distribution_scenario(const Flow& possible_production_X_hat_p) {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
 
     // find first (in order) connection with zero demand
     auto first_zero_connection = std::find_if(
@@ -271,7 +267,7 @@ std::tuple<Flow, Price> SalesManager::calc_supply_distribution_scenario(const Fl
         // no production due to supply shortage or forcing == 0
 
         if (firm->forcing() <= 0.0) {
-            warning("no production due to total forcing");
+            log::warning(this, "no production due to total forcing");
         } else {
             model()->run()->event(EventType::NO_PRODUCTION_SUPPLY_SHORTAGE, firm);
         }
@@ -416,7 +412,7 @@ std::tuple<Flow, Price> SalesManager::calc_supply_distribution_scenario(const Fl
     }
     // no production
     model()->run()->event(EventType::NO_PRODUCTION_HIGH_COSTS, firm);
-    warning("no production because of high costs / too low priced demand requests");
+    log::warning(this, "no production because of high costs / too low priced demand requests");
     supply_distribution_scenario.connection_not_served_completely = business_connections.begin();
     supply_distribution_scenario.flow_not_served_completely = Flow(0.0);
 
@@ -427,7 +423,7 @@ std::tuple<Flow, Price> SalesManager::calc_supply_distribution_scenario(const Fl
 }
 
 std::tuple<Flow, Price> SalesManager::calc_expected_supply_distribution_scenario(const Flow& possible_production_X_hat_p) {
-    assertstep(EXPECTATION);
+    debug::assertstep(this, IterationStep::EXPECTATION);
     // find first (in order) connection with zero demand
     auto first_zero_connection = std::find_if(
         business_connections.begin(), business_connections.end(),
@@ -441,7 +437,7 @@ std::tuple<Flow, Price> SalesManager::calc_expected_supply_distribution_scenario
         // no production due to supply shortage or forcing <= 0
 
         if (firm->forcing() <= 0.0) {
-            warning("no expected production due to total forcing");
+            log::warning(this, "no expected production due to total forcing");
         } else {
             model()->run()->event(EventType::NO_EXP_PRODUCTION_SUPPLY_SHORTAGE, firm);
         }
@@ -616,7 +612,7 @@ std::tuple<Flow, Price> SalesManager::calc_expected_supply_distribution_scenario
 }
 
 void SalesManager::iterate_expectation() {
-    assertstep(EXPECTATION);
+    debug::assertstep(this, IterationStep::EXPECTATION);
     estimated_possible_production_X_hat_ = firm->capacity_manager->estimate_possible_production_X_hat();
     if (estimated_possible_production_X_hat_.get_quantity() > 0.0) {
         estimated_possible_production_X_hat_.set_price(estimated_possible_production_X_hat_.get_price()
@@ -634,7 +630,7 @@ Price SalesManager::get_initial_unit_variable_production_costs() const {
 Price SalesManager::get_initial_markup() const { return std::min(Price(1.0) - initial_unit_commodity_costs, firm->sector->parameters().initial_markup); }
 
 void SalesManager::initialize() {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     initial_unit_commodity_costs = Price(0.0);
     for (auto& input_storage : firm->input_storages) {
         initial_unit_commodity_costs += Price(1.0) * input_storage->get_technology_coefficient_a();
@@ -664,8 +660,8 @@ FlowValue SalesManager::calc_production_extension_penalty_P(const FlowQuantity& 
     }
     // in production extension
     if (production_quantity_X > firm->forced_maximal_production_quantity_lambda_beta_X_star()) {
-        debug(production_quantity_X);
-        debug(firm->forced_maximal_production_quantity_lambda_beta_X_star());
+        log::info(this, production_quantity_X);
+        log::info(this, firm->forced_maximal_production_quantity_lambda_beta_X_star());
     }
     assert(production_quantity_X <= firm->forced_maximal_production_quantity_lambda_beta_X_star());
     return firm->sector->parameters().price_increase_production_extension / (2 * firm->forced_initial_production_quantity_lambda_X_star())
@@ -698,7 +694,7 @@ Price SalesManager::calc_marginal_production_costs(const FlowQuantity& productio
 
 FlowQuantity SalesManager::analytic_solution_in_production_extension(const Price& unit_production_costs_n_c,
                                                                      const Price& price_demand_request_not_served_completely) const {
-    assertstepor(CONSUMPTION_AND_PRODUCTION, EXPECTATION);
+    debug::assertstepor(this, IterationStep::CONSUMPTION_AND_PRODUCTION, IterationStep::EXPECTATION);
     assert(price_demand_request_not_served_completely >= unit_production_costs_n_c);
     return round(
         firm->forced_initial_production_quantity_lambda_X_star()
@@ -783,22 +779,22 @@ Flow SalesManager::search_root_bisec_expectation(const FlowQuantity& left,
 }
 
 const SupplyParameters& SalesManager::communicated_parameters() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return communicated_parameters_;
 }
 
 const FlowValue& SalesManager::total_production_costs_C() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return total_production_costs_C_;
 }
 
 const FlowValue& SalesManager::total_revenue_R() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return total_revenue_R_;
 }
 
 void SalesManager::impose_tax(const Ratio tax_p) {
-    assertstep(EXPECTATION);
+    debug::assertstep(this, IterationStep::EXPECTATION);
     tax_ = tax_p;
 }
 
@@ -806,9 +802,9 @@ FlowValue SalesManager::get_tax() const { return tax_ * firm->production_X().get
 
 void SalesManager::print_details() const {
     if constexpr (options::DEBUGGING) {
-        info(business_connections.size() << " outputs:");
+        log::info(this, business_connections.size(), " outputs:");
         for (const auto& bc : business_connections) {
-            info("    " << bc->id() << "  Z_star= " << std::setw(11) << bc->initial_flow_Z_star().get_quantity());
+            log::info(this, "    ", bc->id(), "  Z_star= ", std::setw(11), bc->initial_flow_Z_star().get_quantity());
         }
     }
 }
@@ -825,7 +821,7 @@ static void print_row(T1 a, T2 b, T3 c) {
 
 void SalesManager::print_parameters() const {
     if constexpr (options::DEBUGGING) {
-        info("parameters:");
+        log::info(this, "parameters:");
         print_row("X", communicated_parameters_.production_X.get_quantity());
         print_row("X_exp", communicated_parameters_.expected_production_X.get_quantity());
         print_row("X_hat", communicated_parameters_.possible_production_X_hat);

@@ -27,6 +27,7 @@
 #include <ostream>
 #include <utility>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/Model.h"
 #include "scenario/ExternalForcing.h"
@@ -65,17 +66,17 @@ std::string ExternalScenario::fill_template(const std::string& in) const {
 static unsigned int get_ref_year(const std::string& time_str) {
     if (time_str.substr(0, 11) == "days since ") {
         if (time_str.substr(15, 4) != "-1-1" && time_str.substr(15, 6) != "-01-01") {
-            error_("Forcing file has invalid time units");
+            throw log::error(this, "Forcing file has invalid time units");
         }
         return std::stoi(time_str.substr(11, 4));
     }
     if (time_str.substr(0, 14) == "seconds since ") {
         if (time_str.substr(19, 13) != "-1-1 00:00:00" && time_str.substr(19, 15) != "-01-01 00:00:00") {
-            error_("Forcing file has invalid time units");
+            throw log::error(this, "Forcing file has invalid time units");
         }
         return std::stoi(time_str.substr(14, 4));
     }
-    error_("Forcing file has invalid time units");
+    throw log::error(this, "Forcing file has invalid time units");
 }
 
 bool ExternalScenario::next_forcing_file() {
@@ -88,16 +89,16 @@ bool ExternalScenario::next_forcing_file() {
     }
     if (!expression.empty()) {
         const std::string final_expression = fill_template(expression);
-        info("Invoking '" << final_expression << "'");
+        log::info(this, "Invoking '", final_expression, "'");
         if (std::system(final_expression.c_str()) != 0) {  // NOLINT(cert-env33-c)
-            error("Invoking '" << final_expression << "' raised an error");
+            throw log::error(this, "Invoking '", final_expression, "' raised an error");
         }
     }
     const std::string filename = fill_template(forcing_file);
     forcing.reset(read_forcing_file(filename, variable_name));
     const std::string new_calendar_str = forcing->calendar_str();
     if (!calendar_str_.empty() && new_calendar_str != calendar_str_) {
-        error("Forcing files differ in calendar");
+        throw log::error(this, "Forcing files differ in calendar");
     }
     calendar_str_ = new_calendar_str;
     const std::string new_time_units_str = forcing->time_units_str();
@@ -110,14 +111,14 @@ bool ExternalScenario::next_forcing_file() {
         const unsigned int ref_year = get_ref_year(time_units_str_);
         const unsigned int new_ref_year = get_ref_year(new_time_units_str);
         if (new_ref_year != ref_year + 1) {
-            error("Forcing files differ by more than a year");
+            throw log::error(this, "Forcing files differ by more than a year");
         }
         time_offset = model()->time() + model()->delta_t();
     }
     time_units_str_ = new_time_units_str;
     next_time = Time(forcing->next_timestep()) / time_step_width;
     if (next_time < 0) {
-        error("Empty forcing in " << filename);
+        throw log::error(this, "Empty forcing in ", filename);
     }
     next_time += time_offset;
     file_index++;
@@ -145,14 +146,14 @@ void ExternalScenario::start() {
     if (forcing_node.has("expression")) {
         expression = forcing_node["expression"].as<std::string>();
         if (system(nullptr) == 0) {
-            error("Cannot invoke system commands");
+            throw log::error(this, "Cannot invoke system commands");
         }
     } else {
         expression = "";
     }
 
     if (!next_forcing_file()) {
-        error("Empty forcing");
+        throw log::error(this, "Empty forcing");
     }
 }
 

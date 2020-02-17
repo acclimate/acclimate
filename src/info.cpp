@@ -50,4 +50,5 @@ const char* info =
     "no"
 #endif
     ;
+
 }  // namespace acclimate

@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/Government.h"
 #include "model/Model.h"
@@ -58,7 +59,7 @@ bool Taxes::iterate() {
             if (tax.has("region") && tax["region"].as<std::string>() != "ALL") {
                 Region* region = model()->find_region(tax["region"].as<std::string>());
                 if (region == nullptr) {
-                    error("Could not find region '" << tax["region"] << "'");
+                    throw log::error(this, "Could not find region '", tax["region"], "'");
                 }
                 region->government()->define_tax(sector, tax_ratio);
             } else {

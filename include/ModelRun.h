@@ -38,42 +38,31 @@ class SettingsNode;
 
 namespace acclimate {
 
-enum class IterationStep {
-    INITIALIZATION,
-    SCENARIO,
-    CONSUMPTION_AND_PRODUCTION,
-    EXPECTATION,
-    PURCHASE,
-    INVESTMENT,
-    OUTPUT,
-    CLEANUP,
-    UNDEFINED  // to be used when function is not used yet
-};
+#define ACCLIMATE_ADD_EVENTS                                  \
+    ADD_ENUM_ITEM(NO_CONSUMPTION)                             \
+    ADD_ENUM_ITEM(STORAGE_UNDERRUN)                           \
+    ADD_ENUM_ITEM(STORAGE_OVERRUN)                            \
+    ADD_ENUM_ITEM(NO_PRODUCTION_SUPPLY_SHORTAGE)              \
+    ADD_ENUM_ITEM(NO_PRODUCTION_DEMAND_QUANTITY_SHORTAGE)     \
+    ADD_ENUM_ITEM(NO_PRODUCTION_DEMAND_VALUE_SHORTAGE)        \
+    ADD_ENUM_ITEM(NO_PRODUCTION_HIGH_COSTS)                   \
+    ADD_ENUM_ITEM(NO_EXP_PRODUCTION_SUPPLY_SHORTAGE)          \
+    ADD_ENUM_ITEM(NO_EXP_PRODUCTION_DEMAND_QUANTITY_SHORTAGE) \
+    ADD_ENUM_ITEM(NO_EXP_PRODUCTION_DEMAND_VALUE_SHORTAGE)    \
+    ADD_ENUM_ITEM(NO_EXP_PRODUCTION_HIGH_COSTS)               \
+    ADD_ENUM_ITEM(DEMAND_FULFILL_HISTORY_UNDERFLOW)           \
+    ADD_ENUM_ITEM(OPTIMIZER_TIMEOUT)                          \
+    ADD_ENUM_ITEM(OPTIMIZER_ROUNDOFF_LIMITED)
 
-#define ACCLIMATE_ADD_EVENTS                              \
-    ADD_EVENT(NO_CONSUMPTION)                             \
-    ADD_EVENT(STORAGE_UNDERRUN)                           \
-    ADD_EVENT(STORAGE_OVERRUN)                            \
-    ADD_EVENT(NO_PRODUCTION_SUPPLY_SHORTAGE)              \
-    ADD_EVENT(NO_PRODUCTION_DEMAND_QUANTITY_SHORTAGE)     \
-    ADD_EVENT(NO_PRODUCTION_DEMAND_VALUE_SHORTAGE)        \
-    ADD_EVENT(NO_PRODUCTION_HIGH_COSTS)                   \
-    ADD_EVENT(NO_EXP_PRODUCTION_SUPPLY_SHORTAGE)          \
-    ADD_EVENT(NO_EXP_PRODUCTION_DEMAND_QUANTITY_SHORTAGE) \
-    ADD_EVENT(NO_EXP_PRODUCTION_DEMAND_VALUE_SHORTAGE)    \
-    ADD_EVENT(NO_EXP_PRODUCTION_HIGH_COSTS)               \
-    ADD_EVENT(DEMAND_FULFILL_HISTORY_UNDERFLOW)           \
-    ADD_EVENT(OPTIMIZER_TIMEOUT)                          \
-    ADD_EVENT(OPTIMIZER_ROUNDOFF_LIMITED)                 \
-    ADD_EVENT(OPTIMIZER_FAILURE)
-
-#define ADD_EVENT(e) e,
+#define ADD_ENUM_ITEM(e) e,
 enum class EventType : unsigned char { ACCLIMATE_ADD_EVENTS };
-#undef ADD_EVENT
+#undef ADD_ENUM_ITEM
 
-#define ADD_EVENT(e) __STRING(e),
-constexpr std::array<const char*, static_cast<int>(EventType::OPTIMIZER_FAILURE) + 1> EVENT_NAMES = {ACCLIMATE_ADD_EVENTS};
-#undef ADD_EVENT
+#define ADD_ENUM_ITEM(e) __STRING(e),
+constexpr std::array<const char*, static_cast<int>(EventType::OPTIMIZER_ROUNDOFF_LIMITED) + 1> EVENT_NAMES = {ACCLIMATE_ADD_EVENTS};
+#undef ADD_ENUM_ITEM
+
+#undef ACCLIMATE_ADD_EVENTS
 
 class Model;
 class Scenario;

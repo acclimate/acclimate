@@ -20,8 +20,10 @@
 
 #include "model/GeoConnection.h"
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/GeoLocation.h"
+#include "model/Model.h"
 
 namespace acclimate {
 
@@ -36,7 +38,7 @@ void GeoConnection::invalidate_location(const GeoLocation* location) {
     } else if (location2 == location) {
         location2 = nullptr;
     } else {
-        error("Location not part of this connection or already invalidated");
+        throw log::error(this, "Location not part of this connection or already invalidated");
     }
 }
 

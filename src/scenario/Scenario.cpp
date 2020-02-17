@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/CapacityManager.h"
 #include "model/Consumer.h"
@@ -88,7 +89,8 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
                         if (firm != nullptr) {
                             set_firm_property(firm, it, reset);
                         } else {
-                            error("Firm " << it["sector"].template as<std::string>() << ":" << it["region"].template as<std::string>() << " not found");
+                            throw log::error(this, "Firm ", it["sector"].template as<std::string>(), ":", it["region"].template as<std::string>(),
+                                             " not found");
                         }
                     } else {
                         Sector* sector = model()->find_sector(it["sector"].template as<std::string>());
@@ -97,7 +99,7 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
                                 set_firm_property(p, it, reset);
                             }
                         } else {
-                            error("Sector " << it["sector"].template as<std::string>() << " not found");
+                            throw log::error(this, "Sector ", it["sector"].template as<std::string>(), " not found");
                         }
                     }
                 } else {
@@ -110,7 +112,7 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
                                 }
                             }
                         } else {
-                            error("Region " << it["region"].template as<std::string>() << " not found");
+                            throw log::error(this, "Region ", it["region"].template as<std::string>(), " not found");
                         }
                     } else {
                         for (auto& s : model()->sectors) {
@@ -126,7 +128,7 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
                     if (consumer != nullptr) {
                         set_consumer_property(consumer, it, reset);
                     } else {
-                        error("Consumer " << it["region"].template as<std::string>() << " not found");
+                        throw log::error(this, "Consumer ", it["region"].template as<std::string>(), " not found");
                     }
                 } else {
                     for (auto& r : model()->regions) {
@@ -143,7 +145,7 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
                     if (location != nullptr) {
                         set_location_property(location, it, reset);
                     } else {
-                        error("Sea route " << it["sea_route"].template as<std::string>() << " not found");
+                        throw log::error(this, "Sea route ", it["sea_route"].template as<std::string>(), " not found");
                     }
                 }
             }

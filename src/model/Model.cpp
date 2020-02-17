@@ -26,6 +26,7 @@
 #include <random>
 #include <type_traits>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
@@ -75,7 +76,7 @@ void Model::start() {
 }
 
 void Model::iterate_consumption_and_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < sectors.size(); ++i) {  // NOLINT(modernize-loop-convert)
         sectors[i]->iterate_consumption_and_production();
@@ -94,7 +95,7 @@ void Model::iterate_consumption_and_production() {
 }
 
 void Model::iterate_expectation() {
-    assertstep(EXPECTATION);
+    debug::assertstep(this, IterationStep::EXPECTATION);
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
         regions[i]->iterate_expectation();
@@ -108,7 +109,7 @@ void Model::iterate_expectation() {
 }
 
 void Model::iterate_purchase() {
-    assertstep(PURCHASE);
+    debug::assertstep(this, IterationStep::PURCHASE);
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
         regions[i]->iterate_purchase();
@@ -128,7 +129,7 @@ void Model::iterate_purchase() {
 }
 
 void Model::iterate_investment() {
-    assertstep(INVESTMENT);
+    debug::assertstep(this, IterationStep::INVESTMENT);
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
         regions[i]->iterate_investment();
@@ -199,38 +200,38 @@ GeoLocation* Model::find_location(const std::string& name) const {
 }
 
 void Model::switch_registers() {
-    assertstep(SCENARIO);
+    debug::assertstep(this, IterationStep::SCENARIO);
     current_register_ = 1 - current_register_;
 }
 
 void Model::tick() {
-    assertstep(SCENARIO);
+    debug::assertstep(this, IterationStep::SCENARIO);
     time_ += delta_t_;
     ++timestep_;
 }
 
 void Model::set_delta_t(const Time& delta_t_p) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     delta_t_ = delta_t_p;
 }
 
 void Model::set_start_time(const Time& start_time) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     start_time_ = start_time;
 }
 
 void Model::set_stop_time(const Time& stop_time) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     stop_time_ = stop_time;
 }
 
 void Model::no_self_supply(bool no_self_supply_p) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     no_self_supply_ = no_self_supply_p;
 }
 
 Parameters::ModelParameters& Model::parameters_writable() {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     return parameters_;
 }
 

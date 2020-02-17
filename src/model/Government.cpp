@@ -21,8 +21,10 @@
 #include "model/Government.h"
 
 #include <memory>
+#include <numeric>
 #include <utility>
 
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/Firm.h"
 #include "model/Model.h"
@@ -34,43 +36,43 @@ namespace acclimate {
 Government::Government(Region* region_p) : region(region_p), budget_(0.0) {}
 
 void Government::collect_tax() {
-    assertstep(EXPECTATION);
+    debug::assertstep(this, IterationStep::EXPECTATION);
     for (const auto& ps : taxed_firms) {  // TODO use std::accumulate
         budget_ += ps.first->sales_manager->get_tax() * model()->delta_t();
     }
 }
 
-void Government::redistribute_tax() { assertstep(INVESTMENT); }
+void Government::redistribute_tax() { debug::assertstep(this, IterationStep::INVESTMENT); }
 
 void Government::impose_tax() {
-    assertstep(EXPECTATION);
+    debug::assertstep(this, IterationStep::EXPECTATION);
     for (const auto& ps : taxed_firms) {
-        info("Imposing tax on " << ps.first->id() << " (" << ps.second << ")");
+        log::info(this, "Imposing tax on ", ps.first->id(), " (", ps.second, ")");
         ps.first->sales_manager->impose_tax(ps.second);
     }
 }
 
 void Government::define_tax(const std::string& sector, const Ratio& tax_ratio_p) {
-    assertstep(SCENARIO);
-    info("Defining tax on " << sector << ":" << region->id() << " (" << tax_ratio_p << ")");
+    debug::assertstep(this, IterationStep::SCENARIO);
+    log::info(this, "Defining tax on ", sector, ":", region->id(), " (", tax_ratio_p, ")");
     Firm* ps = model()->find_firm(sector, region->id());
     if (ps != nullptr) {
         taxed_firms[ps] = tax_ratio_p;
     }
 }
 
-void Government::iterate_consumption_and_production() { assertstep(CONSUMPTION_AND_PRODUCTION); }
+void Government::iterate_consumption_and_production() { debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION); }
 
 void Government::iterate_expectation() {
-    assertstep(EXPECTATION);
+    debug::assertstep(this, IterationStep::EXPECTATION);
     collect_tax();
     impose_tax();
 }
 
-void Government::iterate_purchase() { assertstep(PURCHASE); }
+void Government::iterate_purchase() { debug::assertstep(this, IterationStep::PURCHASE); }
 
 void Government::iterate_investment() {
-    assertstep(INVESTMENT);
+    debug::assertstep(this, IterationStep::INVESTMENT);
     redistribute_tax();
 }
 

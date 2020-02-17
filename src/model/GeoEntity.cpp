@@ -24,7 +24,9 @@
 #include <iterator>
 #include <ostream>
 
+#include "ModelRun.h"
 #include "acclimate.h"
+#include "model/Model.h"
 #include "model/TransportChainLink.h"
 
 namespace acclimate {
@@ -47,7 +49,7 @@ void GeoEntity::remove_transport_chain_link(TransportChainLink* transport_chain_
     auto it = std::find_if(transport_chain_links.begin(), transport_chain_links.end(),
                            [transport_chain_link](const TransportChainLink* it) { return it == transport_chain_link; });
     if (it == std::end(transport_chain_links)) {
-        error("Transport chain link " << transport_chain_link->id() << " not found");
+        throw log::error(this, "Transport chain link ", transport_chain_link->id(), " not found");
     }
     transport_chain_links.erase(it);
 }

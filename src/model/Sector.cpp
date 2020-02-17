@@ -22,7 +22,10 @@
 
 #include <utility>
 
+#include "ModelRun.h"
 #include "acclimate.h"
+#include "model/Firm.h"
+#include "model/Model.h"
 #include "settingsnode.h"
 
 namespace acclimate {
@@ -41,29 +44,29 @@ Sector::Sector(Model* model_p,
       transport_type(transport_type_p) {}
 
 void Sector::add_demand_request_D(const Demand& demand_request_D) {
-    assertstep(PURCHASE);
+    debug::assertstep(this, IterationStep::PURCHASE);
     total_demand_D_lock.call([&]() { total_demand_D_ += demand_request_D; });
 }
 
 void Sector::add_production_X(const Flow& production_X) {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     total_production_X_lock.call([&]() { total_production_X_m += production_X; });
 }
 
 void Sector::add_initial_production_X(const Flow& production_X) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     last_total_production_X_m += production_X;
     total_production_X_m += production_X;
 }
 
 void Sector::subtract_initial_production_X(const Flow& production_X) {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     last_total_production_X_m -= production_X;
     total_production_X_m -= production_X;
 }
 
 void Sector::iterate_consumption_and_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     total_demand_D_ = Demand(0.0);
     last_total_production_X_m = total_production_X_m;
     total_production_X_m = Flow(0.0);
@@ -87,7 +90,7 @@ Sector::TransportType Sector::map_transport_type(const settings::hstring& transp
         case settings::hstring::hash("roadsea"):
             return TransportType::ROADSEA;
         default:
-            error_("Unknown transport type " << transport_type);
+            throw log::error("Unknown transport type ", transport_type);
     }
 }
 
@@ -100,22 +103,22 @@ const char* Sector::unmap_transport_type(Sector::TransportType transport_type) {
         case TransportType::ROADSEA:
             return "roadsea";
         default:
-            error_("Unkown transport type");
+            throw log::error("Unkown transport type");
     }
 }
 
 const Demand& Sector::total_demand_D() const {
-    assertstepnot(PURCHASE);
+    debug::assertstepnot(this, IterationStep::PURCHASE);
     return total_demand_D_;
 }
 
 const Demand& Sector::total_production_X() const {
-    assertstepnot(CONSUMPTION_AND_PRODUCTION);
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return total_production_X_m;
 }
 
 Parameters::SectorParameters& Sector::parameters_writable() {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     return parameters_m;
 }
 

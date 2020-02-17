@@ -61,22 +61,22 @@ static void handle_fpe_error(int /* signal */) {
             return;
         }
         if ((exceptions & FE_OVERFLOW) != 0) {  // NOLINT(hicpp-signed-bitwise)
-            warning_("FPE_OVERFLOW");
+            log::warning("FPE_OVERFLOW");
         }
         if ((exceptions & FE_INVALID) != 0) {  // NOLINT(hicpp-signed-bitwise)
-            warning_("FPE_INVALID");
+            log::warning("FPE_INVALID");
         }
         if ((exceptions & FE_DIVBYZERO) != 0) {  // NOLINT(hicpp-signed-bitwise)
-            warning_("FPE_DIVBYZERO");
+            log::warning("FPE_DIVBYZERO");
         }
         if ((exceptions & FE_INEXACT) != 0) {  // NOLINT(hicpp-signed-bitwise)
-            warning_("FE_INEXACT");
+            log::warning("FE_INEXACT");
         }
         if ((exceptions & FE_UNDERFLOW) != 0) {  // NOLINT(hicpp-signed-bitwise)
-            warning_("FE_UNDERFLOW");
+            log::warning("FE_UNDERFLOW");
         }
         if constexpr (options::FATAL_FLOATING_POINT_EXCEPTIONS) {
-            error_("Floating point exception");
+            throw log::error("Floating point exception");
         }
     }
 }
@@ -133,7 +133,7 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
                 scenario = new EventSeriesScenario(settings, scenario_node, model);
                 break;
             default:
-                error_("Unknown scenario type '" << type << "'");
+                throw log::error("Unknown scenario type '", type, "'");
         }
         scenarios_m.emplace_back(scenario);
     }
@@ -170,7 +170,7 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
                 output = new ProgressOutput(settings, model, node);
                 break;
             default:
-                error_("Unknown output format '" << type << "'");
+                throw log::error("Unknown output format '", type, "'");
         }
         output->initialize();
         outputs_m.emplace_back(output);
@@ -179,11 +179,11 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
 
 void ModelRun::run() {
     if (has_run) {
-        error_("model has already run");
+        throw log::error("model has already run");
     }
     has_run = true;
 
-    info_("Starting model run on max. " << thread_count() << " threads");
+    log::info("Starting model run on max. ", thread_count(), " threads");
 
     step(IterationStep::INITIALIZATION);
 
@@ -203,7 +203,7 @@ void ModelRun::run() {
         for (const auto& scenario : scenarios_m) {
             scenario->iterate();
         }
-        info_("Iteration started");
+        log::info("Iteration started");
 
         model_m->switch_registers();
 
@@ -224,27 +224,27 @@ void ModelRun::run() {
         t0 = t1;
 
         step(IterationStep::OUTPUT);
-        info_("Iteration took " << duration_m << " ms");
+        log::info("Iteration took ", duration_m, " ms");
         for (const auto& output : outputs_m) {
             output->iterate();
         }
 
         if constexpr (options::DEBUGGING) {
             auto t2 = std::chrono::high_resolution_clock::now();
-            info_("Output took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count() << " ms");
+            log::info("Output took ", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count(), " ms");
             t0 = t2;
         }
 
         if constexpr (options::CHECKPOINTING) {
             if (checkpoint::is_scheduled) {
-                info_("Writing checkpoint");
+                log::info("Writing checkpoint");
                 for (const auto& output : outputs_m) {
                     output->checkpoint_stop();
                 }
 
                 checkpoint::write();
 
-                info_("Resuming from checkpoint");
+                log::info("Resuming from checkpoint");
                 t0 = std::chrono::high_resolution_clock::now();
                 for (const auto& output : outputs_m) {
                     output->checkpoint_resume();
@@ -273,37 +273,36 @@ ModelRun::~ModelRun() {
 }
 
 void ModelRun::event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) {
-    info_(EVENT_NAMES[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
-                                 << (region_from == nullptr ? "" : region_from->id()) << "->" << (sector_to == nullptr ? "" : sector_to->id())
-                                 << (sector_to != nullptr && region_to != nullptr ? ":" : "") << (region_to == nullptr ? "" : region_to->id())
-                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
+    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (sector_from == nullptr ? "" : sector_from->id()),
+              (sector_from != nullptr && region_from != nullptr ? ":" : ""), (region_from == nullptr ? "" : region_from->id()), "->",
+              (sector_to == nullptr ? "" : sector_to->id()), (sector_to != nullptr && region_to != nullptr ? ":" : ""),
+              (region_to == nullptr ? "" : region_to->id()), (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, sector_from, region_from, sector_to, region_to, value);
     }
 }
 
 void ModelRun::event(EventType type, const Sector* sector_from, const Region* region_from, const EconomicAgent* economic_agent_to, FloatType value) {
-    info_(EVENT_NAMES[(int)type] << " " << (sector_from == nullptr ? "" : sector_from->id()) << (sector_from != nullptr && region_from != nullptr ? ":" : "")
-                                 << (region_from == nullptr ? "" : region_from->id()) << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
-                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
+    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (sector_from == nullptr ? "" : sector_from->id()),
+              (sector_from != nullptr && region_from != nullptr ? ":" : ""), (region_from == nullptr ? "" : region_from->id()),
+              (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id()), (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, sector_from, region_from, economic_agent_to, value);
     }
 }
 
 void ModelRun::event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) {
-    info_(EVENT_NAMES[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id())
-                                 << (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id())
-                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
+    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (economic_agent_from == nullptr ? "" : economic_agent_from->id()),
+              (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id()), (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, economic_agent_from, economic_agent_to, value);
     }
 }
 
 void ModelRun::event(EventType type, const EconomicAgent* economic_agent_from, const Sector* sector_to, const Region* region_to, FloatType value) {
-    info_(EVENT_NAMES[(int)type] << " " << (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->")
-                                 << (sector_to == nullptr ? "" : sector_to->id() + ":") << (region_to == nullptr ? "" : region_to->id())
-                                 << (std::isnan(value) ? "" : " = " + std::to_string(value)));
+    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->"),
+              (sector_to == nullptr ? "" : sector_to->id() + ":"), (region_to == nullptr ? "" : region_to->id()),
+              (std::isnan(value) ? "" : " = " + std::to_string(value)));
     for (const auto& output : outputs_m) {
         output->event(type, economic_agent_from, sector_to, region_to, value);
     }

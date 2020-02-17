@@ -118,7 +118,6 @@ class RasteredData {
     template<typename T2>
     bool is_compatible(const RasteredData<T2>& other) const;
     T read(FloatType x_var, FloatType y_var) const;
-    virtual std::string id() const { return "RASTER " + filename; }
 };
 }  // namespace acclimate
 

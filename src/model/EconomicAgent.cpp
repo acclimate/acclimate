@@ -22,7 +22,9 @@
 
 #include <algorithm>
 
+#include "ModelRun.h"
 #include "acclimate.h"
+#include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
@@ -70,12 +72,12 @@ Model* EconomicAgent::model() const { return sector->model(); }
 std::string EconomicAgent::id() const { return sector->id() + ":" + region->id(); }
 
 Parameters::AgentParameters const& EconomicAgent::parameters_writable() const {
-    assertstep(INITIALIZATION);
+    debug::assertstep(this, IterationStep::INITIALIZATION);
     return parameters_;
 }
 
 void EconomicAgent::set_forcing(const Forcing& forcing_p) {
-    assertstep(SCENARIO);
+    debug::assertstep(this, IterationStep::SCENARIO);
     assert(forcing_p >= 0.0);
     forcing_ = forcing_p;
 }

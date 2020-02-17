@@ -25,8 +25,9 @@
 #include <cstddef>
 #include <ostream>
 
+#include "ModelRun.h"
 #include "acclimate.h"
-#include "model/Model.h"  // IWYU pragma: keep
+#include "model/Model.h"
 #include "netcdftools.h"
 #include "scenario/RasteredTimeData.h"
 #include "settingsnode.h"
@@ -41,10 +42,10 @@ template<class RegionForcingType>
 ExternalForcing* RasteredScenario<RegionForcingType>::read_forcing_file(const std::string& filename, const std::string& variable_name) {
     auto result = new RasteredTimeData<FloatType>(filename, variable_name);
     if (!result->is_compatible(*iso_raster)) {
-        info("ISO raster size is " << (*iso_raster / *result) << " of forcing");
-        error("Forcing and ISO raster not compatible in raster resolution");
+        log::info(this, "ISO raster size is ", (*iso_raster / *result), " of forcing");
+        throw log::error(this, "Forcing and ISO raster not compatible in raster resolution");
     }
-    info("Proxy size is " << (*proxy / *result) << " of forcing");
+    log::info(this, "Proxy size is ", (*proxy / *result), " of forcing");
     return result;
 }
 
@@ -61,7 +62,7 @@ void RasteredScenario<RegionForcingType>::internal_start() {
         const std::string& index_name = iso_node["index"].as<std::string>("index");
         netCDF::NcVar index_var = file->getVar(index_name);
         if (index_var.isNull()) {
-            error("Cannot find variable '" << index_name << "' in '" << filename << "'");
+            throw log::error(this, "Cannot find variable '", index_name, "' in '", filename, "'");
         }
         const std::size_t index_size = index_var.getDims()[0].getSize();
         region_forcings.reserve(index_size);
@@ -85,7 +86,7 @@ void RasteredScenario<RegionForcingType>::internal_start() {
         proxy.reset(new RasteredData<FloatType>(filename, variable));
     }
 
-    info("Proxy size is " << (*proxy / *iso_raster) << " of ISO raster");
+    log::info(this, "Proxy size is ", (*proxy / *iso_raster), " of ISO raster");
 }
 
 template<class RegionForcingType>
@@ -112,10 +113,10 @@ void RasteredScenario<RegionForcingType>::iterate_first_timestep() {
     if constexpr (options::DEBUGGING) {
         for (auto& r : region_forcings) {
             if (r.region) {
-                info(r.region->id() << ": proxy sum: " << r.proxy_sum);
+                log::info(this, r.region->id(), ": proxy sum: ", r.proxy_sum);
             }
         }
-        info("Total proxy sum: " << total_proxy_sum << " (" << total_proxy_sum_all << ")");
+        log::info(this, "Total proxy sum: ", total_proxy_sum, " (", total_proxy_sum_all, ")");
     }
 }
 
