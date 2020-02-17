@@ -37,9 +37,8 @@ Government::Government(Region* region_p) : region(region_p), budget_(0.0) {}
 
 void Government::collect_tax() {
     debug::assertstep(this, IterationStep::EXPECTATION);
-    for (const auto& ps : taxed_firms) {  // TODO use std::accumulate
-        budget_ += ps.first->sales_manager->get_tax() * model()->delta_t();
-    }
+    budget_ = std::accumulate(std::begin(taxed_firms), std::end(taxed_firms), Value(0.0),
+                              [this](Value v, const auto& firm) { return std::move(v) + firm.first->sales_manager->get_tax() * model()->delta_t(); });
 }
 
 void Government::redistribute_tax() { debug::assertstep(this, IterationStep::INVESTMENT); }

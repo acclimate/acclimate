@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <numeric>
 
 #include "ModelRun.h"
 #include "acclimate.h"

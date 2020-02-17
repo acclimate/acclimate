@@ -54,16 +54,15 @@ inline const Consumer* EconomicAgent::as_consumer() const {
 }
 
 Storage* EconomicAgent::find_input_storage(const std::string& sector_name) const {
-    for (const auto& is : input_storages) {  // TODO use find_if
-        if (is->sector->id() == sector_name) {
-            return is.get();
-        }
+    auto it = std::find_if(std::begin(input_storages), std::end(input_storages), [sector_name](const auto& is) { return is->sector->id() == sector_name; });
+    if (it == std::end(input_storages)) {
+        return nullptr;
     }
-    return nullptr;
+    return it->get();
 }
 
 void EconomicAgent::remove_storage(Storage* storage) {
-    auto it = std::find_if(input_storages.begin(), input_storages.end(), [storage](const std::unique_ptr<Storage>& it) { return it.get() == storage; });
+    auto it = std::find_if(std::begin(input_storages), std::end(input_storages), [storage](const auto& is) { return is.get() == storage; });
     input_storages.erase(it);
 }
 

@@ -36,7 +36,10 @@ GeoLocation::GeoLocation(Model* const model_m, TransportDelay delay_p, GeoLocati
     : GeoEntity(model_m, delay_p, GeoEntity::Type::LOCATION), type(type_p), id_m(std::move(id_p)) {}
 
 void GeoLocation::remove_connection(const GeoConnection* connection) {
-    auto it = std::find_if(connections.begin(), connections.end(), [connection](const std::shared_ptr<GeoConnection>& it) { return it.get() == connection; });
+    auto it = std::find_if(std::begin(connections), std::end(connections), [connection](const auto& c) { return c.get() == connection; });
+    if (it == std::end(connections)) {
+        throw log::error(this, "Connection ", connection->id(), " not found");
+    }
     connections.erase(it);
 }
 

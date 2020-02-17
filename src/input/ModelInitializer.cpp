@@ -195,10 +195,8 @@ void ModelInitializer::clean_network() {
                 if ((*economic_agent)->type == EconomicAgent::Type::FIRM) {
                     Firm* firm = (*economic_agent)->as_firm();
 
-                    auto input = FlowQuantity(0.0);
-                    for (const auto& input_storage : firm->input_storages) {  // TODO use std::accumulate
-                        input += input_storage->initial_input_flow_I_star().get_quantity();
-                    }
+                    auto input = std::accumulate(std::begin(firm->input_storages), std::end(firm->input_storages), FlowQuantity(0.0),
+                                                 [](FlowQuantity q, const auto& is) { return std::move(q) + is->initial_input_flow_I_star().get_quantity(); });
                     FloatType value_added = to_float(firm->initial_production_X_star().get_quantity() - input);
 
                     if (value_added <= 0.0 || firm->sales_manager->business_connections.empty()

@@ -46,8 +46,8 @@ GeoEntity::~GeoEntity() {
 }
 
 void GeoEntity::remove_transport_chain_link(TransportChainLink* transport_chain_link) {
-    auto it = std::find_if(transport_chain_links.begin(), transport_chain_links.end(),
-                           [transport_chain_link](const TransportChainLink* it) { return it == transport_chain_link; });
+    auto it = std::find_if(std::begin(transport_chain_links), std::end(transport_chain_links),
+                           [transport_chain_link](const auto l) { return l == transport_chain_link; });
     if (it == std::end(transport_chain_links)) {
         throw log::error(this, "Transport chain link ", transport_chain_link->id(), " not found");
     }

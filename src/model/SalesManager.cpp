@@ -25,6 +25,7 @@
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <numeric>
 
 #include "ModelRun.h"
 #include "acclimate.h"
@@ -64,8 +65,8 @@ Flow SalesManager::get_transport_flow() const {
 }
 
 bool SalesManager::remove_business_connection(BusinessConnection* business_connection) {
-    auto it = std::find_if(business_connections.begin(), business_connections.end(),
-                           [business_connection](const std::shared_ptr<BusinessConnection>& it) { return it.get() == business_connection; });
+    auto it = std::find_if(std::begin(business_connections), std::end(business_connections),
+                           [business_connection](const auto& bc) { return bc.get() == business_connection; });
     if (it == std::end(business_connections)) {
         throw log::error(this, "Business connection ", business_connection->id(), " not found");
     }
@@ -254,9 +255,9 @@ std::tuple<Flow, Price> SalesManager::calc_supply_distribution_scenario(const Fl
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
 
     // find first (in order) connection with zero demand
-    auto first_zero_connection = std::find_if(
-        business_connections.begin(), business_connections.end(),
-        [](const std::shared_ptr<BusinessConnection>& business_connection) { return business_connection->last_demand_request_D().get_quantity() <= 0.0; });
+    auto first_zero_connection = std::find_if(std::begin(business_connections), std::end(business_connections), [](const auto& business_connection) {
+        return business_connection->last_demand_request_D().get_quantity() <= 0.0;
+    });
 
     supply_distribution_scenario.connection_not_served_completely = first_zero_connection;
     total_production_costs_C_ = FlowValue(0.0);
@@ -425,9 +426,9 @@ std::tuple<Flow, Price> SalesManager::calc_supply_distribution_scenario(const Fl
 std::tuple<Flow, Price> SalesManager::calc_expected_supply_distribution_scenario(const Flow& possible_production_X_hat_p) {
     debug::assertstep(this, IterationStep::EXPECTATION);
     // find first (in order) connection with zero demand
-    auto first_zero_connection = std::find_if(
-        business_connections.begin(), business_connections.end(),
-        [](const std::shared_ptr<BusinessConnection>& business_connection) { return business_connection->last_demand_request_D().get_quantity() <= 0.0; });
+    auto first_zero_connection = std::find_if(std::begin(business_connections), std::end(business_connections), [](const auto& business_connection) {
+        return business_connection->last_demand_request_D().get_quantity() <= 0.0;
+    });
 
     supply_distribution_scenario.connection_not_served_completely = first_zero_connection;
     Price minimal_production_price = round(possible_production_X_hat_p.get_price());

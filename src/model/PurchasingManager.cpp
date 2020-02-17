@@ -50,8 +50,8 @@ PurchasingManager::PurchasingManager(Storage* storage_p) : storage(storage_p) {}
 void PurchasingManager::iterate_consumption_and_production() { debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION); }
 
 bool PurchasingManager::remove_business_connection(const BusinessConnection* business_connection) {
-    auto it = std::find_if(business_connections.begin(), business_connections.end(),
-                           [business_connection](const std::shared_ptr<BusinessConnection>& it) { return it.get() == business_connection; });
+    auto it = std::find_if(std::begin(business_connections), std::end(business_connections),
+                           [business_connection](const auto& bc) { return bc.get() == business_connection; });
     if (it == std::end(business_connections)) {
         throw log::error(this, "Business connection ", business_connection->id(), " not found");
     }

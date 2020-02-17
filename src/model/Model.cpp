@@ -62,9 +62,8 @@ void Model::start() {
     for (const auto& region : regions) {
         for (const auto& economic_agent : region->economic_agents) {
             economic_agents.emplace_back(std::make_pair(economic_agent.get(), 0));
-            for (const auto& is : economic_agent->input_storages) {  // TODO use std::transform
-                purchasing_managers.emplace_back(std::make_pair(is->purchasing_manager.get(), 0));
-            }
+            std::transform(std::begin(economic_agent->input_storages), std::end(economic_agent->input_storages), std::back_inserter(purchasing_managers),
+                           [](const auto& is) { return std::make_pair(is->purchasing_manager.get(), 0); });
         }
     }
     if constexpr (options::PARALLELIZATION) {
@@ -143,16 +142,16 @@ void Model::iterate_investment() {
 }
 
 Region* Model::find_region(const std::string& name) const {
-    auto it = std::find_if(regions.begin(), regions.end(), [name](const std::unique_ptr<Region>& it) { return it->id() == name; });
-    if (it == regions.end()) {
+    auto it = std::find_if(std::begin(regions), std::end(regions), [name](const auto& r) { return r->id() == name; });
+    if (it == std::end(regions)) {
         return nullptr;
     }
     return it->get();
 }
 
 Sector* Model::find_sector(const std::string& name) const {
-    auto it = std::find_if(sectors.begin(), sectors.end(), [name](const std::unique_ptr<Sector>& it) { return it->id() == name; });
-    if (it == sectors.end()) {
+    auto it = std::find_if(std::begin(sectors), std::end(sectors), [name](const auto& s) { return s->id() == name; });
+    if (it == std::end(sectors)) {
         return nullptr;
     }
     return it->get();
@@ -167,17 +166,17 @@ Firm* Model::find_firm(const std::string& sector_name, const std::string& region
 }
 
 Firm* Model::find_firm(Sector* sector, const std::string& region_name) const {
-    auto it = std::find_if(sector->firms.begin(), sector->firms.end(), [region_name](const Firm* it) { return it->region->id() == region_name; });
-    if (it == sector->firms.end()) {
+    auto it = std::find_if(std::begin(sector->firms), std::end(sector->firms), [region_name](const auto f) { return f->region->id() == region_name; });
+    if (it == std::end(sector->firms)) {
         return nullptr;
     }
     return *it;
 }
 
 Consumer* Model::find_consumer(Region* region) const {
-    auto it = std::find_if(region->economic_agents.begin(), region->economic_agents.end(),
-                           [](const std::unique_ptr<EconomicAgent>& it) { return it->type == EconomicAgent::Type::CONSUMER; });
-    if (it == region->economic_agents.end()) {
+    auto it = std::find_if(std::begin(region->economic_agents), std::end(region->economic_agents),
+                           [](const auto& ea) { return ea->type == EconomicAgent::Type::CONSUMER; });
+    if (it == std::end(region->economic_agents)) {
         return nullptr;
     }
     return it->get()->as_consumer();
@@ -192,8 +191,8 @@ Consumer* Model::find_consumer(const std::string& region_name) const {
 }
 
 GeoLocation* Model::find_location(const std::string& name) const {
-    auto it = std::find_if(other_locations.begin(), other_locations.end(), [name](const std::unique_ptr<GeoLocation>& it) { return it->id() == name; });
-    if (it == other_locations.end()) {
+    auto it = std::find_if(std::begin(other_locations), std::end(other_locations), [name](const auto& l) { return l->id() == name; });
+    if (it == std::end(other_locations)) {
         return nullptr;
     }
     return it->get();

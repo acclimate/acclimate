@@ -98,7 +98,7 @@ class SalesManager {
     const FlowValue& total_revenue_R() const;
     void impose_tax(const Ratio tax_p);
     FlowValue get_tax() const;
-    void distribute(const Flow& _);
+    void distribute();
     void initialize();
     void iterate_expectation();
     Flow get_transport_flow() const;

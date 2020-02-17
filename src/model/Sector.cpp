@@ -73,12 +73,11 @@ void Sector::iterate_consumption_and_production() {
 }
 
 void Sector::remove_firm(Firm* firm) {
-    for (auto it = firms.begin(); it != firms.end(); ++it) {  // TODO use find_if
-        if (*it == firm) {
-            firms.erase(it);
-            break;
-        }
+    auto it = std::find_if(std::begin(firms), std::end(firms), [firm](const auto f) { return f == firm; });
+    if (it == std::end(firms)) {
+        throw log::error(this, "Firm ", firm->id(), " not found");
     }
+    firms.erase(it);
 }
 
 Sector::TransportType Sector::map_transport_type(const settings::hstring& transport_type) {

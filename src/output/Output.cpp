@@ -23,6 +23,7 @@
 #include <ctime>
 #include <istream>
 #include <memory>
+#include <numeric>
 #include <utility>
 #include <vector>
 
@@ -167,42 +168,27 @@ bool Output::write_firm_parameter(const Firm* p, const hstring& name) {
 
 bool Output::write_economic_agent_parameter(const EconomicAgent* p, const hstring& name) {
     switch (name) {
-        case hstring::hash("demand"): {
-            auto demand = Demand(0.0);
-            for (const auto& is : p->input_storages) {  // TODO use std::accumulate
-                demand += is->purchasing_manager->demand_D();
-            }
-            internal_write_value(name, demand);
-        } break;
-        case hstring::hash("input_flow"): {
-            Flow input_flow = Flow(0.0);
-            for (const auto& is : p->input_storages) {  // TODO use std::accumulate
-                input_flow += is->last_input_flow_I();
-            }
-            internal_write_value(name, input_flow);
-        } break;
+        case hstring::hash("demand"):
+            internal_write_value(name, std::accumulate(std::begin(p->input_storages), std::end(p->input_storages), Demand(0.0),
+                                                       [](Demand d, const auto& is) { return std::move(d) + is->purchasing_manager->demand_D(); }));
+            break;
+        case hstring::hash("input_flow"):
+            internal_write_value(name, std::accumulate(std::begin(p->input_storages), std::end(p->input_storages), Demand(0.0),
+                                                       [](Demand d, const auto& is) { return std::move(d) + is->last_input_flow_I(); }));
+            break;
         case hstring::hash("used_flow"):
-        case hstring::hash("consumption"): {
-            Flow used_flow = Flow(0.0);
-            for (const auto& is : p->input_storages) {  // TODO use std::accumulate
-                used_flow += is->used_flow_U();
-            }
-            internal_write_value(name, used_flow);
-        } break;
-        case hstring::hash("business_connections"): {
-            int business_connections = 0;
-            for (const auto& is : p->input_storages) {  // TODO use std::accumulate
-                business_connections += is->purchasing_manager->business_connections.size();
-            }
-            internal_write_value(name, business_connections);
-        } break;
-        case hstring::hash("storage"): {
-            auto sum_storage_content = Stock(0.0);
-            for (const auto& is : p->input_storages) {  // TODO use std::accumulate
-                sum_storage_content += is->content_S();
-            }
-            internal_write_value(name, sum_storage_content);
-        } break;
+        case hstring::hash("consumption"):
+            internal_write_value(name, std::accumulate(std::begin(p->input_storages), std::end(p->input_storages), Demand(0.0),
+                                                       [](Demand d, const auto& is) { return std::move(d) + is->used_flow_U(); }));
+            break;
+        case hstring::hash("business_connections"):
+            internal_write_value(name, std::accumulate(std::begin(p->input_storages), std::end(p->input_storages), 0,
+                                                       [](int v, const auto& is) { return v + is->purchasing_manager->business_connections.size(); }));
+            break;
+        case hstring::hash("storage"):
+            internal_write_value(name, std::accumulate(std::begin(p->input_storages), std::end(p->input_storages), Stock(0.0),
+                                                       [](Stock s, const auto& is) { return std::move(s) + is->content_S(); }));
+            break;
         default:
             return false;
     }
