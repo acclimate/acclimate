@@ -63,20 +63,20 @@ std::string ExternalScenario::fill_template(const std::string& in) const {
     return ss.str();
 }
 
-static unsigned int get_ref_year(const std::string& time_str) {
+unsigned int ExternalScenario::get_ref_year(const std::string& filename, const std::string& time_str) {
     if (time_str.substr(0, 11) == "days since ") {
         if (time_str.substr(15, 4) != "-1-1" && time_str.substr(15, 6) != "-01-01") {
-            throw log::error(this, "Forcing file has invalid time units");
+            throw log::error(this, "Forcing file ", filename, " has invalid time units");
         }
         return std::stoi(time_str.substr(11, 4));
     }
     if (time_str.substr(0, 14) == "seconds since ") {
         if (time_str.substr(19, 13) != "-1-1 00:00:00" && time_str.substr(19, 15) != "-01-01 00:00:00") {
-            throw log::error(this, "Forcing file has invalid time units");
+            throw log::error(this, "Forcing file ", filename, " has invalid time units");
         }
         return std::stoi(time_str.substr(14, 4));
     }
-    throw log::error(this, "Forcing file has invalid time units");
+    throw log::error(this, "Forcing file ", filename, " has invalid time units");
 }
 
 bool ExternalScenario::next_forcing_file() {
@@ -108,8 +108,8 @@ bool ExternalScenario::next_forcing_file() {
         time_step_width = 1;
     }
     if (!time_units_str_.empty() && new_time_units_str != time_units_str_) {
-        const unsigned int ref_year = get_ref_year(time_units_str_);
-        const unsigned int new_ref_year = get_ref_year(new_time_units_str);
+        const unsigned int ref_year = get_ref_year(filename, time_units_str_);
+        const unsigned int new_ref_year = get_ref_year(filename, new_time_units_str);
         if (new_ref_year != ref_year + 1) {
             throw log::error(this, "Forcing files differ by more than a year");
         }

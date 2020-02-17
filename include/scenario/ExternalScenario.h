@@ -60,6 +60,7 @@ class ExternalScenario : public Scenario {
     using Scenario::set_firm_property;
     bool next_forcing_file();
     std::string fill_template(const std::string& in) const;
+    unsigned int get_ref_year(const std::string& filename, const std::string& time_str);
     virtual void internal_start() {}
     virtual void internal_iterate_start() {}
     virtual bool internal_iterate_end() { return true; }
