@@ -22,11 +22,8 @@
 
 #include <algorithm>
 #include <iterator>
-#include <ostream>
 
-#include "ModelRun.h"
 #include "acclimate.h"
-#include "model/Model.h"
 #include "model/TransportChainLink.h"
 
 namespace acclimate {

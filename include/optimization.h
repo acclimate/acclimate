@@ -21,10 +21,9 @@
 #ifndef OPTIMIZATION_H
 #define OPTIMIZATION_H
 
-#include <nlopt.h>
-
 #include <stdexcept>
 
+#include "nlopt.h"  // IWYU pragma: export
 #include "settingsnode.h"
 
 namespace acclimate::optimization {

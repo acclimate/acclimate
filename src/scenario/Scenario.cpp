@@ -22,11 +22,9 @@
 
 #include <cstdlib>
 #include <memory>
-#include <ostream>
 #include <utility>
 #include <vector>
 
-#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/CapacityManager.h"
 #include "model/Consumer.h"

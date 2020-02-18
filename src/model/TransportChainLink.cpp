@@ -21,15 +21,16 @@
 #include "model/TransportChainLink.h"
 
 #include <algorithm>
+#include <cmath>
+#include <iterator>
 #include <memory>
 #include <numeric>
+#include <utility>
 
-#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/BusinessConnection.h"
 #include "model/EconomicAgent.h"
 #include "model/GeoEntity.h"
-#include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/SalesManager.h"
 #include "model/Storage.h"
@@ -103,7 +104,7 @@ void TransportChainLink::set_forcing_nu(Forcing forcing_nu_p) {
 Flow TransportChainLink::get_total_flow() const {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return overflow
-           + std::accumulate(std::begin(transport_queue), std::end(transport_queue), Flow(0.0), [](Flow f, const auto& q) { return std::move(f) + q.current; });
+           + std::accumulate(std::begin(transport_queue), std::end(transport_queue), Flow(0.0), [](const Flow& f, const auto& q) { return f + q.current; });
 }
 
 Flow TransportChainLink::get_disequilibrium() const {

@@ -21,7 +21,6 @@
 #include "output/ArrayOutput.h"
 
 #include <limits>
-#include <ostream>
 #include <utility>
 
 #include "ModelRun.h"

@@ -21,14 +21,13 @@
 #include "model/GeoLocation.h"
 
 #include <algorithm>
+#include <iterator>
 #include <memory>
 #include <utility>
 
-#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/GeoConnection.h"
 #include "model/GeoPoint.h"
-#include "model/Model.h"
 
 namespace acclimate {
 

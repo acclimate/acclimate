@@ -27,7 +27,6 @@
 #include <ostream>
 #include <utility>
 
-#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/Model.h"
 #include "scenario/ExternalForcing.h"

@@ -26,7 +26,7 @@
 #include <iostream>
 #include <iterator>
 #include <numeric>
-#include <stdexcept>
+#include <utility>
 
 #include "ModelRun.h"
 #include "acclimate.h"
@@ -72,7 +72,7 @@ FlowQuantity PurchasingManager::get_flow_deficit() const {
 Flow PurchasingManager::get_transport_flow() const {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return std::accumulate(std::begin(business_connections), std::end(business_connections), Flow(0.0),
-                           [](Flow f, const auto& bc) { return std::move(f) + bc->get_transport_flow(); });
+                           [](const Flow& f, const auto& bc) { return f + bc->get_transport_flow(); });
 }
 
 Flow PurchasingManager::get_disequilibrium() const {
@@ -93,7 +93,7 @@ FloatType PurchasingManager::get_stddeviation() const {
 Flow PurchasingManager::get_sum_of_last_shipments() const {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return std::accumulate(std::begin(business_connections), std::end(business_connections), Flow(0.0),
-                           [](Flow f, const auto& bc) { return std::move(f) + bc->last_shipment_Z(); });
+                           [](const Flow& f, const auto& bc) { return f + bc->last_shipment_Z(); });
 }
 
 PurchasingManager::~PurchasingManager() {

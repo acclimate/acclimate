@@ -30,7 +30,6 @@
 
 #include "MRIOIndexSet.h"
 #include "MRIOTable.h"
-#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/BusinessConnection.h"
 #include "model/Consumer.h"

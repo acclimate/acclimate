@@ -23,14 +23,17 @@
 #include <algorithm>
 #include <cfenv>
 #include <chrono>
+#include <cmath>
 #include <csignal>
-#include <iostream>
 #include <string>
 
 #include "acclimate.h"
 #include "checkpointing.h"
 #include "input/ModelInitializer.h"
+#include "model/EconomicAgent.h"
 #include "model/Model.h"
+#include "model/Region.h"
+#include "model/Sector.h"
 #include "openmp.h"
 #include "output/ArrayOutput.h"
 #include "output/ConsoleOutput.h"

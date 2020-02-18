@@ -61,7 +61,7 @@ void SalesManager::subtract_initial_demand_request_D_star(const Demand& initial_
 Flow SalesManager::get_transport_flow() const {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return std::accumulate(std::begin(business_connections), std::end(business_connections), Flow(0.0),
-                           [](Flow f, const auto& bc) { return std::move(f) + bc->get_transport_flow(); });
+                           [](const Flow& f, const auto& bc) { return f + bc->get_transport_flow(); });
 }
 
 bool SalesManager::remove_business_connection(BusinessConnection* business_connection) {

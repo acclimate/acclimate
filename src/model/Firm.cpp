@@ -24,11 +24,9 @@
 #include <utility>
 #include <vector>
 
-#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
-#include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/SalesManager.h"
 #include "model/Sector.h"

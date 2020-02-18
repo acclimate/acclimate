@@ -25,6 +25,7 @@
 
 #include <cassert>
 #include <memory>
+#include <ostream>
 
 #include "types.h"  // IWYU pragma: export
 
@@ -50,6 +51,10 @@ constexpr std::array<const char*, static_cast<int>(IterationStep::UNDEFINED) + 1
 #undef ADD_ENUM_ITEM
 
 #undef ACCLIMATE_ADD_ITERATIONS_STEPS
+
+class Model;
+std::string timeinfo(const Model& m);
+IterationStep current_step(const Model& m);
 
 namespace log {
 
@@ -81,7 +86,7 @@ template<typename Arg, typename... Args>
 inline acclimate::exception error(Arg&& arg, Args&&... args) {
     std::ostringstream ss;
     if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
-        detail::to_stream(ss, arg->model()->run()->timeinfo(), ", ", arg->id(), ": ", std::forward<Args>(args)...);
+        detail::to_stream(ss, timeinfo(*arg->model()), ", ", arg->id(), ": ", std::forward<Args>(args)...);
     } else {
         detail::to_stream(ss, std::forward<Arg>(arg), std::forward<Args>(args)...);
     }
@@ -94,7 +99,7 @@ inline void warning(Arg&& arg, Args&&... args) {
 #pragma omp critical(output)
         {
             if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
-                detail::to_stream(std::cout, arg->model()->run()->timeinfo(), ", ", arg->id(), " Warning: ", std::forward<Args>(args)...);
+                detail::to_stream(std::cout, timeinfo(*arg->model()), ", ", arg->id(), " Warning: ", std::forward<Args>(args)...);
             } else {
                 detail::to_stream(std::cout, "Warning: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
             }
@@ -109,7 +114,7 @@ inline void info(Arg&& arg, Args&&... args) {
 #pragma omp critical(output)
         {
             if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
-                detail::to_stream(std::cout, arg->model()->run()->timeinfo(), ", ", arg->id(), ": ", std::forward<Args>(args)...);
+                detail::to_stream(std::cout, timeinfo(*arg->model()), ", ", arg->id(), ": ", std::forward<Args>(args)...);
             } else {
                 detail::to_stream(std::cout, std::forward<Arg>(arg), std::forward<Args>(args)...);
             }
@@ -125,7 +130,7 @@ namespace debug {
 template<class Caller>
 inline void assertstep(const Caller* c, IterationStep s) {
     if constexpr (options::DEBUGGING) {
-        if (c->model()->run()->step() != s) {
+        if (current_step(*c->model()) != s) {
             throw log::error(c, "should be in ", ITERATION_STEP_NAMES[static_cast<int>(s)], " step");
         }
     }
@@ -134,7 +139,7 @@ inline void assertstep(const Caller* c, IterationStep s) {
 template<class Caller>
 inline void assertstepnot(const Caller* c, IterationStep s) {
     if constexpr (options::DEBUGGING) {
-        if (c->model()->run()->step() == s) {
+        if (current_step(*c->model()) == s) {
             throw log::error(c, "should NOT be in ", ITERATION_STEP_NAMES[static_cast<int>(s)], " step");
         }
     }
@@ -143,7 +148,7 @@ inline void assertstepnot(const Caller* c, IterationStep s) {
 template<class Caller>
 inline void assertstepor(const Caller* c, IterationStep s1, IterationStep s2) {
     if constexpr (options::DEBUGGING) {
-        if (c->model()->run()->step() != s1 && c->model()->run()->step() != s2) {
+        if (current_step(*c->model()) != s1 && current_step(*c->model()) != s2) {
             throw log::error(c, "should be in ", ITERATION_STEP_NAMES[static_cast<int>(s1)], " or ", ITERATION_STEP_NAMES[static_cast<int>(s2)], " step");
         }
     }

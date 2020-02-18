@@ -22,10 +22,8 @@
 
 #include <algorithm>
 #include <iterator>
-#include <ostream>
 #include <utility>
 
-#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Government.h"

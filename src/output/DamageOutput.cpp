@@ -21,6 +21,7 @@
 #include "output/DamageOutput.h"
 
 #include <iostream>
+#include <iterator>
 #include <numeric>
 #include <string>
 #include <utility>
@@ -51,8 +52,8 @@ void DamageOutput::initialize() {
 
 void DamageOutput::internal_iterate_end() {
     for (const auto& sector : model()->sectors) {
-        damage = std::move(std::accumulate(std::begin(sector->firms), std::end(sector->firms), damage,
-                                           [](FlowQuantity q, const auto& f) { return std::move(q) + f->total_loss().get_quantity(); }));
+        damage = std::accumulate(std::begin(sector->firms), std::end(sector->firms), damage,
+                                 [](FlowQuantity q, const Firm* f) { return std::move(q) + f->total_loss().get_quantity(); });
     }
 }
 

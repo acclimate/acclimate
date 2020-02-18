@@ -22,6 +22,7 @@
 
 #include <ctime>
 #include <istream>
+#include <iterator>
 #include <memory>
 #include <numeric>
 #include <utility>
@@ -170,16 +171,16 @@ bool Output::write_economic_agent_parameter(const EconomicAgent* p, const hstrin
     switch (name) {
         case hstring::hash("demand"):
             internal_write_value(name, std::accumulate(std::begin(p->input_storages), std::end(p->input_storages), Demand(0.0),
-                                                       [](Demand d, const auto& is) { return std::move(d) + is->purchasing_manager->demand_D(); }));
+                                                       [](const Demand& d, const auto& is) { return d + is->purchasing_manager->demand_D(); }));
             break;
         case hstring::hash("input_flow"):
             internal_write_value(name, std::accumulate(std::begin(p->input_storages), std::end(p->input_storages), Demand(0.0),
-                                                       [](Demand d, const auto& is) { return std::move(d) + is->last_input_flow_I(); }));
+                                                       [](const Demand& d, const auto& is) { return d + is->last_input_flow_I(); }));
             break;
         case hstring::hash("used_flow"):
         case hstring::hash("consumption"):
             internal_write_value(name, std::accumulate(std::begin(p->input_storages), std::end(p->input_storages), Demand(0.0),
-                                                       [](Demand d, const auto& is) { return std::move(d) + is->used_flow_U(); }));
+                                                       [](const Demand& d, const auto& is) { return d + is->used_flow_U(); }));
             break;
         case hstring::hash("business_connections"):
             internal_write_value(name, std::accumulate(std::begin(p->input_storages), std::end(p->input_storages), 0,
@@ -187,7 +188,7 @@ bool Output::write_economic_agent_parameter(const EconomicAgent* p, const hstrin
             break;
         case hstring::hash("storage"):
             internal_write_value(name, std::accumulate(std::begin(p->input_storages), std::end(p->input_storages), Stock(0.0),
-                                                       [](Stock s, const auto& is) { return std::move(s) + is->content_S(); }));
+                                                       [](const Stock& s, const auto& is) { return s + is->content_S(); }));
             break;
         default:
             return false;

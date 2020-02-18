@@ -23,11 +23,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <ostream>
 
-#include "ModelRun.h"
 #include "acclimate.h"
-#include "model/Model.h"
+#include "model/Model.h"  // IWYU pragma: keep
 #include "netcdftools.h"
 #include "scenario/RasteredTimeData.h"
 #include "settingsnode.h"

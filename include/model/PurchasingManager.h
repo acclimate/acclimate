@@ -32,7 +32,6 @@ namespace acclimate {
 class BusinessConnection;
 class EconomicAgent;
 class Model;
-class PurchasingManager;
 class Storage;
 
 namespace optimization {

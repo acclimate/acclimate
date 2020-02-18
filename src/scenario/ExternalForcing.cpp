@@ -21,7 +21,6 @@
 #include "scenario/ExternalForcing.h"
 
 #include <cstddef>
-#include <ostream>
 #include <utility>
 
 #include "acclimate.h"

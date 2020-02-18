@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <string>
 
-#include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"

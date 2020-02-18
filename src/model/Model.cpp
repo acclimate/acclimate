@@ -23,17 +23,16 @@
 #include <algorithm>
 #include <chrono>
 #include <iterator>
+#include <ostream>
 #include <random>
 #include <type_traits>
 
 #include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
-#include "model/Firm.h"
-#include "model/GeoLocation.h"
+#include "model/Firm.h"  // IWYU pragma: keep
 #include "model/PurchasingManager.h"
 #include "model/Region.h"
-#include "model/Storage.h"
 
 namespace acclimate {
 
@@ -233,5 +232,8 @@ Parameters::ModelParameters& Model::parameters_writable() {
     debug::assertstep(this, IterationStep::INITIALIZATION);
     return parameters_;
 }
+
+std::string timeinfo(const Model& m) { return m.run()->timeinfo(); }
+IterationStep current_step(const Model& m) { return m.run()->step(); }
 
 }  // namespace acclimate
