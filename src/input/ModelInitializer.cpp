@@ -40,16 +40,27 @@
 #include "run.h"
 #include "variants/ModelVariants.h"
 
+
+class NcFile;
+
+class NcVar;
+
+class NcVar;
+
+class NcVar;
+
+class NcVar;
 namespace acclimate {
 
-template<class ModelVariant>
-ModelInitializer<ModelVariant>::ModelInitializer(Model<ModelVariant>* model_p, const settings::SettingsNode& settings_p)
-    : model_m(model_p), settings(settings_p) {
-    const settings::SettingsNode& parameters = settings["model"];
-    const settings::SettingsNode& run = settings["run"];
-    model()->start_time(run["start"].as<Time>());
-    model()->stop_time(run["stop"].as<Time>());
-    model()->delta_t(parameters["delta_t"].as<Time>());
+    template<class ModelVariant>
+    ModelInitializer<ModelVariant>::ModelInitializer(Model<ModelVariant> *model_p,
+                                                     const settings::SettingsNode &settings_p)
+            : model_m(model_p), settings(settings_p) {
+        const settings::SettingsNode &parameters = settings["model"];
+        const settings::SettingsNode &run = settings["run"];
+        model()->start_time(run["start"].as<Time>());
+        model()->stop_time(run["stop"].as<Time>());
+        model()->delta_t(parameters["delta_t"].as<Time>());
     model()->no_self_supply(parameters["no_self_supply"].as<bool>());
 }
 
@@ -1012,52 +1023,55 @@ void ModelInitializer<ModelVariant>::build_agent_network() {
 
             netCDF::NcVar sectors_var = file.getVar("sector");
             std::size_t sectors_count = sectors_var.getDim(0).getSize();
-            std::vector<const char*> sectors_val(sectors_count);
+            std::vector<std::string> sectors_val(sectors_count);
             sectors_var.getVar(&sectors_val[0]);
 
 
             netCDF::NcVar regions_var = file.getVar("region");
             std::size_t regions_count = regions_var.getDim(0).getSize();
-            std::vector<const char*> regions_val(regions_count);
+            std::vector<std::string> regions_val(regions_count);
             regions_var.getVar(&regions_val[0]);
 
+            netCDF::NcVar firm_names_var = file.getVar("firm");
+            std::size_t firms_count = firm_names_var.getDim(0).getSize();
+            std::vector<std::string> firm_names_val(firms_count);
+            firm_names_var.getVar(&firm_names_val[0]);
 
-            netCDF::NcVar firm_compound = file.getVar("firm");
+            netCDF::NcVar firm_compound = file.getVar("firm_type");
             int firm_compound_dim = firm_compound.getDim(0).getSize();
-            info(firm_compound_dim);
 
             // define struct to save compounded data of firm
             struct FirmCompound {
-                const char *name = 0;
-                int sector = 0;
-                int region = 0;
+                ulong sector = 0;
+                ulong region = 0;
             };
 
-            std::vector<FirmCompound> firm_data (firm_compound_dim);
+            std::vector<FirmCompound> firm_data(firm_compound_dim);
 
             firm_compound.getVar(&firm_data[0]);
 
-            info(firm_data.size())
+            info(firm_names_val.size())
+            info(sectors_count)
+            info(firm_compound_dim)
 
-            for (int i = 0; i < firm_compound_dim - 1; i++) {
+#pragma omp parallel for
 
+            for (int i = 0; i < firm_compound_dim; i++) {
 
-                const char* identifier_name = firm_data[i].name;
+                info (i)
+                std::string identifier_name = firm_names_val[i];
                 unsigned long sector_index = firm_data[i].sector;
-                const char* sector_name = sectors_val.at(sector_index);
 
-                unsigned long region_index = firm_data[i].region;
-                const char* region_name = sectors_val.at(region_index);
+                std::string sector_name = sectors_val.at(sector_index);
+                unsigned long region_index = 0; // TODO: fix region recognition, ATM hotfix by fixxing to 0, since only JPN in data
 
-                info("ith variables found")
-                info(identifier_name)
-                Firm <ModelVariant> *firm = model()->find_firm(identifier_name);
-                info("Firm found")
+                std::string region_name = regions_val.at(region_index);
+
+                Firm<ModelVariant> *firm;
 
                 Identifier<ModelVariant> *identifier = add_identifier(identifier_name);
                 Region<ModelVariant> *region = add_region(region_name);
                 Sector<ModelVariant> *sector = add_sector(sector_name);
-
 
 
                 if (sector_name == "FCON") {
@@ -1071,18 +1085,18 @@ void ModelInitializer<ModelVariant>::build_agent_network() {
 
                     if (!firm) {
                         firm = add_firm(identifier, sector, region);
+                        info("added firm" + identifier_name + "_" + sector_name + "_" + region_name)
                         if (!firm) {
                             error("Could not add firm");
                         }
                     }
                 }
-            }
 
-            info("number of Firms added ")
+            }
 
             netCDF::NcVar flow_compound = file.getVar("flow");
             int flows_count = flow_compound.getDim(0).getSize();
-            info(firm_compound_dim);
+            info("Number of flows to be imported: " + flows_count);
 
             // define struct to save compounded data of firm
             struct FlowCompound {
@@ -1091,26 +1105,25 @@ void ModelInitializer<ModelVariant>::build_agent_network() {
                 double value = 0;
             };
 
-            std::vector<FlowCompound> flow_data (flows_count);
+            std::vector<FlowCompound> flow_data(flows_count);
 
             flow_compound.getVar(&flow_data[0]);
 
             for (int i = 0; i < flows_count; i++) {
                 Identifier<ModelVariant> *firm_from_identifier = model()->find_identifier(
-                        firm_data[flow_data[i].firm_from].name);
+                        firm_names_val[flow_data[i].firm_from]);
                 Identifier<ModelVariant> *firm_to_identifier = model()->find_identifier(
-                        firm_data[flow_data[i].firm_to].name);
+                        firm_names_val[flow_data[i].firm_to]);
                 const Flow flow = Flow(FlowQuantity(flow_data[i].value), Price(1));
                 initialize_connection(firm_from_identifier, firm_to_identifier, flow);
             }
-            break;
         }
-
+            break;
         case settings::hstring::hash("artificial"): {
             build_artificial_network();
             return;
         }
-        break;
+            break;
         default: error("Unknown network type '" << type << "'");
 
 
