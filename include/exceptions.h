@@ -18,25 +18,25 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_GEOPOINT_H
-#define ACCLIMATE_GEOPOINT_H
+#ifndef ACCLIMATE_EXCEPTIONS_H
+#define ACCLIMATE_EXCEPTIONS_H
 
-#include "acclimate.h"
+#include <stdexcept>
+#include <string>
+
+// IWYU pragma: private, include "acclimate.h"
 
 namespace acclimate {
 
-class GeoPoint {
-  private:
-    const FloatType lon_, lat_;
-
+class exception : public std::runtime_error {
   public:
-    GeoPoint(FloatType lon_p, FloatType lat_p);
-    FloatType distance_to(const GeoPoint& other) const;
+    explicit exception(const std::string& s) : std::runtime_error(s) {}
 
-    FloatType lon() const { return lon_; }
-
-    FloatType lat() const { return lat_; }
+    explicit exception(const char* s) : std::runtime_error(s) {}
 };
-}  // namespace acclimate
+
+class return_after_checkpoint : public std::exception {};
+
+};  // namespace acclimate
 
 #endif

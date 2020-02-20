@@ -18,25 +18,53 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_GEOPOINT_H
-#define ACCLIMATE_GEOPOINT_H
+#ifndef ACCLIMATE_OPENMP_H
+#define ACCLIMATE_OPENMP_H
 
-#include "acclimate.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
-namespace acclimate {
+namespace acclimate::openmp {
 
-class GeoPoint {
-  private:
-    const FloatType lon_, lat_;
-
+class Lock {
+  protected:
+#ifdef _OPENMP
+    omp_lock_t lock = {};
+#endif
   public:
-    GeoPoint(FloatType lon_p, FloatType lat_p);
-    FloatType distance_to(const GeoPoint& other) const;
+    Lock() {
+#ifdef _OPENMP
+        omp_init_lock(&lock);
+#endif
+    }
 
-    FloatType lon() const { return lon_; }
+    ~Lock() {
+#ifdef _OPENMP
+        omp_destroy_lock(&lock);
+#endif
+    }
 
-    FloatType lat() const { return lat_; }
+    template<typename Func>
+    inline void call(const Func& f) {
+#ifdef _OPENMP
+        omp_set_lock(&lock);
+#endif
+        f();
+#ifdef _OPENMP
+        omp_unset_lock(&lock);
+#endif
+    }
 };
-}  // namespace acclimate
+
+inline unsigned int get_thread_count() {
+#ifdef _OPENMP
+    return omp_get_max_threads();
+#else
+    return 1;
+#endif
+}
+
+};  // namespace acclimate::openmp
 
 #endif

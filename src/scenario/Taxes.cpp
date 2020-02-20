@@ -19,56 +19,30 @@
 */
 
 #include "scenario/Taxes.h"
+
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
+
+#include "acclimate.h"
 #include "model/Government.h"
-#include "run.h"
+#include "model/Model.h"
+#include "model/Region.h"
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-Taxes<ModelVariant>::Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p)
-    : Scenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
+Taxes::Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
+    : Scenario(settings_p, std::move(scenario_node_p), model_p) {}
 
-#ifdef VARIANT_BASIC
-template<>
-Time Taxes<VariantBasic>::start() {
-    error("Taxes scenario not supported in basic model variant");
-}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-Time Taxes<VariantDemand>::start() {
-    error("Taxes scenario not supported in demand model variant");
-}
-#endif
-
-template<class ModelVariant>
-Time Taxes<ModelVariant>::start() {
+void Taxes::start() {
     for (auto& region : model()->regions) {
-        region->set_government(new Government<ModelVariant>(region.get()));
+        region->set_government(new Government(region.get()));
     }
-    return model()->start_time();
 }
 
-#ifdef VARIANT_BASIC
-template<>
-bool Taxes<VariantBasic>::iterate() {
-    return false;
-}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-bool Taxes<VariantDemand>::iterate() {
-    return false;
-}
-#endif
-
-template<class ModelVariant>
-bool Taxes<ModelVariant>::iterate() {
+bool Taxes::iterate() {
     if (model()->time() > model()->stop_time()) {
         return false;
     }
@@ -81,9 +55,9 @@ bool Taxes<ModelVariant>::iterate() {
                 tax["tax_ratio"].as<Ratio>() * (model()->time() + 2 * model()->delta_t() - start_tax) / (full_tax + model()->delta_t() - start_tax);
             const std::string& sector = tax["sector"].as<std::string>();
             if (tax.has("region") && tax["region"].as<std::string>() != "ALL") {
-                Region<ModelVariant>* region = model()->find_region(tax["region"].as<std::string>());
-                if (!region) {
-                    error("Could not find region '" << tax["region"] << "'");
+                Region* region = model()->find_region(tax["region"].as<std::string>());
+                if (region == nullptr) {
+                    throw log::error(this, "Could not find region '", tax["region"], "'");
                 }
                 region->government()->define_tax(sector, tax_ratio);
             } else {
@@ -97,5 +71,4 @@ bool Taxes<ModelVariant>::iterate() {
     return true;
 }
 
-INSTANTIATE_BASIC(Taxes);
 }  // namespace acclimate

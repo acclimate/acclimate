@@ -22,34 +22,32 @@
 #define ACCLIMATE_JSONNETWORKOUTPUT_H
 
 #include <string>
+
+#include "acclimate.h"
 #include "output/Output.h"
-#include "types.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
-class Scenario;
 
-template<class ModelVariant>
-class JSONNetworkOutput : public Output<ModelVariant> {
-  public:
-    using Output<ModelVariant>::output_node;
-    using Output<ModelVariant>::model;
-
-  protected:
+class JSONNetworkOutput : public Output {
+  private:
+    using Output::output_node;
     TimeStep timestep = 0;
     std::string filename;
     bool advanced = false;
+
+  private:
     void internal_iterate_end() override;
 
   public:
-    JSONNetworkOutput(const settings::SettingsNode& settings_p,
-                      Model<ModelVariant>* model_p,
-                      Scenario<ModelVariant>* scenario_p,
-                      settings::SettingsNode output_node_p);
+    JSONNetworkOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);
     void initialize() override;
+    using Output::model;
 };
 }  // namespace acclimate
 

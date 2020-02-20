@@ -19,51 +19,44 @@
 */
 
 #include "output/DamageOutput.h"
+
 #include <iostream>
+#include <iterator>
+#include <numeric>
 #include <string>
 #include <utility>
+#include <vector>
+
+#include "model/Firm.h"
 #include "model/Model.h"
-#include "model/Region.h"
 #include "model/Sector.h"
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-DamageOutput<ModelVariant>::DamageOutput(const settings::SettingsNode& settings_p,
-                                         Model<ModelVariant>* model_p,
-                                         Scenario<ModelVariant>* scenario_p,
-                                         settings::SettingsNode output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)), damage(0.0) {
+DamageOutput::DamageOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, std::move(output_node_p)), damage(0.0) {
     out = nullptr;
 }
 
-template<class ModelVariant>
-void DamageOutput<ModelVariant>::initialize() {
+void DamageOutput::initialize() {
     if (!output_node.has("file")) {
         out = &std::cout;
     } else {
-        std::string filename = output_node["file"].template as<std::string>();
-        outfile.reset(new std::ofstream());
+        const auto filename = output_node["file"].template as<std::string>();
+        outfile = std::make_unique<std::ofstream>();
         outfile->open(filename.c_str(), std::ofstream::out);
         out = outfile.get();
     }
 }
 
-template<class ModelVariant>
-void DamageOutput<ModelVariant>::internal_iterate_end() {
+void DamageOutput::internal_iterate_end() {
     for (const auto& sector : model()->sectors) {
-        for (const auto& firm : sector->firms) {
-            damage += firm->total_loss().get_quantity();
-        }
+        damage = std::accumulate(std::begin(sector->firms), std::end(sector->firms), damage,
+                                 [](FlowQuantity q, const Firm* f) { return std::move(q) + f->total_loss().get_quantity(); });
     }
 }
 
-template<class ModelVariant>
-void DamageOutput<ModelVariant>::internal_end() {
-    *out << damage << std::endl;
-}
+void DamageOutput::internal_end() { *out << damage << std::endl; }
 
-INSTANTIATE_BASIC(DamageOutput);
 }  // namespace acclimate

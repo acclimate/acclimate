@@ -20,10 +20,14 @@
 
 #include "scenario/RasteredData.h"
 
-#include <algorithm>
+#include <algorithm>  // IWYU pragma: keep
+#include <cmath>
+#include <cstdlib>
 #include <limits>
 #include <utility>
-#include "run.h"
+
+#include "acclimate.h"
+#include "netcdftools.h"
 
 namespace acclimate {
 
@@ -36,7 +40,7 @@ void RasteredData<T>::read_boundaries(const netCDF::NcFile* file) {
             if (x_var.isNull()) {
                 x_var = file->getVar("longitude");
                 if (x_var.isNull()) {
-                    error("No longitude variable found in '" << filename << "'");
+                    throw log::error("No longitude variable found in '", filename, "'");
                 }
             }
         }
@@ -57,7 +61,7 @@ void RasteredData<T>::read_boundaries(const netCDF::NcFile* file) {
             if (y_var.isNull()) {
                 y_var = file->getVar("latitude");
                 if (y_var.isNull()) {
-                    error("No latitude variable found in '" << filename << "'");
+                    throw log::error("No latitude variable found in '", filename, "'");
                 }
             }
         }
@@ -83,13 +87,13 @@ template<typename T>
 RasteredData<T>::RasteredData(std::string filename_p, const std::string& variable_name) : filename(std::move(filename_p)), x(*this), y(*this) {
     std::unique_ptr<netCDF::NcFile> file;
     try {
-        file.reset(new netCDF::NcFile(filename, netCDF::NcFile::read));
+        file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::read);
     } catch (netCDF::exceptions::NcException& ex) {
-        error("Could not open '" + filename + "'");
+        throw log::error("Could not open '", filename, "'");
     }
     netCDF::NcVar variable = file->getVar(variable_name);
     if (variable.isNull()) {
-        error("Cannot find variable '" << variable_name << "' in '" << filename << "'");
+        throw log::error("Cannot find variable '", variable_name, "' in '", filename, "'");
     }
     read_boundaries(file.get());
     data.reset(new T[y_count * x_count]);
@@ -104,7 +108,7 @@ FloatType RasteredData<T>::operator/(const RasteredData<T2>& other) const {
 
 template<typename T>
 template<typename T2>
-bool RasteredData<T>::is_compatible(const RasteredData<T2>& other) const {
+[[nodiscard]] bool RasteredData<T>::is_compatible(const RasteredData<T2>& other) const {
     return std::abs(t_x_gridsize - other.abs_x_gridsize()) < 1e-5 && std::abs(t_y_gridsize - other.abs_y_gridsize()) < 1e-5;
 }
 
@@ -154,7 +158,9 @@ inline T RasteredData<T>::read(FloatType x_var, FloatType y_var) const {
 }
 
 template class RasteredData<int>;
+
 template class RasteredData<FloatType>;
+
 template bool RasteredData<FloatType>::is_compatible(const RasteredData<FloatType>& other) const;
 template bool RasteredData<FloatType>::is_compatible(const RasteredData<int>& other) const;
 template bool RasteredData<int>::is_compatible(const RasteredData<FloatType>& other) const;

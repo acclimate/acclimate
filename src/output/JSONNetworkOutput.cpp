@@ -19,11 +19,13 @@
 */
 
 #include "output/JSONNetworkOutput.h"
-#include <algorithm>
+
 #include <fstream>
+#include <memory>
 #include <utility>
+#include <vector>
+
 #include "model/BusinessConnection.h"
-#include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Model.h"
@@ -32,28 +34,20 @@
 #include "model/SalesManager.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
-#include "scenario/Scenario.h"
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-JSONNetworkOutput<ModelVariant>::JSONNetworkOutput(const settings::SettingsNode& settings_p,
-                                                   Model<ModelVariant>* model_p,
-                                                   Scenario<ModelVariant>* scenario_p,
-                                                   settings::SettingsNode output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
+JSONNetworkOutput::JSONNetworkOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, std::move(output_node_p)) {}
 
-template<class ModelVariant>
-void JSONNetworkOutput<ModelVariant>::initialize() {
+void JSONNetworkOutput::initialize() {
     timestep = output_node["timestep"].template as<TimeStep>();
     filename = output_node["file"].template as<std::string>();
     advanced = output_node["advanced"].template as<bool>();
 }
 
-template<class ModelVariant>
-void JSONNetworkOutput<ModelVariant>::internal_iterate_end() {
+void JSONNetworkOutput::internal_iterate_end() {
     if (model()->timestep() == timestep) {
         std::ofstream out;
         out.open(filename.c_str(), std::ofstream::out);
@@ -63,11 +57,11 @@ void JSONNetworkOutput<ModelVariant>::internal_iterate_end() {
             for (const auto& ea : region->economic_agents) {
                 out << "\n  {";
                 std::string sector;
-                Flow out_flow = Flow(0.0);
-                Flow in_flow = Flow(0.0);
-                Flow used_flow = Flow(0.0);
-                if (ea->type == EconomicAgent<ModelVariant>::Type::FIRM) {
-                    Firm<ModelVariant>* ps = ea->as_firm();
+                Flow out_flow(0.0);
+                Flow in_flow(0.0);
+                Flow used_flow(0.0);
+                if (ea->type == EconomicAgent::Type::FIRM) {
+                    Firm* ps = ea->as_firm();
                     sector = ps->sector->id();
                     out_flow = ps->production_X();
                     if (advanced) {
@@ -118,5 +112,4 @@ void JSONNetworkOutput<ModelVariant>::internal_iterate_end() {
     }
 }
 
-INSTANTIATE_BASIC(JSONNetworkOutput);
 }  // namespace acclimate

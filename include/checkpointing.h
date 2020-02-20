@@ -18,25 +18,16 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACCLIMATE_GEOPOINT_H
-#define ACCLIMATE_GEOPOINT_H
+#ifndef ACCLIMATE_CHECKPOINTING_H
+#define ACCLIMATE_CHECKPOINTING_H
 
-#include "acclimate.h"
+namespace acclimate::checkpoint {
 
-namespace acclimate {
+extern volatile bool is_scheduled;
 
-class GeoPoint {
-  private:
-    const FloatType lon_, lat_;
+extern void initialize();
+extern void write();
 
-  public:
-    GeoPoint(FloatType lon_p, FloatType lat_p);
-    FloatType distance_to(const GeoPoint& other) const;
-
-    FloatType lon() const { return lon_; }
-
-    FloatType lat() const { return lat_; }
-};
-}  // namespace acclimate
+};  // namespace acclimate::checkpoint
 
 #endif

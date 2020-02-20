@@ -23,9 +23,9 @@
 
 #include <memory>
 #include <string>
+
+#include "acclimate.h"
 #include "netcdftools.h"
-#include "scenario/RasteredData.h"
-#include "types.h"
 
 namespace acclimate {
 
@@ -37,14 +37,16 @@ class ExternalForcing {
     std::unique_ptr<netCDF::NcFile> file;
     netCDF::NcVar variable;
     netCDF::NcVar time_variable;
+
+  protected:
     virtual void read_data() = 0;
 
   public:
     ExternalForcing(std::string filename_p, const std::string& variable_name);
     virtual ~ExternalForcing() = default;
     int next_timestep();
-    const std::string calendar_str() const;
-    const std::string time_units_str() const;
+    std::string calendar_str() const;
+    std::string time_units_str() const;
 };
 }  // namespace acclimate
 

@@ -19,63 +19,29 @@
 */
 
 #include "model/Consumer.h"
+
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <vector>
+
+#include "ModelRun.h"
+#include "acclimate.h"
 #include "model/Model.h"
+#include "model/PurchasingManager.h"
 #include "model/Region.h"
 #include "model/Storage.h"
-#include "types.h"
-#include "variants/ModelVariants.h"
+#include "parameters.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-Consumer<ModelVariant>::Consumer(Region<ModelVariant>* region_p)
-    : EconomicAgent<ModelVariant>(region_p->model()->consumption_sector, region_p, EconomicAgent<ModelVariant>::Type::CONSUMER) {}
+Consumer::Consumer(Region* region_p) : EconomicAgent(region_p->model()->consumption_sector, region_p, EconomicAgent::Type::CONSUMER) {}
 
-template<class ModelVariant>
-inline Consumer<ModelVariant>* Consumer<ModelVariant>::as_consumer() {
-    return this;
-}
-
-#ifdef VARIANT_BASIC
-template<>
-void Consumer<VariantBasic>::iterate_consumption_and_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
-    for (const auto& is : input_storages) {
-        Flow desired_used_flow_U_tilde = round(is->initial_input_flow_I_star() * forcing_);
-        Flow used_flow_U = round(std::min(desired_used_flow_U_tilde, is->get_possible_use_U_hat()));
-
-        is->set_desired_used_flow_U_tilde(desired_used_flow_U_tilde);
-        is->use_content_S(used_flow_U);
-        region->add_consumption_flow_Y(used_flow_U);
-        is->iterate_consumption_and_production();
-    }
-}
-#endif
-
-#ifdef VARIANT_DEMAND
-template<>
-void Consumer<VariantDemand>::iterate_consumption_and_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
-    for (const auto& is : input_storages) {
-        Flow desired_used_flow_U_tilde = round(is->initial_input_flow_I_star() * forcing_);
-        Flow used_flow_U = round(std::min(desired_used_flow_U_tilde, is->get_possible_use_U_hat()));
-
-        is->set_desired_used_flow_U_tilde(desired_used_flow_U_tilde);
-        is->use_content_S(used_flow_U);
-        region->add_consumption_flow_Y(used_flow_U);
-        is->iterate_consumption_and_production();
-    }
-}
-#endif
-
-template<class ModelVariant>
-void Consumer<ModelVariant>::iterate_consumption_and_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+void Consumer::iterate_consumption_and_production() {
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     for (const auto& is : input_storages) {
         Flow possible_used_flow_U_hat = is->get_possible_use_U_hat();  // Price(U_hat) = Price of used flow
-        Price reservation_price = Price(0.0);
+        Price reservation_price(0.0);
         if (possible_used_flow_U_hat.get_quantity() > 0.0) {
             // we have to purchase with the average price of input and storage
             reservation_price = possible_used_flow_U_hat.get_price();
@@ -99,51 +65,29 @@ void Consumer<ModelVariant>::iterate_consumption_and_production() {
     }
 }
 
-template<class ModelVariant>
-void Consumer<ModelVariant>::iterate_expectation() {
-    assertstep(EXPECTATION);
-}
+void Consumer::iterate_expectation() { debug::assertstep(this, IterationStep::EXPECTATION); }
 
-template<class ModelVariant>
-void Consumer<ModelVariant>::iterate_purchase() {
-    assertstep(PURCHASE);
+void Consumer::iterate_purchase() {
+    debug::assertstep(this, IterationStep::PURCHASE);
     for (const auto& is : input_storages) {
         is->purchasing_manager->iterate_purchase();
     }
 }
 
-#ifdef VARIANT_BASIC
-template<>
-void Consumer<VariantBasic>::iterate_investment() {}
-#endif
+void Consumer::iterate_investment() {
+    // debug::assertstep(this, IterationStep::INVESTMENT);
+    // for (const auto& is : input_storages) {
+    //     is->purchasing_manager->iterate_investment();
+    // }
+}
 
-#ifdef VARIANT_DEMAND
-template<>
-void Consumer<VariantDemand>::iterate_investment() {}
-#endif
-
-#ifdef VARIANT_PRICES
-template<>
-void Consumer<VariantPrices>::iterate_investment() {}
-#endif
-
-template<class ModelVariant>
-void Consumer<ModelVariant>::iterate_investment() {
-    assertstep(INVESTMENT);
-    for (const auto& is : input_storages) {
-        is->purchasing_manager->iterate_investment();
+void Consumer::print_details() const {
+    if constexpr (options::DEBUGGING) {
+        log::info(this);
+        for (const auto& is : input_storages) {
+            is->purchasing_manager->print_details();
+        }
     }
 }
 
-#ifdef DEBUG
-template<class ModelVariant>
-void Consumer<ModelVariant>::print_details() const {
-    info(id() << ":");
-    for (const auto& is : input_storages) {
-        is->purchasing_manager->print_details();
-    }
-}
-#endif
-
-INSTANTIATE_BASIC(Consumer);
 }  // namespace acclimate

@@ -23,34 +23,33 @@
 
 #include <string>
 #include <vector>
-#include "types.h"
+
+#include "acclimate.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class TransportChainLink;
 
-template<class ModelVariant>
 class GeoEntity {
   public:
     enum class Type { LOCATION, CONNECTION };
 
   protected:
     Type type_m;
-    Model<ModelVariant>* const model_m;
+    Model* const model_m;
 
   public:
     const TransportDelay delay;
-    std::vector<TransportChainLink<ModelVariant>*> transport_chain_links;
+    std::vector<TransportChainLink*> transport_chain_links;
 
-    GeoEntity(Model<ModelVariant>* model_p, TransportDelay delay_p, Type type_p);
+  public:
+    GeoEntity(Model* model_p, TransportDelay delay_p, Type type_p);
     virtual ~GeoEntity();
     Type type() const { return type_m; }
     void set_forcing_nu(Forcing forcing_nu_p);
-    void remove_transport_chain_link(TransportChainLink<ModelVariant>* transport_chain_link);
-    inline Model<ModelVariant>* model() const { return model_m; }
+    void remove_transport_chain_link(TransportChainLink* transport_chain_link);
+    Model* model() const { return model_m; }
     virtual std::string id() const = 0;
 };
 }  // namespace acclimate

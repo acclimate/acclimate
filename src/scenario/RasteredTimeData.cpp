@@ -19,8 +19,10 @@
 */
 
 #include "scenario/RasteredTimeData.h"
+
 #include <memory>
-#include "types.h"
+
+#include "acclimate.h"
 
 namespace acclimate {
 
@@ -37,5 +39,6 @@ void RasteredTimeData<T>::read_data() {
 }
 
 template class RasteredTimeData<int>;
+
 template class RasteredTimeData<FloatType>;
 }  // namespace acclimate
