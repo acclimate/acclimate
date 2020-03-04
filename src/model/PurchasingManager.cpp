@@ -506,7 +506,7 @@ void PurchasingManager::iterate_purchase() {
                         + S_shortage
                               / (S_shortage > 0.0 ? storage->sector->parameters().target_storage_refill_time    // storage level low
                                                   : storage->sector->parameters().target_storage_withdraw_time  // storage level high
-                              );
+                                );
 
     if (round(desired_purchase_) <= 0.0) {
         for (auto& bc : business_connections) {
@@ -607,7 +607,12 @@ void PurchasingManager::iterate_purchase() {
         if constexpr (options::DEBUGGING) {
             print_distribution(demand_requests_D);
         }
-        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+        // TODO maxiter limit is ok, the rest fatal
+        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+            throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+        } else {
+            log::warning(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+        }
     }
 
     FloatType costs = 0.0;

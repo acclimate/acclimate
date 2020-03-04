@@ -39,7 +39,7 @@ static void handle_sigterm(int /* signal */) { is_scheduled = true; }
 
 void initialize() {
     if (is_instantiated) {
-        error_("Only one model run instance supported when checkpointing");
+        throw log::error("Only one model run instance supported when checkpointing");
     }
     std::signal(SIGTERM, handle_sigterm);
     close(10);
@@ -60,9 +60,9 @@ void write() {
         case DMTCP_AFTER_RESTART:
             break;
         case DMTCP_NOT_PRESENT:
-            error_("dmtcp not present");
+            throw log::error("dmtcp not present");
         default:
-            error_("unknown dmtcp result " << retval);
+            throw log::error("unknown dmtcp result ", retval);
     }
     is_scheduled = false;
 }
