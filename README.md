@@ -48,6 +48,8 @@ Further built-in dependecies (included in this repository as subtrees):
 
 - [swillner/cmake-modules](https://github.com/swillner/cmake-modules)
   - used for compilation
+- [swillner/cpp-library](https://github.com/swillner/cpp-library)
+  - some minor helper functions, e.g. for progress bar
 - [swillner/libmrio](https://github.com/swillner/libmrio)
   - used for handling of multi-regional input-output tables
 - [swillner/settingsnode](https://github.com/swillner/settingsnode)

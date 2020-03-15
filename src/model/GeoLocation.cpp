@@ -19,29 +19,38 @@
 */
 
 #include "model/GeoLocation.h"
+
 #include <algorithm>
+#include <iterator>
 #include <memory>
+#include <utility>
+
+#include "acclimate.h"
 #include "model/GeoConnection.h"
-#include "variants/ModelVariants.h"
+#include "model/GeoPoint.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-GeoLocation<ModelVariant>::GeoLocation(Model<ModelVariant>* const model_m, TransportDelay delay_p, GeoLocation<ModelVariant>::Type type_p, std::string id_p)
-    : GeoEntity<ModelVariant>(model_m, delay_p, GeoEntity<ModelVariant>::Type::LOCATION), type(type_p), id_m(std::move(id_p)) {}
+GeoLocation::GeoLocation(Model* const model_m, TransportDelay delay_p, GeoLocation::Type type_p, std::string id_p)
+    : GeoEntity(model_m, delay_p, GeoEntity::Type::LOCATION), type(type_p), id_m(std::move(id_p)) {}
 
-template<class ModelVariant>
-void GeoLocation<ModelVariant>::remove_connection(const GeoConnection<ModelVariant>* connection) {
-    auto it = std::find_if(connections.begin(), connections.end(),
-                           [connection](const std::shared_ptr<GeoConnection<ModelVariant>>& it) { return it.get() == connection; });
+void GeoLocation::remove_connection(const GeoConnection* connection) {
+    auto it = std::find_if(std::begin(connections), std::end(connections), [connection](const auto& c) { return c.get() == connection; });
+    if (it == std::end(connections)) {
+        throw log::error(this, "Connection ", connection->id(), " not found");
+    }
     connections.erase(it);
 }
-template<class ModelVariant>
-GeoLocation<ModelVariant>::~GeoLocation() {
+
+GeoLocation::~GeoLocation() {
     for (auto& connection : connections) {
         connection->invalidate_location(this);
     }
 }
 
-INSTANTIATE_BASIC(GeoLocation);
+void GeoLocation::set_centroid(std::unique_ptr<GeoPoint>& centroid_p) {
+    debug::assertstep(this, IterationStep::INITIALIZATION);
+    centroid_m = std::move(centroid_p);
+}
+
 }  // namespace acclimate

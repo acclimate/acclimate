@@ -23,67 +23,60 @@
 
 #include <ctime>
 #include <string>
-#include "run.h"
+
+#include "acclimate.h"
 #include "settingsnode.h"
-#include "types.h"
+
+struct tm;
 
 namespace acclimate {
 
 using hstring = settings::hstring;
-template<class ModelVariant>
-class Scenario;
-template<class ModelVariant>
+
 class BusinessConnection;
-template<class ModelVariant>
 class Consumer;
-template<class ModelVariant>
 class EconomicAgent;
-template<class ModelVariant>
-class Model;
-template<class ModelVariant>
+enum class EventType : unsigned char;
 class Firm;
-template<class ModelVariant>
+class Model;
 class Region;
-template<class ModelVariant>
 class Sector;
-template<class ModelVariant>
 class Storage;
 
-template<class ModelVariant>
 class Output {
-  private:
-    bool write_connection_parameter_variant(const BusinessConnection<ModelVariant>* b, const settings::hstring& name);
-    void write_connection_parameters(const BusinessConnection<ModelVariant>* b, const settings::SettingsNode& it);
-    bool write_consumer_parameter_variant(const Consumer<ModelVariant>* c, const settings::hstring& name);
-    void write_consumer_parameters(const Consumer<ModelVariant>* c, const settings::SettingsNode& it);
-    void write_consumption_connections(const Firm<ModelVariant>* p, const settings::SettingsNode& it);
-    bool write_economic_agent_parameter(const EconomicAgent<ModelVariant>* p, const settings::hstring& name);
-    void write_ingoing_connections(const Storage<ModelVariant>* s, const settings::SettingsNode& it);
-    void write_input_storages(const EconomicAgent<ModelVariant>* ea, const settings::SettingsNode& it);
-    void write_input_storage_parameters(const Storage<ModelVariant>* s, const settings::SettingsNode& it);
-    bool write_input_storage_parameter_variant(const Storage<ModelVariant>* s, const settings::hstring& name);
-    void write_outgoing_connections(const Firm<ModelVariant>* p, const settings::SettingsNode& it);
-    void write_firm_parameters(const Firm<ModelVariant>* p, const settings::SettingsNode& it);
-    bool write_firm_parameter_variant(const Firm<ModelVariant>* p, const settings::hstring& name);
-    void write_region_parameters(const Region<ModelVariant>* region, const settings::SettingsNode& it);
-    bool write_region_parameter_variant(const Region<ModelVariant>* region, const settings::hstring& name);
-    void write_sector_parameters(const Sector<ModelVariant>* sector, const settings::SettingsNode& parameters);
-    bool write_sector_parameter_variant(const Sector<ModelVariant>* sector, const settings::hstring& name);
-    inline void internal_write_value(const hstring& name, const Stock& v);
-    inline void internal_write_value(const hstring& name, const Flow& v);
-    inline void internal_write_value(const hstring& name, FloatType v);
-    template<int precision_digits_p>
-    inline void internal_write_value(const hstring& name, const Type<precision_digits_p>& v, const hstring& suffix = hstring::null());
-
   protected:
     std::string settings_string;
     settings::SettingsNode output_node;
-    Model<ModelVariant>* const model_m;
+    Model* const model_m;
     std::time_t start_time;
-    inline bool is_first_timestep() const { return scenario->is_first_timestep(); }
-    inline bool is_last_timestep() const { return scenario->is_last_timestep(); }
-    inline void parameter_not_found(const std::string& name) const;
-    virtual void internal_write_header(tm* timestamp, int max_threads);
+
+  private:
+    bool write_connection_parameter(const BusinessConnection* b, const settings::hstring& name);
+    void write_connection_parameters(const BusinessConnection* b, const settings::SettingsNode& it);
+    bool write_consumer_parameter(const Consumer* c, const settings::hstring& name);
+    void write_consumer_parameters(const Consumer* c, const settings::SettingsNode& it);
+    void write_consumption_connections(const Firm* p, const settings::SettingsNode& it);
+    bool write_economic_agent_parameter(const EconomicAgent* p, const settings::hstring& name);
+    void write_ingoing_connections(const Storage* s, const settings::SettingsNode& it);
+    void write_input_storages(const EconomicAgent* ea, const settings::SettingsNode& it);
+    void write_input_storage_parameters(const Storage* s, const settings::SettingsNode& it);
+    bool write_input_storage_parameter(const Storage* s, const settings::hstring& name);
+    void write_outgoing_connections(const Firm* p, const settings::SettingsNode& it);
+    void write_firm_parameters(const Firm* p, const settings::SettingsNode& it);
+    bool write_firm_parameter(const Firm* p, const settings::hstring& name);
+    void write_region_parameters(const Region* region, const settings::SettingsNode& it);
+    bool write_region_parameter(const Region* region, const settings::hstring& name);
+    void write_sector_parameters(const Sector* sector, const settings::SettingsNode& parameters);
+    bool write_sector_parameter(const Sector* sector, const settings::hstring& name);
+    void internal_write_value(const hstring& name, const Stock& v);
+    void internal_write_value(const hstring& name, const Flow& v);
+    void internal_write_value(const hstring& name, FloatType v);
+    template<int precision_digits_p, bool rounded>
+    void internal_write_value(const hstring& name, const Type<precision_digits_p, rounded>& v, const hstring& suffix = hstring::null());
+
+  protected:
+    void parameter_not_found(const std::string& name) const;
+    virtual void internal_write_header(tm* timestamp, unsigned int max_threads);
     virtual void internal_write_footer(tm* duration);
     virtual void internal_write_settings();
     virtual void internal_start();
@@ -91,36 +84,19 @@ class Output {
     virtual void internal_iterate_end();
     virtual void internal_end();
     virtual void internal_write_value(const hstring& name, FloatType v, const hstring& suffix);
-    virtual void internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region);
-    virtual void internal_start_target(const hstring& name, Sector<ModelVariant>* sector);
-    virtual void internal_start_target(const hstring& name, Region<ModelVariant>* region);
+    virtual void internal_start_target(const hstring& name, Sector* sector, Region* region);
+    virtual void internal_start_target(const hstring& name, Sector* sector);
+    virtual void internal_start_target(const hstring& name, Region* region);
     virtual void internal_start_target(const hstring& name);
     virtual void internal_end_target();
 
   public:
-    Scenario<ModelVariant>* const scenario;
-    Output(const settings::SettingsNode& settings_p, Model<ModelVariant>* model_p, Scenario<ModelVariant>* scenario_p, settings::SettingsNode output_node_p);
+    Output(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);
     virtual void initialize() = 0;
-    virtual void event(EventType type,
-                       const Sector<ModelVariant>* sector_from,
-                       const Region<ModelVariant>* region_from,
-                       const Sector<ModelVariant>* sector_to,
-                       const Region<ModelVariant>* region_to,
-                       FloatType value);
-    virtual void event(EventType type,
-                       const Sector<ModelVariant>* sector_from,
-                       const Region<ModelVariant>* region_from,
-                       const EconomicAgent<ModelVariant>* economic_agent_to,
-                       FloatType value);
-    virtual void event(EventType type,
-                       const EconomicAgent<ModelVariant>* economic_agent_from,
-                       const EconomicAgent<ModelVariant>* economic_agent_to,
-                       FloatType value);
-    virtual void event(EventType type,
-                       const EconomicAgent<ModelVariant>* economic_agent_from,
-                       const Sector<ModelVariant>* sector_to,
-                       const Region<ModelVariant>* region_to,
-                       FloatType value);
+    virtual void event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value);
+    virtual void event(EventType type, const Sector* sector_from, const Region* region_from, const EconomicAgent* economic_agent_to, FloatType value);
+    virtual void event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value);
+    virtual void event(EventType type, const EconomicAgent* economic_agent_from, const Sector* sector_to, const Region* region_to, FloatType value);
     void start();
     void iterate();
     void end();
@@ -128,8 +104,8 @@ class Output {
     virtual void checkpoint_stop() {}
     virtual void checkpoint_resume() {}
     virtual ~Output() = default;
-    inline Model<ModelVariant>* model() const { return model_m; }
-    virtual inline std::string id() const { return "OUTPUT"; }
+    Model* model() const { return model_m; }
+    virtual std::string id() const { return "OUTPUT"; }
 };
 }  // namespace acclimate
 

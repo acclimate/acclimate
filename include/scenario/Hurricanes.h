@@ -21,29 +21,31 @@
 #ifndef ACCLIMATE_HURRICANES_H
 #define ACCLIMATE_HURRICANES_H
 
-#include <vector>
+#include "acclimate.h"
 #include "scenario/RasteredScenario.h"
-#include "types.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Region;
 
-template<class ModelVariant>
-class Hurricanes : public RasteredScenario<ModelVariant, FloatType> {
-  protected:
+class Hurricanes : public RasteredScenario<FloatType> {
+  private:
     FloatType threshold;
-    FloatType new_region_forcing(Region<ModelVariant>* region) const override;
-    void set_region_forcing(Region<ModelVariant>* region, const FloatType& forcing, FloatType proxy_sum) const override;
-    void reset_forcing(Region<ModelVariant>* region, FloatType& forcing) const override;
+
+  private:
+    FloatType new_region_forcing(Region* region) const override;
+    void set_region_forcing(Region* region, const FloatType& forcing, FloatType proxy_sum) const override;
+    void reset_forcing(Region* region, FloatType& forcing) const override;
     void add_cell_forcing(
-        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region<ModelVariant>* region, FloatType& region_forcing) const override;
+        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, FloatType& region_forcing) const override;
 
   public:
-    Hurricanes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
+    Hurricanes(const settings::SettingsNode& settings_p, const settings::SettingsNode& scenario_node_p, Model* model_p);
 };
 }  // namespace acclimate
 

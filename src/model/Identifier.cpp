@@ -18,31 +18,14 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "model/Sector.h"
+#include "model/Identifier.h"
+
 #include <utility>
-#include "variants/ModelVariants.h"
+
+#include "model/Sector.h"
 
 namespace acclimate {
 
-// Identifier to store name of economic agent and id, could be extended to individual properties
-template<class ModelVariant>
-Identifier<ModelVariant>::Identifier(Model<ModelVariant>* model_p,
-                             std::string id_p,
-                             const IntType index_p)
-    :model_m(model_p),
-     id_m(std::move(id_p)),
-     index_m(index_p)
-      {}
+Identifier::Identifier(Model* model_p, std::string id_p, const IntType index_p) : model_m(model_p), id_m(std::move(id_p)), index_m(index_p) {}
 
-    template<class ModelVariant>
-    void Sector<ModelVariant>::remove_firm(Firm<ModelVariant>* firm) {
-        for (auto it = firms.begin(); it != firms.end(); ++it) {  // TODO use find_if
-            if (*it == firm) {
-                firms.erase(it);
-                break;
-            }
-        }
-    }
-
-      INSTANTIATE_BASIC(Identifier);
 }  // namespace acclimate

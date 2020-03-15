@@ -18,26 +18,29 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
+
+#include "ModelRun.h"
 #include "acclimate.h"
 #include "settingsnode.h"
 #include "settingsnode/inner.h"
 #include "settingsnode/yaml.h"
-#include "types.h"
 #include "version.h"
 
-#ifdef ACCLIMATE_HAS_DIFF
-extern const char* acclimate_git_diff;
-#endif
-extern const char* acclimate_info;
+namespace acclimate {
+extern const char* info;
+}  // namespace acclimate
 
 static void print_usage(const char* program_name) {
     std::cerr << "Acclimate model\n"
-                 "Version: " ACCLIMATE_VERSION
-                 "\n\n"
+                 "Version: "
+              << acclimate::version
+              << "\n\n"
                  "Authors: Sven Willner <sven.willner@pik-potsdam.de>\n"
                  "         Christian Otto <christian.otto@pik-potsdam.de>\n"
                  "\n"
@@ -45,10 +48,8 @@ static void print_usage(const char* program_name) {
               << program_name
               << " (<option> | <settingsfile>)\n"
                  "Options:\n"
-#ifdef ACCLIMATE_HAS_DIFF
-                 "  -d, --diff     Print git diff output from compilation\n"
-#endif
-                 "  -h, --help     Print this help text\n"
+              << (acclimate::has_diff ? "  -d, --diff     Print git diff output from compilation\n" : "")
+              << "  -h, --help     Print this help text\n"
                  "  -i, --info     Print further information\n"
                  "  -v, --version  Print version"
               << std::endl;
@@ -62,9 +63,10 @@ int main(int argc, char* argv[]) {
     const std::string arg = argv[1];
     if (arg.length() > 1 && arg[0] == '-') {
         if (arg == "--version" || arg == "-v") {
-            std::cout << ACCLIMATE_VERSION << std::endl;
+            std::cout << acclimate::version << std::endl;
         } else if (arg == "--info" || arg == "-i") {
-            std::cout << acclimate_info
+            std::cout << "Version:                " << acclimate::version << "\n\n"
+                      << acclimate::info
                       << "\n"
                          "Precision Time:         "
                       << acclimate::Time::precision_digits
@@ -76,11 +78,21 @@ int main(int argc, char* argv[]) {
                       << acclimate::FlowQuantity::precision_digits
                       << "\n"
                          "Precision Price:        "
-                      << acclimate::Price::precision_digits << std::endl;
-#ifdef ACCLIMATE_HAS_DIFF
-        } else if (arg == "--diff" || arg == "-d") {
-            std::cout << acclimate_git_diff << std::flush;
-#endif
+                      << acclimate::Price::precision_digits
+                      << "\n"
+                         "Options:                ";
+            bool first = true;
+            for (const auto& option : acclimate::options::options) {
+                if (first) {
+                    first = false;
+                } else {
+                    std::cout << "                        ";
+                }
+                std::cout << option.name << " = " << (option.value ? "true" : "false") << "\n";
+            }
+            std::cout << std::flush;
+        } else if (acclimate::has_diff && (arg == "--diff" || arg == "-d")) {
+            std::cout << acclimate::git_diff << std::flush;
         } else if (arg == "--help" || arg == "-h") {
             print_usage(argv[0]);
         } else {
@@ -88,26 +100,25 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     } else {
-#ifndef DEBUG
         try {
-#endif
             if (arg == "-") {
                 std::cin >> std::noskipws;
-                acclimate::Acclimate acclimate(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(std::cin))));
-                return acclimate.run();
+                acclimate::ModelRun acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
+                acclimate.run();
+            } else {
+                std::ifstream settings_file(arg);
+                if (!settings_file) {
+                    throw std::runtime_error("Cannot open " + arg);
+                }
+                acclimate::ModelRun acclimate(settings::SettingsNode(std::make_unique<settings::YAML>(settings_file)));
+                acclimate.run();
             }
-            std::ifstream settings_file(arg);
-            if (!settings_file) {
-                throw std::runtime_error("Cannot open " + arg);
-            }
-            acclimate::Acclimate acclimate(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(settings_file))));
-            return acclimate.run();
-#ifndef DEBUG
-        } catch (std::runtime_error& ex) {
+        } catch (const acclimate::return_after_checkpoint&) {
+            return 7;
+        } catch (const std::exception& ex) {
             std::cerr << ex.what() << std::endl;
             return 255;
         }
-#endif
     }
     return 0;
 }

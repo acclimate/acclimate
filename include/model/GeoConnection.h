@@ -21,30 +21,29 @@
 #ifndef ACCLIMATE_GEOCONNECTION_H
 #define ACCLIMATE_GEOCONNECTION_H
 
+#include <string>
+
 #include "acclimate.h"
 #include "model/GeoEntity.h"
 
 namespace acclimate {
+class Model;
 
-template<class ModelVariant>
 class GeoLocation;
 
-template<class ModelVariant>
-class GeoConnection : public GeoEntity<ModelVariant> {
+class GeoConnection : public GeoEntity {
   public:
     enum class Type { ROAD, AVIATION, SEAROUTE, UNSPECIFIED };
 
   public:
-    const GeoLocation<ModelVariant>* location1;  // TODO encapsulate
-    const GeoLocation<ModelVariant>* location2;  // TODO encapsulate
+    const GeoLocation* location1;  // TODO encapsulate
+    const GeoLocation* location2;  // TODO encapsulate
     const Type type;
-    GeoConnection<ModelVariant>(Model<ModelVariant>* model_m,
-                                TransportDelay delay,
-                                Type type_p,
-                                const GeoLocation<ModelVariant>* location1_p,
-                                const GeoLocation<ModelVariant>* location2_p);
-    void invalidate_location(const GeoLocation<ModelVariant>* location);
-    std::string id() const override { return (location1 ? location1->id() : "INVALID") + "-" + (location2 ? location2->id() : "INVALID"); }
+
+  public:
+    GeoConnection(Model* model_m, TransportDelay delay, Type type_p, const GeoLocation* location1_p, const GeoLocation* location2_p);
+    void invalidate_location(const GeoLocation* location);
+    std::string id() const override;
 };
 }  // namespace acclimate
 

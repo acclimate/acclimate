@@ -19,64 +19,69 @@
 */
 
 #include "model/EconomicAgent.h"
+
 #include <algorithm>
+#include <iterator>
+
+#include "acclimate.h"
+#include "model/Region.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-EconomicAgent<ModelVariant>::EconomicAgent(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p)
-        :sector(sector_p), region(region_p), type(type_p) {}
+EconomicAgent::EconomicAgent(Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p)
+    : identifier(nullptr), sector(sector_p), region(region_p), type(type_p) {}
 
+EconomicAgent::EconomicAgent(Identifier* identifier_p, Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p)
+    : identifier(identifier_p), sector(sector_p), region(region_p), type(type_p) {}
 
-template<class ModelVariant>
-EconomicAgent<ModelVariant>::EconomicAgent(Identifier<ModelVariant>* identifier_p, Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const EconomicAgent<ModelVariant>::Type& type_p)
-    :identifier(identifier_p), sector(sector_p), region(region_p), type(type_p) {}
-
-template<class ModelVariant>
-inline Firm<ModelVariant>* EconomicAgent<ModelVariant>::as_firm() {
+inline Firm* EconomicAgent::as_firm() {
     assert(type == Type::FIRM);
     return nullptr;
 }
 
-template<class ModelVariant>
-inline Consumer<ModelVariant>* EconomicAgent<ModelVariant>::as_consumer() {
+inline Consumer* EconomicAgent::as_consumer() {
     assert(type == Type::CONSUMER);
     return nullptr;
 }
 
-template<class ModelVariant>
-inline const Firm<ModelVariant>* EconomicAgent<ModelVariant>::as_firm() const {
+inline const Firm* EconomicAgent::as_firm() const {
     assert(type == Type::FIRM);
     return nullptr;
 }
 
-template<class ModelVariant>
-inline const Consumer<ModelVariant>* EconomicAgent<ModelVariant>::as_consumer() const {
+inline const Consumer* EconomicAgent::as_consumer() const {
     assert(type == Type::CONSUMER);
     return nullptr;
 }
 
-template<class ModelVariant>
-Storage<ModelVariant>* EconomicAgent<ModelVariant>::find_input_storage(const std::string& sector_name) const {
-    for (const auto& is : input_storages) {
-        if (is->sector->id() == sector_name) {
-            return is.get();
-        }
+Storage* EconomicAgent::find_input_storage(const std::string& sector_name) const {
+    auto it = std::find_if(std::begin(input_storages), std::end(input_storages), [sector_name](const auto& is) { return is->sector->id() == sector_name; });
+    if (it == std::end(input_storages)) {
+        return nullptr;
     }
-    return nullptr;
+    return it->get();
 }
 
-template<class ModelVariant>
-void EconomicAgent<ModelVariant>::remove_storage(Storage<ModelVariant>* storage) {
-    auto it =
-        std::find_if(input_storages.begin(), input_storages.end(), [storage](const std::unique_ptr<Storage<ModelVariant>>& it) { return it.get() == storage; });
+void EconomicAgent::remove_storage(Storage* storage) {
+    auto it = std::find_if(std::begin(input_storages), std::end(input_storages), [storage](const auto& is) { return is.get() == storage; });
     input_storages.erase(it);
 }
 
+Model* EconomicAgent::model() const { return sector->model(); }
 
+std::string EconomicAgent::id() const { return sector->id() + ":" + region->id(); }
 
-    INSTANTIATE_BASIC(EconomicAgent);
+Parameters::AgentParameters const& EconomicAgent::parameters_writable() const {
+    debug::assertstep(this, IterationStep::INITIALIZATION);
+    return parameters_;
+}
+
+void EconomicAgent::set_forcing(const Forcing& forcing_p) {
+    debug::assertstep(this, IterationStep::SCENARIO);
+    assert(forcing_p >= 0.0);
+    forcing_ = forcing_p;
+}
+
 }  // namespace acclimate

@@ -23,45 +23,38 @@
 
 #include <string>
 #include <unordered_map>
-#include "types.h"
+
+#include "acclimate.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Firm;
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Region;
 
-template<class ModelVariant>
 class Government {
-  public:
-    const Region<ModelVariant>* region;
-
-  protected:
+  private:
     Value budget_;
+    std::unordered_map<Firm*, Ratio> taxed_firms;
+
+  public:
+    const Region* region;
 
   private:
-    std::unordered_map<Firm<ModelVariant>*, Ratio> taxed_firms;
-
-  public:
-    inline const Value& budget() const { return budget_; }
-
-  protected:
     void collect_tax();
     void redistribute_tax();
     void impose_tax();
 
   public:
-    explicit Government(Region<ModelVariant>* region_p);
+    explicit Government(Region* region_p);
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
     void define_tax(const std::string& sector, const Ratio& tax_ratio_p);
-    inline Model<ModelVariant>* model() const { return region->model(); }
-    inline std::string id() const { return "GOVM:" + region->id(); }
+    const Value& budget() const { return budget_; }
+    Model* model() const;
+    std::string id() const;
 };
 }  // namespace acclimate
 

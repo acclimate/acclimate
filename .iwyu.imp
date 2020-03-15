@@ -1,0 +1,32 @@
+[
+  {
+    "symbol": ["assert", "private", '"types.h"', "private"]
+  },
+  {
+    "symbol": ["std::size_t", "private", "<cstddef>", "public"]
+  },
+  {
+    "symbol": ["std::ifstream", "private", "<fstream>", "public"]
+  },
+  {
+    "symbol": ["std::ofstream", "private", "<fstream>", "public"]
+  },
+  {
+    "include": ["<math.h>", "public", "<cmath>", "public"]
+  },
+  {
+    "include": ["<stddef.h>", "public", "<cstddef>", "public"]
+  },
+  {
+    "include": ["<stdlib.h>", "public", "<cstdlib>", "public"]
+  },
+  {
+    "include": ["<bits/exception.h>", "private", "<stdexcept>", "public"]
+  },
+  {
+    "include": ["<ext/alloc_traits.h>", "private", "<memory>", "public"]
+  },
+  {
+    "include": ["<ext/new_allocator.h>", "private", "<memory>", "public"]
+  }
+]

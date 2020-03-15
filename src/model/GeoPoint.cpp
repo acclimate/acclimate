@@ -19,9 +19,8 @@
 */
 
 #include "model/GeoPoint.h"
+
 #include <cmath>
-#include <utility>
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 

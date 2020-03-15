@@ -19,38 +19,36 @@
 */
 
 #include "model/GeoEntity.h"
+
 #include <algorithm>
-#include <cstddef>
-#include "variants/ModelVariants.h"
+#include <iterator>
+
+#include "acclimate.h"
+#include "model/TransportChainLink.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-GeoEntity<ModelVariant>::GeoEntity(Model<ModelVariant>* model_p, TransportDelay delay_p, Type type_p) : model_m(model_p), delay(delay_p), type_m(type_p) {}
+GeoEntity::GeoEntity(Model* model_p, TransportDelay delay_p, Type type_p) : model_m(model_p), delay(delay_p), type_m(type_p) {}
 
-template<class ModelVariant>
-void GeoEntity<ModelVariant>::set_forcing_nu(Forcing forcing_nu_p) {
-    for (std::size_t i = 0; i < transport_chain_links.size(); ++i) {
-        transport_chain_links[i]->set_forcing_nu(forcing_nu_p);
+void GeoEntity::set_forcing_nu(Forcing forcing_nu_p) {
+    for (auto link : transport_chain_links) {
+        link->set_forcing_nu(forcing_nu_p);
     }
 }
 
-template<class ModelVariant>
-GeoEntity<ModelVariant>::~GeoEntity() {
-    for (auto& link : transport_chain_links) {
+GeoEntity::~GeoEntity() {
+    for (auto link : transport_chain_links) {
         link->unregister_geoentity();
     }
 }
 
-template<class ModelVariant>
-void GeoEntity<ModelVariant>::remove_transport_chain_link(TransportChainLink<ModelVariant>* transport_chain_link) {
-    auto it = std::find_if(transport_chain_links.begin(), transport_chain_links.end(),
-                           [transport_chain_link](const TransportChainLink<ModelVariant>* it) { return it == transport_chain_link; });
+void GeoEntity::remove_transport_chain_link(TransportChainLink* transport_chain_link) {
+    auto it = std::find_if(std::begin(transport_chain_links), std::end(transport_chain_links),
+                           [transport_chain_link](const auto l) { return l == transport_chain_link; });
     if (it == std::end(transport_chain_links)) {
-        error("Transport chain link " << transport_chain_link->id() << " not found");
+        throw log::error(this, "Transport chain link ", transport_chain_link->id(), " not found");
     }
     transport_chain_links.erase(it);
 }
 
-INSTANTIATE_BASIC(GeoEntity);
 }  // namespace acclimate

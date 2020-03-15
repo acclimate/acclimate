@@ -19,33 +19,30 @@
 */
 
 #include <cstring>
+
 #include "acclimate.h"
 #include "model/Model.h"
 #include "output/ArrayOutput.h"
-#include "variants/VariantPrices.h"
 #include "version.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 static void acclimate_get_variable(const char* name, const FloatType** data, std::size_t* size, const std::size_t** shape, std::size_t* dimension) {
-    const typename ArrayOutput<ModelVariant>::Variable& var =
-        static_cast<const ArrayOutput<ModelVariant>*>(Acclimate::Run<ModelVariant>::instance()->output(0))->get_variable(name);
+    const typename ArrayOutput::Variable& var = static_cast<const ArrayOutput*>(Acclimate::Run::instance()->output(0))->get_variable(name);
     *data = &var.data[0];
     *size = var.data.size();
     *shape = &var.shape[0];
     *dimension = var.shape.size();
 }
 
-template<class ModelVariant>
 static void acclimate_get_event(const std::size_t index, std::size_t* timestep, char* event, FloatType* value) {
-    const ArrayOutput<ModelVariant>* output = static_cast<const ArrayOutput<ModelVariant>*>(Acclimate::Run<ModelVariant>::instance()->output(0));
+    const ArrayOutput* output = static_cast<const ArrayOutput*>(Acclimate::Run::instance()->output(0));
     if (index >= output->get_events().size()) {
         *timestep = 0;
         event[0] = '\0';
         *value = std::numeric_limits<FloatType>::quiet_NaN();
     } else {
-        const typename ArrayOutput<ModelVariant>::Event& e = output->get_events()[index];
+        const typename ArrayOutput::Event& e = output->get_events()[index];
         *timestep = e.time;
         std::string desc = std::string(Acclimate::event_names[e.type]) + " " + (e.sector_from < 0 ? "" : output->model->sectors_C[e.sector_from]->id())
                            + (e.sector_from >= 0 && e.region_from >= 0 ? ":" : "") + (e.region_from < 0 ? "" : output->model->regions_R[e.region_from]->id())
@@ -95,7 +92,7 @@ int acclimate_run() {
 
 int acclimate_get_variable_prices(const char* name, const FloatType** data, std::size_t* size, const std::size_t** shape, std::size_t* dimension) {
     try {
-        acclimate_get_variable<VariantPrices>(name, data, size, shape, dimension);
+        acclimate_get_variable(name, data, size, shape, dimension);
         return 0;
     } catch (const std::exception& ex) {
         last_error = ex.what();
@@ -105,7 +102,7 @@ int acclimate_get_variable_prices(const char* name, const FloatType** data, std:
 
 int acclimate_get_event_prices(const std::size_t index, std::size_t* timestep, char* event, FloatType* value) {
     try {
-        acclimate_get_event<VariantPrices>(index, timestep, event, value);
+        acclimate_get_event(index, timestep, event, value);
         return 0;
     } catch (const std::exception& ex) {
         last_error = ex.what();

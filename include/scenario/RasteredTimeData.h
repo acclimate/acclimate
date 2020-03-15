@@ -22,6 +22,7 @@
 #define ACCLIMATE_RASTEREDTIMEDATA_H
 
 #include <string>
+
 #include "scenario/ExternalForcing.h"
 #include "scenario/RasteredData.h"
 
@@ -29,15 +30,16 @@ namespace acclimate {
 
 template<typename T>
 class RasteredTimeData : public RasteredData<T>, public ExternalForcing {
-  protected:
+  private:
     using RasteredData<T>::read_boundaries;
     using RasteredData<T>::data;
-    using RasteredData<T>::id;
     using RasteredData<T>::x_count;
     using RasteredData<T>::y_count;
     using RasteredData<T>::filename;
     using ExternalForcing::time_index;
     using ExternalForcing::variable;
+
+  private:
     void read_data() override;
 
   public:

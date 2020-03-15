@@ -22,92 +22,40 @@
 #define ACCLIMATE_FIRM_H
 
 #include <memory>
-#include "run.h"
+
+#include "acclimate.h"
+#include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
-#include "types.h"
+#include "model/SalesManager.h"
 
 namespace acclimate {
 
-template<class Modelvariant>
 class BusinessConnection;
-template<class Modelvariant>
+class Identifier;
 class Region;
-template<class Modelvariant>
 class Sector;
 
-template<class ModelVariant>
-class Firm : public EconomicAgent<ModelVariant> {
-  protected:
+class Firm : public EconomicAgent {
+  private:
+    using EconomicAgent::forcing_;
     Flow initial_production_X_star_ = Flow(0.0);
     Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
     Flow initial_total_use_U_star_ = Flow(0.0);
-    std::shared_ptr<BusinessConnection<ModelVariant>> self_supply_connection_;
-
-  protected:
-    using EconomicAgent<ModelVariant>::forcing_;
+    std::shared_ptr<BusinessConnection> self_supply_connection_;
 
   public:
-    using EconomicAgent<ModelVariant>::id;
-    using EconomicAgent<ModelVariant>::input_storages;
-    using EconomicAgent<ModelVariant>::model;
-    using EconomicAgent<ModelVariant>::region;
-    using EconomicAgent<ModelVariant>::sector;
-    std::unique_ptr<typename ModelVariant::CapacityManagerType> const capacity_manager;
-    std::unique_ptr<typename ModelVariant::SalesManagerType> const sales_manager;
+    using EconomicAgent::input_storages;
+    using EconomicAgent::region;
+    using EconomicAgent::sector;
+    std::unique_ptr<CapacityManager> const capacity_manager;
+    std::unique_ptr<SalesManager> const sales_manager;
 
-  public:
-    Firm<ModelVariant>* as_firm() override;
-    const Firm<ModelVariant>* as_firm() const override;
-    inline const BusinessConnection<ModelVariant>* self_supply_connection() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return self_supply_connection_.get();
-    }
-    inline void self_supply_connection(std::shared_ptr<BusinessConnection<ModelVariant>> self_supply_connection_p) {
-        assertstep(INITIALIZATION);
-        self_supply_connection_ = self_supply_connection_p;
-    }
-    inline const Flow& production_X() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return production_X_;
-    }
-    inline const Flow& initial_production_X_star() const { return initial_production_X_star_; }
-    inline const Flow& initial_total_use_U_star() const { return initial_total_use_U_star_; }
-    inline const Flow forced_initial_production_lambda_X_star() const { return round(initial_production_X_star_ * forcing_); }
-    inline const Flow maximal_production_beta_X_star() const { return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta); }
-    inline const Flow forced_maximal_production_lambda_beta_X_star() const {
-        return round(initial_production_X_star_ * forcing_ * capacity_manager->possible_overcapacity_ratio_beta);
-    }
-    inline const FlowQuantity& initial_production_quantity_X_star() const { return initial_production_X_star_.get_quantity(); }
-    inline const FlowQuantity forced_initial_production_quantity_lambda_X_star() const { return round(initial_production_X_star_.get_quantity() * forcing_); }
-    inline FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_); }
-    inline const FlowQuantity maximal_production_quantity_beta_X_star() const {
-        return round(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
-    }
-    inline FloatType maximal_production_quantity_beta_X_star_float() const {
-        return to_float(initial_production_X_star_.get_quantity() * capacity_manager->possible_overcapacity_ratio_beta);
-    }
-    const FlowQuantity forced_maximal_production_quantity_lambda_beta_X_star() const {
-        return round(initial_production_X_star_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
-    }
-    FloatType forced_maximal_production_quantity_lambda_beta_X_star_float() const {
-        return to_float(initial_production_X_star_.get_quantity()) * (capacity_manager->possible_overcapacity_ratio_beta * forcing_);
-    }
-    inline const Flow direct_loss() const {
-        return Flow(round(initial_production_X_star_.get_quantity() * Forcing(1.0 - forcing_)),
-                    production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0), true);
-    }
-    inline const Flow total_loss() const {
-        return Flow(round(initial_production_X_star_.get_quantity() - production_X_.get_quantity()),
-                    production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0), true);
-    }
-    inline const FlowValue total_value_loss() const { return (initial_production_X_star_ - production_X_).get_value(); }
-
-  protected:
+  private:
     void produce_X();
 
   public:
-    Firm(Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
-    Firm(Identifier<ModelVariant>* identifier_p, Sector<ModelVariant>* sector_p, Region<ModelVariant>* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
+    Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
+    Firm(Identifier* identifier_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;
@@ -116,9 +64,25 @@ class Firm : public EconomicAgent<ModelVariant> {
     void subtract_initial_production_X_star(const Flow& initial_production_flow_X_star);
     void add_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
     void subtract_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
-#ifdef DEBUG
+    Firm* as_firm() override { return this; }
+    const Firm* as_firm() const override { return this; }
+    const BusinessConnection* self_supply_connection() const;
+    void self_supply_connection(std::shared_ptr<BusinessConnection> self_supply_connection_p);
+    const Flow& production_X() const;
+    const Flow& initial_production_X_star() const { return initial_production_X_star_; }
+    Flow forced_initial_production_lambda_X_star() const { return round(initial_production_X_star_ * forcing_); }
+    Flow maximal_production_beta_X_star() const;
+    FlowQuantity forced_initial_production_quantity_lambda_X_star() const { return round(initial_production_X_star_.get_quantity() * forcing_); }
+    FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_); }
+    FlowQuantity forced_maximal_production_quantity_lambda_beta_X_star() const;
+    const Flow& initial_total_use_U_star() const { return initial_total_use_U_star_; }
+    Flow direct_loss() const;
+    Flow total_loss() const;
+    FlowValue total_value_loss() const { return (initial_production_X_star_ - production_X_).get_value(); }
+    using EconomicAgent::id;
+    using EconomicAgent::model;
+    // DEBUG
     void print_details() const override;
-#endif
 };
 }  // namespace acclimate
 

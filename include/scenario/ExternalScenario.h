@@ -23,20 +23,22 @@
 
 #include <memory>
 #include <string>
+
+#include "acclimate.h"
 #include "scenario/ExternalForcing.h"
 #include "scenario/Scenario.h"
-#include "types.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
+class Model;
 
-template<class ModelVariant>
-class ExternalScenario : public Scenario<ModelVariant> {
+class ExternalScenario : public Scenario {
   protected:
-    using Scenario<ModelVariant>::scenario_node;
-    using Scenario<ModelVariant>::settings;
-    using Scenario<ModelVariant>::set_firm_property;
-    using Scenario<ModelVariant>::set_consumer_property;
-
+    using Scenario::scenario_node;
+    using Scenario::settings;
     std::string forcing_file;
     std::string expression;
     std::string variable_name;
@@ -50,13 +52,15 @@ class ExternalScenario : public Scenario<ModelVariant> {
     Time time_offset = Time(0.0);
     int time_step_width = 1;
     bool stop_time_known = false;
-
     std::unique_ptr<ExternalForcing> forcing;
 
+  protected:
+    ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    using Scenario::set_consumer_property;
+    using Scenario::set_firm_property;
     bool next_forcing_file();
     std::string fill_template(const std::string& in) const;
-    ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* model_p);
-
+    unsigned int get_ref_year(const std::string& filename, const std::string& time_str);
     virtual void internal_start() {}
     virtual void internal_iterate_start() {}
     virtual bool internal_iterate_end() { return true; }
@@ -65,12 +69,11 @@ class ExternalScenario : public Scenario<ModelVariant> {
     virtual void read_forcings() = 0;
 
   public:
-    using Scenario<ModelVariant>::id;
-    using Scenario<ModelVariant>::model;
-    using Scenario<ModelVariant>::is_first_timestep;
-    ~ExternalScenario() override = default;
+    virtual ~ExternalScenario() override = default;
+    using Scenario::id;
+    using Scenario::model;
     bool iterate() override;
-    Time start() override;
+    void start() override;
     void end() override;
     std::string calendar_str() const override { return calendar_str_; }
     std::string time_units_str() const override { return time_units_str_; }

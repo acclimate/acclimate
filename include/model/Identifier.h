@@ -23,29 +23,29 @@
 
 #include <string>
 #include <vector>
-#include "run.h"
-#include "types.h"
+
+#include "acclimate.h"
 
 namespace acclimate {
 
-    template<class ModelVariant>
-    class Model;
-    template<class ModelVariant>
-    class Firm;
-    template<class ModelVariant>
-    class Identifier {
-        friend class Model<ModelVariant>;
-    protected:
-        const IntType index_m;
-        const std::string id_m;
-        Model<ModelVariant> *const model_m;
-    public:
-        Identifier(Model<ModelVariant> *model_p,
-                   std::string id_p,
-                   IntType index_p);
-        inline const std::string& id() const { return id_m; }
+class Model;
+class Firm;
+class Identifier {
+    friend class Model;
 
-        std::vector<Firm<ModelVariant>*> firms;
-    }; // namespace acclimate
-}
+  protected:
+    const IntType index_m;
+    const std::string id_m;
+    Model* const model_m;
+
+  public:
+    std::vector<Firm*> firms;
+
+  public:
+    Identifier(Model* model_p, std::string id_p, IntType index_p);
+    inline const std::string& id() const { return id_m; }
+};
+
+}  // namespace acclimate
+
 #endif

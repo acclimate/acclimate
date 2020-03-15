@@ -19,227 +19,231 @@
 */
 
 #include "model/Model.h"
+
 #include <algorithm>
 #include <chrono>
+#include <iterator>
+#include <ostream>
 #include <random>
+#include <type_traits>
+
+#include "ModelRun.h"
+#include "acclimate.h"
 #include "model/EconomicAgent.h"
+#include "model/Firm.h"  // IWYU pragma: keep
+#include "model/Identifier.h"
+#include "model/PurchasingManager.h"
 #include "model/Region.h"
-#include "model/Sector.h"
-#include "model/Storage.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-Model<ModelVariant>::Model(Run<ModelVariant>* const run_p)
-    : run_m(run_p), consumption_sector(new Sector<ModelVariant>(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector<ModelVariant>::TransportType::IMMEDIATE)), consumption_identifier(new Identifier<ModelVariant>(this, "FCON",0)) {
+Model::Model(ModelRun* const run_p)
+    : run_m(run_p),
+      consumption_sector(new Sector(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector::TransportType::IMMEDIATE)),
+      consumption_identifier(new Identifier(this, "FCON", 0)) {
     sectors.emplace_back(consumption_sector);
 }
 
-template<class ModelVariant>
-Region<ModelVariant>* Model<ModelVariant>::add_region(std::string name) {
-    auto region = new Region<ModelVariant>(this, name, regions.size());
+Region* Model::add_region(std::string name) {
+    auto region = new Region(this, std::move(name), regions.size());
     regions.emplace_back(region);
     return region;
 }
 
-template<class ModelVariant>
-Sector<ModelVariant>* Model<ModelVariant>::add_sector(std::string name,
-                                                      const Ratio& upper_storage_limit_omega_p,
-                                                      const Time& initial_storage_fill_factor_psi_p,
-                                                      typename Sector<ModelVariant>::TransportType transport_type_p) {
-    auto sector = new Sector<ModelVariant>(this, name, sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
+Sector* Model::add_sector(std::string name,
+                          const Ratio& upper_storage_limit_omega_p,
+                          const Time& initial_storage_fill_factor_psi_p,
+                          typename Sector::TransportType transport_type_p) {
+    auto sector = new Sector(this, std::move(name), sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
     sectors.emplace_back(sector);
     return sector;
 }
 
-template<class ModelVariant>
-Identifier<ModelVariant>* Model<ModelVariant>::add_identifier(std::string name) {
-    auto identifier = new Identifier<ModelVariant>(this, name, identifiers.size());
+Identifier* Model::add_identifier(std::string name) {
+    auto identifier = new Identifier(this, name, identifiers.size());
     identifiers.emplace_back(identifier);
     return identifier;
 }
 
-template<class ModelVariant>
-void Model<ModelVariant>::start() {
+void Model::start() {
     time_ = start_time_;
     timestep_ = 0;
     for (const auto& region : regions) {
         for (const auto& economic_agent : region->economic_agents) {
-            economic_agents.push_back(std::make_pair(economic_agent.get(), 0));
-            for (const auto& is : economic_agent->input_storages) {
-                purchasing_managers.push_back(std::make_pair(is->purchasing_manager.get(), 0));
-            }
+            economic_agents.emplace_back(std::make_pair(economic_agent.get(), 0));
+            std::transform(std::begin(economic_agent->input_storages), std::end(economic_agent->input_storages), std::back_inserter(purchasing_managers),
+                           [](const auto& is) { return std::make_pair(is->purchasing_manager.get(), 0); });
         }
     }
-#ifdef _OPENMP
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(std::begin(economic_agents), std::end(economic_agents), g);
-    std::shuffle(std::begin(purchasing_managers), std::end(purchasing_managers), g);
-#endif
+    if constexpr (options::PARALLELIZATION) {
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(std::begin(economic_agents), std::end(economic_agents), g);
+        std::shuffle(std::begin(purchasing_managers), std::end(purchasing_managers), g);
+    }
 }
 
-template<class ModelVariant>
-void Model<ModelVariant>::iterate_consumption_and_production() {
-    assertstep(CONSUMPTION_AND_PRODUCTION);
+void Model::iterate_consumption_and_production() {
+    debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < sectors.size(); ++i) {
+    for (std::size_t i = 0; i < sectors.size(); ++i) {  // NOLINT(modernize-loop-convert)
         sectors[i]->iterate_consumption_and_production();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions.size(); ++i) {
+    for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
         regions[i]->iterate_consumption_and_production();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
         auto& p = economic_agents[i];
         p.first->iterate_consumption_and_production();
     }
 }
 
-template<class ModelVariant>
-void Model<ModelVariant>::iterate_expectation() {
-    assertstep(EXPECTATION);
+void Model::iterate_expectation() {
+    debug::assertstep(this, IterationStep::EXPECTATION);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions.size(); ++i) {
+    for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
         regions[i]->iterate_expectation();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
         auto& p = economic_agents[i];
         p.first->iterate_expectation();
     }
 }
 
-template<class ModelVariant>
-void Model<ModelVariant>::iterate_purchase() {
-    assertstep(PURCHASE);
+void Model::iterate_purchase() {
+    debug::assertstep(this, IterationStep::PURCHASE);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions.size(); ++i) {
+    for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
         regions[i]->iterate_purchase();
     }
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < purchasing_managers.size(); ++i) {
+    for (std::size_t i = 0; i < purchasing_managers.size(); ++i) {  // NOLINT(modernize-loop-convert)
         auto t1 = std::chrono::high_resolution_clock::now();
         auto& p = purchasing_managers[i];
         p.first->iterate_purchase();
         auto t2 = std::chrono::high_resolution_clock::now();
         p.second = (t2 - t1).count();
     }
-#ifdef _OPENMP
-    std::sort(std::begin(purchasing_managers), std::end(purchasing_managers),
-              [](const std::pair<PurchasingManager<ModelVariant>*, std::size_t>& a, const std::pair<PurchasingManager<ModelVariant>*, std::size_t>& b) {
-                  return b.second > a.second;
-              });
-#endif
+    if constexpr (options::PARALLELIZATION) {
+        std::sort(std::begin(purchasing_managers), std::end(purchasing_managers),
+                  [](const std::pair<PurchasingManager*, std::size_t>& a, const std::pair<PurchasingManager*, std::size_t>& b) { return b.second > a.second; });
+    }
 }
 
-template<class ModelVariant>
-void Model<ModelVariant>::iterate_investment() {
-    assertstep(INVESTMENT);
+void Model::iterate_investment() {
+    debug::assertstep(this, IterationStep::INVESTMENT);
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < regions.size(); ++i) {
+    for (std::size_t i = 0; i < regions.size(); ++i) {  // NOLINT(modernize-loop-convert)
         regions[i]->iterate_investment();
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {
+    for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
         auto& p = economic_agents[i];
         p.first->iterate_investment();
     }
 }
 
-template<class ModelVariant>
-Region<ModelVariant>* Model<ModelVariant>::find_region(const std::string& name) const {
-    auto it = std::find_if(regions.begin(), regions.end(), [name](const std::unique_ptr<Region<ModelVariant>>& it) { return it->id() == name; });
-    if (it == regions.end()) {
+Region* Model::find_region(const std::string& name) const {
+    auto it = std::find_if(std::begin(regions), std::end(regions), [name](const auto& r) { return r->id() == name; });
+    if (it == std::end(regions)) {
         return nullptr;
     }
     return it->get();
 }
 
-template<class ModelVariant>
-Identifier<ModelVariant>* Model<ModelVariant>::find_identifier(const std::string& name) const {
-    auto it = std::find_if(identifiers.begin(), identifiers.end(), [name](const std::unique_ptr<Identifier<ModelVariant>>& it) { return it->id() == name; });
-    if (it == identifiers.end()) {
+Sector* Model::find_sector(const std::string& name) const {
+    auto it = std::find_if(std::begin(sectors), std::end(sectors), [name](const auto& s) { return s->id() == name; });
+    if (it == std::end(sectors)) {
         return nullptr;
     }
     return it->get();
 }
 
-template<class ModelVariant>
-Sector<ModelVariant>* Model<ModelVariant>::find_sector(const std::string& name) const {
-    auto it = std::find_if(sectors.begin(), sectors.end(), [name](const std::unique_ptr<Sector<ModelVariant>>& it) { return it->id() == name; });
-    if (it == sectors.end()) {
-        return nullptr;
-    }
-    return it->get();
-}
-
-template<class ModelVariant>
-Firm<ModelVariant>* Model<ModelVariant>::find_firm(const std::string& sector_name, const std::string& region_name) const {
-    Sector<ModelVariant>* sector = find_sector(sector_name);
-    if (sector) {
+Firm* Model::find_firm(const std::string& sector_name, const std::string& region_name) const {
+    Sector* sector = find_sector(sector_name);
+    if (sector != nullptr) {
         return find_firm(sector, region_name);
     }
     return nullptr;
 }
 
-template<class ModelVariant>
-    Firm<ModelVariant> *Model<ModelVariant>::find_firm(Sector<ModelVariant> *sector, const std::string& region_name) const {
-    auto it = std::find_if(sector->firms.begin(), sector->firms.end(), [region_name](const Firm<ModelVariant>* it) { return it->region->id() == region_name; });
-    if (it == sector->firms.end()) {
+Firm* Model::find_firm(Sector* sector, const std::string& region_name) const {
+    auto it = std::find_if(std::begin(sector->firms), std::end(sector->firms), [region_name](const auto f) { return f->region->id() == region_name; });
+    if (it == std::end(sector->firms)) {
         return nullptr;
     }
     return *it;
-    }
-
-
-template<class ModelVariant>
-Firm<ModelVariant>* Model<ModelVariant>::find_firm(const std::string& identifier_name) const {
-    auto it = find_identifier(identifier_name)->firms.front();
-    return it;
 }
 
-    template<class ModelVariant>
-    Firm<ModelVariant>* Model<ModelVariant>::find_firm(Identifier<ModelVariant>* identifier) const {
-       return find_firm(identifier->id());
-    }
-
-template<class ModelVariant>
-Consumer<ModelVariant>* Model<ModelVariant>::find_consumer(Region<ModelVariant>* region) const {
-    auto it = std::find_if(region->economic_agents.begin(), region->economic_agents.end(),
-                           [](const std::unique_ptr<EconomicAgent<ModelVariant>>& it) { return it->type == EconomicAgent<ModelVariant>::Type::CONSUMER; });
-    if (it == region->economic_agents.end()) {
+Consumer* Model::find_consumer(Region* region) const {
+    auto it = std::find_if(std::begin(region->economic_agents), std::end(region->economic_agents),
+                           [](const auto& ea) { return ea->type == EconomicAgent::Type::CONSUMER; });
+    if (it == std::end(region->economic_agents)) {
         return nullptr;
     }
     return it->get()->as_consumer();
 }
 
-template<class ModelVariant>
-Consumer<ModelVariant>* Model<ModelVariant>::find_consumer(const std::string& region_name) const {
-    Region<ModelVariant>* region = find_region(region_name);
-    if (region) {
+Consumer* Model::find_consumer(const std::string& region_name) const {
+    Region* region = find_region(region_name);
+    if (region != nullptr) {
         return find_consumer(region);
     }
     return nullptr;
 }
 
-template<class ModelVariant>
-GeoLocation<ModelVariant>* Model<ModelVariant>::find_location(const std::string& name) const {
-    auto it =
-        std::find_if(other_locations.begin(), other_locations.end(), [name](const std::unique_ptr<GeoLocation<ModelVariant>>& it) { return it->id() == name; });
-    if (it == other_locations.end()) {
+GeoLocation* Model::find_location(const std::string& name) const {
+    auto it = std::find_if(std::begin(other_locations), std::end(other_locations), [name](const auto& l) { return l->id() == name; });
+    if (it == std::end(other_locations)) {
         return nullptr;
     }
     return it->get();
 }
 
+void Model::switch_registers() {
+    debug::assertstep(this, IterationStep::SCENARIO);
+    current_register_ = 1 - current_register_;
+}
 
+void Model::tick() {
+    debug::assertstep(this, IterationStep::SCENARIO);
+    time_ += delta_t_;
+    ++timestep_;
+}
 
-    INSTANTIATE_BASIC(Model);
+void Model::set_delta_t(const Time& delta_t_p) {
+    debug::assertstep(this, IterationStep::INITIALIZATION);
+    delta_t_ = delta_t_p;
+}
+
+void Model::set_start_time(const Time& start_time) {
+    debug::assertstep(this, IterationStep::INITIALIZATION);
+    start_time_ = start_time;
+}
+
+void Model::set_stop_time(const Time& stop_time) {
+    debug::assertstep(this, IterationStep::INITIALIZATION);
+    stop_time_ = stop_time;
+}
+
+void Model::no_self_supply(bool no_self_supply_p) {
+    debug::assertstep(this, IterationStep::INITIALIZATION);
+    no_self_supply_ = no_self_supply_p;
+}
+
+Parameters::ModelParameters& Model::parameters_writable() {
+    debug::assertstep(this, IterationStep::INITIALIZATION);
+    return parameters_;
+}
+
+std::string timeinfo(const Model& m) { return m.run()->timeinfo(); }
+IterationStep current_step(const Model& m) { return m.run()->step(); }
+
 }  // namespace acclimate
