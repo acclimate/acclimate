@@ -1,5 +1,5 @@
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.853346-blue.svg)](http://dx.doi.org/10.5281/zenodo.853346)
-
+![C/C++ CI](https://github.com/acclimate/acclimate/workflows/C/C++%20CI/badge.svg?branch=github-actions)
 
 # Acclimate - a model for economic loss propagation
 
