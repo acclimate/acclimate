@@ -68,7 +68,16 @@ inline void to_stream(Stream& s, Arg&& arg) {
 template<class Stream, typename Arg, typename... Args>
 inline void to_stream(Stream& s, Arg&& arg, Args&&... args) {
     s << arg;
-    to_stream(s, args...);
+    to_stream(s, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+inline void output(Args&&... args) {
+#pragma omp critical(output)
+    {
+        to_stream(std::cout, std::forward<Args>(args)...);
+        std::cout << std::endl;
+    }
 }
 
 template<class>
@@ -96,14 +105,10 @@ inline acclimate::exception error(Arg&& arg, Args&&... args) {
 template<typename Arg, typename... Args>
 inline void warning(Arg&& arg, Args&&... args) {
     if constexpr (options::DEBUGGING) {
-#pragma omp critical(output)
-        {
-            if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
-                detail::to_stream(std::cout, timeinfo(*arg->model()), ", ", arg->id(), " Warning: ", std::forward<Args>(args)...);
-            } else {
-                detail::to_stream(std::cout, "Warning: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
-            }
-            std::cout << std::endl;
+        if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
+            detail::output(timeinfo(*arg->model()), ", ", arg->id(), " Warning: ", std::forward<Args>(args)...);
+        } else {
+            detail::output("Warning: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
         }
     }
 }
@@ -111,14 +116,10 @@ inline void warning(Arg&& arg, Args&&... args) {
 template<typename Arg, typename... Args>
 inline void info(Arg&& arg, Args&&... args) {
     if constexpr (options::DEBUGGING) {
-#pragma omp critical(output)
-        {
-            if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
-                detail::to_stream(std::cout, timeinfo(*arg->model()), ", ", arg->id(), ": ", std::forward<Args>(args)...);
-            } else {
-                detail::to_stream(std::cout, std::forward<Arg>(arg), std::forward<Args>(args)...);
-            }
-            std::cout << std::endl;
+        if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
+            detail::output(timeinfo(*arg->model()), ", ", arg->id(), ": ", std::forward<Args>(args)...);
+        } else {
+            detail::output(std::forward<Arg>(arg), std::forward<Args>(args)...);
         }
     }
 }
