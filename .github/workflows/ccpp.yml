@@ -1,21 +1,17 @@
-name: C/C++ CI
+name: Build
 
 on: [push]
 
 jobs:
   build-ubuntu:
-
     runs-on: ubuntu-latest
-    
     steps:
     - uses: actions/checkout@v1
       with:
         submodules: true
-    - name: install NetCDF C
+    - name: install netcdf
       run: sudo apt-get install libnetcdf-dev
     - name: configure
-      run: mkdir build && cd build && cmake -DCMAKE_CXX_FLAGS="-Werror" ..
+      run: mkdir build && cd build && cmake -DCMAKE_CXX_FLAGS="-Werror" -DCXX_WARNINGS=ON ..
     - name: build
       run: cmake --build build
-    - name: test
-      run: cd build && ctest
