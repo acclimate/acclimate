@@ -80,21 +80,28 @@ inline void output(Args&&... args) {
     }
 }
 
-template<class>
-struct to_void {
-    typedef void type;
-};
-template<class T, class = void>
-struct is_acclimate_class : std::false_type {};
+template<typename...>
+using void_t = void;
+
+template<class, class = void_t<>>
+struct has_type_member : std::false_type {};
+
 template<class T>
-struct is_acclimate_class<T, typename to_void<decltype(std::declval<T>().id())>::type> : std::true_type {};
+struct has_type_member<T, void_t<typename T::type>> : std::true_type {};
+
+template<class, class = void_t<>>
+struct is_acclimate_class : std::false_type {};
+
+template<class T>
+struct is_acclimate_class<T, void_t<decltype(std::declval<T&>().id())>> : std::true_type {};
 
 }  // namespace detail
 
 template<typename Arg, typename... Args>
 inline acclimate::exception error(Arg&& arg, Args&&... args) {
     std::ostringstream ss;
-    if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
+    if constexpr (std::is_pointer<std::remove_reference_t<Arg>>::value
+                  && detail::is_acclimate_class<std::remove_pointer_t<std::remove_reference_t<Arg>>>::value) {
         detail::to_stream(ss, timeinfo(*arg->model()), ", ", arg->id(), ": ", std::forward<Args>(args)...);
     } else {
         detail::to_stream(ss, std::forward<Arg>(arg), std::forward<Args>(args)...);
@@ -105,7 +112,8 @@ inline acclimate::exception error(Arg&& arg, Args&&... args) {
 template<typename Arg, typename... Args>
 inline void warning(Arg&& arg, Args&&... args) {
     if constexpr (options::DEBUGGING) {
-        if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
+        if constexpr (std::is_pointer<std::remove_reference_t<Arg>>::value
+                      && detail::is_acclimate_class<std::remove_pointer_t<std::remove_reference_t<Arg>>>::value) {
             detail::output(timeinfo(*arg->model()), ", ", arg->id(), " Warning: ", std::forward<Args>(args)...);
         } else {
             detail::output("Warning: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
@@ -116,7 +124,8 @@ inline void warning(Arg&& arg, Args&&... args) {
 template<typename Arg, typename... Args>
 inline void info(Arg&& arg, Args&&... args) {
     if constexpr (options::DEBUGGING) {
-        if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
+        if constexpr (std::is_pointer<std::remove_reference_t<Arg>>::value
+                      && detail::is_acclimate_class<std::remove_pointer_t<std::remove_reference_t<Arg>>>::value) {
             detail::output(timeinfo(*arg->model()), ", ", arg->id(), ": ", std::forward<Args>(args)...);
         } else {
             detail::output(std::forward<Arg>(arg), std::forward<Args>(args)...);

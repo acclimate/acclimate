@@ -56,7 +56,7 @@ class EventSeriesScenario : public ExternalScenario {
         void read_data() override;
 
       public:
-        EventForcing(const std::string& filename, const std::string& variable_name, const Model* model);
+        EventForcing(const std::string& filename, const std::string& variable_name, const EventSeriesScenario* scenario);
     };
 
   private:

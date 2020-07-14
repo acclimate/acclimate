@@ -38,7 +38,7 @@ EventSeriesScenario::EventSeriesScenario(const settings::SettingsNode& settings_
     : ExternalScenario(settings_p, std::move(scenario_node_p), model_p) {}
 
 ExternalForcing* EventSeriesScenario::read_forcing_file(const std::string& filename, const std::string& variable_name) {
-    return new EventForcing(filename, variable_name, model());
+    return new EventForcing(filename, variable_name, this);
 }
 
 void EventSeriesScenario::read_forcings() {
@@ -56,7 +56,7 @@ void EventSeriesScenario::read_forcings() {
 
 void EventSeriesScenario::EventForcing::read_data() { variable.getVar({time_index, 0, 0}, {1, sectors_count, regions_count}, &forcings[0]); }
 
-EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, const std::string& variable_name, const Model* model)
+EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, const std::string& variable_name, const EventSeriesScenario* scenario)
     : ExternalForcing(filename, variable_name) {
     std::vector<const char*> regions(file->getDim("region").getSize());
     file->getVar("region").getVar(&regions[0]);
@@ -67,14 +67,14 @@ EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, con
     firms.reserve(regions_count * sectors_count);
     forcings.reserve(regions_count * sectors_count);
     for (const auto& sector_name : sectors) {
-        Sector* sector = model->find_sector(sector_name);
+        auto* sector = scenario->model()->find_sector(sector_name);
         if (sector == nullptr) {
-            throw log::error(this, "sector '", sector_name, "' not found");
+            throw log::error(scenario, "Sector '", sector_name, "' not found");
         }
         for (const auto& region_name : regions) {
-            Firm* firm = model->find_firm(sector, region_name);
+            auto* firm = scenario->model()->find_firm(sector, region_name);
             if (firm == nullptr) {
-                log::warning(this, "firm '", sector_name, ":", region_name, "' not found");
+                log::warning(scenario, "Firm '", sector_name, ":", region_name, "' not found");
             }
             firms.push_back(firm);
             forcings.push_back(1.0);
