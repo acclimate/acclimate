@@ -152,13 +152,12 @@ void RasteredScenario<RegionForcingType>::internal_iterate_start() {
 }
 
 template<class RegionForcingType>
-bool RasteredScenario<RegionForcingType>::internal_iterate_end() {
+void RasteredScenario<RegionForcingType>::internal_iterate_end() {
     for (auto& r : region_forcings) {
         if (r.region && r.proxy_sum > 0) {
             set_region_forcing(r.region, r.forcing, r.proxy_sum);
         }
     }
-    return true;
 }
 
 template class RasteredScenario<FloatType>;

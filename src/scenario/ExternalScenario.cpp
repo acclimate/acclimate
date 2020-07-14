@@ -125,12 +125,6 @@ bool ExternalScenario::next_forcing_file() {
 }
 
 void ExternalScenario::start() {
-    if (model()->stop_time() > Time(0.0)) {
-        stop_time_known = true;
-    } else {
-        stop_time_known = false;
-    }
-
     internal_start();
 
     const settings::SettingsNode& forcing_node = scenario_node["forcing"];
@@ -163,10 +157,11 @@ void ExternalScenario::end() {
     }
 }
 
-bool ExternalScenario::iterate() {
-    if (stop_time_known && model()->time() > model()->stop_time()) {
-        return false;
+void ExternalScenario::iterate() {
+    if (next_time < 0) {
+        return;
     }
+
     if (model()->is_first_timestep()) {
         iterate_first_timestep();
     }
@@ -175,16 +170,11 @@ bool ExternalScenario::iterate() {
     if (model()->time() >= next_time) {
         read_forcings();
         next_time = Time(forcing->next_timestep()) / time_step_width;
-        if (next_time < 0) {
-            if (!next_forcing_file() && !stop_time_known) {
-                // TODO stop_time = model()->time();
-                stop_time_known = true;
-            }
-        } else {
+        if (next_time >= 0) {
             next_time += time_offset;
         }
     }
-    return internal_iterate_end();
+    internal_iterate_end();
 }
 
 }  // namespace acclimate

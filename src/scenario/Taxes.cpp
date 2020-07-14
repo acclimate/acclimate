@@ -42,11 +42,7 @@ void Taxes::start() {
     }
 }
 
-bool Taxes::iterate() {
-    if (model()->time() > model()->stop_time()) {
-        return false;
-    }
-
+void Taxes::iterate() {
     for (const settings::SettingsNode& tax : scenario_node["taxes"].as_sequence()) {
         const Time start_tax = tax["start_tax"].as<Time>();
         const Time full_tax = tax["full_tax"].as<Time>();
@@ -67,8 +63,6 @@ bool Taxes::iterate() {
             }
         }
     }
-
-    return true;
 }
 
 }  // namespace acclimate

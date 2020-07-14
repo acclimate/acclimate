@@ -51,7 +51,6 @@ class ExternalScenario : public Scenario {
     Time next_time = Time(0.0);
     Time time_offset = Time(0.0);
     int time_step_width = 1;
-    bool stop_time_known = false;
     std::unique_ptr<ExternalForcing> forcing;
 
   protected:
@@ -63,7 +62,7 @@ class ExternalScenario : public Scenario {
     unsigned int get_ref_year(const std::string& filename, const std::string& time_str);
     virtual void internal_start() {}
     virtual void internal_iterate_start() {}
-    virtual bool internal_iterate_end() { return true; }
+    virtual void internal_iterate_end() {}
     virtual void iterate_first_timestep() {}
     virtual ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) = 0;
     virtual void read_forcings() = 0;
@@ -72,7 +71,7 @@ class ExternalScenario : public Scenario {
     virtual ~ExternalScenario() override = default;
     using Scenario::id;
     using Scenario::model;
-    bool iterate() override;
+    void iterate() override;
     void start() override;
     void end() override;
     std::string calendar_str() const override { return calendar_str_; }

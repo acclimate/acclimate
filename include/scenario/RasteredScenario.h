@@ -68,7 +68,7 @@ class RasteredScenario : public ExternalScenario {
         FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, RegionForcingType& region_forcing) const = 0;
     void internal_start() override;
     void internal_iterate_start() override;
-    bool internal_iterate_end() override;
+    void internal_iterate_end() override;
     void iterate_first_timestep() override;
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;

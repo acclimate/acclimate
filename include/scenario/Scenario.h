@@ -49,7 +49,7 @@ class Scenario {
     virtual ~Scenario() = default;
     virtual void start() {}
     virtual void end() {}
-    virtual bool iterate();
+    virtual void iterate();
     virtual std::string calendar_str() const { return "standard"; }
     virtual std::string time_units_str() const;
     Model* model() const { return model_m; }

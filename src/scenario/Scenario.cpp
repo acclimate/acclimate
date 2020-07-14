@@ -151,7 +151,7 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
     }
 }
 
-bool Scenario::iterate() {
+void Scenario::iterate() {
     for (const auto& event : scenario_node["events"].as_sequence()) {
         const std::string& type = event["type"].template as<std::string>();
         if (type == "shock") {
@@ -164,7 +164,6 @@ bool Scenario::iterate() {
             }
         }
     }
-    return true;
 }
 
 std::string Scenario::time_units_str() const {
