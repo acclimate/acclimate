@@ -531,8 +531,9 @@ void PurchasingManager::iterate_purchase() {
             const FloatType ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
             const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
             if constexpr (options::DEBUGGING) {
-                const FloatType X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
+                const auto X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
                 assert(X_max <= X_hat);
+                (void)X_hat;
             }
             const FloatType lower_limit = 0.0;
             const FloatType upper_limit = X_max - ratio_X_expected_to_X * (X - Z_last);

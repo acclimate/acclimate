@@ -37,6 +37,6 @@ class exception : public std::runtime_error {
 
 class return_after_checkpoint : public std::exception {};
 
-};  // namespace acclimate
+}  // namespace acclimate
 
 #endif

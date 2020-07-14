@@ -65,6 +65,6 @@ inline unsigned int get_thread_count() {
 #endif
 }
 
-};  // namespace acclimate::openmp
+}  // namespace acclimate::openmp
 
 #endif

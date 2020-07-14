@@ -110,6 +110,8 @@ class Optimization {
 
   public:
     Optimization(nlopt_algorithm algorithm, unsigned int dim_p) : opt(nlopt_create(algorithm, dim_p)), dim_m(dim_p) {}
+    Optimization(const settings::hstring& algorithm_name, unsigned int dim_p)
+        : Optimization(static_cast<nlopt_algorithm>(get_algorithm(algorithm_name)), dim_p) {}
     ~Optimization() { nlopt_destroy(opt); }
 
     // double& xtol(std::size_t i) { return opt->xtol_abs[i]; }

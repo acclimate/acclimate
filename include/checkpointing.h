@@ -28,6 +28,6 @@ extern volatile bool is_scheduled;
 extern void initialize();
 extern void write();
 
-};  // namespace acclimate::checkpoint
+}  // namespace acclimate::checkpoint
 
 #endif
