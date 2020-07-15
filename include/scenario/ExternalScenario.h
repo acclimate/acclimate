@@ -43,6 +43,7 @@ class ExternalScenario : public Scenario {
     std::string expression;
     std::string variable_name;
     bool remove_afterwards = false;
+    bool done = false;
     unsigned int file_index_from = 0;
     unsigned int file_index_to = 0;
     unsigned int file_index = 0;

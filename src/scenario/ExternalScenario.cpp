@@ -158,7 +158,7 @@ void ExternalScenario::end() {
 }
 
 void ExternalScenario::iterate() {
-    if (next_time < 0) {
+    if (done) {
         return;
     }
 
@@ -167,6 +167,17 @@ void ExternalScenario::iterate() {
     }
 
     internal_iterate_start();
+    if (next_time < 0) {
+        if (!next_forcing_file()) {
+            done = true;
+            for (const auto& region : model()->regions) {
+                for (const auto& ea : region->economic_agents) {
+                    ea->set_forcing(Forcing(1.0));
+                }
+            }
+            return;
+        }
+    }
     if (model()->time() >= next_time) {
         read_forcings();
         next_time = Time(forcing->next_timestep()) / time_step_width;
