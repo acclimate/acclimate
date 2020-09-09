@@ -31,21 +31,66 @@ class Consumer : public EconomicAgent {
   private:
     using EconomicAgent::forcing_;
 
+  private:
+    // opitmization parameters
+    std::vector<double> upper_bounds;
+    std::vector<double> lower_bounds;
+    std::vector<double> xtol_abs;
+
+    // vectors to store desired actual, and previous consumption quantities as floats
+    std::vector<FloatType> possible_consumption;  // consumption limits considered in optimization
+    std::vector<FloatType> consumption_prices;    // prices to be considered in optimization
+    std::vector<FloatType> desired_consumption;
+    std::vector<FloatType> consumption;
+    std::vector<FloatType> previous_consumption;
+    std::vector<FloatType> previous_prices;
+
+    // field to store utility
+    double utility;
+
+    // starting values
+    std::vector<FloatType> inital_prices;
+    std::vector<FloatType> initial_consumption;
+
   public:
     using EconomicAgent::input_storages;
     using EconomicAgent::region;
+    float budget{};  // TODO: less crude way of introducing budget?!
+    std::vector<FloatType> share_factors;
+    FloatType substitution_coefficient{};
 
   public:
     Consumer* as_consumer() override { return this; };
-    explicit Consumer(Region* region_p);
+    explicit Consumer(Region* region_p);  // TODO: replace constructor in other classes
+
+    explicit Consumer(Region* region_p, float substitution_coefficient);
+
+    void initialize();
+
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;
     void iterate_investment() override;
     using EconomicAgent::id;
     using EconomicAgent::model;
+
     // DEBUG
     void print_details() const override;
+
+    FloatType expected_average_utility_E_U_r(FloatType U_r, const BusinessConnection* business_connection) const;
+    FloatType grad_expected_average_utility_E_U_r(FloatType U_r, const BusinessConnection* business_connection) const;
+    FloatType estimate_marginal_utility(const BusinessConnection* bc, FloatType production_quantity_X, FloatType unit_production_costs_n_c) const;
+    // CES utility specific funtions TODO: check if replacing by abstract funtions suitable
+    FloatType CES_utility_function(std::vector<FloatType> consumption_demands) const;
+    FloatType CES_marginal_utility(int index_of_good, std::vector<FloatType> consumption_demands) const;
+    FloatType CES_average_utility(int index_of_good,
+                                  std::vector<FloatType> current_consumption,
+                                  std::vector<FloatType> share_factors,
+                                  FloatType substitution_coefficient);
+
+    // functions for constrained optimization
+    FloatType equality_constraint(const double* x, double* grad) const;
+    FloatType max_objective(const double* x, double* grad) const;
 };
 }  // namespace acclimate
 

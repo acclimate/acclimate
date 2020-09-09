@@ -39,6 +39,8 @@ Firm::Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacit
       capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta_p)),
       sales_manager(new SalesManager(this)) {}
 
+void Firm::initialize() { this->sales_manager->initialize(); }
+
 void Firm::produce_X() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     production_X_ = capacity_manager->calc_production_X();

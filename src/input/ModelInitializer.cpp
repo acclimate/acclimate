@@ -882,9 +882,10 @@ void ModelInitializer::pre_initialize() {
 
 void ModelInitializer::post_initialize() {
     // initialize price dependent members of each capacity manager, which can only be calculated after the whole network has been initialized
-    for (auto& sector : model()->sectors) {
-        for (auto& firm : sector->firms) {
-            firm->sales_manager->initialize();
+    float substitution_coefficient = get_named_property(settings["consumer"], "utility_function", "substitution_coefficient").template as<FloatType>();
+    for (auto& region : model()->regions) {
+        for (auto& economic_agent : region->economic_agents) {
+            economic_agent->initialize();
         }
     }
 }

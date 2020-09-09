@@ -54,6 +54,7 @@ class Firm : public EconomicAgent {
 
   public:
     Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
+    void initialize();
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;
