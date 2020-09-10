@@ -53,15 +53,20 @@ void Consumer::initialize() {
     share_factors = std::vector<FloatType>(input_storages.size());
     previous_prices = std::vector<FloatType>(input_storages.size());
     previous_consumption = std::vector<FloatType>(input_storages.size());
+    desired_consumption = std::vector<FloatType>(input_storages.size());
     // initialize previous consumption as starting values, calculate budget
     budget = 0.0;
     for (std::size_t r = 0; r < input_storages.size(); ++r) {
-        previous_consumption[r] = to_float(input_storages[r]->content_S().get_quantity());
-        previous_prices[r] = 1;  // might be changed in the future, thus keeping this line
+        auto initial_storage_content = round(input_storages[r]->initial_content_S_star().get_quantity());
+        auto initial_input_flow = round(input_storages[r]->initial_input_flow_I_star().get_quantity());
+        auto initial_consumption_flow = input_storages[r]->initial_used_flow_U_star().get_quantity();
+
+        previous_consumption[r] = to_float(initial_consumption_flow);
+        previous_prices[r] = 1;  // might be non-constant in the future, thus keeping this line
         budget += previous_consumption[r] * previous_prices[r];
     }
     // initialize share factors
-    for (std::size_t r = 0; r < input_storages.size(); ++r) {
+    for (std::size_t r = 0; r < previous_prices.size(); ++r) {
         share_factors[r] = (previous_consumption[r] * previous_prices[r]) / budget;
     }
 }
@@ -76,9 +81,8 @@ FloatType Consumer::CES_utility_function(std::vector<FloatType> consumption_dema
         throw log::error(this, "number of goods and share factors does not match!");
 
     for (std::size_t r = 0; r < consumption_demands.size(); ++r) {
-        sum_over_goods =
-            sum_over_goods
-            + pow(consumption_demands[r], (substitution_coefficient - 1) / substitution_coefficient) * pow(share_factors[r], 1 / substitution_coefficient);
+        sum_over_goods +=
+            pow(consumption_demands[r], (substitution_coefficient - 1) / substitution_coefficient) * pow(share_factors[r], 1 / substitution_coefficient);
     }
     return sum_over_goods;  // outer exponent not relevant for optimization (at least for sigma >1)
 }
@@ -122,25 +126,22 @@ FloatType Consumer::max_objective(const double* x, double* grad) const {
 
 void Consumer::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-
     // get storage content of each good as maximal possible consumption and get prices from storage goods.
     // TODO: extend by alternative prices of most recent goods
     for (const auto& is : input_storages) {
-        Flow possible_used_flow_U_hat = is->get_possible_use_U_hat();
+        auto storage_content = is->get_possible_use_U_hat();
         // TODO: less "risky" data structure possible / needed?
-        possible_consumption.push_back(to_float(possible_used_flow_U_hat.get_quantity()));
-        consumption_prices.push_back(possible_used_flow_U_hat.get_price_float());  // Price(U_hat) = Price of used flow
+        possible_consumption.push_back(to_float((storage_content.get_quantity())));
+        consumption_prices.push_back((storage_content.get_price_float()));
     }
-    // initialize desired consumption vector
-    desired_consumption.clear();
-    desired_consumption.reserve(input_storages.size());
+
     // calculate maximal spending if all goods are consumed:
-    FloatType maximum_spending = 0;
+    FloatType maximum_spending = 0.0;
     for (std::size_t r = 0; r < possible_consumption.size(); ++r) {
         maximum_spending += possible_consumption[r] * consumption_prices[r];
     }
     // consumer can get all available goods, which is optimal assuming no saving incentives and positive marginal utility for all goods
-    // (no "bads" i.e. commodities with negative utility like radioactive waste)
+    // (no "bads" i.e. commodities with negative utility like radioactive waste);
     if (maximum_spending <= budget) {
         desired_consumption = possible_consumption;
     } else {
@@ -150,29 +151,28 @@ void Consumer::iterate_consumption_and_production() {
 
         // check whether enough goods available &
         // adjust if price changes make previous consumption to expensive - assuming constant expenditure per good
-        FloatType overspending_factor = 1;  // factor to adjust consumption if overspending occurs
-        FloatType used_budget;
+        FloatType used_budget = 0;
         for (std::size_t r = 0; r < possible_consumption.size(); ++r) {
             desired_consumption[r] = std::min(possible_consumption[r], previous_consumption[r]);  // cap desired consumption at maximum possible
             used_budget += desired_consumption[r] * consumption_prices[r];
         }
         if (used_budget > budget) {
+            log::info(this, "consumption budget needs to be readjusted for ", desired_consumption.size() + 1, " consumption goods)");
             for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
-                overspending_factor = previous_prices[r] / consumption_prices[r];
-                desired_consumption[r] = desired_consumption[r] * overspending_factor;
+                FloatType overspending_factor = previous_prices[r] / consumption_prices[r];
+                desired_consumption[r] = std::min(possible_consumption[r], desired_consumption[r] * overspending_factor);
                 // TODO: seems a little arbitrary, but should use budget quite well (if price decreases, share of consumption is increased) -
                 //  maybe price elasticity could be used here
             }
         }
         // utility optimization
-        consumption.clear();
-        consumption.reserve(desired_consumption.size());
+
         lower_bounds.clear();
-        lower_bounds.reserve(consumption.size());
+        lower_bounds.reserve(desired_consumption.size());
         upper_bounds.clear();
-        upper_bounds.reserve(consumption.size());
+        upper_bounds.reserve(desired_consumption.size());
         xtol_abs.clear();
-        xtol_abs.reserve(consumption.size());
+        xtol_abs.reserve(desired_consumption.size());
 
         // set parameters
         for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
@@ -200,53 +200,66 @@ void Consumer::iterate_consumption_and_production() {
                 if (opt.roundoff_limited()) {
                     if constexpr (!IGNORE_ROUNDOFFLIMITED) {
                         if constexpr (options::DEBUGGING) {
-                            // print_distribution(desired_consumption); //TODO: change to vector of flows?
+                            std::vector<double> desired_consumption_double = std::vector<double>(desired_consumption.size());
+                            for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
+                                desired_consumption_double[r] = double(desired_consumption[r]);
+                            }
+                            print_distribution(desired_consumption_double);  // TODO: change to vector of flows?
                         }
                         model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, this->region->model()->consumption_sector, nullptr, this);
                         if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                            throw log::error(this, "optimization is roundoff limited (for ", desired_consumption.size(), " consumption goods)");
+                            throw log::error(this, "optimization is roundoff limited (for ", desired_consumption.size() + 1, " consumption goods)");
                         } else {
-                            log::warning(this, "optimization is roundoff limited (for ", desired_consumption.size(), " consumption goods)");
+                            log::warning(this, "optimization is roundoff limited (for ", desired_consumption.size() + 1, " consumption goods)");
                         }
                     }
                 }
             } else if (opt.maxtime_reached()) {
                 if constexpr (options::DEBUGGING) {
-                    // print_distribution(demand_requests_D);
+                    std::vector<double> desired_consumption_double = std::vector<double>(desired_consumption.size());
+                    for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
+                        desired_consumption_double[r] = double(desired_consumption[r]);
+                    }
+                    print_distribution(desired_consumption_double);  // TODO: change to vector of flows?
                 }
                 model()->run()->event(EventType::OPTIMIZER_TIMEOUT, this->region->model()->consumption_sector, nullptr, this);
                 if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                     throw log::error(this, "optimization timed out (for ", desired_consumption.size(), " inputs)");
                 } else {
-                    log::warning(this, "optimization timed out (for ", desired_consumption.size(), " inputs)");
+                    log::warning(this, "optimization timed out (for ", desired_consumption.size() + 1, " inputs)");
                 }
 
             } else {
                 log::warning(this, "optimization finished with ", opt.last_result_description());
             }
-
-            utility = (opt.optimized_value());  // TODO: safe this anywhere?
+            utility = (opt.optimized_value());  // TODO: use this anywhere?
         } catch (const optimization::failure& ex) {
             if constexpr (options::DEBUGGING) {
-                // print_distribution(demand_requests_D);
+                std::vector<double> desired_consumption_double = std::vector<double>(desired_consumption.size());
+                for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
+                    desired_consumption_double[r] = double(desired_consumption[r]);
+                }
+                print_distribution(desired_consumption_double);  // TODO: change to vector of flows?
             }
             // TODO maxiter limit is ok, the rest fatal
             if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                 throw log::error(this, "optimization failed, ", ex.what(), " (for ", desired_consumption.size(), " inputs)");
             } else {
-                log::warning(this, "optimization failed, ", ex.what(), " (for ", desired_consumption.size(), " inputs)");
+                log::warning(this, "optimization failed, ", ex.what(), " (for ", desired_consumption.size() + 1, " inputs)");
             }
         }
+    }
 
-        // consume goods and adjust previous_consumption
-        for (std::size_t r = 0; r < input_storages.size(); ++r) {
-            Flow consumption_flow = Flow(FlowQuantity(desired_consumption[r]), Price(consumption_prices[r]));
-            // withdraw consumption from storages
-            input_storages[r]->use_content_S(consumption_flow);
-            // adjust previous consumption vector
-            previous_consumption[r] = desired_consumption[r];
-            previous_prices[r] = consumption_prices[r];
-        }
+    // consume goods and adjust previous_consumption
+    for (std::size_t r = 0; r < input_storages.size(); ++r) {
+        const Flow consumption_flow = Flow(round(FlowQuantity(desired_consumption[r])), Price(consumption_prices[r]));
+        // withdraw consumption from storage
+        // adjust previous consumption vector
+        previous_consumption[r] = desired_consumption[r];
+        previous_prices[r] = consumption_prices[r];
+        input_storages[r]->use_content_S((consumption_flow));
+        this->region->add_consumption_flow_Y((consumption_flow));
+        input_storages[r]->iterate_consumption_and_production();
     }
 }
 
@@ -272,6 +285,44 @@ void Consumer::print_details() const {
         log::info(this);
         for (const auto& is : input_storages) {
             is->purchasing_manager->print_details();
+        }
+    }
+}
+
+template<typename T1, typename T2>
+static void print_row(T1 a, T2 b) {
+    std::cout << "      " << std::setw(14) << a << " = " << std::setw(14) << b << '\n';
+}
+
+template<typename T1, typename T2, typename T3>
+static void print_row(T1 a, T2 b, T3 c) {
+    std::cout << "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n";
+}
+
+void Consumer::print_distribution(const std::vector<double>& demand_requests_D) const {
+    if constexpr (options::DEBUGGING) {
+#pragma omp critical(output)
+        {
+            std::cout << model()->run()->timeinfo() << ", " << id() << ": demand distribution for " << desired_consumption.size() << " inputs :\n";
+            FloatType purchasing_quantity = 0.0;
+            FloatType purchasing_value = 0.0;
+            FloatType initial_sum = 0.0;
+            std::vector<FloatType> last_consumption_requests(desired_consumption.size());
+            std::vector<FloatType> grad(desired_consumption.size());
+
+            const auto obj = max_objective(&desired_consumption[0], &grad[0]);
+            FloatType total_upper_bound = 0.0;
+            FloatType T_penalty = 0.0;
+            for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
+                last_consumption_requests[r] = desired_consumption[r];
+                std::cout << "      " << this->id() << " :\n";
+                print_row("grad", grad[r]);
+                print_row("share factor", share_factors[r]);
+                print_row("substitution coefficient", substitution_coefficient);
+                print_row("consumption request", desired_consumption[r]);
+                print_row("current utility", utility);
+                std::cout << '\n';
+            }
         }
     }
 }

@@ -41,7 +41,6 @@ class Consumer : public EconomicAgent {
     std::vector<FloatType> possible_consumption;  // consumption limits considered in optimization
     std::vector<FloatType> consumption_prices;    // prices to be considered in optimization
     std::vector<FloatType> desired_consumption;
-    std::vector<FloatType> consumption;
     std::vector<FloatType> previous_consumption;
     std::vector<FloatType> previous_prices;
 
@@ -55,7 +54,7 @@ class Consumer : public EconomicAgent {
   public:
     using EconomicAgent::input_storages;
     using EconomicAgent::region;
-    float budget{};  // TODO: less crude way of introducing budget?!
+    float budget;  // TODO: less crude way of introducing budget?!
     std::vector<FloatType> share_factors;
     FloatType substitution_coefficient{};
 
@@ -91,6 +90,7 @@ class Consumer : public EconomicAgent {
     // functions for constrained optimization
     FloatType equality_constraint(const double* x, double* grad) const;
     FloatType max_objective(const double* x, double* grad) const;
+    void print_distribution(const std::vector<double>& demand_requests_D) const;
 };
 }  // namespace acclimate
 

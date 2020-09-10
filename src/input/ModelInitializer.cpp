@@ -94,7 +94,8 @@ Firm* ModelInitializer::add_firm(Sector* sector, Region* region) {
 }
 
 Consumer* ModelInitializer::add_consumer(Region* region) {
-    auto consumer = new Consumer(region);
+    float substitution_coefficient = get_named_property(settings["consumers"], "ALL", "substitution_coefficient").template as<FloatType>();
+    auto consumer = new Consumer(region, substitution_coefficient);
     region->economic_agents.emplace_back(consumer);
     return consumer;
 }
@@ -850,8 +851,11 @@ void ModelInitializer::build_transport_network() {
 
 void ModelInitializer::initialize() {
     pre_initialize();
+
     build_agent_network();
+
     clean_network();
+
     post_initialize();
 }
 
@@ -882,7 +886,6 @@ void ModelInitializer::pre_initialize() {
 
 void ModelInitializer::post_initialize() {
     // initialize price dependent members of each capacity manager, which can only be calculated after the whole network has been initialized
-    float substitution_coefficient = get_named_property(settings["consumer"], "utility_function", "substitution_coefficient").template as<FloatType>();
     for (auto& region : model()->regions) {
         for (auto& economic_agent : region->economic_agents) {
             economic_agent->initialize();
