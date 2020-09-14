@@ -59,8 +59,6 @@ void Consumer::initialize() {
     // initialize previous consumption as starting values, calculate budget
     budget = 0.0;
     for (std::size_t r = 0; r < input_storages.size(); ++r) {
-        auto initial_storage_content = round(input_storages[r]->initial_content_S_star().get_quantity());
-        auto initial_input_flow = round(input_storages[r]->initial_input_flow_I_star().get_quantity());
         auto initial_consumption_flow = to_float(input_storages[r]->initial_used_flow_U_star().get_quantity());
 
         previous_consumption[r] = initial_consumption_flow;
@@ -94,14 +92,8 @@ FloatType Consumer::CES_marginal_utility(int index_of_good, std::vector<FloatTyp
            * ((substitution_coefficient - 1) / substitution_coefficient) * pow(share_factors[index_of_good], 1 / substitution_coefficient);
 }
 
-FloatType Consumer::CES_average_utility(int index_of_good,
-                                        std::vector<FloatType> current_consumption,
-                                        std::vector<FloatType> share_factors,
-                                        FloatType substitution_coefficient) {
-    // TODO: TBD, in ideal case already for abstract class, if necessary at all
-}
+// TODO: more complex budget function should be possible
 
-// TODO: more complex budget function should be possible,
 FloatType Consumer::inequality_constraint(const double* x, double* grad) {
     FloatType consumption_cost = 0;
     for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
@@ -322,14 +314,13 @@ static void print_row(T1 a, T2 b, T3 c) {
     std::cout << "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n";
 }
 
-void Consumer::print_distribution(const std::vector<double>& demand_requests_D) const {
+void Consumer::print_distribution(const std::vector<double>& consumption_demands) const {
     if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
         {
-            std::cout << model()->run()->timeinfo() << ", " << id() << ": demand distribution for " << desired_consumption.size() << " inputs :\n";
-            std::vector<FloatType> grad(desired_consumption.size());
-            const auto obj = max_objective(&desired_consumption[0], &grad[0]);
-            for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
+            std::cout << model()->run()->timeinfo() << ", " << id() << ": demand distribution for " << consumption_demands.size() << " inputs :\n";
+            std::vector<FloatType> grad(consumption_demands.size());
+            for (std::size_t r = 0; r < consumption_demands.size(); ++r) {
                 std::cout << "      " << this->id() << " :\n";
                 print_row("grad", grad[r]);
                 print_row("share factor", share_factors[r]);
