@@ -34,13 +34,8 @@
 
 namespace acclimate {
 
-Firm::Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
-    : EconomicAgent(sector_p, region_p, EconomicAgent::Type::FIRM),
-      capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta_p)),
-      sales_manager(new SalesManager(this)) {}
-
-Firm::Firm(Identifier* identifier_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
-    : EconomicAgent(identifier_p, sector_p, region_p, EconomicAgent::Type::FIRM),
+Firm::Firm(std::string name_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
+    : EconomicAgent(std::move(name_p), sector_p, region_p, EconomicAgent::Type::FIRM),
       capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta_p)),
       sales_manager(new SalesManager(this)) {}
 

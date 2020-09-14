@@ -54,8 +54,7 @@ class Firm : public EconomicAgent {
     void produce_X();
 
   public:
-    Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
-    Firm(Identifier* identifier_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
+    Firm(std::string name_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;

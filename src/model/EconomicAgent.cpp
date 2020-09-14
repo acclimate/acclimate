@@ -30,11 +30,8 @@
 
 namespace acclimate {
 
-EconomicAgent::EconomicAgent(Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p)
-    : identifier(nullptr), sector(sector_p), region(region_p), type(type_p) {}
-
-EconomicAgent::EconomicAgent(Identifier* identifier_p, Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p)
-    : identifier(identifier_p), sector(sector_p), region(region_p), type(type_p) {}
+EconomicAgent::EconomicAgent(std::string name_p, Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p)
+    : name(std::move(name_p)), sector(sector_p), region(region_p), type(type_p) {}
 
 inline Firm* EconomicAgent::as_firm() {
     assert(type == Type::FIRM);
@@ -70,8 +67,6 @@ void EconomicAgent::remove_storage(Storage* storage) {
 }
 
 Model* EconomicAgent::model() const { return sector->model(); }
-
-std::string EconomicAgent::id() const { return sector->id() + ":" + region->id(); }
 
 Parameters::AgentParameters const& EconomicAgent::parameters_writable() const {
     debug::assertstep(this, IterationStep::INITIALIZATION);

@@ -26,6 +26,7 @@
 namespace acclimate {
 
 class Region;
+class Sector;
 
 class Consumer : public EconomicAgent {
   private:
@@ -37,7 +38,7 @@ class Consumer : public EconomicAgent {
 
   public:
     Consumer* as_consumer() override { return this; };
-    explicit Consumer(Region* region_p);
+    Consumer(std::string name_p, Sector* sector_p, Region* region_p);
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;

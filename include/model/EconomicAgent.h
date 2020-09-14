@@ -47,17 +47,16 @@ class EconomicAgent {
 
   protected:
     Forcing forcing_ = Forcing(1.0);
+    std::string name;
 
   public:
-    Identifier* const identifier;
     Sector* const sector;
     Region* const region;
     std::vector<std::unique_ptr<Storage>> input_storages;
     const Type type;
 
   protected:
-    EconomicAgent(Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p);
-    EconomicAgent(Identifier* identifier_p, Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p);
+    EconomicAgent(std::string name_p, Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p);
 
   public:
     virtual ~EconomicAgent() = default;
@@ -78,7 +77,7 @@ class EconomicAgent {
     Storage* find_input_storage(const std::string& sector_name) const;
     void remove_storage(Storage* storage);
     Model* model() const;
-    virtual std::string id() const;
+    std::string id() const { return name; }
     // DEBUG
     virtual void print_details() const = 0;
 };

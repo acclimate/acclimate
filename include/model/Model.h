@@ -29,7 +29,6 @@
 
 #include "acclimate.h"
 #include "model/GeoLocation.h"
-#include "model/Identifier.h"
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "parameters.h"
@@ -61,10 +60,7 @@ class Model {
   public:
     std::vector<std::unique_ptr<Sector>> sectors;
     std::vector<std::unique_ptr<Region>> regions;
-    std::vector<std::unique_ptr<Identifier>> identifiers;
     std::vector<std::unique_ptr<GeoLocation>> other_locations;
-    Sector* const consumption_sector;
-    Identifier* const consumption_identifier;
 
   private:
     explicit Model(ModelRun* run_p);
@@ -91,7 +87,6 @@ class Model {
     unsigned char other_register() const { return 1 - current_register_; }
     const Parameters::ModelParameters& parameters() const { return parameters_; }
     Parameters::ModelParameters& parameters_writable();
-    Identifier* add_identifier(std::string name);
     Region* add_region(std::string name);
     Sector* add_sector(std::string name,
                        const Ratio& upper_storage_limit_omega_p,
@@ -104,13 +99,12 @@ class Model {
     void iterate_investment();
     Region* find_region(const std::string& name) const;
     Sector* find_sector(const std::string& name) const;
-    Identifier* find_identifier(const std::string& name) const;
+    Firm* find_firm(const std::string& name, const Sector* sector, const Region* region) const;
+    Firm* find_firm(const Sector* sector, const std::string& region_name) const;
     Firm* find_firm(const std::string& sector_name, const std::string& region_name) const;
-    Firm* find_firm(Sector* sector, const std::string& region_name) const;
-    Firm* find_firm(Identifier* identifier) const;
-    Firm* find_firm(const std::string& identifier_name) const;
-    Consumer* find_consumer(Region* region) const;
+    Consumer* find_consumer(const Region* region) const;
     Consumer* find_consumer(const std::string& region_name) const;
+    Consumer* find_consumer(const std::string& name, const Region* region) const;
     GeoLocation* find_location(const std::string& name) const;
     ModelRun* run() const { return run_m; }
     std::string id() const { return "MODEL"; }

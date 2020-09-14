@@ -44,7 +44,6 @@ namespace acclimate {
 class Consumer;
 class EconomicAgent;
 class Firm;
-class Identifier;
 class Model;
 class Region;
 class Sector;
@@ -103,8 +102,7 @@ class ModelInitializer {
     const settings::SettingsNode& settings;
 
   private:
-    settings::SettingsNode get_firm_property(const std::string& sector_name, const std::string& region_name, const std::string& property_name) const;
-    settings::SettingsNode get_firm_property(const std::string& identifier_name,
+    settings::SettingsNode get_firm_property(const std::string& name,
                                              const std::string& sector_name,
                                              const std::string& region_name,
                                              const std::string& property_name) const;
@@ -113,20 +111,15 @@ class ModelInitializer {
                                               const std::string& property_name) const;
     Sector* add_sector(const std::string& name);
     Region* add_region(const std::string& name);
-    Firm* add_firm(Sector* sector, Region* region);
-    Consumer* add_consumer(Region* region);
+    Firm* add_firm(std::string name, Sector* sector, Region* region);
+    Consumer* add_consumer(std::string name, Sector* sector, Region* region);
+    EconomicAgent* add_standard_agent(Sector* sector, Region* region);
     void create_simple_transport_connection(Region* region_from, Region* region_to, TransportDelay transport_delay);
-    Identifier* add_identifier(const std::string& name);
-    Firm* add_firm(Identifier*, Sector* sector, Region* region);
-    Firm* add_firm(Identifier*);
     void initialize_connection(Firm* firm_from, EconomicAgent* economic_agent_to, const Flow& flow);
-    void initialize_connection(Sector* sector_from, Region* region_from, Sector* sector_to, Region* region_to, const Flow& flow);
-    void initialize_connection(Identifier* identifier_from, Identifier* identifier_to, const Flow& flow);
     void clean_network();
     void pre_initialize();
     void post_initialize();
     void build_agent_network();
-    void build_agent_network_from_table(const mrio::Table<FloatType, std::size_t>& table, FloatType flow_threshold);
     void build_artificial_network();
     void build_transport_network();
     void read_transport_times_csv(const std::string& index_filename, const std::string& filename);

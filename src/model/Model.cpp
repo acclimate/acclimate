@@ -31,18 +31,12 @@
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"  // IWYU pragma: keep
-#include "model/Identifier.h"
 #include "model/PurchasingManager.h"
 #include "model/Region.h"
 
 namespace acclimate {
 
-Model::Model(ModelRun* const run_p)
-    : run_m(run_p),
-      consumption_sector(new Sector(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector::TransportType::IMMEDIATE)),
-      consumption_identifier(new Identifier(this, "FCON", 0)) {
-    sectors.emplace_back(consumption_sector);
-}
+Model::Model(ModelRun* const run_p) : run_m(run_p) {}
 
 Region* Model::add_region(std::string name) {
     auto region = new Region(this, std::move(name), regions.size());
@@ -57,12 +51,6 @@ Sector* Model::add_sector(std::string name,
     auto sector = new Sector(this, std::move(name), sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
     sectors.emplace_back(sector);
     return sector;
-}
-
-Identifier* Model::add_identifier(std::string name) {
-    auto identifier = new Identifier(this, name, identifiers.size());
-    identifiers.emplace_back(identifier);
-    return identifier;
 }
 
 void Model::start() {
@@ -169,34 +157,51 @@ Sector* Model::find_sector(const std::string& name) const {
 Firm* Model::find_firm(const std::string& sector_name, const std::string& region_name) const {
     Sector* sector = find_sector(sector_name);
     if (sector != nullptr) {
-        return find_firm(sector, region_name);
+        return find_firm(sector, region_name);  // NOTE: not necessarily unique!
     }
     return nullptr;
 }
 
-Firm* Model::find_firm(Sector* sector, const std::string& region_name) const {
+Firm* Model::find_firm(const Sector* sector, const std::string& region_name) const {
     auto it = std::find_if(std::begin(sector->firms), std::end(sector->firms), [region_name](const auto f) { return f->region->id() == region_name; });
+    if (it == std::end(sector->firms)) {
+        return nullptr;
+    }
+    return *it;  // NOTE: not necessarily unique!
+}
+
+Firm* Model::find_firm(const std::string& name, const Sector* sector, const Region* region) const {
+    auto it = std::find_if(std::begin(sector->firms), std::end(sector->firms), [region, name](const auto f) { return f->region == region && f->id() == name; });
     if (it == std::end(sector->firms)) {
         return nullptr;
     }
     return *it;
 }
 
-Consumer* Model::find_consumer(Region* region) const {
+Consumer* Model::find_consumer(const Region* region) const {
     auto it = std::find_if(std::begin(region->economic_agents), std::end(region->economic_agents),
                            [](const auto& ea) { return ea->type == EconomicAgent::Type::CONSUMER; });
     if (it == std::end(region->economic_agents)) {
         return nullptr;
     }
-    return it->get()->as_consumer();
+    return it->get()->as_consumer();  // NOTE: not necessarily unique!
 }
 
 Consumer* Model::find_consumer(const std::string& region_name) const {
     Region* region = find_region(region_name);
     if (region != nullptr) {
-        return find_consumer(region);
+        return find_consumer(region);  // NOTE: not necessarily unique!
     }
     return nullptr;
+}
+
+Consumer* Model::find_consumer(const std::string& name, const Region* region) const {
+    auto it = std::find_if(std::begin(region->economic_agents), std::end(region->economic_agents),
+                           [name](const auto& ea) { return ea->type == EconomicAgent::Type::CONSUMER && ea->id() == name; });
+    if (it == std::end(region->economic_agents)) {
+        return nullptr;
+    }
+    return it->get()->as_consumer();
 }
 
 GeoLocation* Model::find_location(const std::string& name) const {

@@ -35,14 +35,8 @@
 
 namespace acclimate {
 
-Consumer::Consumer(Region* region_p) : EconomicAgent(region_p->model()->consumption_sector, region_p, EconomicAgent::Type::CONSUMER) {}
-
-/*possible future extension to include multiple consumers
- * template<class ModelVariant>
-   Consumer<ModelVariant>::Consumer(Region<ModelVariant>* region_p)
-           : EconomicAgent<ModelVariant>(region->model() ->consumption_identifier, region_p->model()->consumption_sector, region_p,
- EconomicAgent<ModelVariant>::Type::CONSUMER) {}
-   */
+Consumer::Consumer(std::string name_p, Sector* sector_p, Region* region_p)
+    : EconomicAgent(std::move(name_p), sector_p, region_p, EconomicAgent::Type::CONSUMER) {}
 
 void Consumer::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
