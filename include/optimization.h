@@ -146,6 +146,12 @@ class Optimization {
             opt, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->equality_constraint(x, grad); }, handler,
             precision));
     }
+    template<class Handler>
+    void add_inequality_constraint(Handler* handler, double precision = 0) {
+        check(nlopt_add_inequality_constraint(
+            opt, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->inequality_constraint(x, grad); },
+            handler, precision));
+    }
 
     template<class Handler>
     void add_max_objective(Handler* handler) {

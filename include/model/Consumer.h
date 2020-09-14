@@ -46,6 +46,7 @@ class Consumer : public EconomicAgent {
 
     // field to store utility
     double utility;
+    FloatType budget_gap;
 
     // starting values
     std::vector<FloatType> inital_prices;
@@ -88,7 +89,7 @@ class Consumer : public EconomicAgent {
                                   FloatType substitution_coefficient);
 
     // functions for constrained optimization
-    FloatType equality_constraint(const double* x, double* grad) const;
+    FloatType inequality_constraint(const double* x, double* grad);
     FloatType max_objective(const double* x, double* grad) const;
     void print_distribution(const std::vector<double>& demand_requests_D) const;
 };
