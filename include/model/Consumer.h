@@ -44,6 +44,8 @@ class Consumer : public EconomicAgent {
     std::vector<FloatType> previous_consumption;
     std::vector<FloatType> previous_prices;
 
+    const std::vector<FloatType> consumption;
+
     // field to store utility
     double utility;
     FloatType budget_gap;

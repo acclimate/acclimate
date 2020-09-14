@@ -96,9 +96,9 @@ FloatType Consumer::CES_marginal_utility(int index_of_good, std::vector<FloatTyp
 
 FloatType Consumer::inequality_constraint(const double* x, double* grad) {
     FloatType consumption_cost = 0;
-    for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
-        assert(!std::isnan(desired_consumption[r]));
-        consumption_cost += desired_consumption[r] * consumption_prices[r];
+    for (std::size_t r = 0; r < consumption_prices.size(); ++r) {
+        assert(!std::isnan(x[r]));
+        consumption_cost += x[r] * consumption_prices[r];
         if (grad != nullptr) {
             grad[r] = CES_marginal_utility(r, desired_consumption);
             if constexpr (options::OPTIMIZATION_WARNINGS) {
@@ -114,9 +114,9 @@ FloatType Consumer::inequality_constraint(const double* x, double* grad) {
 }
 
 FloatType Consumer::max_objective(const double* x, double* grad) const {
-    for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
-        x[r];  // TODO:  maybe add scaling here
-        assert(!std::isnan(desired_consumption[r]));
+    for (std::size_t r = 0; r < consumption_prices.size(); ++r) {
+        // TODO:  maybe add scaling here, if needed
+        assert(!std::isnan(x[r]));
         if (grad != nullptr) {
             grad[r] = CES_marginal_utility(r, desired_consumption);
             if constexpr (options::OPTIMIZATION_WARNINGS) {
