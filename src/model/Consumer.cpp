@@ -115,7 +115,7 @@ FloatType Consumer::inequality_constraint(const double* x, double* grad) {
 
 FloatType Consumer::max_objective(const double* x, double* grad) const {
     for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
-        // TODO:  maybe add scaling here
+        x[r];  // TODO:  maybe add scaling here
         assert(!std::isnan(desired_consumption[r]));
         if (grad != nullptr) {
             grad[r] = CES_marginal_utility(r, desired_consumption);
