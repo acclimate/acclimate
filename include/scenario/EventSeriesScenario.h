@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -24,45 +24,52 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+
+#include "acclimate.h"
 #include "scenario/ExternalForcing.h"
 #include "scenario/ExternalScenario.h"
-#include "types.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
+class Model;
 
-template<class ModelVariant>
 class Firm;
 
-template<class ModelVariant>
-class EventSeriesScenario : public ExternalScenario<ModelVariant> {
-  protected:
-    using ExternalScenario<ModelVariant>::forcing;
-
+class EventSeriesScenario : public ExternalScenario {
+  private:
     class EventForcing : public ExternalForcing {
-        friend class EventSeriesScenario<ModelVariant>;
+        friend class EventSeriesScenario;
 
-      protected:
+      private:
         using ExternalForcing::file;
         using ExternalForcing::time_index;
         using ExternalForcing::variable;
-        std::vector<Firm<ModelVariant>*> firms;
+        std::vector<Firm*> firms;
         std::vector<Forcing> forcings;
         std::size_t regions_count;
         std::size_t sectors_count;
 
+      private:
         void read_data() override;
 
       public:
-        EventForcing(const std::string& filename, const std::string& variable_name, const Model<ModelVariant>* model);
+        EventForcing(const std::string& filename, const std::string& variable_name, const EventSeriesScenario* scenario);
     };
 
+  private:
+    using ExternalScenario::forcing;
+
+  private:
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
 
   public:
-    using ExternalScenario<ModelVariant>::id;
-    using ExternalScenario<ModelVariant>::model;
-    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
+    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    using ExternalScenario::id;
+    using ExternalScenario::model;
 };
 }  // namespace acclimate
 

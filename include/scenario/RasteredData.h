@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -25,38 +25,17 @@
 #include <iterator>
 #include <memory>
 #include <string>
-#include "netcdf_headers.h"
-#include "types.h"
+
+#include "acclimate.h"
+
+namespace netCDF {
+class NcFile;
+}  // namespace netCDF
 
 namespace acclimate {
 
 template<typename T>
 class RasteredData {
-  protected:
-    std::unique_ptr<T[]> data;
-    unsigned int time_step = 0;
-    FloatType x_min = 0;
-    FloatType x_max = 0;
-    FloatType x_gridsize = 0;
-    FloatType t_x_gridsize = 0;
-    FloatType t_x_min = 0;
-    FloatType t_x_max = 0;
-    std::size_t x_count = 0;
-    FloatType y_min = 0;
-    FloatType y_max = 0;
-    FloatType y_gridsize = 0;
-    FloatType t_y_gridsize = 0;
-    FloatType t_y_min = 0;
-    FloatType t_y_max = 0;
-    std::size_t y_count = 0;
-    const std::string filename;
-
-    void read_boundaries(const netCDF::NcFile* file);
-    unsigned int x_index(FloatType x_var) const;
-    unsigned int y_index(FloatType y_var) const;
-    RasteredData();
-    explicit RasteredData(std::string filename_p);
-
   public:
     class iterator {
       private:
@@ -79,6 +58,7 @@ class RasteredData {
         bool operator==(const iterator& rhs) const { return c == rhs.c; }
         bool operator!=(const iterator& rhs) const { return c != rhs.c; }
     };
+
     class X {
       protected:
         const RasteredData& rd;
@@ -88,7 +68,7 @@ class RasteredData {
         iterator begin() const { return iterator(rd.t_x_min, 0, rd.t_x_gridsize, rd.x_count); }
         iterator end() const { return iterator(rd.t_x_max, rd.x_count, rd.t_x_gridsize, rd.x_count); }
     };
-    const X x;
+
     class Y {
       protected:
         const RasteredData& rd;
@@ -98,18 +78,46 @@ class RasteredData {
         iterator begin() const { return iterator(rd.t_y_min, 0, rd.t_y_gridsize, rd.y_count); }
         iterator end() const { return iterator(rd.t_y_max, rd.y_count, rd.t_y_gridsize, rd.y_count); }
     };
-    const Y y;
-    inline FloatType abs_x_gridsize() const { return t_x_gridsize; }
-    inline FloatType abs_y_gridsize() const { return t_y_gridsize; }
 
+  protected:
+    std::unique_ptr<T[]> data;
+    FloatType x_min = 0;
+    FloatType x_max = 0;
+    FloatType x_gridsize = 0;
+    FloatType t_x_gridsize = 0;
+    FloatType t_x_min = 0;
+    FloatType t_x_max = 0;
+    std::size_t x_count = 0;
+    FloatType y_min = 0;
+    FloatType y_max = 0;
+    FloatType y_gridsize = 0;
+    FloatType t_y_gridsize = 0;
+    FloatType t_y_min = 0;
+    FloatType t_y_max = 0;
+    std::size_t y_count = 0;
+    const std::string filename;
+
+  public:
+    const X x;
+    const Y y;
+
+  protected:
+    void read_boundaries(const netCDF::NcFile* file);
+    unsigned int x_index(FloatType x_var) const;
+    unsigned int y_index(FloatType y_var) const;
+    RasteredData();
+    explicit RasteredData(std::string filename_p);
+
+  public:
     RasteredData(std::string filename_p, const std::string& variable_name);
-    virtual ~RasteredData() {}
+    virtual ~RasteredData() = default;
+    FloatType abs_x_gridsize() const { return t_x_gridsize; }
+    FloatType abs_y_gridsize() const { return t_y_gridsize; }
     template<typename T2>
     FloatType operator/(const RasteredData<T2>& other) const;
     template<typename T2>
     bool is_compatible(const RasteredData<T2>& other) const;
     T read(FloatType x_var, FloatType y_var) const;
-    virtual inline std::string id() const { return "RASTER " + filename; }
 };
 }  // namespace acclimate
 

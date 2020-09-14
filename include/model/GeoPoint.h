@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -21,20 +21,21 @@
 #ifndef ACCLIMATE_GEOPOINT_H
 #define ACCLIMATE_GEOPOINT_H
 
-#include <string>
-#include "types.h"
+#include "acclimate.h"
 
 namespace acclimate {
 
 class GeoPoint {
-  protected:
+  private:
     const FloatType lon_, lat_;
 
   public:
     GeoPoint(FloatType lon_p, FloatType lat_p);
     FloatType distance_to(const GeoPoint& other) const;
-    inline FloatType lon() const { return lon_; }
-    inline FloatType lat() const { return lat_; }
+
+    FloatType lon() const { return lon_; }
+
+    FloatType lat() const { return lat_; }
 };
 }  // namespace acclimate
 

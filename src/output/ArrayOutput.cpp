@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -19,45 +19,41 @@
 */
 
 #include "output/ArrayOutput.h"
+
 #include <limits>
 #include <utility>
+
+#include "ModelRun.h"
+#include "model/Model.h"
+#include "model/Region.h"
+#include "model/Sector.h"
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-ArrayOutput<ModelVariant>::ArrayOutput(const settings::SettingsNode& settings_p,
-                                       Model<ModelVariant>* model_p,
-                                       Scenario<ModelVariant>* scenario_p,
-                                       settings::SettingsNode output_node_p,
-                                       const bool over_time_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)), over_time(over_time_p) {
+ArrayOutput::ArrayOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p, bool over_time_p)
+    : Output(settings_p, model_p, std::move(output_node_p)), over_time(over_time_p) {
     include_events = false;
 }
 
-template<class ModelVariant>
-void ArrayOutput<ModelVariant>::initialize() {
+void ArrayOutput::initialize() {
     include_events = output_node["events"].template as<bool>(false);
     sectors_size = model()->sectors.size();
     regions_size = model()->regions.size();
 }
 
-template<class ModelVariant>
-inline typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::create_variable(const hstring& path,
-                                                                                                const hstring& name,
-                                                                                                const hstring& suffix) {
+inline typename ArrayOutput::Variable& ArrayOutput::create_variable(const hstring& path, const hstring& name, const hstring& suffix) {
     const auto key = suffix ^ name ^ path;
     auto it = variables.find(key);
     if (it == variables.end()) {
         std::size_t size = 1;
         std::vector<std::size_t> shape;
         for (const auto& t : stack) {
-            if (t.sector) {
+            if (t.sector != nullptr) {
                 shape.push_back(sectors_size);
                 size *= sectors_size;
             }
-            if (t.region) {
+            if (t.region != nullptr) {
                 shape.push_back(regions_size);
                 size *= regions_size;
             }
@@ -69,15 +65,13 @@ inline typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::
     return it->second;
 }
 
-template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
+void ArrayOutput::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     const Target& t = stack.back();
     Variable& it = create_variable(t.name, name, suffix);
     it.data[t.index] = v;
 }
 
-template<class ModelVariant>
-inline std::size_t ArrayOutput<ModelVariant>::current_index() const {
+inline std::size_t ArrayOutput::current_index() const {
     if (!stack.empty()) {
         return stack.back().index;
     }
@@ -87,33 +81,23 @@ inline std::size_t ArrayOutput<ModelVariant>::current_index() const {
     return 0;
 }
 
-template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector, Region<ModelVariant>* region) {
+void ArrayOutput::internal_start_target(const hstring& name, Sector* sector, Region* region) {
     stack.emplace_back(Target{name, current_index() * regions_size * sectors_size + sector->index() * regions_size + region->index(), sector, region});
 }
 
-template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_start_target(const hstring& name, Sector<ModelVariant>* sector) {
+void ArrayOutput::internal_start_target(const hstring& name, Sector* sector) {
     stack.emplace_back(Target{name, current_index() * sectors_size + sector->index(), sector, nullptr});
 }
 
-template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_start_target(const hstring& name, Region<ModelVariant>* region) {
+void ArrayOutput::internal_start_target(const hstring& name, Region* region) {
     stack.emplace_back(Target{name, current_index() * regions_size + region->index(), nullptr, region});
 }
 
-template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_start_target(const hstring& name) {
-    stack.emplace_back(Target{name, current_index(), nullptr, nullptr});
-}
+void ArrayOutput::internal_start_target(const hstring& name) { stack.emplace_back(Target{name, current_index(), nullptr, nullptr}); }
 
-template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_end_target() {
-    stack.pop_back();
-}
+void ArrayOutput::internal_end_target() { stack.pop_back(); }
 
-template<class ModelVariant>
-void ArrayOutput<ModelVariant>::internal_iterate_begin() {
+void ArrayOutput::internal_iterate_begin() {
     if (over_time) {
         const unsigned int t = model()->timestep();
         for (auto& var : variables) {
@@ -123,22 +107,16 @@ void ArrayOutput<ModelVariant>::internal_iterate_begin() {
     }
 }
 
-template<class ModelVariant>
-const typename ArrayOutput<ModelVariant>::Variable& ArrayOutput<ModelVariant>::get_variable(const hstring& fullname) const {
+const typename ArrayOutput::Variable& ArrayOutput::get_variable(const hstring& fullname) const {
     const auto it = variables.find(fullname);
     if (it == variables.end()) {
-        error("Variable '" << fullname << "' not found");
+        throw log::error(this, "Variable '", fullname, "' not found");
     }
     return it->second;
 }
 
-template<class ModelVariant>
-void ArrayOutput<ModelVariant>::event(EventType type,
-                                      const Sector<ModelVariant>* sector_from,
-                                      const Region<ModelVariant>* region_from,
-                                      const Sector<ModelVariant>* sector_to,
-                                      const Region<ModelVariant>* region_to,
-                                      FloatType value) {
+void ArrayOutput::event(
+    EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) {
     if (include_events) {
         Event event_struct;
         event_struct.time = model()->timestep();
@@ -154,5 +132,4 @@ void ArrayOutput<ModelVariant>::event(EventType type,
     }
 }
 
-INSTANTIATE_BASIC(ArrayOutput);
 }  // namespace acclimate

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -19,17 +19,20 @@
 */
 
 #include "scenario/ExternalForcing.h"
-#include <ostream>
+
+#include <cstddef>
 #include <utility>
-#include "run.h"
+
+#include "acclimate.h"
+#include "netcdftools.h"
 
 namespace acclimate {
 
 ExternalForcing::ExternalForcing(std::string filename_p, const std::string& variable_name) : filename(std::move(filename_p)) {
     try {
-        file.reset(new netCDF::NcFile(filename, netCDF::NcFile::read, netCDF::NcFile::nc4));
+        file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::read, netCDF::NcFile::nc4);
     } catch (netCDF::exceptions::NcException& ex) {
-        error_("Could not open '" + filename + "'");
+        throw log::error("Could not open '", filename, "'");
     }
     variable = file->getVar(variable_name);
     time_variable = file->getVar("time");
@@ -42,29 +45,29 @@ int ExternalForcing::next_timestep() {
         return -1;
     }
     read_data();
-    unsigned int day;
+    int day;
     time_variable.getVar({time_index}, {1}, &day);
     time_index++;
     return day;
 }
 
-const std::string ExternalForcing::calendar_str() const {
+std::string ExternalForcing::calendar_str() const {
     try {
         std::string res;
         time_variable.getAtt("calendar").getValues(res);
         return res;
     } catch (netCDF::exceptions::NcException& e) {
-        error_("Could not read calendar attribute in " << filename << ": " << e.what());
+        throw log::error("Could not read calendar attribute in ", filename, ": ", e.what());
     }
 }
 
-const std::string ExternalForcing::time_units_str() const {
+std::string ExternalForcing::time_units_str() const {
     try {
         std::string res;
         time_variable.getAtt("units").getValues(res);
         return res;
     } catch (netCDF::exceptions::NcException& e) {
-        error_("could not read time units attribute in " << filename << ": " << e.what());
+        throw log::error("could not read time units attribute in ", filename, ": ", e.what());
     }
 }
 }  // namespace acclimate

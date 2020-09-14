@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -21,61 +21,64 @@
 #ifndef ACCLIMATE_MODELINITIALIZER_H
 #define ACCLIMATE_MODELINITIALIZER_H
 
+#include <algorithm>
+#include <cstddef>
+#include <iterator>
+#include <memory>
 #include <string>
-#include <unordered_map>
+#include <vector>
+
+#include "acclimate.h"
 #include "model/GeoEntity.h"
 #include "settingsnode.h"
-#include "types.h"
 
 namespace mrio {
+
 template<typename ValueType, typename IndexType>
 class Table;
-}
+
+}  // namespace mrio
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Consumer;
-template<class ModelVariant>
 class EconomicAgent;
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Firm;
-template<class ModelVariant>
 class Region;
-template<class ModelVariant>
 class Sector;
 
-template<class ModelVariant>
 class ModelInitializer {
-  protected:
+  private:
     class TemporaryGeoEntity {
-      protected:
-        std::unique_ptr<GeoEntity<ModelVariant>> entity_m;
+      private:
+        std::unique_ptr<GeoEntity> entity_m;
 
       public:
         bool used;
-        GeoEntity<ModelVariant>* entity() { return entity_m.get(); }
-        TemporaryGeoEntity(GeoEntity<ModelVariant>* entity_p, bool used_p) : entity_m(entity_p), used(used_p) {}
+
+      public:
+        TemporaryGeoEntity(GeoEntity* entity_p, bool used_p) : entity_m(entity_p), used(used_p) {}
         ~TemporaryGeoEntity() {
             if (used) {
-                entity_m.release();
+                (void)entity_m.release();
             }
         }
+        GeoEntity* entity() { return entity_m.get(); }
     };
+
     class Path {
-      protected:
-        FloatType costs_m;
+      private:
+        FloatType costs_m = 0;
         std::vector<TemporaryGeoEntity*> points_m;
 
       public:
-        Path() : costs_m(0) {}
+        Path() = default;
         Path(FloatType costs_p, TemporaryGeoEntity* p1, TemporaryGeoEntity* p2, TemporaryGeoEntity* connection)
             : costs_m(costs_p), points_m({p1, connection, p2}) {}
-        inline FloatType costs() const { return costs_m; }
-        inline bool empty() const { return points_m.empty(); }
-        inline const std::vector<TemporaryGeoEntity*>& points() const { return points_m; }
+        FloatType costs() const { return costs_m; }
+        bool empty() const { return points_m.empty(); }
+        const std::vector<TemporaryGeoEntity*>& points() const { return points_m; }
         Path operator+(const Path& other) const {
             Path res;
             if (empty()) {
@@ -93,28 +96,26 @@ class ModelInitializer {
             return res;
         }
     };
-  private:
-    settings::SettingsNode get_firm_property(const std::string& sector_name, const std::string& region_name, const std::string& property_name) const;
-    settings::SettingsNode get_named_property(const std::string& tag_name, const std::string& node_name, const std::string& property_name) const;
 
-  protected:
-    Model<ModelVariant>* const model_m;
+  private:
+    Model* const model_m;
     const settings::SettingsNode& settings;
 
-    Sector<ModelVariant>* add_sector(const std::string& name);
-    Region<ModelVariant>* add_region(const std::string& name);
-    Firm<ModelVariant>* add_firm(Sector<ModelVariant>* sector, Region<ModelVariant>* region);
-    Consumer<ModelVariant>* add_consumer(Region<ModelVariant>* region);
-    void create_simple_transport_connection(Region<ModelVariant>* region_from, Region<ModelVariant>* region_to, TransportDelay transport_delay);
-    void initialize_connection(Sector<ModelVariant>* sector_from,
-                               Region<ModelVariant>* region_from,
-                               Sector<ModelVariant>* sector_to,
-                               Region<ModelVariant>* region_to,
-                               const Flow& flow);
-    void initialize_connection(Firm<ModelVariant>* firm_from, EconomicAgent<ModelVariant>* economic_agent_to, const Flow& flow);
+  private:
+    settings::SettingsNode get_firm_property(const std::string& sector_name, const std::string& region_name, const std::string& property_name) const;
+    settings::SettingsNode get_named_property(const settings::SettingsNode& node_settings,
+                                              const std::string& node_name,
+                                              const std::string& property_name) const;
+    Sector* add_sector(const std::string& name);
+    Region* add_region(const std::string& name);
+    Firm* add_firm(Sector* sector, Region* region);
+    Consumer* add_consumer(Region* region);
+    void create_simple_transport_connection(Region* region_from, Region* region_to, TransportDelay transport_delay);
+    void initialize_connection(Firm* firm_from, EconomicAgent* economic_agent_to, const Flow& flow);
+    void initialize_connection(Sector* sector_from, Region* region_from, Sector* sector_to, Region* region_to, const Flow& flow);
     void clean_network();
-    void pre_initialize_variant();
-    void post_initialize_variant();
+    void pre_initialize();
+    void post_initialize();
     void build_agent_network();
     void build_agent_network_from_table(const mrio::Table<FloatType, std::size_t>& table, FloatType flow_threshold);
     void build_artificial_network();
@@ -124,13 +125,11 @@ class ModelInitializer {
     void read_transport_network_netcdf(const std::string& filename);
 
   public:
-    ModelInitializer(Model<ModelVariant>* model_p, const settings::SettingsNode& settings_p);
+    ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p);
     void initialize();
-#ifdef DEBUG
     void print_network_characteristics() const;
-#endif
-    inline Model<ModelVariant>* model() const { return model_m; }
-    inline std::string id() const { return "MODELINITIALIZER"; }
+    Model* model() const { return model_m; }
+    std::string id() const { return "MODELINITIALIZER"; }
 };
 }  // namespace acclimate
 

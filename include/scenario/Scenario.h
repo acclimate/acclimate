@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -22,37 +22,38 @@
 #define ACCLIMATE_SCENARIO_H
 
 #include <string>
-#include "model/Consumer.h"
-#include "model/Firm.h"
-#include "model/Model.h"
+
 #include "settingsnode.h"
-#include "types.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
+class Consumer;
+class Firm;
+class GeoLocation;
+class Model;
+
 class Scenario {
   protected:
     settings::SettingsNode scenario_node;
     const settings::SettingsNode& settings;
-    Model<ModelVariant>* const model_m;
-    void set_firm_property(Firm<ModelVariant>* firm, const settings::SettingsNode& node, const bool reset);
-    void set_consumer_property(Consumer<ModelVariant>* consumer, const settings::SettingsNode& node, const bool reset);
-    void set_location_property(GeoLocation<ModelVariant>* location, const settings::SettingsNode& node, const bool reset);
-    void apply_target(const settings::SettingsNode& node, const bool reset);
+    Model* const model_m;
+
+  protected:
+    void set_firm_property(Firm* firm, const settings::SettingsNode& node, bool reset);
+    void set_consumer_property(Consumer* consumer, const settings::SettingsNode& node, bool reset);
+    void set_location_property(GeoLocation* location, const settings::SettingsNode& node, bool reset);
+    void apply_target(const settings::SettingsNode& node, bool reset);
 
   public:
-    Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
-    virtual ~Scenario() {}
-    virtual Time start() { return Time(0.0); }  // TODO eliminate return type
+    Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    virtual ~Scenario() = default;
+    virtual void start() {}
     virtual void end() {}
-    virtual bool is_first_timestep() const { return model()->timestep() == 0; }
-    virtual bool is_last_timestep() const { return model()->time() >= model()->stop_time(); }
-    virtual bool iterate();
+    virtual void iterate();
     virtual std::string calendar_str() const { return "standard"; }
     virtual std::string time_units_str() const;
-    inline Model<ModelVariant>* model() const { return model_m; }
-    virtual inline std::string id() const { return "SCENARIO"; }
+    Model* model() const { return model_m; }
+    virtual std::string id() const { return "SCENARIO"; }
 };
 }  // namespace acclimate
 

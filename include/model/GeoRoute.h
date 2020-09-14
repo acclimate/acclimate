@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -21,17 +21,16 @@
 #ifndef ACCLIMATE_GEOROUTE_H
 #define ACCLIMATE_GEOROUTE_H
 
-#include "acclimate.h"
+#include <string>
+#include <vector>
 
 namespace acclimate {
 
-template<class ModelVariant>
 class GeoEntity;
 
-template<class ModelVariant>
 class GeoRoute {
   public:
-    std::vector<GeoEntity<ModelVariant>*> path;
+    std::vector<GeoEntity*> path;
     std::string id() const;
 };
 }  // namespace acclimate

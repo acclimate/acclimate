@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -22,6 +22,7 @@
 #define ACCLIMATE_RASTEREDTIMEDATA_H
 
 #include <string>
+
 #include "scenario/ExternalForcing.h"
 #include "scenario/RasteredData.h"
 
@@ -29,16 +30,17 @@ namespace acclimate {
 
 template<typename T>
 class RasteredTimeData : public RasteredData<T>, public ExternalForcing {
-  protected:
+  private:
     using RasteredData<T>::read_boundaries;
     using RasteredData<T>::data;
-    using RasteredData<T>::id;
     using RasteredData<T>::x_count;
     using RasteredData<T>::y_count;
     using RasteredData<T>::filename;
     using ExternalForcing::time_index;
     using ExternalForcing::variable;
-    void read_data();
+
+  private:
+    void read_data() override;
 
   public:
     RasteredTimeData(const std::string& filename_p, const std::string& variable_name);

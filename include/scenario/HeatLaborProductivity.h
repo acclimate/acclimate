@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -22,33 +22,32 @@
 #define ACCLIMATE_HEATLABORPRODUCTIVITY_H
 
 #include <vector>
+
+#include "acclimate.h"
 #include "scenario/RasteredScenario.h"
-#include "types.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
 class Region;
+
 using HeatLaborProductivityRegionForcingType = std::vector<FloatType>;
 
-template<class ModelVariant>
-class HeatLaborProductivity : public RasteredScenario<ModelVariant, HeatLaborProductivityRegionForcingType> {
-  protected:
+class HeatLaborProductivity : public RasteredScenario<HeatLaborProductivityRegionForcingType> {
+  private:
     using RegionForcingType = HeatLaborProductivityRegionForcingType;
-    RegionForcingType new_region_forcing(Region<ModelVariant>* region) const override;
-    void set_region_forcing(Region<ModelVariant>* region, const RegionForcingType& forcing, FloatType proxy_sum) const override;
-    void reset_forcing(Region<ModelVariant>* region, RegionForcingType& forcing) const override;
-    void add_cell_forcing(FloatType x,
-                          FloatType y,
-                          FloatType proxy_value,
-                          FloatType cell_forcing,
-                          const Region<ModelVariant>* region,
-                          RegionForcingType& region_forcing) const override;
+    RegionForcingType new_region_forcing(Region* region) const override;
+    void set_region_forcing(Region* region, const RegionForcingType& forcing, FloatType proxy_sum) const override;
+    void reset_forcing(Region* region, RegionForcingType& forcing) const override;
+    void add_cell_forcing(
+        FloatType x, FloatType y, FloatType proxy_value, FloatType cell_forcing, const Region* region, RegionForcingType& region_forcing) const override;
 
   public:
-    HeatLaborProductivity(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
+    HeatLaborProductivity(const settings::SettingsNode& settings_p, const settings::SettingsNode& scenario_node_p, Model* model_p);
 };
 }  // namespace acclimate
 

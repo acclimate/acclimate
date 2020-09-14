@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -19,28 +19,29 @@
 */
 
 #include "model/GeoConnection.h"
-#include "variants/ModelVariants.h"
+
+#include "acclimate.h"
+#include "model/GeoLocation.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-GeoConnection<ModelVariant>::GeoConnection(Model<ModelVariant>* const model_m,
-                                           TransportDelay delay,
-                                           Type type_p,
-                                           const GeoLocation<ModelVariant>* location1_p,
-                                           const GeoLocation<ModelVariant>* location2_p)
-    : GeoEntity<ModelVariant>(model_m, delay, GeoEntity<ModelVariant>::Type::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
+class Model;
 
-template<class ModelVariant>
-void GeoConnection<ModelVariant>::invalidate_location(const GeoLocation<ModelVariant>* location) {
+GeoConnection::GeoConnection(Model* model_m, TransportDelay delay, Type type_p, const GeoLocation* location1_p, const GeoLocation* location2_p)
+    : GeoEntity(model_m, delay, GeoEntity::Type::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
+
+void GeoConnection::invalidate_location(const GeoLocation* location) {
     if (location1 == location) {
         location1 = nullptr;
     } else if (location2 == location) {
         location2 = nullptr;
     } else {
-        error("Location not part of this connection or already invalidated");
+        throw log::error(this, "Location not part of this connection or already invalidated");
     }
 }
 
-INSTANTIATE_BASIC(GeoConnection);
+std::string GeoConnection::id() const {
+    return (location1 != nullptr ? location1->id() : "INVALID") + "-" + (location2 != nullptr ? location2->id() : "INVALID");
+}
+
 }  // namespace acclimate

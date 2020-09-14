@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -21,94 +21,68 @@
 #ifndef ACCLIMATE_REGION_H
 #define ACCLIMATE_REGION_H
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
+
+#include "acclimate.h"
+#include "model/EconomicAgent.h"
 #include "model/GeoLocation.h"
-#include "model/GeoRoute.h"
-#include "run.h"
-#include "types.h"
+#include "model/GeoRoute.h"  // IWYU pragma: keep
+#include "model/Government.h"
+#include "model/Sector.h"
+#include "openmp.h"
+#include "parameters.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-class EconomicAgent;
-template<class ModelVariant>
-class Government;
-template<class ModelVariant>
-class Infrastructure;
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
-class Sector;
 
-template<class ModelVariant>
-class Region : public GeoLocation<ModelVariant> {
-    friend class Model<ModelVariant>;
+class Region : public GeoLocation {
+    friend class Model;
+    friend class ModelInitializer;
 
-  protected:
-    Flow export_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
-    OpenMPLock export_flow_Z_lock;
-    Flow import_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
-    OpenMPLock import_flow_Z_lock;
-    Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
-    OpenMPLock consumption_flow_Y_lock;
-    std::unique_ptr<Government<ModelVariant>> government_m;
-    const IntType index_m;
-    typename ModelVariant::RegionParameters parameters_m;
-    OpenMPLock economic_agents_lock;
-
+  private:
     struct route_hash {
-        std::size_t operator()(const std::pair<IntType, typename Sector<ModelVariant>::TransportType>& p) const {
+        std::size_t operator()(const std::pair<IndexType, typename Sector::TransportType>& p) const {
             return (p.first << 3) | (static_cast<IntType>(p.second));
         }
     };
-    Region(Model<ModelVariant>* model_p, std::string name_p, const IntType index_p);
-    void iterate_consumption_and_production_variant();
-    void iterate_expectation_variant();
-    void iterate_purchase_variant();
-    void iterate_investment_variant();
+
+  private:
+    Flow export_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
+    openmp::Lock export_flow_Z_lock;
+    Flow import_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
+    openmp::Lock import_flow_Z_lock;
+    Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
+    openmp::Lock consumption_flow_Y_lock;
+    std::unordered_map<std::pair<IndexType, typename Sector::TransportType>, GeoRoute, route_hash> routes;
+    std::unique_ptr<Government> government_m;
+    const IndexType index_m;
+    Parameters::RegionParameters parameters_m;
+    openmp::Lock economic_agents_lock;
 
   public:
-    std::vector<std::unique_ptr<EconomicAgent<ModelVariant>>> economic_agents;
-    std::unordered_map<std::pair<IntType, typename Sector<ModelVariant>::TransportType>, GeoRoute<ModelVariant>, route_hash> routes;
-    using GeoLocation<ModelVariant>::connections;
+    using GeoLocation::connections;
+    std::vector<std::unique_ptr<EconomicAgent>> economic_agents;
 
-    using GeoLocation<ModelVariant>::id;
-    using GeoLocation<ModelVariant>::model;
-    Region<ModelVariant>* as_region() override;
-    const Region<ModelVariant>* as_region() const override;
-    inline const Flow& consumption_C() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return consumption_flow_Y_[model()->current_register()];
-    }
-    inline const Flow& import_flow_Z() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return import_flow_Z_[model()->current_register()];
-    }
-    inline const Flow& export_flow_Z() const {
-        assertstepnot(CONSUMPTION_AND_PRODUCTION);
-        return export_flow_Z_[model()->current_register()];
-    }
-    inline void set_government(Government<ModelVariant>* government_p) {
-        assertstep(INITIALIZATION);
-#ifdef DEBUG
-        if (government_m) {
-            error("Government already set");
-        }
-#endif
-        government_m.reset(government_p);
-    }
-    inline Government<ModelVariant>* government() { return government_m.get(); }
-    inline Government<ModelVariant> const* government() const { return government_m.get(); }
-    inline const typename ModelVariant::RegionParameters& parameters() const { return parameters_m; }
-    inline const typename ModelVariant::RegionParameters& parameters_writable() const {
-        assertstep(INITIALIZATION);
-        return parameters_m;
-    }
-    ~Region();
-    inline IntType index() const { return index_m; };
+  private:
+    Region(Model* model_p, std::string id_p, IndexType index_p);
+
+  public:
+    ~Region() override = default;
+    const Flow& consumption_C() const;
+    const Flow& import_flow_Z() const;
+    const Flow& export_flow_Z() const;
+    void set_government(Government* government_p);
+    Government* government();
+    Government const* government() const;
+    const Parameters::RegionParameters& parameters() const { return parameters_m; }
+    const Parameters::RegionParameters& parameters_writable() const;
+    IndexType index() const { return index_m; }
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);
     void add_consumption_flow_Y(const Flow& consumption_flow_Y_p);
@@ -117,8 +91,12 @@ class Region : public GeoLocation<ModelVariant> {
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
-    const GeoRoute<ModelVariant>& find_path_to(Region<ModelVariant>* region, typename Sector<ModelVariant>::TransportType transport_type) const;
-    void remove_economic_agent(EconomicAgent<ModelVariant>* economic_agent);
+    const GeoRoute& find_path_to(Region* region, typename Sector::TransportType transport_type) const;
+    Region* as_region() override { return this; }
+    const Region* as_region() const override { return this; }
+    using GeoLocation::id;
+    using GeoLocation::model;
+    void remove_economic_agent(EconomicAgent* economic_agent);
 };
 }  // namespace acclimate
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -21,19 +21,21 @@
 #ifndef ACCLIMATE_GEOLOCATION_H
 #define ACCLIMATE_GEOLOCATION_H
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "acclimate.h"
 #include "model/GeoEntity.h"
-#include "model/GeoPoint.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class GeoConnection;
-template<class ModelVariant>
+class GeoPoint;
+class Model;
 class Region;
 
-template<class ModelVariant>
-class GeoLocation : public GeoEntity<ModelVariant> {
+class GeoLocation : public GeoEntity {
   public:
     enum class Type { REGION, SEA, PORT };
 
@@ -42,27 +44,25 @@ class GeoLocation : public GeoEntity<ModelVariant> {
     const std::string id_m;
 
   public:
-    using GeoEntity<ModelVariant>::model;
-    std::vector<std::shared_ptr<GeoConnection<ModelVariant>>> connections;
+    std::vector<std::shared_ptr<GeoConnection>> connections;
     const Type type;
 
-    GeoLocation(Model<ModelVariant>* const model_m, TransportDelay delay_p, Type type_p, std::string id_p);
-    virtual ~GeoLocation();
-    virtual inline Region<ModelVariant>* as_region() {
-        assert(type == Type::REGION);
-        return nullptr;
-    }
-    virtual inline const Region<ModelVariant>* as_region() const {
-        assert(type == Type::REGION);
-        return nullptr;
-    }
-    void set_centroid(std::unique_ptr<GeoPoint>& centroid_p) {
-        assertstep(INITIALIZATION);
-        return centroid_m.reset(centroid_p.release());
-    }
+  public:
+    GeoLocation(Model* model_m, TransportDelay delay_p, Type type_p, std::string id_p);
+    virtual ~GeoLocation() override;
+    void set_centroid(std::unique_ptr<GeoPoint>& centroid_p);
     const GeoPoint* centroid() const { return centroid_m.get(); }
-    void remove_connection(const GeoConnection<ModelVariant>* connection);
-    inline std::string id() const override { return id_m; }
+    void remove_connection(const GeoConnection* connection);
+    virtual Region* as_region() {
+        assert(type == Type::REGION);
+        return nullptr;
+    }
+    virtual const Region* as_region() const {
+        assert(type == Type::REGION);
+        return nullptr;
+    }
+    using GeoEntity::model;
+    std::string id() const override { return id_m; }
 };
 }  // namespace acclimate
 

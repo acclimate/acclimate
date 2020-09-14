@@ -19,43 +19,35 @@
 */
 
 #include "output/ProgressOutput.h"
-#include <iostream>
-#include <string>
+
+#include <cstddef>
 #include <utility>
-#include "model/Model.h"
-#include "model/Sector.h"
+
 #include "progressbar.h"
-#include "variants/ModelVariants.h"
+#include "settingsnode.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-ProgressOutput<ModelVariant>::ProgressOutput(const settings::SettingsNode& settings_p,
-                                             Model<ModelVariant>* model_p,
-                                             Scenario<ModelVariant>* scenario_p,
-                                             settings::SettingsNode output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)) {}
+ProgressOutput::ProgressOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, std::move(output_node_p)) {}
 
-template<class ModelVariant>
-void ProgressOutput<ModelVariant>::initialize() {
+void ProgressOutput::initialize() {
     const auto total = output_node["total"].template as<std::size_t>();
-    bar.reset(new progressbar::ProgressBar(total));
+    bar = std::make_unique<progressbar::ProgressBar>(total);
 }
 
-template<class ModelVariant>
-void ProgressOutput<ModelVariant>::checkpoint_resume() {
+void ProgressOutput::checkpoint_stop() {
+    bar->println("     [ Checkpointing ]", false);
+    bar->abort();
+}
+
+void ProgressOutput::checkpoint_resume() {
     bar->reset_eta();
+    bar->resume();
 }
 
-template<class ModelVariant>
-void ProgressOutput<ModelVariant>::internal_end() {
-    bar->close();
-}
+void ProgressOutput::internal_end() { bar->close(); }
 
-template<class ModelVariant>
-void ProgressOutput<ModelVariant>::internal_iterate_end() {
-    ++(*bar);
-}
+void ProgressOutput::internal_iterate_end() { ++(*bar); }
 
-INSTANTIATE_BASIC(ProgressOutput);
 }  // namespace acclimate

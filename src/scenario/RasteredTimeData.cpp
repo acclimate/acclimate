@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -19,8 +19,10 @@
 */
 
 #include "scenario/RasteredTimeData.h"
+
 #include <memory>
-#include "types.h"
+
+#include "acclimate.h"
 
 namespace acclimate {
 
@@ -37,5 +39,6 @@ void RasteredTimeData<T>::read_data() {
 }
 
 template class RasteredTimeData<int>;
+
 template class RasteredTimeData<FloatType>;
 }  // namespace acclimate

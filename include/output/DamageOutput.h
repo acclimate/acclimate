@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -23,42 +23,33 @@
 
 #include <fstream>
 #include <memory>
+
+#include "acclimate.h"
 #include "output/Output.h"
-#include "types.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
-class Region;
-template<class ModelVariant>
-class Sector;
-template<class ModelVariant>
-class Scenario;
 
-template<class ModelVariant>
-class DamageOutput : public Output<ModelVariant> {
-  public:
-    using Output<ModelVariant>::output_node;
-    using Output<ModelVariant>::model;
-    using Output<ModelVariant>::settings;
-
+class DamageOutput : public Output {
   private:
+    using Output::output_node;
     FlowQuantity damage;
-
-  protected:
     std::ostream* out;
     std::unique_ptr<std::ofstream> outfile;
+
+  private:
     void internal_iterate_end() override;
     void internal_end() override;
 
   public:
-    DamageOutput(const settings::SettingsNode& settings_p,
-                 Model<ModelVariant>* model_p,
-                 Scenario<ModelVariant>* scenario_p,
-                 settings::SettingsNode output_node_p);
+    DamageOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);
     void initialize() override;
+    using Output::model;
 };
 }  // namespace acclimate
 

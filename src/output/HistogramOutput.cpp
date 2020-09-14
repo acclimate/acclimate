@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -19,85 +19,72 @@
 */
 
 #include "output/HistogramOutput.h"
+
+#include <algorithm>
 #include <cstddef>
 #include <ctime>
+#include <iterator>
 #include <string>
 #include <utility>
+
 #include "model/Model.h"
 #include "settingsnode.h"
-#include "variants/ModelVariants.h"
 #include "version.h"
+
+struct tm;
 
 namespace acclimate {
 
-template<class ModelVariant>
-HistogramOutput<ModelVariant>::HistogramOutput(const settings::SettingsNode& settings_p,
-                                               Model<ModelVariant>* model_p,
-                                               Scenario<ModelVariant>* scenario_p,
-                                               settings::SettingsNode output_node_p)
-    : Output<ModelVariant>(settings_p, model_p, scenario_p, std::move(output_node_p)) {
+HistogramOutput::HistogramOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)
+    : Output(settings_p, model_p, std::move(output_node_p)) {
     windows = 0;
     min = 0;
     max = 1;
     exclude_max = false;
 }
 
-template<class ModelVariant>
-void HistogramOutput<ModelVariant>::initialize() {
+void HistogramOutput::initialize() {
     min = output_node["windows"]["min"].template as<double>();
     max = output_node["windows"]["max"].template as<double>();
     exclude_max = output_node["windows"]["exclude_max"].template as<bool>();
     windows = output_node["windows"]["count"].template as<int>();
-    const std::string filename = output_node["file"].template as<std::string>();
+    const auto filename = output_node["file"].template as<std::string>();
     file.open(filename.c_str(), std::ofstream::out);
     count.resize(windows);
 }
 
-template<class ModelVariant>
-void HistogramOutput<ModelVariant>::internal_write_header(tm* timestamp, int max_threads) {
-    file << "# Start time: " << std::asctime(timestamp) << "# Version: " << ACCLIMATE_VERSION << "\n"
+void HistogramOutput::internal_write_header(tm* timestamp, unsigned int max_threads) {
+    file << "# Start time: " << std::asctime(timestamp) << "# Version: " << version << "\n"
          << "# Max number of threads: " << max_threads << "\n";
 }
 
-template<class ModelVariant>
-void HistogramOutput<ModelVariant>::internal_write_footer(tm* duration) {
-    file << "# Duration: " << std::mktime(duration) << "s\n";
-}
+void HistogramOutput::internal_write_footer(tm* duration) { file << "# Duration: " << std::mktime(duration) << "s\n"; }
 
-template<class ModelVariant>
-void HistogramOutput<ModelVariant>::internal_write_settings() {
+void HistogramOutput::internal_write_settings() {
     std::stringstream ss;
-    ss << settings;
+    ss << settings_string;
     ss.flush();
     ss.seekg(0);
     std::string line;
     file << "# Settings:\n";
-    while (getline(ss, line)) {
+    while (std::getline(ss, line)) {
         file << "# " << line << "\n";
     }
     file << "#\n";
 }
 
-template<class ModelVariant>
-void HistogramOutput<ModelVariant>::internal_iterate_begin() {
-    std::fill(std::begin(count), std::end(count), 0);
-}
+void HistogramOutput::internal_iterate_begin() { std::fill(std::begin(count), std::end(count), 0); }
 
-template<class ModelVariant>
-void HistogramOutput<ModelVariant>::internal_iterate_end() {
+void HistogramOutput::internal_iterate_end() {
     for (std::size_t i = 0; i < windows; ++i) {
         file << model()->time() << " " << (min + i * (max - min) / (windows - 1)) << " " << count[i] << "\n";
     }
     file << "\n";
 }
 
-template<class ModelVariant>
-void HistogramOutput<ModelVariant>::internal_end() {
-    file.close();
-}
+void HistogramOutput::internal_end() { file.close(); }
 
-template<class ModelVariant>
-void HistogramOutput<ModelVariant>::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
+void HistogramOutput::internal_write_value(const hstring& name, FloatType v, const hstring& suffix) {
     UNUSED(name);
     UNUSED(suffix);
     if (v >= min && (v < max || !exclude_max)) {
@@ -105,5 +92,4 @@ void HistogramOutput<ModelVariant>::internal_write_value(const hstring& name, Fl
     }
 }
 
-INSTANTIATE_BASIC(HistogramOutput);
 }  // namespace acclimate

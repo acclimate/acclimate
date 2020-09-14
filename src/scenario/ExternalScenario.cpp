@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -19,24 +19,25 @@
 */
 
 #include "scenario/ExternalScenario.h"
+
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
-#include "model/EconomicAgent.h"
-#include "model/Region.h"
-#include "model/Sector.h"
-#include "netcdf_headers.h"
+#include <ostream>
+#include <utility>
+
+#include "acclimate.h"
+#include "model/Model.h"
 #include "scenario/ExternalForcing.h"
-#include "variants/ModelVariants.h"
+#include "settingsnode.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-ExternalScenario<ModelVariant>::ExternalScenario(const settings::SettingsNode& settings_p,
-                                                 settings::SettingsNode scenario_node_p,
-                                                 Model<ModelVariant>* const model_p)
-    : Scenario<ModelVariant>(settings_p, scenario_node_p, model_p) {}
+ExternalScenario::ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
+    : Scenario(settings_p, std::move(scenario_node_p), model_p) {}
 
-template<class ModelVariant>
-std::string ExternalScenario<ModelVariant>::fill_template(const std::string& in) const {
+std::string ExternalScenario::fill_template(const std::string& in) const {
     const char* beg_mark = "[[";
     const char* end_mark = "]]";
     std::ostringstream ss;
@@ -61,24 +62,23 @@ std::string ExternalScenario<ModelVariant>::fill_template(const std::string& in)
     return ss.str();
 }
 
-static unsigned int get_ref_year(const std::string& time_str) {
+unsigned int ExternalScenario::get_ref_year(const std::string& filename, const std::string& time_str) {
     if (time_str.substr(0, 11) == "days since ") {
         if (time_str.substr(15, 4) != "-1-1" && time_str.substr(15, 6) != "-01-01") {
-            error_("Forcing file has invalid time units");
+            throw log::error(this, "Forcing file ", filename, " has invalid time units");
         }
         return std::stoi(time_str.substr(11, 4));
     }
     if (time_str.substr(0, 14) == "seconds since ") {
         if (time_str.substr(19, 13) != "-1-1 00:00:00" && time_str.substr(19, 15) != "-01-01 00:00:00") {
-            error_("Forcing file has invalid time units");
+            throw log::error(this, "Forcing file ", filename, " has invalid time units");
         }
         return std::stoi(time_str.substr(14, 4));
     }
-    error_("Forcing file has invalid time units");
+    throw log::error(this, "Forcing file ", filename, " has invalid time units");
 }
 
-template<class ModelVariant>
-bool ExternalScenario<ModelVariant>::next_forcing_file() {
+bool ExternalScenario::next_forcing_file() {
     if (file_index > file_index_to) {
         forcing.reset();
         return false;
@@ -88,16 +88,16 @@ bool ExternalScenario<ModelVariant>::next_forcing_file() {
     }
     if (!expression.empty()) {
         const std::string final_expression = fill_template(expression);
-        info("Invoking '" << final_expression << "'");
-        if (std::system(final_expression.c_str()) != 0) {
-            error("Invoking '" << final_expression << "' raised an error");
+        log::info(this, "Invoking '", final_expression, "'");
+        if (std::system(final_expression.c_str()) != 0) {  // NOLINT(cert-env33-c)
+            throw log::error(this, "Invoking '", final_expression, "' raised an error");
         }
     }
     const std::string filename = fill_template(forcing_file);
     forcing.reset(read_forcing_file(filename, variable_name));
     const std::string new_calendar_str = forcing->calendar_str();
     if (!calendar_str_.empty() && new_calendar_str != calendar_str_) {
-        error("Forcing files differ in calendar");
+        throw log::error(this, "Forcing files differ in calendar");
     }
     calendar_str_ = new_calendar_str;
     const std::string new_time_units_str = forcing->time_units_str();
@@ -107,31 +107,24 @@ bool ExternalScenario<ModelVariant>::next_forcing_file() {
         time_step_width = 1;
     }
     if (!time_units_str_.empty() && new_time_units_str != time_units_str_) {
-        const unsigned int ref_year = get_ref_year(time_units_str_);
-        const unsigned int new_ref_year = get_ref_year(new_time_units_str);
+        const unsigned int ref_year = get_ref_year(filename, time_units_str_);
+        const unsigned int new_ref_year = get_ref_year(filename, new_time_units_str);
         if (new_ref_year != ref_year + 1) {
-            error("Forcing files differ by more than a year");
+            throw log::error(this, "Forcing files differ by more than a year");
         }
         time_offset = model()->time() + model()->delta_t();
     }
     time_units_str_ = new_time_units_str;
-    next_time = static_cast<Time>(forcing->next_timestep() / time_step_width);
+    next_time = Time(forcing->next_timestep()) / time_step_width;
     if (next_time < 0) {
-        error("Empty forcing in " << filename);
+        throw log::error(this, "Empty forcing in ", filename);
     }
     next_time += time_offset;
     file_index++;
     return true;
 }
 
-template<class ModelVariant>
-Time ExternalScenario<ModelVariant>::start() {
-    if (model()->stop_time() > Time(0.0)) {
-        stop_time_known = true;
-    } else {
-        stop_time_known = false;
-    }
-
+void ExternalScenario::start() {
     internal_start();
 
     const settings::SettingsNode& forcing_node = scenario_node["forcing"];
@@ -146,51 +139,53 @@ Time ExternalScenario<ModelVariant>::start() {
     if (forcing_node.has("expression")) {
         expression = forcing_node["expression"].as<std::string>();
         if (system(nullptr) == 0) {
-            error("Cannot invoke system commands");
+            throw log::error(this, "Cannot invoke system commands");
         }
     } else {
         expression = "";
     }
 
     if (!next_forcing_file()) {
-        error("Empty forcing");
+        throw log::error(this, "Empty forcing");
     }
-
-    return model()->start_time();
 }
 
-template<class ModelVariant>
-void ExternalScenario<ModelVariant>::end() {
+void ExternalScenario::end() {
     forcing.reset();
     if (remove_afterwards) {
         remove(forcing_file.c_str());
     }
 }
 
-template<class ModelVariant>
-bool ExternalScenario<ModelVariant>::iterate() {
-    if (stop_time_known && model()->time() > model()->stop_time()) {
-        return false;
+void ExternalScenario::iterate() {
+    if (done) {
+        return;
     }
-    if (is_first_timestep()) {
+
+    if (model()->is_first_timestep()) {
         iterate_first_timestep();
     }
 
     internal_iterate_start();
-    if (model()->time() == next_time) {
-        read_forcings();
-        next_time = Time(forcing->next_timestep() / time_step_width);
-        if (next_time < 0) {
-            if (!next_forcing_file() && !stop_time_known) {
-                // TODO stop_time = model()->time();
-                stop_time_known = true;
+    if (next_time < 0) {
+        if (!next_forcing_file()) {
+            done = true;
+            for (const auto& region : model()->regions) {
+                for (const auto& ea : region->economic_agents) {
+                    ea->set_forcing(Forcing(1.0));
+                }
             }
-        } else {
+            return;
+        }
+    }
+    if (model()->time() >= next_time) {
+        read_forcings();
+        next_time = Time(forcing->next_timestep()) / time_step_width;
+        if (next_time >= 0) {
             next_time += time_offset;
         }
     }
-    return internal_iterate_end();
+    internal_iterate_end();
 }
 
-INSTANTIATE_BASIC(ExternalScenario);
 }  // namespace acclimate

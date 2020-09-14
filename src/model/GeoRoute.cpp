@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -19,12 +19,14 @@
 */
 
 #include "model/GeoRoute.h"
-#include "variants/ModelVariants.h"
+
+#include <cstddef>
+
+#include "model/GeoEntity.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
-std::string GeoRoute<ModelVariant>::id() const {
+std::string GeoRoute::id() const {
     std::string res;
     for (std::size_t i = 0; i < path.size(); ++i) {
         if (i > 0) {
@@ -35,5 +37,4 @@ std::string GeoRoute<ModelVariant>::id() const {
     return res;
 }
 
-INSTANTIATE_BASIC(GeoRoute);
 }  // namespace acclimate

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -22,22 +22,25 @@
 #define ACCLIMATE_TAXES_H
 
 #include "scenario/Scenario.h"
-#include "types.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
 
 namespace acclimate {
+class Model;
 
-template<class ModelVariant>
-class Taxes : public Scenario<ModelVariant> {
-  protected:
-    using Scenario<ModelVariant>::model;
-    using Scenario<ModelVariant>::id;
-    using Scenario<ModelVariant>::scenario_node;
-    using Scenario<ModelVariant>::settings;
+class Taxes : public Scenario {
+  private:
+    using Scenario::scenario_node;
+    using Scenario::settings;
 
   public:
-    Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model<ModelVariant>* const model_p);
-    Time start() override;
-    bool iterate() override;
+    Taxes(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    void start() override;
+    void iterate() override;
+    using Scenario::id;
+    using Scenario::model;
 };
 }  // namespace acclimate
 

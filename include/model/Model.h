@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -26,120 +26,87 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "acclimate.h"
 #include "model/GeoLocation.h"
-#include "run.h"
-#include "types.h"
+#include "model/Region.h"
+#include "model/Sector.h"
+#include "parameters.h"
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Consumer;
-template<class ModelVariant>
 class EconomicAgent;
-template<class ModelVariant>
 class Firm;
-template<class ModelVariant>
+class ModelRun;
 class PurchasingManager;
-template<class ModelVariant>
-class Region;
-template<class ModelVariant>
-class Sector;
 
-template<class ModelVariant>
 class Model {
-    friend class Run<ModelVariant>;
-
-  public:
-    struct Event {
-        const unsigned char type;
-        const Sector<ModelVariant>* sector_from;
-        const Region<ModelVariant>* region_from;
-        const Sector<ModelVariant>* sector_to;
-        const Region<ModelVariant>* region_to;
-        FloatType value;
-    };
-    std::vector<std::unique_ptr<Sector<ModelVariant>>> sectors;
-    std::vector<std::unique_ptr<Region<ModelVariant>>> regions;
-    std::vector<std::unique_ptr<GeoLocation<ModelVariant>>> other_locations;
-    Sector<ModelVariant>* const consumption_sector;
+    friend class ModelRun;
 
   private:
     Time time_ = Time(0.0);
-    TimeStep timestep_ = 0;
-    unsigned char current_register_ = 1;
-    Time delta_t_ = Time(1.0);
-    typename ModelVariant::ModelParameters parameters_;
-    bool no_self_supply_ = false;
-    std::vector<std::pair<PurchasingManager<ModelVariant>*, std::size_t>> purchasing_managers;
-    std::vector<std::pair<EconomicAgent<ModelVariant>*, std::size_t>> economic_agents;
-    Run<ModelVariant>* const run_m;
-    inline Model<ModelVariant>* model() { return this; }
-
-  protected:
-    Model(Run<ModelVariant>* const run_p);
     Time start_time_ = Time(0.0);
     Time stop_time_ = Time(0.0);
+    TimeStep timestep_ = 0;
+    Time delta_t_ = Time(1.0);
+    unsigned char current_register_ = 1;
+    Parameters::ModelParameters parameters_;
+    bool no_self_supply_ = false;
+    std::vector<std::pair<PurchasingManager*, std::size_t>> purchasing_managers;
+    std::vector<std::pair<EconomicAgent*, std::size_t>> economic_agents;
+    ModelRun* const run_m;
 
   public:
-    inline const Time& time() const { return time_; }
-    inline const TimeStep& timestep() const { return timestep_; }
-    inline const Time& start_time() const { return start_time_; };
-    inline const Time& stop_time() const { return stop_time_; };
-    bool done() const { return time() > stop_time(); };
-    inline void switch_registers() {
-        assertstep(SCENARIO);
-        current_register_ = 1 - current_register_;
-    }
-    inline void tick() {
-        assertstep(SCENARIO);
-        time_ += delta_t_;
-        ++timestep_;
-    }
-    inline const Time& delta_t() const { return delta_t_; }
-    inline void delta_t(const Time& delta_t_p) {
-        assertstep(INITIALIZATION);
-        delta_t_ = delta_t_p;
-    }
-    inline const bool& no_self_supply() const { return no_self_supply_; }
-    inline void start_time(const Time& start_time) {
-        assertstep(INITIALIZATION);
-        start_time_ = start_time;
-    }
-    inline void stop_time(const Time& stop_time) {
-        assertstep(INITIALIZATION);
-        stop_time_ = stop_time;
-    }
-    inline void no_self_supply(bool no_self_supply_p) {
-        assertstep(INITIALIZATION);
-        no_self_supply_ = no_self_supply_p;
-    }
-    inline const unsigned char& current_register() const { return current_register_; }
-    inline unsigned char other_register() const { return 1 - current_register_; }
-    inline const typename ModelVariant::ModelParameters& parameters() const { return parameters_; }
-    inline typename ModelVariant::ModelParameters& parameters_writable() {
-        assertstep(INITIALIZATION);
-        return parameters_;
-    }
+    std::vector<std::unique_ptr<Sector>> sectors;
+    std::vector<std::unique_ptr<Region>> regions;
+    std::vector<std::unique_ptr<GeoLocation>> other_locations;
+    Sector* const consumption_sector;
 
-    Region<ModelVariant>* add_region(std::string name);
-    Sector<ModelVariant>* add_sector(std::string name,
-                                     const Ratio& upper_storage_limit_omega_p,
-                                     const Time& initial_storage_fill_factor_psi_p,
-                                     typename Sector<ModelVariant>::TransportType transport_type_p);
+  private:
+    explicit Model(ModelRun* run_p);
+
+  public:
+    Model(const Model& other) = delete;
+    Model(Model&& other) = default;
+    const Model* model() const { return this; }
+    const Time& time() const { return time_; }
+    const Time& start_time() const { return start_time_; };
+    const Time& stop_time() const { return stop_time_; };
+    const TimeStep& timestep() const { return timestep_; }
+    const Time& delta_t() const { return delta_t_; }
+    bool done() const { return time() > stop_time(); };
+    bool is_first_timestep() const { return timestep_ == 0; }
+    void switch_registers();
+    void tick();
+    const bool& no_self_supply() const { return no_self_supply_; }
+    void set_start_time(const Time& start_time);
+    void set_stop_time(const Time& stop_time);
+    void set_delta_t(const Time& delta_t_p);
+    void no_self_supply(bool no_self_supply_p);
+    const unsigned char& current_register() const { return current_register_; }
+    unsigned char other_register() const { return 1 - current_register_; }
+    const Parameters::ModelParameters& parameters() const { return parameters_; }
+    Parameters::ModelParameters& parameters_writable();
+    Region* add_region(std::string name);
+    Sector* add_sector(std::string name,
+                       const Ratio& upper_storage_limit_omega_p,
+                       const Time& initial_storage_fill_factor_psi_p,
+                       typename Sector::TransportType transport_type_p);
     void start();
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
-    Region<ModelVariant>* find_region(const std::string& name) const;
-    Sector<ModelVariant>* find_sector(const std::string& name) const;
-    Firm<ModelVariant>* find_firm(const std::string& sector_name, const std::string& region_name) const;
-    Firm<ModelVariant>* find_firm(Sector<ModelVariant>* sector, const std::string& region_name) const;
-    Consumer<ModelVariant>* find_consumer(Region<ModelVariant>* region) const;
-    Consumer<ModelVariant>* find_consumer(const std::string& region_name) const;
-    GeoLocation<ModelVariant>* find_location(const std::string& name) const;
-    inline Run<ModelVariant>* run() const { return run_m; }
-    inline std::string id() const { return "MODEL"; }
+    Region* find_region(const std::string& name) const;
+    Sector* find_sector(const std::string& name) const;
+    Firm* find_firm(const std::string& sector_name, const std::string& region_name) const;
+    Firm* find_firm(Sector* sector, const std::string& region_name) const;
+    Consumer* find_consumer(Region* region) const;
+    Consumer* find_consumer(const std::string& region_name) const;
+    GeoLocation* find_location(const std::string& name) const;
+    ModelRun* run() const { return run_m; }
+    std::string id() const { return "MODEL"; }
 };
 }  // namespace acclimate
 

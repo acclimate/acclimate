@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -26,37 +26,40 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "netcdf_headers.h"
+
+#include "acclimate.h"
+#include "netcdftools.h"
+#include "openmp.h"
 #include "output/ArrayOutput.h"
-#include "types.h"
+#include "output/Output.h"
+
+namespace settings {
+class SettingsNode;
+}  // namespace settings
+
+struct tm;
 
 namespace acclimate {
 
-template<class ModelVariant>
 class Model;
-template<class ModelVariant>
-class Scenario;
 
-template<class ModelVariant>
-class NetCDFOutput : public ArrayOutput<ModelVariant> {
-  public:
-    using Output<ModelVariant>::id;
-    using Output<ModelVariant>::model;
-    using Output<ModelVariant>::output_node;
-    using Output<ModelVariant>::settings;
-    using Output<ModelVariant>::scenario;
-
-  protected:
+class NetCDFOutput : public ArrayOutput {
+  private:
     struct VariableMeta {
         std::vector<std::size_t> index;
         std::vector<std::size_t> sizes;
         netCDF::NcVar nc_var;
     };
-    using ArrayOutput<ModelVariant>::regions_size;
-    using ArrayOutput<ModelVariant>::sectors_size;
-    using ArrayOutput<ModelVariant>::variables;
-    using ArrayOutput<ModelVariant>::stack;
-    using ArrayOutput<ModelVariant>::include_events;
+
+  private:
+    using ArrayOutput::include_events;
+    using ArrayOutput::regions_size;
+    using ArrayOutput::sectors_size;
+    using ArrayOutput::stack;
+    using ArrayOutput::variables;
+    using Output::output_node;
+    using Output::settings_string;
+    static constexpr auto compression_level = 7;
     netCDF::NcDim dim_time;
     netCDF::NcDim dim_sector;
     netCDF::NcDim dim_region;
@@ -67,30 +70,30 @@ class NetCDFOutput : public ArrayOutput<ModelVariant> {
     TimeStep flush_freq;
     unsigned int event_cnt;
     std::string filename;
-    OpenMPLock netcdf_event_lock;
+    openmp::Lock netcdf_event_lock;
+    std::string calendar;
+    std::string time_units;
 
-  protected:
-    void internal_write_header(tm* timestamp, int max_threads) override;
+  private:
+    void internal_write_header(tm* timestamp, unsigned int max_threads) override;
     void internal_write_footer(tm* duration) override;
     void internal_write_settings() override;
     void internal_iterate_begin() override;
     void internal_iterate_end() override;
-    void internal_start() override;
     void internal_end() override;
     netCDF::NcGroup& create_group(const hstring& name);
-    void create_variable_meta(typename ArrayOutput<ModelVariant>::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) override;
-    bool internal_handle_event(typename ArrayOutput<ModelVariant>::Event& event) override;
+    void create_variable_meta(typename ArrayOutput::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) override;
+    bool internal_handle_event(typename ArrayOutput::Event& event) override;
 
   public:
-    NetCDFOutput(const settings::SettingsNode& settings_p,
-                 Model<ModelVariant>* model_p,
-                 Scenario<ModelVariant>* scenario_p,
-                 settings::SettingsNode output_node_p);
-    ~NetCDFOutput();
+    NetCDFOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);
+    ~NetCDFOutput() override;
     void initialize() override;
     void flush() override;
     void checkpoint_stop() override;
     void checkpoint_resume() override;
+    using Output::id;
+    using Output::model;
 };
 }  // namespace acclimate
 

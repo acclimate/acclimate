@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -18,10 +18,9 @@
   along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <cmath>
-#include <utility>
 #include "model/GeoPoint.h"
-#include "variants/ModelVariants.h"
+
+#include <cmath>
 
 namespace acclimate {
 

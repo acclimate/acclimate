@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -21,39 +21,161 @@
 #ifndef ACCLIMATE_H
 #define ACCLIMATE_H
 
+#include <features.h>  // for __STRING
+
+#include <cassert>
 #include <memory>
-#include "run.h"
-#include "settingsnode.h"
-#include "types.h"
+#include <ostream>
+
+#include "types.h"  // IWYU pragma: export
 
 namespace acclimate {
 
+#define ACCLIMATE_ADD_ITERATION_STEPS         \
+    ADD_ENUM_ITEM(INITIALIZATION)             \
+    ADD_ENUM_ITEM(SCENARIO)                   \
+    ADD_ENUM_ITEM(CONSUMPTION_AND_PRODUCTION) \
+    ADD_ENUM_ITEM(EXPECTATION)                \
+    ADD_ENUM_ITEM(PURCHASE)                   \
+    ADD_ENUM_ITEM(INVESTMENT)                 \
+    ADD_ENUM_ITEM(OUTPUT)                     \
+    ADD_ENUM_ITEM(CLEANUP)                    \
+    ADD_ENUM_ITEM(UNDEFINED)  // to be used when function is not used yet
 
-enum class ModelVariantType {
-#ifdef VARIANT_BASIC
-    BASIC,
-#endif
-#ifdef VARIANT_DEMAND
-    DEMAND,
-#endif
-#ifdef VARIANT_PRICES
-    PRICES,
-#endif
-};
+#define ADD_ENUM_ITEM(e) e,
+enum class IterationStep : unsigned char { ACCLIMATE_ADD_ITERATION_STEPS };
+#undef ADD_ENUM_ITEM
 
+#define ADD_ENUM_ITEM(e) __STRING(e),
+constexpr std::array<const char*, static_cast<int>(IterationStep::UNDEFINED) + 1> ITERATION_STEP_NAMES = {ACCLIMATE_ADD_ITERATION_STEPS};
+#undef ADD_ENUM_ITEM
 
-class Acclimate {
+#undef ACCLIMATE_ADD_ITERATIONS_STEPS
 
-  protected:
-    ModelVariantType variant_m;
-    std::shared_ptr<void> run_m;
+class Model;
+std::string timeinfo(const Model& m);
+IterationStep current_step(const Model& m);
 
-  public:
-    Acclimate(settings::SettingsNode settings_p);
+namespace log {
 
-    inline const ModelVariantType& variant() const { return variant_m; }
-    int run();
-};
+namespace detail {
+
+template<class Stream, typename Arg>
+inline void to_stream(Stream& s, Arg&& arg) {
+    s << arg;
+}
+
+template<class Stream, typename Arg, typename... Args>
+inline void to_stream(Stream& s, Arg&& arg, Args&&... args) {
+    s << arg;
+    to_stream(s, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+inline void output(Args&&... args) {
+#pragma omp critical(output)
+    {
+        to_stream(std::cout, std::forward<Args>(args)...);
+        std::cout << std::endl;
+    }
+}
+
+template<typename...>
+using void_t = void;
+
+template<class, class = void_t<>>
+struct has_type_member : std::false_type {};
+
+template<class T>
+struct has_type_member<T, void_t<typename T::type>> : std::true_type {};
+
+template<class, class = void_t<>>
+struct is_acclimate_class : std::false_type {};
+
+template<class T>
+struct is_acclimate_class<T, void_t<decltype(std::declval<T&>().id())>> : std::true_type {};
+
+}  // namespace detail
+
+template<typename Arg, typename... Args>
+inline acclimate::exception error(Arg&& arg, Args&&... args) {
+    std::ostringstream ss;
+    if constexpr (std::is_pointer<std::remove_reference_t<Arg>>::value
+                  && detail::is_acclimate_class<std::remove_pointer_t<std::remove_reference_t<Arg>>>::value) {
+        detail::to_stream(ss, timeinfo(*arg->model()), ", ", arg->id(), ": ", std::forward<Args>(args)...);
+    } else {
+        detail::to_stream(ss, std::forward<Arg>(arg), std::forward<Args>(args)...);
+    }
+    return acclimate::exception(ss.str());
+}
+
+template<typename Arg, typename... Args>
+inline void warning(Arg&& arg, Args&&... args) {
+    if constexpr (options::DEBUGGING) {
+        if constexpr (std::is_pointer<std::remove_reference_t<Arg>>::value
+                      && detail::is_acclimate_class<std::remove_pointer_t<std::remove_reference_t<Arg>>>::value) {
+            detail::output(timeinfo(*arg->model()), ", ", arg->id(), " Warning: ", std::forward<Args>(args)...);
+        } else {
+            detail::output("Warning: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
+        }
+    }
+}
+
+template<typename Arg, typename... Args>
+inline void info(Arg&& arg, Args&&... args) {
+    if constexpr (options::DEBUGGING) {
+        if constexpr (std::is_pointer<std::remove_reference_t<Arg>>::value
+                      && detail::is_acclimate_class<std::remove_pointer_t<std::remove_reference_t<Arg>>>::value) {
+            detail::output(timeinfo(*arg->model()), ", ", arg->id(), ": ", std::forward<Args>(args)...);
+        } else {
+            detail::output(std::forward<Arg>(arg), std::forward<Args>(args)...);
+        }
+    }
+}
+
+}  // namespace log
+
+namespace debug {
+
+template<class Caller>
+inline void assertstep(const Caller* c, IterationStep s) {
+    if constexpr (options::DEBUGGING) {
+        if (current_step(*c->model()) != s) {
+            throw log::error(c, "should be in ", ITERATION_STEP_NAMES[static_cast<int>(s)], " step");
+        }
+    } else {
+        (void)c;
+        (void)s;
+    }
+}
+
+template<class Caller>
+inline void assertstepnot(const Caller* c, IterationStep s) {
+    if constexpr (options::DEBUGGING) {
+        if (current_step(*c->model()) == s) {
+            throw log::error(c, "should NOT be in ", ITERATION_STEP_NAMES[static_cast<int>(s)], " step");
+        }
+    } else {
+        (void)c;
+        (void)s;
+    }
+}
+
+template<class Caller>
+inline void assertstepor(const Caller* c, IterationStep s1, IterationStep s2) {
+    if constexpr (options::DEBUGGING) {
+        if (current_step(*c->model()) != s1 && current_step(*c->model()) != s2) {
+            throw log::error(c, "should be in ", ITERATION_STEP_NAMES[static_cast<int>(s1)], " or ", ITERATION_STEP_NAMES[static_cast<int>(s2)], " step");
+        }
+    } else {
+        (void)c;
+        (void)s1;
+        (void)s2;
+    }
+}
+
+}  // namespace debug
+
 }  // namespace acclimate
 
 #endif
