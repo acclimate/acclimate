@@ -45,6 +45,7 @@ struct Parameters {
         int optimization_algorithm;
         int optimization_maxiter;           // maximal iteration
         unsigned int optimization_timeout;  // timeout in sec
+        bool consumer_utilitarian;
     };
 
     struct RegionParameters {};

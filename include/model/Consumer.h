@@ -32,6 +32,8 @@ class Consumer : public EconomicAgent {
     using EconomicAgent::forcing_;
 
   private:
+    bool utilitarian;
+
     // opitmization parameters
     std::vector<double> upper_bounds;
     std::vector<double> lower_bounds;

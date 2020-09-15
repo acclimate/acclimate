@@ -94,8 +94,14 @@ Firm* ModelInitializer::add_firm(Sector* sector, Region* region) {
 }
 
 Consumer* ModelInitializer::add_consumer(Region* region) {
-    float substitution_coefficient = get_named_property(settings["consumers"], "ALL", "substitution_coefficient").template as<FloatType>();
-    auto consumer = new Consumer(region, substitution_coefficient);
+    Consumer* consumer;
+    if (model()->parameters_writable().consumer_utilitarian) {
+        float substitution_coefficient = get_named_property(settings["consumers"], "ALL", "substitution_coefficient").template as<FloatType>();
+        consumer = new Consumer(region, substitution_coefficient);
+    } else {
+        consumer = new Consumer(region);
+    }
+
     region->economic_agents.emplace_back(consumer);
     return consumer;
 }
@@ -882,6 +888,8 @@ void ModelInitializer::pre_initialize() {
     if (parameters["cost_correction"].as<bool>(false)) {
         throw log::error(this, "parameter cost_correction not supported anymore");
     }
+
+    model()->parameters_writable().consumer_utilitarian = parameters["consumer_utilitarian"].as<bool>();
 }
 
 void ModelInitializer::post_initialize() {
