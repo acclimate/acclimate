@@ -44,8 +44,6 @@ class Consumer : public EconomicAgent {
     std::vector<FloatType> previous_consumption;
     std::vector<FloatType> previous_prices;
 
-    const std::vector<FloatType> consumption;
-
     // field to store utility
     double utility;
     FloatType budget_gap;
@@ -84,7 +82,7 @@ class Consumer : public EconomicAgent {
     FloatType estimate_marginal_utility(const BusinessConnection* bc, FloatType production_quantity_X, FloatType unit_production_costs_n_c) const;
     // CES utility specific funtions TODO: check if replacing by abstract funtions suitable
     FloatType CES_utility_function(std::vector<FloatType> consumption_demands) const;
-    FloatType CES_marginal_utility(int index_of_good, std::vector<FloatType> consumption_demands) const;
+    FloatType CES_marginal_utility(int index_of_good, double consumption_demands) const;
     FloatType CES_average_utility(int index_of_good,
                                   std::vector<FloatType> current_consumption,
                                   std::vector<FloatType> share_factors,

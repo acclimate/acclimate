@@ -21,8 +21,6 @@
 #include "model/Consumer.h"
 
 #include <optimization.h>
-
-#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <vector>
@@ -30,9 +28,7 @@
 #include "ModelRun.h"
 #include "acclimate.h"
 #include "model/Model.h"
-#include "model/PurchasingManager.h"
 #include "model/Region.h"
-#include "model/Storage.h"
 #include "parameters.h"
 
 static constexpr auto MAX_GRADIENT = 1e3;  // TODO: any need to modify?
@@ -53,7 +49,6 @@ void Consumer::initialize() {
     share_factors = std::vector<FloatType>(input_storages.size());
     previous_prices = std::vector<FloatType>(input_storages.size());
     previous_consumption = std::vector<FloatType>(input_storages.size());
-
     desired_consumption = std::vector<FloatType>(input_storages.size());
 
     // initialize previous consumption as starting values, calculate budget
@@ -77,22 +72,19 @@ void Consumer::initialize() {
 
 FloatType Consumer::CES_utility_function(std::vector<FloatType> consumption_demands) const {
     FloatType sum_over_goods = 0;
-    if (consumption_demands.size() != share_factors.size())
-        throw log::error(this, "number of goods and share factors does not match!");
-
-    for (std::size_t r = 0; r < consumption_demands.size(); ++r) {
+    for (std::size_t r = 0; r < share_factors.size(); ++r) {
         sum_over_goods +=
             pow(consumption_demands[r], (substitution_coefficient - 1) / substitution_coefficient) * pow(share_factors[r], 1 / substitution_coefficient);
     }
     return sum_over_goods;  // outer exponent not relevant for optimization (at least for sigma >1)
 }
 
-FloatType Consumer::CES_marginal_utility(int index_of_good, std::vector<FloatType> consumption_demands) const {
-    return pow(consumption_demands[index_of_good], (((substitution_coefficient - 1) / substitution_coefficient) - 1))
+FloatType Consumer::CES_marginal_utility(int index_of_good, double consumption_demand) const {
+    return pow(consumption_demand, (((substitution_coefficient - 1) / substitution_coefficient) - 1))
            * ((substitution_coefficient - 1) / substitution_coefficient) * pow(share_factors[index_of_good], 1 / substitution_coefficient);
 }
 
-// TODO: more complex budget function should be possible
+// TODO: more complex budget function might be useful, e.g. opportunity for saving etc.
 
 FloatType Consumer::inequality_constraint(const double* x, double* grad) {
     FloatType consumption_cost = 0;
@@ -100,7 +92,7 @@ FloatType Consumer::inequality_constraint(const double* x, double* grad) {
         assert(!std::isnan(x[r]));
         consumption_cost += x[r] * consumption_prices[r];
         if (grad != nullptr) {
-            grad[r] = CES_marginal_utility(r, desired_consumption);
+            grad[r] = CES_marginal_utility(r, x[r]);
             if constexpr (options::OPTIMIZATION_WARNINGS) {
                 if (grad[r] > MAX_GRADIENT) {
                     log::warning(this, this->id(), ": large gradient of ", grad[r]);
@@ -108,25 +100,26 @@ FloatType Consumer::inequality_constraint(const double* x, double* grad) {
             }
         }
     }
-    budget_gap = (budget - consumption_cost) * -1;  // inequality constraint checks for h(x) <=0, thus switch sign
-
-    return budget_gap;
+    return (budget - consumption_cost) * -1;  // inequality constraint checks for h(x) <=0, thus switch sign
 }
 
 FloatType Consumer::max_objective(const double* x, double* grad) const {
+    std::vector<FloatType> consumption;
+    consumption.reserve(consumption_prices.size());
     for (std::size_t r = 0; r < consumption_prices.size(); ++r) {
         // TODO:  maybe add scaling here, if needed
-        assert(!std::isnan(x[r]));
+
         if (grad != nullptr) {
-            grad[r] = CES_marginal_utility(r, desired_consumption);
+            grad[r] = CES_marginal_utility(r, x[r]);
             if constexpr (options::OPTIMIZATION_WARNINGS) {
                 if (grad[r] > MAX_GRADIENT) {
                     log::warning(this, ": large gradient of ", grad[r]);
                 }
             }
         }
+        consumption.push_back(x[r]);
     }
-    return CES_utility_function(desired_consumption);
+    return CES_utility_function(consumption);
 }
 
 void Consumer::iterate_consumption_and_production() {
@@ -140,22 +133,20 @@ void Consumer::iterate_consumption_and_production() {
     consumption_prices.reserve(input_storages.size());
 
     for (const auto& is : input_storages) {
-        auto storage_content = is->get_possible_use_U_hat();
-        // TODO: less "risky" data structure possible / needed?
-        possible_consumption.push_back(to_float((storage_content.get_quantity())));
-        consumption_prices.push_back((storage_content.get_price_float()));
+        auto possible_consumption_flow = is->get_possible_use_U_hat();
+        possible_consumption.push_back(to_float((possible_consumption_flow.get_quantity())));
+        consumption_prices.push_back((possible_consumption_flow.get_price_float()));
     }
-
-    // calculate maximal spending if all goods are consumed:
+    // calculate maximum spending if all goods are consumed:
     FloatType maximum_spending = 0.0;
     for (std::size_t r = 0; r < possible_consumption.size(); ++r) {
         maximum_spending += possible_consumption[r] * consumption_prices[r];
     }
-    // consumer can get all available goods, which is optimal assuming no saving incentives and positive marginal utility for all goods
-    // (no "bads" i.e. commodities with negative utility like radioactive waste);
 
     if (budget - maximum_spending > 0) {
-        desired_consumption = possible_consumption;  // TODO: needs to be refined, since storage emptying consumption highly unlikely
+        // consumer can get all available goods, which is optimal assuming no saving incentives and positive marginal utility for all goods
+        // (no "bads" i.e. commodities with negative utility like radioactive waste);
+        desired_consumption = possible_consumption;  // TODO: storage emptying consumption highly unlikely?!
     } else {
         // consumer has to decide what goods he would like to get most. here based on utility function
         // start optimization at previous optimum, guarantees stability in undisturbed baseline
@@ -169,7 +160,7 @@ void Consumer::iterate_consumption_and_production() {
             used_budget += desired_consumption[r] * consumption_prices[r];
         }
 
-        if (used_budget - budget < 0) {
+        if (budget - used_budget < 0) {
             log::info(this, "consumption budget needs to be readjusted for ", desired_consumption.size() + 1, " consumption goods)");
             for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
                 FloatType overspending_factor = previous_prices[r] / consumption_prices[r];
@@ -178,16 +169,16 @@ void Consumer::iterate_consumption_and_production() {
                 //  maybe price elasticity could be used here
             }
         }
+
         // utility optimization
 
+        // set parameters
         lower_bounds.clear();
         lower_bounds.reserve(desired_consumption.size());
         upper_bounds.clear();
         upper_bounds.reserve(desired_consumption.size());
         xtol_abs.clear();
         xtol_abs.reserve(desired_consumption.size());
-
-        // set parameters
         for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
             FloatType lower_limit = 0;
             FloatType upper_limit = possible_consumption[r];
@@ -196,13 +187,13 @@ void Consumer::iterate_consumption_and_production() {
             xtol_abs.push_back(FlowQuantity::precision);
         }
 
+        // start optimizer
         try {
             optimization::Optimization opt(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
                                            desired_consumption.size());  // TODO keep and only recreate when resize is needed
 
             opt.add_inequality_constraint(this, FlowValue::precision);
             opt.add_max_objective(this);
-
             opt.xtol(xtol_abs);
             opt.lower_bounds(lower_bounds);
             opt.upper_bounds(upper_bounds);
@@ -265,12 +256,15 @@ void Consumer::iterate_consumption_and_production() {
 
     // consume goods and adjust previous_consumption
     for (std::size_t r = 0; r < input_storages.size(); ++r) {
-        const Flow consumption_flow = Flow((FlowQuantity(desired_consumption[r])), Price(consumption_prices[r]));
+        FloatType consumption_request = desired_consumption[r];
+        FloatType consumption_price = consumption_prices[r];  // assuming consumers are price takers
         // withdraw consumption from storage
-        // adjust previous consumption vector
-        previous_consumption[r] = desired_consumption[r];
-        previous_prices[r] = consumption_prices[r];
+        const Flow consumption_flow = Flow((FlowQuantity(consumption_request)), Price(consumption_price));
 
+        // adjust previous consumption vector
+        previous_consumption[r] = consumption_request;
+        previous_prices[r] = consumption_price;
+        // set consumption parameters
         input_storages[r]->set_desired_used_flow_U_tilde(consumption_flow);
         input_storages[r]->use_content_S((consumption_flow));
         this->region->add_consumption_flow_Y((consumption_flow));
@@ -330,7 +324,6 @@ void Consumer::print_distribution(const std::vector<double>& consumption_demands
                 print_row("current utility", utility);
                 print_row("current total budget", budget);
                 print_row("current spending for this good", consumption_prices[r] * desired_consumption[r]);
-                print_row("budget gap", budget_gap);
 
                 std::cout << '\n';
             }
