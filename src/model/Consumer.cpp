@@ -48,23 +48,26 @@ void Consumer::initialize() {
     utilitarian = model()->parameters_writable().consumer_utilitarian;
     if (utilitarian) {
         debug::assertstep(this, IterationStep::INITIALIZATION);
-        share_factors = std::vector<FloatType>(input_storages.size());
-        previous_prices = std::vector<FloatType>(input_storages.size());
-        previous_consumption = std::vector<FloatType>(input_storages.size());
-        desired_consumption = std::vector<FloatType>(input_storages.size());
+
+        share_factors.clear();
+        share_factors.reserve(input_storages.size());
+        previous_prices.clear();
+        previous_prices.reserve(input_storages.size());
+        previous_consumption.clear();
+        previous_consumption.reserve(input_storages.size());
 
         // initialize previous consumption as starting values, calculate budget
         budget = 0.0;
         for (std::size_t r = 0; r < input_storages.size(); ++r) {
             auto initial_consumption_flow = to_float(input_storages[r]->initial_used_flow_U_star().get_quantity());
 
-            previous_consumption[r] = initial_consumption_flow;
-            previous_prices[r] = 1;  // might be non-constant in the future, thus keeping this line
+            previous_consumption.push_back(initial_consumption_flow);
+            previous_prices.push_back(1);  // might be non-constant in the future, thus keeping this line
             budget += initial_consumption_flow * previous_prices[r];
         }
         // initialize share factors
         for (std::size_t r = 0; r < previous_prices.size(); ++r) {
-            share_factors[r] = (previous_consumption[r] * previous_prices[r]) / budget;
+            share_factors.push_back(previous_consumption[r] * previous_prices[r] / budget);
         }
     }
 }
@@ -136,6 +139,9 @@ void Consumer::iterate_consumption_and_production() {
         consumption_prices.clear();
         consumption_prices.reserve(input_storages.size());
 
+        desired_consumption.clear();
+        desired_consumption.reserve(input_storages.size());
+
         for (const auto& is : input_storages) {
             auto possible_consumption_flow = is->get_possible_use_U_hat();
             possible_consumption.push_back(to_float((possible_consumption_flow.get_quantity())));
@@ -160,7 +166,7 @@ void Consumer::iterate_consumption_and_production() {
             // adjust if price changes make previous consumption to expensive - assuming constant expenditure per good
             FloatType used_budget = 0;
             for (std::size_t r = 0; r < possible_consumption.size(); ++r) {
-                desired_consumption[r] = std::min(possible_consumption[r], previous_consumption[r]);  // cap desired consumption at maximum possible
+                desired_consumption.push_back(std::min(possible_consumption[r], previous_consumption[r]));  // cap desired consumption at maximum possible
                 used_budget += desired_consumption[r] * consumption_prices[r];
             }
 
