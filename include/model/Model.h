@@ -54,13 +54,13 @@ class Model {
     Parameters::ModelParameters parameters_;
     bool no_self_supply_ = false;
     std::vector<std::pair<PurchasingManager*, std::size_t>> purchasing_managers;
-    std::vector<std::pair<EconomicAgent*, std::size_t>> economic_agents;
     ModelRun* const run_m;
 
   public:
     std::vector<std::unique_ptr<Sector>> sectors;
     std::vector<std::unique_ptr<Region>> regions;
     std::vector<std::unique_ptr<GeoLocation>> other_locations;
+    std::vector<std::pair<EconomicAgent*, std::size_t>> economic_agents;
 
   private:
     explicit Model(ModelRun* run_p);

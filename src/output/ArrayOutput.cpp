@@ -40,6 +40,10 @@ void ArrayOutput::initialize() {
     include_events = output_node["events"].template as<bool>(false);
     sectors_size = model()->sectors.size();
     regions_size = model()->regions.size();
+
+    for (auto& region : model()->regions) {
+        firms_size += region->economic_agents.size();
+    }
 }
 
 inline typename ArrayOutput::Variable& ArrayOutput::create_variable(const hstring& path, const hstring& name, const hstring& suffix) {
@@ -55,6 +59,10 @@ inline typename ArrayOutput::Variable& ArrayOutput::create_variable(const hstrin
             }
             if (t.region != nullptr) {
                 shape.push_back(regions_size);
+                size *= regions_size;
+            }
+            if (t.firmname != nullptr) {
+                shape.push_back(firms_size);
                 size *= regions_size;
             }
         }

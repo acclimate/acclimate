@@ -63,6 +63,7 @@ class NetCDFOutput : public ArrayOutput {
     netCDF::NcDim dim_time;
     netCDF::NcDim dim_sector;
     netCDF::NcDim dim_region;
+    netCDF::NcDim dim_firm_names;
     std::unordered_map<hstring::hash_type, netCDF::NcGroup> groups;
     std::unique_ptr<netCDF::NcFile> file;
     netCDF::NcVar var_events;

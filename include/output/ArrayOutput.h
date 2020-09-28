@@ -48,6 +48,7 @@ class ArrayOutput : public Output {
         std::size_t index = 0;
         Sector* sector;
         Region* region;
+        std::string* firmname;
 
         Target(hstring name_p, std::size_t index_p, Sector* sector_p, Region* region_p)
             : name(std::move(name_p)), index(index_p), sector(sector_p), region(region_p) {}
@@ -78,6 +79,7 @@ class ArrayOutput : public Output {
     using Output::output_node;
     std::size_t sectors_size = 0;
     std::size_t regions_size = 0;
+    std::size_t firms_size = 0;
     std::unordered_map<hstring::hash_type, Variable> variables;
     std::vector<Target> stack;
     std::vector<Event> events;

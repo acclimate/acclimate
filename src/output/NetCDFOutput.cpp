@@ -70,6 +70,7 @@ void NetCDFOutput::initialize() {
     dim_time = file->addDim("time");
     dim_sector = file->addDim("sector", sectors_size);
     dim_region = file->addDim("region", regions_size);
+    dim_firm_names = file->addDim("firm_names", firms_size);
     netCDF::NcDim dim_event = file->addDim("event");
     netCDF::NcDim dim_event_type = file->addDim("event_type", EVENT_NAMES.size());
     netCDF::NcCompoundType event_compound_type = file->addCompoundType("event_compound_type", sizeof(typename ArrayOutput::Event));
@@ -105,6 +106,12 @@ void NetCDFOutput::initialize() {
     region_var.setCompression(false, true, compression_level);
     for (std::size_t i = 0; i < model()->regions.size(); ++i) {
         region_var.putVar({i}, model()->regions[i]->id());
+    }
+
+    const auto& firm_name_var = file->addVar("firmname", netCDF::NcType::nc_STRING, {dim_firm_names});
+    firm_name_var.setCompression(false, true, compression_level);
+    for (std::size_t i = 0; i < model()->economic_agents.size(); ++i) {
+        firm_name_var.putVar({i}, model()->economic_agents[i].first->id());
     }
 }
 
@@ -143,6 +150,11 @@ void NetCDFOutput::create_variable_meta(typename ArrayOutput::Variable& v, const
             meta->index.push_back(0);
             meta->sizes.push_back(regions_size);
             dims.push_back(dim_region);
+        }
+        if (t.firmname != nullptr) {
+            meta->index.push_back(0);
+            meta->sizes.push_back(firms_size);
+            dims.push_back(dim_firm_names);
         }
     }
     netCDF::NcGroup& group = create_group(path);
