@@ -59,7 +59,8 @@ class Consumer : public EconomicAgent {
     using EconomicAgent::region;
     float budget;  // TODO: less crude way of introducing budget?!
     std::vector<FloatType> share_factors;
-    FloatType substitution_coefficient{};
+    FloatType substitution_coefficient;
+    FloatType substitution_exponent;
 
   public:
     Consumer* as_consumer() override { return this; };
