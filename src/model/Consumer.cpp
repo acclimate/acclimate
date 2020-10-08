@@ -21,15 +21,9 @@
 #include "model/Consumer.h"
 
 #include <optimization.h>
-#include <cmath>
-#include <memory>
-#include <vector>
 
 #include "ModelRun.h"
-#include "acclimate.h"
 #include "model/Model.h"
-#include "model/Region.h"
-#include "parameters.h"
 
 static constexpr auto MAX_GRADIENT = 1e3;  // TODO: any need to modify?
 static constexpr bool IGNORE_ROUNDOFFLIMITED = false;
@@ -58,15 +52,13 @@ void Consumer::initialize() {
         previous_consumption.reserve(input_storages.size());
 
         // initialize previous consumption as starting values, calculate budget
-        budget = 0.0;
         for (std::size_t r = 0; r < input_storages.size(); ++r) {
-            auto initial_consumption_flow = to_float(input_storages[r]->initial_used_flow_U_star().get_quantity());
-
+            float initial_consumption_flow = to_float(input_storages[r]->initial_used_flow_U_star().get_quantity());
             previous_consumption.push_back(initial_consumption_flow);
             previous_prices.push_back(1);  // might be non-constant in the future, thus keeping this line
             budget += initial_consumption_flow * previous_prices[r];
         }
-        // initialize share factors, exponentiated already to speed up funtion calls
+        // initialize share factors, potentiated already to speed up function calls
         for (std::size_t r = 0; r < previous_prices.size(); ++r) {
             share_factors.push_back(pow(previous_consumption[r] * previous_prices[r] / budget, 1 / substitution_coefficient));
         }
@@ -75,8 +67,7 @@ void Consumer::initialize() {
 
 // TODO: define scaling functions after first tests of optimizer
 
-// first draft of a definition of a CES utility function:
-
+// definition of a simple CES utility function:
 FloatType Consumer::CES_utility_function(std::vector<FloatType> consumption_demands) const {
     FloatType sum_over_goods = 0;
     for (std::size_t r = 0; r < share_factors.size(); ++r) {
@@ -151,14 +142,13 @@ void Consumer::iterate_consumption_and_production() {
             // start optimization at previous optimum, guarantees stability in undisturbed baseline
             // while potentially speeding up optimization in case of small price changes
 
-            // check whether enough goods available &
-            // adjust if price changes make previous consumption to expensive - assuming constant expenditure per good
             FloatType used_budget = 0;
             for (std::size_t r = 0; r < possible_consumption.size(); ++r) {
                 desired_consumption.push_back(std::min(possible_consumption[r], previous_consumption[r]));  // cap desired consumption at maximum possible
                 used_budget += desired_consumption[r] * consumption_prices[r];
             }
 
+            // adjust if price changes make previous consumption to expensive - assuming constant expenditure per good
             if (budget - used_budget < 0) {
                 log::info(this, "consumption budget needs to be readjusted for ", desired_consumption.size() + 1, " consumption goods)");
                 for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
