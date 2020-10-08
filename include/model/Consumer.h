@@ -95,6 +95,9 @@ class Consumer : public EconomicAgent {
     FloatType inequality_constraint(const double* x, double* grad);
     FloatType max_objective(const double* x, double* grad) const;
     void print_distribution(const std::vector<double>& demand_requests_D) const;
+
+    // getters and setters
+    float get_utility() const;
 };
 }  // namespace acclimate
 

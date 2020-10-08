@@ -296,6 +296,8 @@ void Consumer::iterate_investment() {
     // }
 }
 
+float Consumer::get_utility() const { return utility; }
+
 void Consumer::print_details() const {
     // TODO: adjust this to give info on U(x), budget, starting values, etc.
     if constexpr (options::DEBUGGING) {

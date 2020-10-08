@@ -216,9 +216,14 @@ void Output::write_consumer_parameters(const Consumer* c, const settings::Settin
 }
 
 bool Output::write_consumer_parameter(const Consumer* c, const hstring& name) {
-    UNUSED(c);
-    UNUSED(name);
-    return false;
+    switch (name) {
+        case hstring::hash("utility"):
+            internal_write_value(name, c->get_utility());
+            break;
+        default:
+            return false;
+    }
+    return true;
 }
 
 void Output::write_input_storage_parameters(const Storage* s, const settings::SettingsNode& it) {
