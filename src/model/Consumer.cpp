@@ -96,7 +96,7 @@ FloatType Consumer::inequality_constraint(const double* x, double* grad) {
             }
         }
     }
-    return (budget - consumption_cost) * -1;  // inequality constraint checks for h(x) <=0, thus switch sign
+    return (budget + non_spent_budget - consumption_cost) * -1;  // inequality constraint checks for h(x) <=0, thus switch sign
 }
 
 FloatType Consumer::max_objective(const double* x, double* grad) const {
@@ -241,6 +241,9 @@ void Consumer::iterate_consumption_and_production() {
         previous_prices.reserve(input_storages.size());
         previous_consumption = desired_consumption;
         previous_prices = consumption_prices;  // assuming consumers are price takers
+
+        float consumption_expense = 0;
+
         for (std::size_t r = 0; r < input_storages.size(); ++r) {
             // withdraw consumption from storage
             const Flow consumption_flow = Flow((FlowQuantity(desired_consumption[r])), Price(consumption_prices[r]));
@@ -250,7 +253,12 @@ void Consumer::iterate_consumption_and_production() {
             region->add_consumption_flow_Y((consumption_flow));
             // consume goods
             input_storages[r]->iterate_consumption_and_production();
+
+            consumption_expense += desired_consumption[r] * consumption_prices[r];
         }
+        // accrue non-spent budget
+        non_spent_budget = budget + non_spent_budget - consumption_expense;
+
     } else {
         // old consumer to be used for comparison
         for (const auto& is : input_storages) {

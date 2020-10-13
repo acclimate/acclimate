@@ -58,6 +58,9 @@ class Consumer : public EconomicAgent {
     using EconomicAgent::input_storages;
     using EconomicAgent::region;
     float budget;  // TODO: less crude way of introducing budget?!
+
+    float non_spent_budget;  // TODO: introduce real saving possibility, for now just trying to improve numerical stability
+
     std::vector<FloatType> share_factors;
     FloatType substitution_coefficient;
     FloatType substitution_exponent;
