@@ -51,8 +51,8 @@ class Consumer : public EconomicAgent {
     FloatType budget_gap;
 
     // starting values
+
     std::vector<FloatType> inital_prices;
-    std::vector<FloatType> initial_consumption;
 
   public:
     using EconomicAgent::input_storages;
@@ -64,6 +64,9 @@ class Consumer : public EconomicAgent {
     std::vector<FloatType> share_factors;
     FloatType substitution_coefficient;
     FloatType substitution_exponent;
+
+    FloatType baseline_utility;  // baseline utility for scaling
+    std::vector<FloatType> baseline_consumption;
 
   public:
     Consumer* as_consumer() override { return this; };
@@ -95,7 +98,7 @@ class Consumer : public EconomicAgent {
                                   FloatType substitution_coefficient);
 
     // functions for constrained optimization
-    FloatType inequality_constraint(const double* x, double* grad);
+    FloatType equality_constraint(const double* x, double* grad);
     FloatType max_objective(const double* x, double* grad) const;
     void print_distribution(const std::vector<double>& demand_requests_D) const;
 
