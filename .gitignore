@@ -9,3 +9,5 @@ GTAGS
 /output/
 /settings/
 .vscode/
+/cmake-build-debug/
+/.idea
