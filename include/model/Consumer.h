@@ -34,47 +34,44 @@ class Consumer : public EconomicAgent {
   private:
     bool utilitarian;
 
-    // opitmization parameters
-    std::vector<double> upper_bounds;
+    // optimization parameters
+    std::vector<double> optimizer_consumption;
     std::vector<double> lower_bounds;
+    std::vector<double> upper_bounds;
     std::vector<double> xtol_abs;
 
     // vectors to store desired actual, and previous consumption quantities as floats
-    std::vector<FloatType> possible_consumption;  // consumption limits considered in optimization
-    std::vector<FloatType> consumption_prices;    // prices to be considered in optimization
-    std::vector<FloatType> desired_consumption;
-    std::vector<FloatType> previous_consumption;
-    std::vector<FloatType> previous_prices;
+    std::vector<FlowQuantity> possible_consumption;  // consumption limits considered in optimization
+    std::vector<Price> consumption_prices;           // prices to be considered in optimization
+    std::vector<Flow> desired_consumption;
+    std::vector<FlowQuantity> previous_consumption;
+    std::vector<Price> previous_prices;
+
+    FlowValue not_spent_budget;  // TODO: introduce real saving possibility, for now just trying to improve numerical stability
+
+    double baseline_utility;  // baseline utility for scaling
+    std::vector<Flow> baseline_consumption;
 
     // field to store utility
     double utility;
-    FloatType budget_gap;
-
-    // starting values
-
-    std::vector<FloatType> inital_prices;
 
   public:
     using EconomicAgent::input_storages;
     using EconomicAgent::region;
-    float budget;  // TODO: less crude way of introducing budget?!
 
-    float non_spent_budget;  // TODO: introduce real saving possibility, for now just trying to improve numerical stability
+    FlowValue budget;
 
-    std::vector<FloatType> share_factors;
-    FloatType substitution_coefficient;
-    FloatType substitution_exponent;
-
-    FloatType baseline_utility;  // baseline utility for scaling
-    std::vector<FloatType> baseline_consumption;
+    std::vector<double> share_factors;
+    double substitution_coefficient;
+    double substitution_exponent;
 
   public:
     Consumer* as_consumer() override { return this; };
-    explicit Consumer(Region* region_p);  // TODO: replace constructor in other classes
+    explicit Consumer(Region* region_p);
 
     explicit Consumer(Region* region_p, float substitution_coefficient);
 
-    void initialize();
+    void initialize() override;
 
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
@@ -86,24 +83,22 @@ class Consumer : public EconomicAgent {
     // DEBUG
     void print_details() const override;
 
-    FloatType expected_average_utility_E_U_r(FloatType U_r, const BusinessConnection* business_connection) const;
-    FloatType grad_expected_average_utility_E_U_r(FloatType U_r, const BusinessConnection* business_connection) const;
-    FloatType estimate_marginal_utility(const BusinessConnection* bc, FloatType production_quantity_X, FloatType unit_production_costs_n_c) const;
     // CES utility specific funtions TODO: check if replacing by abstract funtions suitable
-    FloatType CES_utility_function(std::vector<FloatType> consumption_demands) const;
-    FloatType CES_marginal_utility(int index_of_good, double consumption_demands) const;
-    FloatType CES_average_utility(int index_of_good,
-                                  std::vector<FloatType> current_consumption,
-                                  std::vector<FloatType> share_factors,
-                                  FloatType substitution_coefficient);
+    FloatType CES_utility_function(std::vector<FlowQuantity> consumption_demands) const;
+    FloatType CES_utility_function(std::vector<Flow> consumption_demands) const;
+    FloatType CES_marginal_utility(int index_of_good, FlowQuantity consumption_demand) const;
+    FloatType CES_marginal_utility(int index_of_good, double consumption_demand) const;
 
     // functions for constrained optimization
     FloatType equality_constraint(const double* x, double* grad);
     FloatType max_objective(const double* x, double* grad) const;
     void print_distribution(const std::vector<double>& demand_requests_D) const;
 
+    // some simple function
+    std::vector<FlowQuantity> get_quantity_vector(std::vector<Flow> flow);
+
     // getters and setters
-    float get_utility() const;
+    double get_utility() const;
 };
 }  // namespace acclimate
 

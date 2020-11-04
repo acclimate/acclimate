@@ -107,11 +107,12 @@ class Type {
     static constexpr int precision_digits = precision_digits_p;
     static constexpr FloatType precision = precision_from_digits(precision_digits_p);
 
+    constexpr Type() : t(0) {}
+
   protected:
     typename InternalType<rounded_p>::type t;
 
   protected:
-    constexpr Type() : t(0) {}
     constexpr FloatType get_float() const {
         if constexpr (rounded) {
             return t * precision;
