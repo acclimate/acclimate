@@ -30,6 +30,7 @@ class Region;
 class Consumer : public EconomicAgent {
   private:
     using EconomicAgent::forcing_;
+    using EconomicAgent::growth_;
 
   public:
     using EconomicAgent::input_storages;
@@ -44,6 +45,7 @@ class Consumer : public EconomicAgent {
     void iterate_investment() override;
     using EconomicAgent::id;
     using EconomicAgent::model;
+    using EconomicAgent::growth;
     // DEBUG
     void print_details() const override;
 };

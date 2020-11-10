@@ -105,6 +105,9 @@ void Output::write_firm_parameters(const Firm* p, const settings::SettingsNode& 
             case hstring::hash("forcing"):
                 internal_write_value(name, p->forcing());
                 break;
+            case hstring::hash("growth"):
+                internal_write_value(name, p->growth());
+                break;
             case hstring::hash("incoming_demand"):
                 internal_write_value(name, p->sales_manager->sum_demand_requests_D());
                 break;
@@ -202,6 +205,9 @@ void Output::write_consumer_parameters(const Consumer* c, const settings::Settin
         switch (name) {
             case hstring::hash("forcing"):
                 internal_write_value(name, c->forcing());
+                break;
+            case hstring::hash("growth"):
+                internal_write_value(name, c->growth());
                 break;
             default:
                 if (!write_consumer_parameter(c, name)) {

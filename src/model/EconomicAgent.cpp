@@ -69,6 +69,8 @@ Model* EconomicAgent::model() const { return sector->model(); }
 
 std::string EconomicAgent::id() const { return sector->id() + ":" + region->id(); }
 
+double EconomicAgent::growth() const { return growth_; }
+
 Parameters::AgentParameters const& EconomicAgent::parameters_writable() const {
     debug::assertstep(this, IterationStep::INITIALIZATION);
     return parameters_;
