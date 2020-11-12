@@ -54,7 +54,7 @@ void Consumer::iterate_consumption_and_production() {
         }
         assert(reservation_price > 0.0);
 
-        const Flow desired_used_flow_U_tilde = Flow(round(is->initial_used_flow_U_star().get_quantity() * forcing_
+        const Flow desired_used_flow_U_tilde = Flow(round(is->baseline_used_flow_U_star().get_quantity() * forcing_
                                                           * pow(reservation_price / Price(1.0), is->parameters().consumption_price_elasticity)),
                                                     reservation_price);
         const Flow used_flow_U = Flow(std::min(desired_used_flow_U_tilde.get_quantity(), possible_used_flow_U_hat.get_quantity()), reservation_price);
@@ -76,11 +76,11 @@ void Consumer::iterate_purchase() {
 
 void Consumer::iterate_investment() {
      debug::assertstep(this, IterationStep::INVESTMENT);
-    // for (const auto& is : input_storages) {
-    //     is->purchasing_manager->iterate_investment();
-    // }
     double growth_rate = 0;
     growth_ *= (1 + growth_rate);
+    for (const auto& is : input_storages) {
+        is->iterate_investment();
+    }
 }
 
 void Consumer::print_details() const {

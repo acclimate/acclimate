@@ -42,6 +42,8 @@ class Storage {
     Stock content_S_ = Stock(0.0);
     Stock initial_content_S_star_ = Stock(0.0);
     Flow initial_input_flow_I_star_ = Flow(0.0);  // == initial_used_flow_U_star_
+    Flow baseline_used_flow_U_star_ = Flow(0.0);
+    Flow initial_baseline_used_flow_U_star_ = Flow(0.0);
     Flow used_flow_U_ = Flow(0.0);
     Flow desired_used_flow_U_tilde_ = Flow(0.0);
     openmp::Lock input_flow_I_lock;
@@ -63,6 +65,7 @@ class Storage {
     const Stock& initial_content_S_star() const { return initial_content_S_star_; }
     const Flow& initial_input_flow_I_star() const { return initial_input_flow_I_star_; }
     const Flow& initial_used_flow_U_star() const { return initial_input_flow_I_star_; }  // == initial_used_flow_U_star
+    const Flow& baseline_used_flow_U_star() const { return baseline_used_flow_U_star_; }
     const Parameters::StorageParameters& parameters() const { return parameters_; }
     Parameters::StorageParameters& parameters_writable();
     void set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p);
@@ -77,7 +80,9 @@ class Storage {
     Ratio get_input_share_u() const;
     void add_initial_flow_Z_star(const Flow& flow_Z_star);
     bool subtract_initial_flow_Z_star(const Flow& flow_Z_star);
+    void add_initial_baseline_used_flow_U_star(const Flow& flow_U_star);
     void iterate_consumption_and_production();
+    void iterate_investment();
     Model* model() const;
     std::string id() const;
 };

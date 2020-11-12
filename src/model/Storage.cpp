@@ -41,6 +41,13 @@ void Storage::iterate_consumption_and_production() {
     purchasing_manager->iterate_consumption_and_production();
 }
 
+void Storage::iterate_investment() {
+    debug::assertstep(this, IterationStep::INVESTMENT);
+    if (economic_agent->is_consumer()) {
+        baseline_used_flow_U_star_ = initial_baseline_used_flow_U_star_ * economic_agent->growth();
+    }
+}
+
 Flow Storage::estimate_possible_use_U_hat() const {
     debug::assertstep(this, IterationStep::EXPECTATION);
     return content_S_ / model()->delta_t() + next_input_flow_I();
@@ -119,6 +126,12 @@ void Storage::add_initial_flow_Z_star(const Flow& flow_Z_star) {
     if (economic_agent->type == EconomicAgent::Type::FIRM) {
         economic_agent->as_firm()->add_initial_total_use_U_star(flow_Z_star);
     }
+}
+
+void Storage::add_initial_baseline_used_flow_U_star(const Flow& flow_U_star) {
+    debug::assertstep(this, IterationStep::INITIALIZATION);
+    initial_baseline_used_flow_U_star_ += flow_U_star;
+    baseline_used_flow_U_star_ += flow_U_star;
 }
 
 bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
