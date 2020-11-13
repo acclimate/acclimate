@@ -120,18 +120,14 @@ void Storage::add_initial_flow_Z_star(const Flow& flow_Z_star) {
     input_flow_I_[1] += flow_Z_star;
     input_flow_I_[2] += flow_Z_star;
     initial_input_flow_I_star_ += flow_Z_star;  // == initial_used_flow_U_star
+    initial_baseline_used_flow_U_star_ += flow_Z_star;
+    baseline_used_flow_U_star_ += flow_Z_star;
     initial_content_S_star_ = round(initial_content_S_star_ + flow_Z_star * sector->initial_storage_fill_factor_psi);
     content_S_ = round(content_S_ + flow_Z_star * sector->initial_storage_fill_factor_psi);
     purchasing_manager->add_initial_demand_D_star(flow_Z_star);
     if (economic_agent->type == EconomicAgent::Type::FIRM) {
         economic_agent->as_firm()->add_initial_total_use_U_star(flow_Z_star);
     }
-}
-
-void Storage::add_initial_baseline_used_flow_U_star(const Flow& flow_U_star) {
-    debug::assertstep(this, IterationStep::INITIALIZATION);
-    initial_baseline_used_flow_U_star_ += flow_U_star;
-    baseline_used_flow_U_star_ += flow_U_star;
 }
 
 bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {

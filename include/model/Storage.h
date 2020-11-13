@@ -80,7 +80,6 @@ class Storage {
     Ratio get_input_share_u() const;
     void add_initial_flow_Z_star(const Flow& flow_Z_star);
     bool subtract_initial_flow_Z_star(const Flow& flow_Z_star);
-    void add_initial_baseline_used_flow_U_star(const Flow& flow_U_star);
     void iterate_consumption_and_production();
     void iterate_investment();
     Model* model() const;
