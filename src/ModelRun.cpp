@@ -39,13 +39,8 @@
 #include "output/NetCDFOutput.h"
 #include "output/Output.h"
 #include "output/ProgressOutput.h"
-#include "scenario/DirectPopulation.h"
 #include "scenario/EventSeriesScenario.h"
-#include "scenario/Flooding.h"
-#include "scenario/HeatLaborProductivity.h"
-#include "scenario/Hurricanes.h"
 #include "scenario/Scenario.h"
-#include "scenario/Taxes.h"
 #include "settingsnode.h"
 
 namespace acclimate {
@@ -108,23 +103,8 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
         Scenario* scenario = nullptr;
         const auto& type = scenario_node["type"].template as<hstring>();
         switch (type) {
-            case hstring::hash("events"):
+            case hstring::hash("events"): // TODO separate
                 scenario = new Scenario(settings, scenario_node, model);
-                break;
-            case hstring::hash("taxes"):
-                scenario = new Taxes(settings, scenario_node, model);
-                break;
-            case hstring::hash("flooding"):
-                scenario = new Flooding(settings, scenario_node, model);
-                break;
-            case hstring::hash("hurricanes"):
-                scenario = new Hurricanes(settings, scenario_node, model);
-                break;
-            case hstring::hash("direct_population"):
-                scenario = new DirectPopulation(settings, scenario_node, model);
-                break;
-            case hstring::hash("heat_labor_productivity"):
-                scenario = new HeatLaborProductivity(settings, scenario_node, model);
                 break;
             case hstring::hash("event_series"):
                 scenario = new EventSeriesScenario(settings, scenario_node, model);
