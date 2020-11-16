@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "acclimate.h"
-#include "netcdftools.h"
+#include "netcdfpp.h"
 #include "openmp.h"
 #include "output/ArrayOutput.h"
 #include "output/Output.h"
@@ -48,7 +48,7 @@ class NetCDFOutput : public ArrayOutput {
     struct VariableMeta {
         std::vector<std::size_t> index;
         std::vector<std::size_t> sizes;
-        netCDF::NcVar nc_var;
+        netCDF::Variable nc_var;
     };
 
   private:
@@ -60,14 +60,14 @@ class NetCDFOutput : public ArrayOutput {
     using Output::output_node;
     using Output::settings_string;
     static constexpr auto compression_level = 7;
-    netCDF::NcDim dim_time;
-    netCDF::NcDim dim_sector;
-    netCDF::NcDim dim_region;
-    netCDF::NcDim dim_firm_names;
-    std::unordered_map<hstring::hash_type, netCDF::NcGroup> groups;
-    std::unique_ptr<netCDF::NcFile> file;
-    netCDF::NcVar var_events;
-    netCDF::NcVar var_time_variable;
+    int dim_time;
+    int dim_sector;
+    int dim_region;
+    int dim_firm_names;
+    std::unordered_map<hstring::hash_type, netCDF::Group> groups;
+    netCDF::File file;
+    std::unique_ptr<netCDF::Variable> var_events;
+    std::unique_ptr<netCDF::Variable> var_time_variable;
     TimeStep flush_freq;
     unsigned int event_cnt;
     std::string filename;
@@ -82,7 +82,7 @@ class NetCDFOutput : public ArrayOutput {
     void internal_iterate_begin() override;
     void internal_iterate_end() override;
     void internal_end() override;
-    netCDF::NcGroup& create_group(const hstring& name);
+    netCDF::Group& create_group(const hstring& name);
     void create_variable_meta(typename ArrayOutput::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) override;
     bool internal_handle_event(typename ArrayOutput::Event& event) override;
 

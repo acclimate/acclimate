@@ -165,11 +165,8 @@ target_sources(acclimate PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp)
 
 include_nlopt(acclimate ON "v2.6.1")
 
-include_netcdf_cxx4(acclimate ON v4.3.0)
-
-include(lib/libmrio/libmrio.cmake)
-target_link_libraries(acclimate PRIVATE libmrio)
-mark_as_advanced(LIBMRIO_WITH_NETCDF)
+include(lib/netcdfpp/netcdfpp.cmake)
+include_netcdfpp(acclimate)
 
 include(lib/settingsnode/settingsnode.cmake)
 include_settingsnode(acclimate)

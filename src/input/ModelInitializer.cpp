@@ -28,8 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "MRIOIndexSet.h"
-#include "MRIOTable.h"
 #include "acclimate.h"
 #include "model/BusinessConnection.h"
 #include "model/Consumer.h"
@@ -45,7 +43,7 @@
 #include "model/SalesManager.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
-#include "netcdftools.h"
+#include "netcdfpp.h"
 #include "optimization.h"
 #include "parameters.h"
 
@@ -315,17 +313,15 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
     std::vector<std::size_t> input_indices;
     std::unordered_map<std::string, std::size_t> point_indices;
 
-    netCDF::check_file_exists(filename);
-    netCDF::NcFile file(filename, netCDF::NcFile::read, netCDF::NcFile::nc4);
+    netCDF::File file(filename, 'r');
 
-    const auto types_size = file.getDim("typeindex").getSize();
-    std::vector<char*> typenames(types_size);
-    file.getVar("typeindex").getVar(&typenames[0]);
+    const auto typenames = file.variable("typeindex").require().require_dimensions({"typeindex"}).get<std::string>();
+
     char type_port = -1;
     char type_region = -1;
     char type_sea = -1;
-    for (std::size_t i = 0; i < types_size; ++i) {
-        const std::string s(typenames[i]);
+    for (std::size_t i = 0; i < typenames.size(); ++i) {
+        const auto& s = typenames[i];
         if (s == "port") {
             type_port = i;
         } else if (s == "sea") {
@@ -346,21 +342,15 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
         throw log::error(this, "No transport node type for seas found");
     }
 
-    const auto input_size = file.getDim("index").getSize();
-    std::vector<char*> ids(input_size);
-    std::vector<unsigned char> types(input_size);
-    std::vector<double> latitudes(input_size);
-    std::vector<double> longitudes(input_size);
-    std::vector<unsigned char> connections(input_size * input_size);
+    const auto ids = file.variable("index").require().require_dimensions({"index"}).get<std::string>();
+    const auto types = file.variable("type").require().require_dimensions({"index"}).get<unsigned char>();
+    const auto latitudes = file.variable("latitude").require().require_dimensions({"index"}).get<double>();
+    const auto longitudes = file.variable("longitude").require().require_dimensions({"index"}).get<double>();
+    const auto connections = file.variable("connections").require().require_dimensions({"index", "index"}).get<unsigned char>();
 
-    file.getVar("index").getVar(&ids[0]);
-    file.getVar("type").getVar(&types[0]);
-    file.getVar("latitude").getVar(&latitudes[0]);
-    file.getVar("longitude").getVar(&longitudes[0]);
-    file.getVar("connections").getVar(&connections[0]);
     file.close();
 
-    for (std::size_t i = 0; i < input_size; ++i) {
+    for (std::size_t i = 0; i < ids.size(); ++i) {
         GeoLocation* location = nullptr;
         if (types[i] == type_region) {
             location = model()->find_region(ids[i]);
@@ -385,7 +375,7 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
         auto& p1 = points[i];
         auto l1 = static_cast<GeoLocation*>(p1->entity());  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
         for (std::size_t j = 0; j < i; ++j) {               // assume connections is symmetric
-            if (connections[input_indices[i] * input_size + input_indices[j]] > 0) {
+            if (connections[input_indices[i] * ids.size() + input_indices[j]] > 0) {
                 auto& p2 = points[j];
                 auto l2 = static_cast<GeoLocation*>(p2->entity());  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
                 FloatType costs;
@@ -512,27 +502,16 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
 
 void ModelInitializer::read_centroids_netcdf(const std::string& filename) {
     {
-        netCDF::check_file_exists(filename);
-        netCDF::NcFile file(filename, netCDF::NcFile::read);
+        netCDF::File file(filename, 'r');
 
-        std::size_t regions_count = file.getDim("region").getSize();
+        const auto regions = file.variable("region").require().require_dimensions({"region"}).get<std::string>();
+        const auto lons = file.variable("lon").require().require_dimensions({"region"}).get<float>();
+        const auto lats = file.variable("lat").require().require_dimensions({"region"}).get<float>();
 
-        netCDF::NcVar regions_var = file.getVar("region");
-        std::vector<const char*> regions_val(regions_count);
-        regions_var.getVar(&regions_val[0]);
-
-        netCDF::NcVar lons_var = file.getVar("lon");
-        std::vector<float> lons_val(regions_count);
-        lons_var.getVar(&lons_val[0]);
-
-        netCDF::NcVar lats_var = file.getVar("lat");
-        std::vector<float> lats_val(regions_count);
-        lats_var.getVar(&lats_val[0]);
-
-        for (std::size_t i = 0; i < regions_count; ++i) {
-            Region* region = model()->find_region(regions_val[i]);
+        for (std::size_t i = 0; i < regions.size(); ++i) {
+            Region* region = model()->find_region(regions[i]);
             if (region != nullptr) {
-                std::unique_ptr<GeoPoint> centroid(new GeoPoint(lons_val[i], lats_val[i]));
+                std::unique_ptr<GeoPoint> centroid(new GeoPoint(lons[i], lats[i]));
                 region->set_centroid(centroid);
             }
         }
@@ -734,112 +713,105 @@ void ModelInitializer::build_agent_network() {
     const settings::SettingsNode& network = settings["network"];
     const auto& type = network["type"].as<settings::hstring>();
     switch (type) {
-            /*
-            case settings::hstring::hash("csv"): {
-                const auto& index_filename = network["index"].as<std::string>();
-                std::ifstream index_file(index_filename.c_str(), std::ios::in | std::ios::binary);
-                if (!index_file) {
-                    throw log::error(this, "Could not open index file '", index_filename, "'");
-                }
-                const auto& filename = network["file"].as<std::string>();
-                std::ifstream flows_file(filename.c_str(), std::ios::in | std::ios::binary);
-                if (!flows_file) {
-                    throw log::error(this, "Could not open flows file '", filename, "'");
-                }
-                mrio::Table<FloatType, std::size_t> table;
-                const auto flow_threshold = network["threshold"].as<FloatType>();
-                table.read_from_csv(index_file, flows_file, flow_threshold);
-                flows_file.close();
-                index_file.close();
-                build_agent_network_from_table(table, flow_threshold);
-            } break;
-            */
+            // TODO case settings::hstring::hash("csv")
 
         case settings::hstring::hash("netcdf"): {
             const auto& filename = network["file"].as<std::string>();
-            netCDF::check_file_exists(filename);
+            netCDF::File file(filename, 'r');
+
             const auto flow_threshold = network["threshold"].as<FloatType>();
             const Ratio time_factor = model()->delta_t() / Time(365.0);
             const FlowQuantity daily_flow_threshold = round(FlowQuantity(flow_threshold * time_factor));
 
-            netCDF::NcFile file(filename, netCDF::NcFile::read, netCDF::NcFile::nc4);
-
-            const auto sectors_count = file.getDim("sector").getSize();
-            {
-                const auto sectors_var = file.getVar("sector");
-                std::vector<const char*> sectors_val(sectors_count);
-                sectors_var.getVar(&sectors_val[0]);
-                for (const auto& sector : sectors_val) {
-                    add_sector(sector);
-                }
+            const auto sectors_count = file.dimension("sector").require().size();
+            for (const auto& sector : file.variable("sector").require().get<std::string>()) {
+                add_sector(sector);
             }
 
-            const auto regions_count = file.getDim("region").getSize();
-            {
-                const auto regions_var = file.getVar("region");
-                std::vector<const char*> regions_val(regions_count);
-                regions_var.getVar(&regions_val[0]);
-                for (const auto& region : regions_val) {
-                    add_region(region);
-                }
+            const auto regions_count = file.dimension("region").require().size();
+            for (const auto& region : file.variable("region").require().get<std::string>()) {
+                add_region(region);
             }
 
             std::vector<EconomicAgent*> economic_agents;
 
-            auto flows_var = file.getVar("flows");
-            if (flows_var.isNull()) {
-                flows_var = file.getVar("flow");
-            }
+            auto flows_var = ([&file]() {
+                auto tmp = file.variable("flows");
+                if (tmp) {
+                    return tmp.require();
+                }
+                return file.variable("flow").require();
+            })();
 
-            if (netCDF::check_dimensions(flows_var, {"sector", "region", "sector", "region"})) {
-                const auto firms_count = sectors_count * regions_count;
-                economic_agents.reserve(firms_count);
+            if (flows_var.check_dimensions({"sector", "region", "sector", "region"})) {
+                const auto agents_count = sectors_count * regions_count;
+                economic_agents.reserve(agents_count);
                 for (auto& sector : model()->sectors) {
                     for (auto& region : model()->regions) {
                         economic_agents.push_back(add_standard_agent(sector.get(), region.get()));
                     }
                 }
 
-            } else if (netCDF::check_dimensions(flows_var, {"region", "sector", "region", "sector"})) {
-                const auto firms_count = regions_count * sectors_count;
-                economic_agents.reserve(firms_count);
+            } else if (flows_var.check_dimensions({"region", "sector", "region", "sector"})) {
+                const auto agents_count = regions_count * sectors_count;
+                economic_agents.reserve(agents_count);
                 for (auto& region : model()->regions) {
                     for (auto& sector : model()->sectors) {
                         economic_agents.push_back(add_standard_agent(sector.get(), region.get()));
                     }
                 }
 
-            } else if (netCDF::check_dimensions(flows_var, {"index"})) {
-                const auto firms_count = file.getDim("index").getSize();
-                economic_agents.reserve(firms_count);
-                const auto index_sector_var = file.getVar("index_sector");
-                std::vector<unsigned int> index_sector_val(firms_count);
-                index_sector_var.getVar(&index_sector_val[0]);
-                const auto index_region_var = file.getVar("index_region");
-                std::vector<unsigned int> index_region_val(firms_count);
-                index_region_var.getVar(&index_region_val[0]);
-                for (unsigned int i = 0; i < firms_count; ++i) {
-                    economic_agents.push_back(add_standard_agent(model()->sectors[index_sector_val[i]].get(), model()->regions[index_region_val[i]].get()));
+            } else if (flows_var.check_dimensions({"index"})) {
+                const auto agents_count = file.dimension("index").require().size();
+                economic_agents.reserve(agents_count);
+                const auto index_sector = file.variable("index_sector").require().require_dimensions({"index"}).get<unsigned int>();
+                const auto index_region = file.variable("index_region").require().require_dimensions({"index"}).get<unsigned int>();
+                for (unsigned int i = 0; i < agents_count; ++i) {
+                    economic_agents.push_back(add_standard_agent(model()->sectors[index_sector[i]].get(), model()->regions[index_region[i]].get()));
                 }
 
-            } else if (netCDF::check_dimensions(flows_var, {"flow"})) {
-                const auto firms_count = file.getDim("firm").getSize();
-                economic_agents.reserve(firms_count);
-                std::vector<const char*> firm_names(firms_count);
-                file.getVar("firm").getVar(&firm_names[0]);
-                struct FirmCompound {
+            } else if (flows_var.check_dimensions({"flow"})) {
+                const auto agents_count = file.dimension("agent").require().size();
+                economic_agents.reserve(agents_count);
+
+                int type_firm = -1;
+                int type_consumer = -1;
+
+                const auto agent_types = file.variable("agent_type").require().require_dimensions({"agent_type"}).get<std::string>();
+                {
+                    for (int i = 0; i < agent_types.size(); ++i) {
+                        const auto& type = agent_types[i];
+                        if (type == "firm") {
+                            type_firm = i;
+                        } else if (type == "consumer") {
+                            type_consumer = i;
+                        }
+                    }
+                }
+
+                struct AgentCompound {
+                    char name[25];
+                    std::uint8_t agent_type;
                     std::uint32_t sector;
                     std::uint32_t region;
                 };
-                std::vector<FirmCompound> firm_types(firms_count);
-                file.getVar("firm_type").getVar(&firm_types[0]);
-                for (unsigned int i = 0; i < firms_count; ++i) {
-                    auto* region = model()->regions[firm_types[i].region].get();
-                    auto* sector = model()->sectors[firm_types[i].sector].get();
-                    if (sector->id() == "FCON") {
-                        economic_agents.push_back(add_consumer(firm_names[i], sector, region));
+                const auto agents = file.variable("agent").require().require_dimensions({"agent"}).require_compound<AgentCompound>(4).get<AgentCompound>();
+                for (unsigned int i = 0; i < agents_count; ++i) {
+                    if (agents[i].region >= model()->regions.size()) {
+                        throw log::error(this, "Region out of range for ", agents[i].name, " in '", filename, "'");
+                    }
+                    auto* region = model()->regions[agents[i].region].get();
+                    if (agents[i].agent_type == type_consumer) {
+                        auto* sector = model()->find_sector("FCON");  // TODO
+                        economic_agents.push_back(add_consumer(agents[i].name, sector, region));
+                    } else if (agents[i].agent_type == type_firm) {
+                        if (agents[i].sector >= model()->sectors.size()) {
+                            throw log::error(this, "Sector out of range for ", agents[i].name, " in '", filename, "'");
+                        }
+                        auto* sector = model()->sectors[agents[i].sector].get();
+                        economic_agents.push_back(add_firm(agents[i].name, sector, region));
                     } else {
-                        economic_agents.push_back(add_firm(firm_names[i], sector, region));
+                        throw log::error(this, "Unkown agent type ", agent_types.at(agents[i].agent_type), " in '", filename, "'");
                     }
                 }
 
@@ -849,28 +821,25 @@ void ModelInitializer::build_agent_network() {
 
             build_transport_network();
 
-            const auto firms_count = economic_agents.size();
+            const auto agents_count = economic_agents.size();
 
-            if (netCDF::check_dimensions(flows_var, {"flow"})) {
-                const auto flows_count = file.getDim("flow").getSize();
+            if (flows_var.check_dimensions({"flow"})) {
                 struct FlowCompound {
-                    std::uint32_t firm_from;
-                    std::uint32_t firm_to;
+                    std::uint32_t agent_from;
+                    std::uint32_t agent_to;
                     double value;
                 };
-                std::vector<FlowCompound> data(flows_count);
-                flows_var.getVar(&data[0]);
-                for (const auto& flow : data) {
+                const auto flows = flows_var.require_compound<FlowCompound>(3).get<FlowCompound>();
+                for (const auto& flow : flows) {
                     if (flow.value > flow_threshold) {
-                        initialize_connection(economic_agents[flow.firm_from]->as_firm(), economic_agents[flow.firm_to],
+                        initialize_connection(economic_agents[flow.agent_from]->as_firm(), economic_agents[flow.agent_to],
                                               round(FlowQuantity(flow.value) * time_factor));
                     }
                 }
 
             } else {
-                std::vector<float> data(firms_count * firms_count);  // use float to save memory
-                flows_var.getVar(&data[0]);
-                auto d = std::begin(data);
+                const auto flows = flows_var.require_size(agents_count * agents_count).get<float>();  // use float to save memory
+                auto d = std::begin(flows);
                 for (auto& source : economic_agents) {
                     if (source->type == EconomicAgent::Type::FIRM) {
                         Firm* firm_from = source->as_firm();
@@ -882,7 +851,7 @@ void ModelInitializer::build_agent_network() {
                             ++d;
                         }
                     } else {
-                        d += firms_count;
+                        d += agents_count;
                     }
                 }
             }

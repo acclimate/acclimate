@@ -25,24 +25,23 @@
 #include <string>
 
 #include "acclimate.h"
-#include "netcdftools.h"
+#include "netcdfpp.h"
 
 namespace acclimate {
 
 class ExternalForcing {
   protected:
-    std::string filename;
     TimeStep time_index;
     TimeStep time_index_count;
-    std::unique_ptr<netCDF::NcFile> file;
-    netCDF::NcVar variable;
-    netCDF::NcVar time_variable;
+    netCDF::File file;
+    std::unique_ptr<netCDF::Variable> variable;
+    std::unique_ptr<netCDF::Variable> time_variable;
 
   protected:
     virtual void read_data() = 0;
 
   public:
-    ExternalForcing(std::string filename_p, const std::string& variable_name);
+    ExternalForcing(std::string filename, std::string variable_name);
     virtual ~ExternalForcing() = default;
     int next_timestep();
     std::string calendar_str() const;

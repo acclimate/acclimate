@@ -28,7 +28,7 @@
 #include "acclimate.h"
 #include "model/Firm.h"
 #include "model/Model.h"
-#include "netcdftools.h"
+#include "netcdfpp.h"
 #include "settingsnode.h"
 
 namespace acclimate {
@@ -54,14 +54,12 @@ void EventSeriesScenario::read_forcings() {
     }
 }
 
-void EventSeriesScenario::EventForcing::read_data() { variable.getVar({time_index, 0, 0}, {1, sectors_count, regions_count}, &forcings[0]); }
+void EventSeriesScenario::EventForcing::read_data() { variable->read<Forcing, 3>(&forcings[0], {time_index, 0, 0}, {1, sectors_count, regions_count}); }
 
 EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, const std::string& variable_name, const Model* model)
     : ExternalForcing(filename, variable_name) {
-    std::vector<const char*> regions(file->getDim("region").getSize());
-    file->getVar("region").getVar(&regions[0]);
-    std::vector<const char*> sectors(file->getDim("sector").getSize());
-    file->getVar("sector").getVar(&sectors[0]);
+    const auto regions = file.variable("region").require().get<std::string>();
+    const auto sectors = file.variable("sector").require().get<std::string>();
     regions_count = regions.size();
     sectors_count = sectors.size();
     firms.reserve(regions_count * sectors_count);
