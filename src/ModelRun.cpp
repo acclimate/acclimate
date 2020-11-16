@@ -36,12 +36,6 @@
 #include "model/Sector.h"
 #include "openmp.h"
 #include "output/ArrayOutput.h"
-#include "output/ConsoleOutput.h"
-#include "output/DamageOutput.h"
-#include "output/GnuplotOutput.h"
-#include "output/HistogramOutput.h"
-#include "output/JSONNetworkOutput.h"
-#include "output/JSONOutput.h"
 #include "output/NetCDFOutput.h"
 #include "output/Output.h"
 #include "output/ProgressOutput.h"
@@ -145,26 +139,8 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
         Output* output = nullptr;
         const auto& type = node["format"].template as<hstring>();
         switch (type) {
-            case hstring::hash("console"):
-                output = new ConsoleOutput(settings, model, node);
-                break;
-            case hstring::hash("json"):
-                output = new JSONOutput(settings, model, node);
-                break;
-            case hstring::hash("json_network"):
-                output = new JSONNetworkOutput(settings, model, node);
-                break;
             case hstring::hash("netcdf"):
                 output = new NetCDFOutput(settings, model, node);
-                break;
-            case hstring::hash("histogram"):
-                output = new HistogramOutput(settings, model, node);
-                break;
-            case hstring::hash("gnuplot"):
-                output = new GnuplotOutput(settings, model, node);
-                break;
-            case hstring::hash("damage"):
-                output = new DamageOutput(settings, model, node);
                 break;
             case hstring::hash("array"):
                 output = new ArrayOutput(settings, model, node);
