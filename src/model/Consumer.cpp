@@ -108,7 +108,7 @@ FloatType Consumer::equality_constraint(const double* x, double* grad) {
         assert(!std::isnan(x[r]));
         consumption_cost += FlowValue(x[r] * to_float(consumption_prices[r]));
         if (grad != nullptr) {
-            grad[r] = CES_marginal_utility(r, FlowQuantity(x[r]));
+            grad[r] = CES_marginal_utility(r, FlowQuantity(x[r])) / baseline_utility;
             if constexpr (options::OPTIMIZATION_WARNINGS) {
                 if (grad[r] > MAX_GRADIENT) {
                     log::warning(this, this->id(), ": large gradient of ", grad[r]);
@@ -257,7 +257,7 @@ void Consumer::iterate_consumption_and_production() {
         for (std::size_t r = 0; r < input_storages.size(); ++r) {
             desired_consumption[r] = Flow(FlowQuantity(optimizer_consumption[r]), consumption_prices[r]);
             previous_consumption[r] = desired_consumption[r].get_quantity();
-            // withdraw consumption from storagr
+            // withdraw consumption from storage
             input_storages[r]->set_desired_used_flow_U_tilde(desired_consumption[r]);
             input_storages[r]->use_content_S((desired_consumption[r]));
             region->add_consumption_flow_Y((desired_consumption[r]));
