@@ -44,8 +44,10 @@ void Storage::iterate_consumption_and_production() {
 void Storage::iterate_investment() {
     debug::assertstep(this, IterationStep::INVESTMENT);
     if (economic_agent->is_consumer()) {
-        baseline_used_flow_U_star_ = initial_baseline_used_flow_U_star_ * economic_agent->growth();
+        baseline_used_flow_U_star_ += baseline_used_flow_U_star_ * economic_agent->growth_rate();
     }
+    initial_content_S_star_ += initial_content_S_star_ * economic_agent->growth_rate();
+    purchasing_manager->iterate_investment();
 }
 
 Flow Storage::estimate_possible_use_U_hat() const {

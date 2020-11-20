@@ -101,6 +101,7 @@ class PurchasingManager {
     Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
     void iterate_purchase();
+    void iterate_investment();
     void add_initial_demand_D_star(const Demand& demand_D_p);
     void subtract_initial_demand_D_star(const Demand& demand_D_p);
     Model* model() const;

@@ -41,6 +41,7 @@ class Storage {
     Forcing forcing_mu_ = Forcing(1.0);
     Stock content_S_ = Stock(0.0);
     Stock initial_content_S_star_ = Stock(0.0);
+    Stock baseline_content_S_star_ = Stock(0.0);
     Flow initial_input_flow_I_star_ = Flow(0.0);  // == initial_used_flow_U_star_
     Flow baseline_used_flow_U_star_ = Flow(0.0);
     Flow initial_baseline_used_flow_U_star_ = Flow(0.0);
@@ -63,6 +64,7 @@ class Storage {
     const Flow& used_flow_U(const EconomicAgent* const caller = nullptr) const;
     const Flow& desired_used_flow_U_tilde(const EconomicAgent* const caller = nullptr) const;
     const Stock& initial_content_S_star() const { return initial_content_S_star_; }
+    const Stock& baseline_content_S_star() const { return baseline_content_S_star_; }
     const Flow& initial_input_flow_I_star() const { return initial_input_flow_I_star_; }
     const Flow& initial_used_flow_U_star() const { return initial_input_flow_I_star_; }  // == initial_used_flow_U_star
     const Flow& baseline_used_flow_U_star() const { return baseline_used_flow_U_star_; }

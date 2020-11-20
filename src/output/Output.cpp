@@ -105,8 +105,8 @@ void Output::write_firm_parameters(const Firm* p, const settings::SettingsNode& 
             case hstring::hash("forcing"):
                 internal_write_value(name, p->forcing());
                 break;
-            case hstring::hash("growth"):
-                internal_write_value(name, p->growth());
+            case hstring::hash("growth_rate"):
+                internal_write_value(name, p->growth_rate());
                 break;
             case hstring::hash("incoming_demand"):
                 internal_write_value(name, p->sales_manager->sum_demand_requests_D());
@@ -206,8 +206,8 @@ void Output::write_consumer_parameters(const Consumer* c, const settings::Settin
             case hstring::hash("forcing"):
                 internal_write_value(name, c->forcing());
                 break;
-            case hstring::hash("growth"):
-                internal_write_value(name, c->growth());
+            case hstring::hash("growth_rate"):
+                internal_write_value(name, c->growth_rate());
                 break;
             default:
                 if (!write_consumer_parameter(c, name)) {
@@ -336,9 +336,10 @@ void Output::write_connection_parameters(const BusinessConnection* b, const sett
                 internal_write_value(name, b->get_flow_mean());
                 break;
             case hstring::hash("initial_flow"):
-                if (model()->is_first_timestep()) {
-                    internal_write_value(name, b->initial_flow_Z_star());
-                }
+//                if (model()->is_first_timestep()) {
+//                    internal_write_value(name, b->initial_flow_Z_star());
+//                }
+                internal_write_value(name, b->initial_flow_Z_star());
                 break;
             case hstring::hash("flow_deficit"):
                 internal_write_value(name, b->get_flow_deficit());

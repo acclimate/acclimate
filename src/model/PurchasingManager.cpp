@@ -49,6 +49,13 @@ PurchasingManager::PurchasingManager(Storage* storage_p) : storage(storage_p) {}
 
 void PurchasingManager::iterate_consumption_and_production() { debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION); }
 
+void PurchasingManager::iterate_investment() {
+    debug::assertstep(this, IterationStep::INVESTMENT);
+    for (auto& bc : business_connections) {
+        bc->initial_flow_Z_star(bc->initial_flow_Z_star() + bc->initial_flow_Z_star() * storage->economic_agent->growth_rate());
+    }
+}
+
 bool PurchasingManager::remove_business_connection(const BusinessConnection* business_connection) {
     auto it = std::find_if(std::begin(business_connections), std::end(business_connections),
                            [business_connection](const auto& bc) { return bc.get() == business_connection; });

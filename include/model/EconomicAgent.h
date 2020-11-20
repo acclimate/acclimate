@@ -46,7 +46,7 @@ class EconomicAgent {
 
   protected:
     Forcing forcing_ = Forcing(1.0);
-    double growth_ = 1.0;
+    double growth_rate_ = 0.0;
 
   public:
     Sector* const sector;
@@ -77,7 +77,7 @@ class EconomicAgent {
     void remove_storage(Storage* storage);
     Model* model() const;
     virtual std::string id() const;
-    virtual double growth() const;
+    virtual double growth_rate() const;
     // DEBUG
     virtual void print_details() const = 0;
 };

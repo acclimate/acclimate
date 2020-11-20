@@ -109,12 +109,11 @@ void Firm::iterate_purchase() {
 
 void Firm::iterate_investment() {
     debug::assertstep(this, IterationStep::INVESTMENT);
-    // for (const auto& is : input_storages) {
-    //     is->purchasing_manager->iterate_investment();
-    // }
-    double growth_rate = 5.425525e-5;
-    growth_ *= (1 + growth_rate);
-    initial_production_X_star_ += initial_production_X_star_ * growth_rate;
+    growth_rate_ = 5.425525e-5;
+    initial_production_X_star_ += initial_production_X_star_ * growth_rate_;
+    for (const auto& is : input_storages) {
+        is->iterate_investment();
+    }
 }
 
 Flow Firm::maximal_production_beta_X_star() const { return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta); }
