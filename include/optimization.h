@@ -50,6 +50,12 @@ static int get_algorithm(const settings::hstring& name) {
             return NLOPT_LD_VAR1;
         case settings::hstring::hash("var2"):
             return NLOPT_LD_VAR2;
+        case settings::hstring::hash("bobyqa"):
+            return NLOPT_LN_BOBYQA;
+        case settings::hstring::hash("cobyla"):
+            return NLOPT_LN_COBYLA;
+        case settings::hstring::hash("isres"):
+            return NLOPT_GN_ISRES;
         default:
             throw log::error("unknown optimization alorithm '", name, "'");
     }

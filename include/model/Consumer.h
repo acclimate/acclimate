@@ -35,14 +35,14 @@ class Consumer : public EconomicAgent {
     bool utilitarian;
 
     // optimization parameters
-    std::vector<double> optimizer_consumption;
+    std::vector<FloatType> optimizer_consumption;
     std::vector<double> lower_bounds;
     std::vector<double> upper_bounds;
     std::vector<double> xtol_abs;
 
-    // vectors to store desired actual, and previous consumption quantities as floats
     std::vector<FlowQuantity> possible_consumption;  // consumption limits considered in optimization
     std::vector<Price> consumption_prices;           // prices to be considered in optimization
+    std::vector<Price> current_prices;               // current prices to enable optimization with some foresight
     std::vector<Flow> desired_consumption;
     std::vector<FlowQuantity> previous_consumption;
     std::vector<Price> previous_prices;
@@ -89,9 +89,14 @@ class Consumer : public EconomicAgent {
     FloatType CES_marginal_utility(int index_of_good, FlowQuantity consumption_demand) const;
     FloatType CES_marginal_utility(int index_of_good, double consumption_demand) const;
 
+    // some simple utility functions
+    FloatType linear_utility_function(std::vector<FlowQuantity> consumption_demands) const;
+    FloatType linear_utility_function(std::vector<Flow> consumption_demands) const;
+    FloatType linear_marginal_utility(int index_of_good, double consumption_demand) const;
+
     // functions for constrained optimization
     FloatType equality_constraint(const double* x, double* grad);
-    FloatType max_objective(const double* x, double* grad) const;
+    const FloatType max_objective(const double* x, double* grad) const;
     void print_distribution(const std::vector<double>& demand_requests_D) const;
 
     // some simple function

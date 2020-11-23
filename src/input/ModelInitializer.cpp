@@ -95,12 +95,9 @@ Firm* ModelInitializer::add_firm(Sector* sector, Region* region) {
 
 Consumer* ModelInitializer::add_consumer(Region* region) {
     Consumer* consumer;
-    if (model()->parameters_writable().consumer_utilitarian) {
-        float substitution_coefficient = get_named_property(settings["consumers"], "ALL", "substitution_coefficient").template as<FloatType>();
-        consumer = new Consumer(region, substitution_coefficient);
-    } else {
-        consumer = new Consumer(region);
-    }
+    // always initialize with substitution coefficient to allow utility comparison
+    float substitution_coefficient = get_named_property(settings["consumers"], "ALL", "substitution_coefficient").template as<FloatType>();
+    consumer = new Consumer(region, substitution_coefficient);
 
     region->economic_agents.emplace_back(consumer);
     return consumer;
@@ -885,6 +882,8 @@ void ModelInitializer::pre_initialize() {
     }
     model()->parameters_writable().relative_transport_penalty = parameters["relative_transport_penalty"].as<bool>();
     model()->parameters_writable().optimization_algorithm = optimization::get_algorithm(parameters["optimization_algorithm"].as<settings::hstring>("slsqp"));
+    model()->parameters_writable().utility_optimization_algorithm =
+        optimization::get_algorithm(parameters["optimization_algorithm"].as<settings::hstring>("slsqp"));
     if (parameters["cost_correction"].as<bool>(false)) {
         throw log::error(this, "parameter cost_correction not supported anymore");
     }
