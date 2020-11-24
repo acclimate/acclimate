@@ -373,7 +373,8 @@ void Consumer::print_distribution(const std::vector<double>& consumption_demands
         {
             std::cout << model()->run()->timeinfo() << ", " << id() << ": demand distribution for " << consumption_demands.size() << " inputs :\n";
             std::vector<FloatType> grad(consumption_demands.size());
-            const auto obj = max_objective(&consumption_demands[0], &grad[0]);
+            FloatType obj;
+            obj = max_objective(&consumption_demands[0], &grad[0]);
             for (std::size_t r = 0; r < consumption_demands.size(); ++r) {
                 std::cout << "      " << this->id() << " :\n";
                 print_row("grad", grad[r]);
