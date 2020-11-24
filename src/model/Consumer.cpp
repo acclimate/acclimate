@@ -98,7 +98,7 @@ FloatType Consumer::linear_utility_function(std::vector<Flow> consumption_demand
     return sum_over_goods;
 }
 
-FloatType Consumer::linear_marginal_utility(int index_of_good, double consumption_demand) const { return share_factors[index_of_good]; }
+FloatType Consumer::linear_marginal_utility(int index_of_good) const { return share_factors[index_of_good]; }
 
 FloatType Consumer::CES_utility_function(std::vector<Flow> consumption_demands) const {
     FloatType sum_over_goods = 0;

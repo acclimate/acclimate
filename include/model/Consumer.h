@@ -92,7 +92,7 @@ class Consumer : public EconomicAgent {
     // some simple utility functions
     FloatType linear_utility_function(std::vector<FlowQuantity> consumption_demands) const;
     FloatType linear_utility_function(std::vector<Flow> consumption_demands) const;
-    FloatType linear_marginal_utility(int index_of_good, double consumption_demand) const;
+    FloatType linear_marginal_utility(int index_of_good) const;
 
     // functions for constrained optimization
     FloatType equality_constraint(const double* x, double* grad);
