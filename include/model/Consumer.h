@@ -96,7 +96,7 @@ class Consumer : public EconomicAgent {
 
     // functions for constrained optimization
     FloatType equality_constraint(const double* x, double* grad);
-    const FloatType max_objective(const double* x, double* grad) const;
+    FloatType max_objective(const double* x, double* grad) const;
     void print_distribution(const std::vector<double>& demand_requests_D) const;
 
     // some simple function

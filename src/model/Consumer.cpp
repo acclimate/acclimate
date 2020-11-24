@@ -87,7 +87,7 @@ FloatType Consumer::linear_utility_function(std::vector<FlowQuantity> consumptio
     for (std::size_t r = 0; r < share_factors.size(); ++r) {
         sum_over_goods += to_float(consumption_demands[r]) * share_factors[r];
     }
-    return sum_over_goods;  // outer exponent not relevant for optimization (at least for sigma >1)
+    return sum_over_goods;
 }
 
 FloatType Consumer::linear_utility_function(std::vector<Flow> consumption_demands) const {
@@ -95,7 +95,7 @@ FloatType Consumer::linear_utility_function(std::vector<Flow> consumption_demand
     for (std::size_t r = 0; r < share_factors.size(); ++r) {
         sum_over_goods += to_float(consumption_demands[r].get_quantity()) * share_factors[r];
     }
-    return sum_over_goods;  // outer exponent not relevant for optimization (at least for sigma >1)
+    return sum_over_goods;
 }
 
 FloatType Consumer::linear_marginal_utility(int index_of_good, double consumption_demand) const { return share_factors[index_of_good]; }
@@ -109,7 +109,7 @@ FloatType Consumer::CES_utility_function(std::vector<Flow> consumption_demands) 
 }
 
 FloatType Consumer::CES_marginal_utility(int index_of_good, double consumption_demand) const {
-    return pow(consumption_demand, substitution_exponent - 1) * substitution_exponent * share_factors[index_of_good];
+    return pow(consumption_demand, substitution_exponent - 1) * substitution_exponent * share_factors[index_of_good] * 10000;
 }
 
 // TODO: more complex budget function might be useful, e.g. opportunity for saving etc.
@@ -131,7 +131,7 @@ FloatType Consumer::equality_constraint(const double* x, double* grad) {
     return to_float(budget + not_spent_budget - consumption_cost);
 }
 
-const FloatType Consumer::max_objective(const double* x, double* grad) const {
+FloatType Consumer::max_objective(const double* x, double* grad) const {
     std::vector<FlowQuantity> consumption;
     consumption.reserve(desired_consumption.size());
     for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
@@ -180,14 +180,14 @@ void Consumer::iterate_consumption_and_production() {
         // while potentially speeding up optimization in case of small price changes
 
         for (std::size_t r = 0; r < possible_consumption.size(); ++r) {
-            desired_consumption.push_back(Flow(baseline_consumption[r].get_quantity(), consumption_prices[r]));
+            desired_consumption.push_back(Flow(previous_consumption[r], consumption_prices[r]));
         }
 
         // adjust if price changes make baseline consumption to expensive - assuming constant expenditure per good
         for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
             desired_consumption[r] =
                 Flow(FlowQuantity(std::min(possible_consumption[r],
-                                           desired_consumption[r].get_quantity() * to_float(baseline_consumption[r].get_price())
+                                           desired_consumption[r].get_quantity() * to_float(previous_prices[r])
                                                * pow(to_float(consumption_prices[r]), input_storages[r]->parameters().consumption_price_elasticity))),
                      consumption_prices[r]);
             // TODO: more sophisticated use of price elasticity
@@ -212,11 +212,12 @@ void Consumer::iterate_consumption_and_production() {
 
             opt.add_equality_constraint(this, FlowValue::precision);
             opt.add_max_objective(this);
-            opt.xtol(xtol_abs);
+            // opt.xtol(xtol_abs); // ignoring this to avoid problems with quite small gradient
             opt.lower_bounds(lower_bounds);
             opt.upper_bounds(upper_bounds);
             opt.maxeval(model()->parameters().optimization_maxiter);
             opt.maxtime(model()->parameters().optimization_timeout);
+
             const auto res = opt.optimize(optimizer_consumption);
             if (!res && !opt.xtol_reached()) {
                 if (opt.roundoff_limited()) {
@@ -284,7 +285,7 @@ void Consumer::iterate_consumption_and_production() {
             // adjust non-spent budget
             not_spent_budget -= used_flow_U.get_value();
         }
-        utility = CES_utility_function(previous_consumption) / baseline_utility;
+        utility = CES_utility_function(desired_consumption) / baseline_utility;
     } else {
         // old consumer to be used for comparison
         // utility calculated to compare
