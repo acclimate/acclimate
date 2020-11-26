@@ -20,54 +20,20 @@
 
 #include "model/EconomicAgent.h"
 
-#include <algorithm>
-#include <iterator>
+#include <utility>
 
 #include "acclimate.h"
 #include "model/Region.h"
-#include "model/Sector.h"
 #include "model/Storage.h"
 
 namespace acclimate {
 
-EconomicAgent::EconomicAgent(std::string name_p, Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p)
-    : name(std::move(name_p)), sector(sector_p), region(region_p), type(type_p) {}
+EconomicAgent::EconomicAgent(id_t id_p, Region* region_p, EconomicAgent::type_t type_p) : id(std::move(id_p)), region(region_p), type(type_p) {}
 
-inline Firm* EconomicAgent::as_firm() {
-    assert(type == Type::FIRM);
-    return nullptr;
-}
-
-inline Consumer* EconomicAgent::as_consumer() {
-    assert(type == Type::CONSUMER);
-    return nullptr;
-}
-
-inline const Firm* EconomicAgent::as_firm() const {
-    assert(type == Type::FIRM);
-    return nullptr;
-}
-
-inline const Consumer* EconomicAgent::as_consumer() const {
-    assert(type == Type::CONSUMER);
-    return nullptr;
-}
-
-Storage* EconomicAgent::find_input_storage(const std::string& sector_name) const {
-    auto it = std::find_if(std::begin(input_storages), std::end(input_storages), [sector_name](const auto& is) { return is->sector->id() == sector_name; });
-    if (it == std::end(input_storages)) {
-        return nullptr;
-    }
-    return it->get();
-}
-
-void EconomicAgent::remove_storage(Storage* storage) {
-    auto it = std::find_if(std::begin(input_storages), std::end(input_storages), [storage](const auto& is) { return is.get() == storage; });
-    input_storages.erase(it);
-}
 EconomicAgent::~EconomicAgent() = default;  // needed to use forward declares for std::unique_ptr
 
-Model* EconomicAgent::model() const { return sector->model(); }
+Model* EconomicAgent::model() { return region->model(); }
+const Model* EconomicAgent::model() const { return region->model(); }
 
 Parameters::AgentParameters const& EconomicAgent::parameters_writable() const {
     debug::assertstep(this, IterationStep::INITIALIZATION);
@@ -77,7 +43,7 @@ Parameters::AgentParameters const& EconomicAgent::parameters_writable() const {
 void EconomicAgent::set_forcing(const Forcing& forcing_p) {
     debug::assertstep(this, IterationStep::SCENARIO);
     assert(forcing_p >= 0.0);
-    forcing_ = forcing_p;
+    forcing_m = forcing_p;
 }
 
 }  // namespace acclimate

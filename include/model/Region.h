@@ -61,7 +61,6 @@ class Region : public GeoLocation {
     openmp::Lock consumption_flow_Y_lock;
     std::unordered_map<std::pair<IndexType, typename Sector::TransportType>, GeoRoute, route_hash> routes;
     std::unique_ptr<Government> government_m;
-    const IndexType index_m;
     Parameters::RegionParameters parameters_m;
     openmp::Lock economic_agents_lock;
 
@@ -69,6 +68,7 @@ class Region : public GeoLocation {
     non_owning_vector<EconomicAgent> economic_agents;
 
   public:
+    Region(Model* model_p, id_t id_p);
     ~Region() override;
     const Flow& consumption_C() const;
     const Flow& import_flow_Z() const;
@@ -78,7 +78,6 @@ class Region : public GeoLocation {
     const Government* government() const;
     const Parameters::RegionParameters& parameters() const { return parameters_m; }
     const Parameters::RegionParameters& parameters_writable() const;
-    IndexType index() const { return index_m; }
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);
     void add_consumption_flow_Y(const Flow& consumption_flow_Y_p);

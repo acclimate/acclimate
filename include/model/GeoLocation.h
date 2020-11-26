@@ -46,9 +46,10 @@ class GeoLocation : public GeoEntity {
   public:
     std::vector<std::shared_ptr<GeoConnection>> connections;
     const Type type;
+    const id_t id;
 
   public:
-    GeoLocation(Model* model_m, TransportDelay delay_p, Type type_p, std::string id_p);
+    GeoLocation(Model* model_p, id_t id_p, TransportDelay delay_p, GeoLocation::type_t type_p);
     virtual ~GeoLocation() override;
     void set_centroid(std::unique_ptr<GeoPoint>& centroid_p);
     const GeoPoint* centroid() const { return centroid_m.get(); }
@@ -61,8 +62,8 @@ class GeoLocation : public GeoEntity {
         assert(type == Type::REGION);
         return nullptr;
     }
-    using GeoEntity::model;
-    std::string id() const override { return id_m; }
+
+    std::string name() const override { return id.name; }
 };
 }  // namespace acclimate
 

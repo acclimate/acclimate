@@ -35,8 +35,7 @@
 
 namespace acclimate {
 
-Consumer::Consumer(std::string name_p, Sector* sector_p, Region* region_p)
-    : EconomicAgent(std::move(name_p), sector_p, region_p, EconomicAgent::Type::CONSUMER) {}
+Consumer::Consumer(id_t id_p, Region* region_p) : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::CONSUMER) {}
 
 void Consumer::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
@@ -55,7 +54,7 @@ void Consumer::iterate_consumption_and_production() {
         }
         assert(reservation_price > 0.0);
 
-        const Flow desired_used_flow_U_tilde = Flow(round(is->initial_input_flow_I_star().get_quantity() * forcing_
+        const Flow desired_used_flow_U_tilde = Flow(round(is->initial_input_flow_I_star().get_quantity() * forcing_m
                                                           * pow(reservation_price / Price(1.0), is->parameters().consumption_price_elasticity)),
                                                     reservation_price);
         const Flow used_flow_U = Flow(std::min(desired_used_flow_U_tilde.get_quantity(), possible_used_flow_U_hat.get_quantity()), reservation_price);
@@ -82,11 +81,11 @@ void Consumer::iterate_investment() {
     // }
 }
 
-void Consumer::print_details() const {
+void Consumer::debug_print_details() const {
     if constexpr (options::DEBUGGING) {
         log::info(this);
         for (const auto& is : input_storages) {
-            is->purchasing_manager->print_details();
+            is->purchasing_manager->debug_print_details();
         }
     }
 }

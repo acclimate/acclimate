@@ -46,16 +46,16 @@ void CapacityManager::calc_possible_and_desired_production() {
     desired_production_X_tilde_ = firm->sales_manager->sum_demand_requests_D();
 }
 
-Model* CapacityManager::model() const { return firm->model(); }
+const Model* CapacityManager::model() const { return firm->model(); }
 
-std::string CapacityManager::id() const { return firm->id(); }
+std::string CapacityManager::name() const { return firm->name(); }
 
-void CapacityManager::print_inputs() const {
+void CapacityManager::debug_print_inputs() const {
     if constexpr (options::DEBUGGING) {
         log::info(this, firm->input_storages.size(), " inputs:");
         for (const auto& is : firm->input_storages) {
             Flow possible_use_U_hat = is->get_possible_use_U_hat();
-            log::info("    ", is->id(), ":"
+            log::info("    ", is->name(), ":"
 
                       ,
                       "  U_hat= ", std::setw(11), possible_use_U_hat.get_quantity()

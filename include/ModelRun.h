@@ -117,6 +117,9 @@ class ModelRun {
                const Sector* sector_to,
                const Region* region_to,
                FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
+
+    const char* name() const { return "RUN"; }
+    const Model* model() const { return model_m.get(); }
 };
 
 }  // namespace acclimate

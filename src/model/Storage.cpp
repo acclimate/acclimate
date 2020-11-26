@@ -31,7 +31,7 @@
 namespace acclimate {
 
 Storage::Storage(Sector* sector_p, EconomicAgent* economic_agent_p)
-    : sector(sector_p), economic_agent(economic_agent_p), purchasing_manager(new PurchasingManager(this)) {}
+    : sector(sector_p), economic_agent(economic_agent_p), purchasing_manager(new PurchasingManager(this)), id(sector->name() + "->" + economic_agent->name()) {}
 
 Storage::~Storage() = default;  // needed to use forward declares for std::unique_ptr
 
@@ -141,9 +141,8 @@ bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
     return true;
 }
 
-Model* Storage::model() const { return sector->model(); }
-
-std::string Storage::id() const { return sector->id() + ":_S_->" + economic_agent->id(); }
+Model* Storage::model() { return sector->model(); }
+const Model* Storage::model() const { return sector->model(); }
 
 const Stock& Storage::content_S() const {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);

@@ -75,18 +75,19 @@ template<class>
 struct to_void {
     typedef void type;
 };
-template<class T, class = void>
-struct is_acclimate_class : std::false_type {};
+template<class T, class = void, class = void>
+struct has_model_and_name : std::false_type {};
 template<class T>
-struct is_acclimate_class<T, typename to_void<decltype(std::declval<T>().id())>::type> : std::true_type {};
+struct has_model_and_name<T, typename to_void<decltype(std::declval<T>().model())>::type, typename to_void<decltype(std::declval<T>().name())>::type>
+    : std::true_type {};
 
 }  // namespace detail
 
 template<typename Arg, typename... Args>
 inline acclimate::exception error(Arg&& arg, Args&&... args) {
     std::ostringstream ss;
-    if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
-        detail::to_stream(ss, timeinfo(*arg->model()), ", ", arg->id(), ": ", std::forward<Args>(args)...);
+    if constexpr (std::is_pointer<Arg>::value && detail::has_model_and_name<typename std::remove_pointer<Arg>::type>::value) {
+        detail::to_stream(ss, timeinfo(*arg->model()), ", ", arg->name(), ": ", std::forward<Args>(args)...);
     } else {
         detail::to_stream(ss, std::forward<Arg>(arg), std::forward<Args>(args)...);
     }
@@ -98,8 +99,8 @@ inline void warning(Arg&& arg, Args&&... args) {
     if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
         {
-            if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
-                detail::to_stream(std::cout, timeinfo(*arg->model()), ", ", arg->id(), " Warning: ", std::forward<Args>(args)...);
+            if constexpr (std::is_pointer<Arg>::value && detail::has_model_and_name<typename std::remove_pointer<Arg>::type>::value) {
+                detail::to_stream(std::cout, timeinfo(*arg->model()), ", ", arg->name(), " Warning: ", std::forward<Args>(args)...);
             } else {
                 detail::to_stream(std::cout, "Warning: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
             }
@@ -113,8 +114,8 @@ inline void info(Arg&& arg, Args&&... args) {
     if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
         {
-            if constexpr (std::is_pointer<Arg>::value && detail::is_acclimate_class<typename std::remove_pointer<Arg>::type>::value) {
-                detail::to_stream(std::cout, timeinfo(*arg->model()), ", ", arg->id(), ": ", std::forward<Args>(args)...);
+            if constexpr (std::is_pointer<Arg>::value && detail::has_model_and_name<typename std::remove_pointer<Arg>::type>::value) {
+                detail::to_stream(std::cout, timeinfo(*arg->model()), ", ", arg->name(), ": ", std::forward<Args>(args)...);
             } else {
                 detail::to_stream(std::cout, std::forward<Arg>(arg), std::forward<Args>(args)...);
             }

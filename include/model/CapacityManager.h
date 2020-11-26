@@ -54,10 +54,11 @@ class CapacityManager {
     Flow get_possible_production_X_hat() const;
     Flow estimate_possible_production_X_hat() const;
     Flow calc_production_X();
-    Model* model() const;
-    std::string id() const;
-    // DEBUG
-    void print_inputs() const;
+
+    void debug_print_inputs() const;
+
+    const Model* model() const;
+    std::string name() const;
 };
 }  // namespace acclimate
 

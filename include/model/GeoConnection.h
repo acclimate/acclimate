@@ -45,7 +45,11 @@ class GeoConnection : public GeoEntity {
   public:
     GeoConnection(Model* model_m, TransportDelay delay, Type type_p, const GeoLocation* location1_p, const GeoLocation* location2_p);
     void invalidate_location(const GeoLocation* location);
-    std::string id() const override;
+
+    GeoConnection* as_connection() override { return this; }
+    const GeoConnection* as_connection() const override { return this; }
+
+    std::string name() const override;
 };
 }  // namespace acclimate
 

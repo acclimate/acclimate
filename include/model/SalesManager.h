@@ -108,10 +108,12 @@ class SalesManager {
     FlowValue calc_production_extension_penalty_P(const FlowQuantity& production_quantity_X) const;
     Price calc_marginal_production_extension_penalty(const FlowQuantity& production_quantity_X) const;
     Price calc_marginal_production_costs(const FlowQuantity& production_quantity_X, const Price& unit_production_costs_n_c) const;
-    Model* model() const;
-    std::string id() const;
-    // DEBUG
-    void print_details() const;
+
+    void debug_print_details() const;
+
+    Model* model();
+    const Model* model() const;
+    std::string name() const;
 };
 }  // namespace acclimate
 

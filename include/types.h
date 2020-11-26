@@ -250,6 +250,27 @@ class owning_vector final {
     std::size_t size() const { return v.size(); }
 };
 
+class id_t {
+    template<typename T>
+    friend class owning_vector;
+
+  private:
+    mutable std::size_t index_m = 0;
+    void override_index(std::size_t index_p) const { index_m = index_p; }
+
+  public:
+    const std::string name;
+    const hash_t name_hash;
+
+    explicit id_t(std::string name_p) : name_hash(hash(name_p.c_str())), name(std::move(name_p)) {}
+
+    std::size_t index() const { return index_m; }
+
+    constexpr bool operator==(const id_t& rhs) const { return index_m == rhs.index_m && name_hash == rhs.name_hash; }
+    constexpr bool operator!=(const id_t& rhs) const { return index_m != rhs.index_m || name_hash != rhs.name_hash; }
+    friend std::ostream& operator<<(std::ostream& lhs, const id_t& rhs) { return lhs << rhs.name; }
+};
+
 using FloatType = double;  // TODO rename to lower case
 using IntType = long;      // TODO rename to lower case
 using IndexType = int;     // TODO rename to lower case

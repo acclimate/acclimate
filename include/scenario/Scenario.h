@@ -52,8 +52,10 @@ class Scenario {
     virtual bool iterate();
     virtual std::string calendar_str() const { return "standard"; }
     virtual std::string time_units_str() const;
-    Model* model() const { return model_m; }
-    virtual std::string id() const { return "SCENARIO"; }
+
+    Model* model() { return model_m; }
+    const Model* model() const { return model_m; }
+    virtual std::string name() const { return "SCENARIO"; }
 };
 }  // namespace acclimate
 

@@ -138,11 +138,11 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
 
 void ModelRun::run() {
     if (has_run) {
-        throw log::error("model has already run");
+        throw log::error(this, "Model has already run");
     }
     has_run = true;
 
-    log::info("Starting model run on max. ", thread_count(), " threads");
+    log::info(this, "Starting model run on max. ", thread_count(), " threads");
 
     step(IterationStep::INITIALIZATION);
 
@@ -162,7 +162,7 @@ void ModelRun::run() {
         for (const auto& scenario : scenarios_m) {
             scenario->iterate();
         }
-        log::info("Iteration started");
+        log::info(this, "Iteration started");
 
         model_m->switch_registers();
 
@@ -183,27 +183,27 @@ void ModelRun::run() {
         t0 = t1;
 
         step(IterationStep::OUTPUT);
-        log::info("Iteration took ", duration_m, " ms");
+        log::info(this, "Iteration took ", duration_m, " ms");
         for (const auto& output : outputs_m) {
             output->iterate();
         }
 
         if constexpr (options::DEBUGGING) {
             auto t2 = std::chrono::high_resolution_clock::now();
-            log::info("Output took ", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count(), " ms");
+            log::info(this, "Output took ", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count(), " ms");
             t0 = t2;
         }
 
         if constexpr (options::CHECKPOINTING) {
             if (checkpoint::is_scheduled) {
-                log::info("Writing checkpoint");
+                log::info(this, "Writing checkpoint");
                 for (const auto& output : outputs_m) {
                     output->checkpoint_stop();
                 }
 
                 checkpoint::write();
 
-                log::info("Resuming from checkpoint");
+                log::info(this, "Resuming from checkpoint");
                 t0 = std::chrono::high_resolution_clock::now();
                 for (const auto& output : outputs_m) {
                     output->checkpoint_resume();

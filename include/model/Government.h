@@ -53,9 +53,10 @@ class Government {
     void iterate_purchase();
     void iterate_investment();
     void define_tax(const std::string& sector, const Ratio& tax_ratio_p);
-    const Value& budget() const { return budget_; }
-    Model* model() const;
-    std::string id() const;
+    const Value& budget() const { return budget_m; }
+
+    const Model* model() const;
+    std::string name() const;
 };
 }  // namespace acclimate
 

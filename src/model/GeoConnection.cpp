@@ -40,8 +40,6 @@ void GeoConnection::invalidate_location(const GeoLocation* location) {
     }
 }
 
-std::string GeoConnection::id() const {
-    return (location1 != nullptr ? location1->id() : "INVALID") + "-" + (location2 != nullptr ? location2->id() : "INVALID");
-}
+std::string GeoConnection::name() const { return (location1 ? location1->name() : "INVALID") + "-" + (location2 ? location2->name() : "INVALID"); }
 
 }  // namespace acclimate

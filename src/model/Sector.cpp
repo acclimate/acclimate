@@ -20,24 +20,14 @@
 
 #include "model/Sector.h"
 
-#include <algorithm>
-#include <iterator>
 #include <utility>
 
 #include "acclimate.h"
-#include "model/Firm.h"
-#include "settingsnode.h"
 
 namespace acclimate {
 
-Sector::Sector(Model* model_p,
-               std::string id_p,
-               IndexType index_p,
-               Ratio upper_storage_limit_omega_p,
-               Time initial_storage_fill_factor_psi_p,
-               TransportType transport_type_p)
-    : id_m(std::move(id_p)),
-      index_m(index_p),
+Sector::Sector(Model* model_p, id_t id_p, Ratio upper_storage_limit_omega_p, Time initial_storage_fill_factor_psi_p, transport_type_t transport_type_p)
+    : id(std::move(id_p)),
       model_m(model_p),
       upper_storage_limit_omega(upper_storage_limit_omega_p),
       initial_storage_fill_factor_psi(std::move(initial_storage_fill_factor_psi_p)),

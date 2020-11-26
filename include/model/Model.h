@@ -87,27 +87,16 @@ class Model {
     unsigned char other_register() const { return 1 - current_register_; }
     const Parameters::ModelParameters& parameters() const { return parameters_; }
     Parameters::ModelParameters& parameters_writable();
-    Region* add_region(std::string name);
-    Sector* add_sector(std::string name,
-                       const Ratio& upper_storage_limit_omega_p,
-                       const Time& initial_storage_fill_factor_psi_p,
-                       typename Sector::TransportType transport_type_p);
     void start();
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
-    Region* find_region(const std::string& name) const;
-    Sector* find_sector(const std::string& name) const;
-    Firm* find_firm(const std::string& name, const Sector* sector, const Region* region) const;
-    Firm* find_firm(const Sector* sector, const std::string& region_name) const;
-    Firm* find_firm(const std::string& sector_name, const std::string& region_name) const;
-    Consumer* find_consumer(const Region* region) const;
-    Consumer* find_consumer(const std::string& region_name) const;
-    Consumer* find_consumer(const std::string& name, const Region* region) const;
-    GeoLocation* find_location(const std::string& name) const;
-    ModelRun* run() const { return run_m; }
-    std::string id() const { return "MODEL"; }
+
+    ModelRun* run() { return run_m; }
+    const ModelRun* run() const { return run_m; }
+    const Model* model() const { return this; }
+    std::string name() const { return "MODEL"; }
 };
 }  // namespace acclimate
 

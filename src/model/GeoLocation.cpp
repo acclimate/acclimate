@@ -31,13 +31,13 @@
 
 namespace acclimate {
 
-GeoLocation::GeoLocation(Model* const model_m, TransportDelay delay_p, GeoLocation::Type type_p, std::string id_p)
-    : GeoEntity(model_m, delay_p, GeoEntity::Type::LOCATION), type(type_p), id_m(std::move(id_p)) {}
+GeoLocation::GeoLocation(Model* model_p, id_t id_p, TransportDelay delay_p, GeoLocation::type_t type_p)
+    : GeoEntity(model_p, delay_p, GeoEntity::type_t::LOCATION), type(type_p), id(std::move(id_p)) {}
 
 void GeoLocation::remove_connection(const GeoConnection* connection) {
     auto it = std::find_if(std::begin(connections), std::end(connections), [connection](const auto& c) { return c.get() == connection; });
     if (it == std::end(connections)) {
-        throw log::error(this, "Connection ", connection->id(), " not found");
+        throw log::error(this, "Connection ", connection->name(), " not found");
     }
     connections.erase(it);
 }

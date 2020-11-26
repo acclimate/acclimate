@@ -72,8 +72,9 @@ class BusinessConnection {
     void deliver_flow_Z(const Flow& flow_Z);
     void send_demand_request_D(const Demand& demand_request_D);
     bool get_domestic() const;
-    Model* model() const;
-    std::string id() const;
+
+    const Model* model() const;
+    std::string name() const;
 };
 }  // namespace acclimate
 

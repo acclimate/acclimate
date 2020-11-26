@@ -31,13 +31,11 @@
 namespace acclimate {
 
 class BusinessConnection;
-class Identifier;
 class Region;
 class Sector;
 
 class Firm : public EconomicAgent {
   private:
-    using EconomicAgent::forcing_;
     Flow initial_production_X_star_ = Flow(0.0);
     Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
     Flow initial_total_use_U_star_ = Flow(0.0);
@@ -52,7 +50,7 @@ class Firm : public EconomicAgent {
     void produce_X();
 
   public:
-    Firm(std::string name_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
+    Firm(id_t id_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;
@@ -67,19 +65,17 @@ class Firm : public EconomicAgent {
     void self_supply_connection(std::shared_ptr<BusinessConnection> self_supply_connection_p);
     const Flow& production_X() const;
     const Flow& initial_production_X_star() const { return initial_production_X_star_; }
-    Flow forced_initial_production_lambda_X_star() const { return round(initial_production_X_star_ * forcing_); }
+    Flow forced_initial_production_lambda_X_star() const { return round(initial_production_X_star_ * forcing_m); }
     Flow maximal_production_beta_X_star() const;
-    FlowQuantity forced_initial_production_quantity_lambda_X_star() const { return round(initial_production_X_star_.get_quantity() * forcing_); }
-    FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_); }
+    FlowQuantity forced_initial_production_quantity_lambda_X_star() const { return round(initial_production_X_star_.get_quantity() * forcing_m); }
+    FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_m); }
     FlowQuantity forced_maximal_production_quantity_lambda_beta_X_star() const;
     const Flow& initial_total_use_U_star() const { return initial_total_use_U_star_; }
     Flow direct_loss() const;
     Flow total_loss() const;
     FlowValue total_value_loss() const { return (initial_production_X_star_ - production_X_).get_value(); }
-    using EconomicAgent::id;
-    using EconomicAgent::model;
-    // DEBUG
-    void print_details() const override;
+
+    void debug_print_details() const override;
 };
 }  // namespace acclimate
 

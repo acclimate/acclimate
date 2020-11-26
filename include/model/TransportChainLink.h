@@ -65,9 +65,10 @@ class TransportChainLink {
     Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
     FlowQuantity get_flow_deficit() const;
-    Model* model() const;
-    std::string id() const;
     void unregister_geoentity() { geo_entity.invalidate(); }
+
+    const Model* model() const;
+    std::string name() const;
 };
 }  // namespace acclimate
 

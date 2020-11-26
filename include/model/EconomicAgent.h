@@ -33,7 +33,6 @@ namespace acclimate {
 
 class Consumer;
 class Firm;
-class Identifier;
 class Model;
 class Region;
 class Sector;
@@ -46,22 +45,22 @@ class EconomicAgent {
     Parameters::AgentParameters parameters_;
 
   protected:
-    Forcing forcing_ = Forcing(1.0);
-    std::string name;
+    Forcing forcing_m = Forcing(1.0);
 
   public:
     const Type type;
     owning_vector<Storage> input_storages;
     non_owning_ptr<Region> region;
+    const id_t id;
 
   protected:
-    EconomicAgent(std::string name_p, Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p);
+    EconomicAgent(id_t id_p, Region* region_p, EconomicAgent::type_t type_p);
 
   public:
     virtual ~EconomicAgent();
     const Parameters::AgentParameters& parameters() const { return parameters_; }
     Parameters::AgentParameters const& parameters_writable() const;
-    const Forcing& forcing() const { return forcing_; }
+    const Forcing& forcing() const { return forcing_m; }
     void set_forcing(const Forcing& forcing_p);
     virtual Firm* as_firm();
     virtual const Firm* as_firm() const;
@@ -73,12 +72,12 @@ class EconomicAgent {
     virtual void iterate_expectation() = 0;
     virtual void iterate_purchase() = 0;
     virtual void iterate_investment() = 0;
-    Storage* find_input_storage(const std::string& sector_name) const;
-    void remove_storage(Storage* storage);
-    Model* model() const;
-    std::string id() const { return name; }
-    // DEBUG
-    virtual void print_details() const = 0;
+
+    virtual void debug_print_details() const = 0;
+
+    Model* model();
+    const Model* model() const;
+    std::string name() const { return id.name; }
 };
 }  // namespace acclimate
 

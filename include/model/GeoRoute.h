@@ -30,8 +30,8 @@ class GeoEntity;
 
 class GeoRoute {
   public:
-    std::string id() const;
     non_owning_vector<GeoEntity> path;
+    std::string name() const;
 };
 }  // namespace acclimate
 

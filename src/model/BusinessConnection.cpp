@@ -192,10 +192,10 @@ FloatType BusinessConnection::get_stddeviation() const {
     return res;
 }
 
-Model* BusinessConnection::model() const { return buyer->model(); }
+const Model* BusinessConnection::model() const { return buyer->model(); }
 
-std::string BusinessConnection::id() const {
-    return (seller != nullptr ? seller->id() : "INVALID") + "->" + (buyer != nullptr ? buyer->storage->economic_agent->id() : "INVALID");
+std::string BusinessConnection::name() const {
+    return (seller.valid() ? seller->name() : "INVALID") + "->" + (buyer.valid() ? buyer->storage->economic_agent->name() : "INVALID");
 }
 
 const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller) const {

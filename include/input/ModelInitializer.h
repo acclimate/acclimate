@@ -129,9 +129,12 @@ class ModelInitializer {
   public:
     ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p);
     void initialize();
-    void print_network_characteristics() const;
-    Model* model() const { return model_m; }
-    std::string id() const { return "MODELINITIALIZER"; }
+
+    void debug_print_network_characteristics() const;
+
+    const Model* model() const { return model_m; }
+    Model* model() { return model_m; }
+    std::string name() const { return "MODELINITIALIZER"; }
 };
 }  // namespace acclimate
 

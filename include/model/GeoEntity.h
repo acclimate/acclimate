@@ -48,9 +48,16 @@ class GeoEntity {
     virtual ~GeoEntity();
     Type type() const { return type_m; }
     void set_forcing_nu(Forcing forcing_nu_p);
-    void remove_transport_chain_link(TransportChainLink* transport_chain_link);
-    Model* model() const { return model_m; }
-    virtual std::string id() const = 0;
+
+    virtual GeoConnection* as_connection() { throw log::error(this, "Not a connection"); }
+    virtual const GeoConnection* as_connection() const { throw log::error(this, "Not a connection"); }
+
+    virtual GeoLocation* as_location() { throw log::error(this, "Not a location"); }
+    virtual const GeoLocation* as_location() const { throw log::error(this, "Not a location"); }
+
+    Model* model() { return model_m; }
+    const Model* model() const { return model_m; }
+    virtual std::string name() const = 0;
 };
 }  // namespace acclimate
 

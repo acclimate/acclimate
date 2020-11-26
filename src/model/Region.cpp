@@ -20,18 +20,17 @@
 
 #include "model/Region.h"
 
-#include <algorithm>
 #include <iterator>
+#include <type_traits>
 #include <utility>
 
 #include "acclimate.h"
-#include "model/EconomicAgent.h"
 #include "model/Government.h"
 #include "model/Model.h"
 
 namespace acclimate {
 
-Region::Region(Model* model_p, std::string id_p, IndexType index_p) : GeoLocation(model_p, 0, GeoLocation::Type::REGION, std::move(id_p)), index_m(index_p) {}
+Region::Region(Model* model_p, id_t id_p) : GeoLocation(model_p, std::move(id_p), 0, GeoLocation::type_t::REGION) {}
 
 Region::~Region() = default;
 
@@ -85,10 +84,10 @@ void Region::iterate_investment() {
     }
 }
 
-const GeoRoute& Region::find_path_to(Region* region, typename Sector::TransportType transport_type) const {
-    const auto& it = routes.find(std::make_pair(region->index(), transport_type));
+GeoRoute& Region::find_path_to(Region* region, Sector::transport_type_t transport_type) {
+    const auto& it = routes.find(std::make_pair(region->id.index(), transport_type));
     if (it == std::end(routes)) {
-        throw log::error(this, "No transport data from ", id(), " to ", region->id(), " via ", Sector::unmap_transport_type(transport_type));
+        throw log::error(this, "No transport data from ", name(), " to ", region->name(), " via ", Sector::unmap_transport_type(transport_type));
     }
     return it->second;
 }

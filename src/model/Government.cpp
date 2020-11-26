@@ -77,8 +77,8 @@ void Government::iterate_investment() {
     redistribute_tax();
 }
 
-Model* Government::model() const { return region->model(); }
+const Model* Government::model() const { return region->model(); }
 
-std::string Government::id() const { return "GOVM:" + region->id(); }
+std::string Government::name() const { return "GOVM:" + region->name(); }
 
 }  // namespace acclimate

@@ -51,6 +51,7 @@ class Storage {
     non_owning_ptr<Sector> sector;
     non_owning_ptr<EconomicAgent> economic_agent;
     const std::unique_ptr<PurchasingManager> purchasing_manager;
+    const id_t id;
 
   private:
     void calc_content_S();
@@ -79,8 +80,10 @@ class Storage {
     void add_initial_flow_Z_star(const Flow& flow_Z_star);
     bool subtract_initial_flow_Z_star(const Flow& flow_Z_star);
     void iterate_consumption_and_production();
-    Model* model() const;
-    std::string id() const;
+
+    Model* model();
+    const Model* model() const;
+    const std::string& name() const { return id.name; }
 };
 }  // namespace acclimate
 

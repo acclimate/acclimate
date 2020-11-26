@@ -103,10 +103,12 @@ class PurchasingManager {
     void iterate_purchase();
     void add_initial_demand_D_star(const Demand& demand_D_p);
     void subtract_initial_demand_D_star(const Demand& demand_D_p);
-    Model* model() const;
-    std::string id() const;
-    // DEBUG
-    void print_details() const;
+
+    void debug_print_details() const;
+
+    const Model* model() const;
+    Model* model();
+    std::string name() const;
 };
 }  // namespace acclimate
 
