@@ -21,6 +21,7 @@
 #include "model/PurchasingManager.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <iomanip>
 #include <iostream>
@@ -102,7 +103,7 @@ PurchasingManager::~PurchasingManager() {
     }
 }
 
-const Demand& PurchasingManager::demand_D(const EconomicAgent* const caller) const {
+const Demand& PurchasingManager::demand_D(const EconomicAgent* caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != storage->economic_agent) {
             debug::assertstepnot(this, IterationStep::PURCHASE);
@@ -136,7 +137,7 @@ const FlowValue& PurchasingManager::total_transport_penalty() const {
     return total_transport_penalty_;
 }
 
-const FlowValue& PurchasingManager::expected_costs(const EconomicAgent* const caller) const {
+const FlowValue& PurchasingManager::expected_costs(const EconomicAgent* caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != storage->economic_agent) {
             debug::assertstepnot(this, IterationStep::PURCHASE);

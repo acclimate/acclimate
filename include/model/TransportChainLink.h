@@ -33,7 +33,7 @@ class BusinessConnection;
 class GeoEntity;
 class Model;
 
-class TransportChainLink {
+class TransportChainLink final {
     friend class BusinessConnection;
 
   private:

@@ -145,10 +145,8 @@ void SalesManager::distribute() {
         for (auto& not_served_bc : business_connections) {
             not_served_bc->push_flow_Z(Flow(0.0));
         }
-    } else {  // non-zero production to distribute
-        // DEBUG
-        unsigned int pushed_flows = 0;
-        //
+    } else {                            // non-zero production to distribute
+        unsigned int pushed_flows = 0;  // only used when debugging
         assert(!isnan(supply_distribution_scenario.price_cheapest_buyer_accepted_in_optimization));
         Price cheapest_price_range_half_width(0.0);
         if (model()->parameters().cheapest_price_range_generic_size) {

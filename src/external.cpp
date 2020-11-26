@@ -28,7 +28,7 @@
 namespace acclimate {
 
 static void acclimate_get_variable(const char* name, const FloatType** data, std::size_t* size, const std::size_t** shape, std::size_t* dimension) {
-    const typename ArrayOutput::Variable& var = static_cast<const ArrayOutput*>(Acclimate::Run::instance()->output(0))->get_variable(name);
+    const ArrayOutput::Variable& var = static_cast<const ArrayOutput*>(Acclimate::Run::instance()->output(0))->get_variable(name);
     *data = &var.data[0];
     *size = var.data.size();
     *shape = &var.shape[0];

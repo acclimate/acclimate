@@ -23,33 +23,28 @@
 
 #include <cstddef>
 #include <memory>
-#include <string>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 
 #include "acclimate.h"
-#include "model/EconomicAgent.h"
 #include "model/GeoLocation.h"
 #include "model/GeoRoute.h"  // IWYU pragma: keep
-#include "model/Government.h"
 #include "model/Sector.h"
 #include "openmp.h"
 #include "parameters.h"
 
 namespace acclimate {
 
+class EconomicAgent;
+class Government;
 class Model;
 
-class Region : public GeoLocation {
-    friend class Model;
+class Region final : public GeoLocation {
     friend class ModelInitializer;
 
   private:
     struct route_hash {
-        std::size_t operator()(const std::pair<IndexType, typename Sector::TransportType>& p) const {
-            return (p.first << 3) | (static_cast<IntType>(p.second));
-        }
+        std::size_t operator()(const std::pair<IndexType, Sector::transport_type_t>& p) const { return (p.first << 3) | (static_cast<IntType>(p.second)); }
     };
 
   private:
@@ -59,7 +54,7 @@ class Region : public GeoLocation {
     openmp::Lock import_flow_Z_lock;
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
     openmp::Lock consumption_flow_Y_lock;
-    std::unordered_map<std::pair<IndexType, typename Sector::TransportType>, GeoRoute, route_hash> routes;
+    std::unordered_map<std::pair<IndexType, Sector::transport_type_t>, GeoRoute, route_hash> routes;  // TODO improve
     std::unique_ptr<Government> government_m;
     Parameters::RegionParameters parameters_m;
     openmp::Lock economic_agents_lock;
@@ -86,7 +81,7 @@ class Region : public GeoLocation {
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
-    const GeoRoute& find_path_to(Region* region, typename Sector::TransportType transport_type) const;
+    GeoRoute& find_path_to(Region* region, Sector::transport_type_t transport_type);
     Region* as_region() override { return this; }
     const Region* as_region() const override { return this; }
 

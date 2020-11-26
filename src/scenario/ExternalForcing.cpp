@@ -20,10 +20,8 @@
 
 #include "scenario/ExternalForcing.h"
 
-#include <cstddef>
 #include <utility>
 
-#include "acclimate.h"
 #include "netcdfpp.h"
 
 namespace acclimate {
@@ -35,6 +33,8 @@ ExternalForcing::ExternalForcing(std::string filename, std::string variable_name
     time_index_count = time_variable->size();
     time_index = 0;
 }
+
+ExternalForcing::~ExternalForcing() = default;  // needed to use forward declares for std::unique_ptr
 
 int ExternalForcing::next_timestep() {
     if (time_index >= time_index_count) {

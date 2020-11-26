@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "acclimate.h"
 #include "model/PurchasingManager.h"
@@ -35,7 +36,7 @@ class EconomicAgent;
 class Model;
 class Sector;
 
-class Storage {
+class Storage final {
   private:
     Flow input_flow_I_[3] = {Flow(0.0), Flow(0.0), Flow(0.0)};
     Forcing forcing_mu_ = Forcing(1.0);
@@ -60,8 +61,8 @@ class Storage {
     Storage(Sector* sector_p, EconomicAgent* economic_agent_p);
     ~Storage();
     const Stock& content_S() const;
-    const Flow& used_flow_U(const EconomicAgent* const caller = nullptr) const;
-    const Flow& desired_used_flow_U_tilde(const EconomicAgent* const caller = nullptr) const;
+    const Flow& used_flow_U(const EconomicAgent* caller = nullptr) const;
+    const Flow& desired_used_flow_U_tilde(const EconomicAgent* caller = nullptr) const;
     const Stock& initial_content_S_star() const { return initial_content_S_star_; }
     const Flow& initial_input_flow_I_star() const { return initial_input_flow_I_star_; }
     const Flow& initial_used_flow_U_star() const { return initial_input_flow_I_star_; }  // == initial_used_flow_U_star
@@ -69,6 +70,7 @@ class Storage {
     Parameters::StorageParameters& parameters_writable();
     void set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p);
     void use_content_S(const Flow& used_flow_U_current);
+    Flow last_possible_use_U_hat() const;
     Flow estimate_possible_use_U_hat() const;
     Flow get_possible_use_U_hat() const;
     void push_flow_Z(const Flow& flow_Z);

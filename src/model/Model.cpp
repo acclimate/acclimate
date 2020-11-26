@@ -23,32 +23,30 @@
 #include <algorithm>
 #include <chrono>
 #include <iterator>
-#include <ostream>
+#include <memory>
 #include <random>
-#include <type_traits>
 
 #include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
-#include "model/Firm.h"  // IWYU pragma: keep
+#include "model/GeoLocation.h"
 #include "model/PurchasingManager.h"
 #include "model/Region.h"
+#include "model/Sector.h"
+#include "model/Storage.h"  // IWYU pragma: keep
 
 namespace acclimate {
 
-Model::Model(ModelRun* const run_p) : run_m(run_p) {}
+Model::Model(ModelRun* run_p) : run_m(run_p) {}
 
 Model::~Model() = default;  // needed to use forward declares for std::unique_ptr
 
 void Model::start() {
     time_ = start_time_;
     timestep_ = 0;
-    for (const auto& region : regions) {
-        for (const auto& economic_agent : region->economic_agents) {
-            economic_agents.emplace_back(std::make_pair(economic_agent.get(), 0));
-            std::transform(std::begin(economic_agent->input_storages), std::end(economic_agent->input_storages), std::back_inserter(purchasing_managers),
-                           [](const auto& is) { return std::make_pair(is->purchasing_manager.get(), 0); });
-        }
+    for (const auto& economic_agent : economic_agents) {
+        std::transform(std::begin(economic_agent->input_storages), std::end(economic_agent->input_storages), std::back_inserter(purchasing_managers),
+                       [](const auto& is) { return std::make_pair(is->purchasing_manager.get(), 0); });
     }
     if constexpr (options::PARALLELIZATION) {
         std::random_device rd;

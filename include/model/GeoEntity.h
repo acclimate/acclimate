@@ -22,31 +22,31 @@
 #define ACCLIMATE_GEOENTITY_H
 
 #include <string>
-#include <vector>
 
 #include "acclimate.h"
 
 namespace acclimate {
 
+class GeoConnection;
+class GeoLocation;
 class Model;
 class TransportChainLink;
 
 class GeoEntity {
   public:
-    enum class Type { LOCATION, CONNECTION };
+    enum class type_t { LOCATION, CONNECTION };
 
   protected:
-    Type type_m;
     non_owning_ptr<Model> model_m;
 
   public:
     const TransportDelay delay;
+    const GeoEntity::type_t entity_type;
     non_owning_vector<TransportChainLink> transport_chain_links;
 
   public:
-    GeoEntity(Model* model_p, TransportDelay delay_p, Type type_p);
+    GeoEntity(Model* model_p, TransportDelay delay_p, GeoEntity::type_t type_p);
     virtual ~GeoEntity();
-    Type type() const { return type_m; }
     void set_forcing_nu(Forcing forcing_nu_p);
 
     virtual GeoConnection* as_connection() { throw log::error(this, "Not a connection"); }

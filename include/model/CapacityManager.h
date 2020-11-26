@@ -30,7 +30,7 @@ namespace acclimate {
 class Firm;
 class Model;
 
-class CapacityManager {
+class CapacityManager final {
   private:
     Flow desired_production_X_tilde_ = Flow(0.0);
     Flow possible_production_X_hat_ = Flow(0.0);

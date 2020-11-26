@@ -25,7 +25,6 @@
 #include <string>
 
 #include "acclimate.h"
-#include "scenario/ExternalForcing.h"
 #include "scenario/Scenario.h"
 
 namespace settings {
@@ -33,12 +32,12 @@ class SettingsNode;
 }  // namespace settings
 
 namespace acclimate {
+
+class ExternalForcing;  // IWYU pragma: keep
 class Model;
 
 class ExternalScenario : public Scenario {
   protected:
-    using Scenario::scenario_node;
-    using Scenario::settings;
     std::string forcing_file;
     std::string expression;
     std::string variable_name;
@@ -56,8 +55,6 @@ class ExternalScenario : public Scenario {
 
   protected:
     ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
-    using Scenario::set_consumer_property;
-    using Scenario::set_firm_property;
     bool next_forcing_file();
     std::string fill_template(const std::string& in) const;
     unsigned int get_ref_year(const std::string& filename, const std::string& time_str);
@@ -70,8 +67,6 @@ class ExternalScenario : public Scenario {
 
   public:
     virtual ~ExternalScenario() override = default;
-    using Scenario::id;
-    using Scenario::model;
     bool iterate() override;
     void start() override;
     void end() override;

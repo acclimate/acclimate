@@ -23,7 +23,6 @@
 #include <cstdlib>
 #include <memory>
 #include <utility>
-#include <vector>
 
 #include "acclimate.h"
 #include "model/CapacityManager.h"
@@ -83,34 +82,33 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
             if (type == "firm") {
                 if (it.has("sector")) {
                     if (it.has("region")) {
-                        Firm* firm = model()->find_firm(it["sector"].template as<std::string>(), it["region"].template as<std::string>());
+                        Firm* firm = nullptr;  // TODO model()->find_firm(it["sector"].as<std::string>(), it["region"].as<std::string>());
                         if (firm != nullptr) {
                             set_firm_property(firm, it, reset);
                         } else {
-                            throw log::error(this, "Firm ", it["sector"].template as<std::string>(), ":", it["region"].template as<std::string>(),
-                                             " not found");
+                            throw log::error(this, "Firm ", it["sector"].as<std::string>(), ":", it["region"].as<std::string>(), " not found");
                         }
                     } else {
-                        Sector* sector = model()->find_sector(it["sector"].template as<std::string>());
+                        auto* sector = model()->sectors.find(it["sector"].as<std::string>());
                         if (sector != nullptr) {
                             for (auto& p : sector->firms) {
                                 set_firm_property(p, it, reset);
                             }
                         } else {
-                            throw log::error(this, "Sector ", it["sector"].template as<std::string>(), " not found");
+                            throw log::error(this, "Sector ", it["sector"].as<std::string>(), " not found");
                         }
                     }
                 } else {
                     if (it.has("region")) {
-                        Region* region = model()->find_region(it["region"].template as<std::string>());
+                        Region* region = model()->regions.find(it["region"].as<std::string>());
                         if (region != nullptr) {
                             for (auto& ea : region->economic_agents) {
-                                if (ea->type == EconomicAgent::Type::FIRM) {
+                                if (ea->type == EconomicAgent::type_t::FIRM) {
                                     set_firm_property(ea->as_firm(), it, reset);
                                 }
                             }
                         } else {
-                            throw log::error(this, "Region ", it["region"].template as<std::string>(), " not found");
+                            throw log::error(this, "Region ", it["region"].as<std::string>(), " not found");
                         }
                     } else {
                         for (auto& s : model()->sectors) {
@@ -122,16 +120,16 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
                 }
             } else if (type == "consumer") {
                 if (it.has("region")) {
-                    Consumer* consumer = model()->find_consumer(it["region"].template as<std::string>());
+                    Consumer* consumer = nullptr;  // TODO model()->find_consumer(it["region"].as<std::string>());
                     if (consumer != nullptr) {
                         set_consumer_property(consumer, it, reset);
                     } else {
-                        throw log::error(this, "Consumer ", it["region"].template as<std::string>(), " not found");
+                        throw log::error(this, "Consumer ", it["region"].as<std::string>(), " not found");
                     }
                 } else {
                     for (auto& r : model()->regions) {
                         for (auto& ea : r->economic_agents) {
-                            if (ea->type == EconomicAgent::Type::CONSUMER) {
+                            if (ea->type == EconomicAgent::type_t::CONSUMER) {
                                 set_consumer_property(ea->as_consumer(), it, reset);
                             }
                         }
@@ -139,11 +137,11 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
                 }
             } else if (type == "sea") {
                 if (it.has("sea_route")) {
-                    GeoLocation* location = model()->find_location(it["sea_route"].template as<std::string>());
+                    auto* location = model()->other_locations.find(it["sea_route"].as<std::string>());
                     if (location != nullptr) {
                         set_location_property(location, it, reset);
                     } else {
-                        throw log::error(this, "Sea route ", it["sea_route"].template as<std::string>(), " not found");
+                        throw log::error(this, "Sea route ", it["sea_route"].as<std::string>(), " not found");
                     }
                 }
             }
@@ -153,10 +151,10 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
 
 bool Scenario::iterate() {
     for (const auto& event : scenario_node["events"].as_sequence()) {
-        const std::string& type = event["type"].template as<std::string>();
+        const std::string& type = event["type"].as<std::string>();
         if (type == "shock") {
-            const Time from = event["from"].template as<Time>();
-            const Time to = event["to"].template as<Time>();
+            const Time from = event["from"].as<Time>();
+            const Time to = event["to"].as<Time>();
             if (model()->time() >= from && model()->time() <= to) {
                 apply_target(event["targets"], false);
             } else if (model()->time() == to + model()->delta_t()) {
@@ -169,7 +167,7 @@ bool Scenario::iterate() {
 
 std::string Scenario::time_units_str() const {
     if (scenario_node.has("baseyear")) {
-        return std::string("days since ") + std::to_string(scenario_node["baseyear"].template as<unsigned int>()) + "-1-1";
+        return std::string("days since ") + std::to_string(scenario_node["baseyear"].as<unsigned int>()) + "-1-1";
     }
     return "days since 0-1-1";
 }

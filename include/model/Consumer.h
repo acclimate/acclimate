@@ -27,16 +27,8 @@ namespace acclimate {
 
 class id_t;
 class Region;
-class Sector;
 
-class Consumer : public EconomicAgent {
-  private:
-    using EconomicAgent::forcing_;
-
-  public:
-    using EconomicAgent::input_storages;
-    using EconomicAgent::region;
-
+class Consumer final : public EconomicAgent {
   public:
     Consumer* as_consumer() override { return this; };
     const Consumer* as_consumer() const override { return this; };

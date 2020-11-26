@@ -62,26 +62,26 @@ void Sector::iterate_consumption_and_production() {
     total_production_X_m = Flow(0.0);
 }
 
-Sector::TransportType Sector::map_transport_type(const settings::hstring& transport_type) {
+Sector::transport_type_t Sector::map_transport_type(const hashed_string& transport_type) {
     switch (transport_type) {
-        case settings::hstring::hash("aviation"):
-            return TransportType::AVIATION;
-        case settings::hstring::hash("immediate"):
-            return TransportType::IMMEDIATE;
-        case settings::hstring::hash("roadsea"):
-            return TransportType::ROADSEA;
+        case hash("aviation"):
+            return transport_type_t::AVIATION;
+        case hash("immediate"):
+            return transport_type_t::IMMEDIATE;
+        case hash("roadsea"):
+            return transport_type_t::ROADSEA;
         default:
             throw log::error("Unknown transport type ", transport_type);
     }
 }
 
-const char* Sector::unmap_transport_type(Sector::TransportType transport_type) {
+const char* Sector::unmap_transport_type(Sector::transport_type_t transport_type) {
     switch (transport_type) {
-        case TransportType::AVIATION:
+        case transport_type_t::AVIATION:
             return "aviation";
-        case TransportType::IMMEDIATE:
+        case transport_type_t::IMMEDIATE:
             return "immediate";
-        case TransportType::ROADSEA:
+        case transport_type_t::ROADSEA:
             return "roadsea";
         default:
             throw log::error("Unkown transport type");

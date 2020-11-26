@@ -25,17 +25,17 @@
 
 namespace acclimate {
 
-class GeoPoint {
+class GeoPoint final {
   private:
-    const FloatType lon_, lat_;
+    const FloatType lon_m, lat_m;
 
   public:
     GeoPoint(FloatType lon_p, FloatType lat_p);
     FloatType distance_to(const GeoPoint& other) const;
 
-    FloatType lon() const { return lon_; }
+    FloatType lon() const { return lon_m; }
 
-    FloatType lat() const { return lat_; }
+    FloatType lat() const { return lat_m; }
 };
 }  // namespace acclimate
 

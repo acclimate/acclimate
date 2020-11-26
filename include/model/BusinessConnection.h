@@ -26,7 +26,6 @@
 #include <string>
 
 #include "acclimate.h"
-#include "model/TransportChainLink.h"
 #include "openmp.h"
 
 namespace acclimate {
@@ -34,8 +33,9 @@ namespace acclimate {
 class Model;
 class PurchasingManager;
 class SalesManager;
+class TransportChainLink;
 
-class BusinessConnection {
+class BusinessConnection final {
   private:
     Demand last_demand_request_D_;
     Flow initial_flow_Z_star_;
@@ -55,8 +55,8 @@ class BusinessConnection {
     BusinessConnection(PurchasingManager* buyer_p, SalesManager* seller_p, const Flow& initial_flow_Z_star_p);
     ~BusinessConnection();
     const Flow& last_shipment_Z(const SalesManager* caller = nullptr) const;
-    const Flow& last_delivery_Z(const SalesManager* const caller = nullptr) const;
-    const Demand& last_demand_request_D(const PurchasingManager* const caller = nullptr) const;
+    const Flow& last_delivery_Z(const SalesManager* caller = nullptr) const;
+    const Demand& last_demand_request_D(const PurchasingManager* caller = nullptr) const;
     const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; }
     void initial_flow_Z_star(const Flow& new_initial_flow_Z_star);
     std::size_t get_id(const TransportChainLink* transport_chain_link) const;

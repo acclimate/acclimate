@@ -21,11 +21,13 @@
 #ifndef ACCLIMATE_TYPES_H
 #define ACCLIMATE_TYPES_H
 
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <string>
+#include <vector>
 
 // IWYU pragma: private, include "acclimate.h"
 
@@ -296,6 +298,8 @@ inline IntType iround(FloatType x) {
         return std::round(x);
     }
 }
+
+constexpr FloatType to_float(FloatType v) { return v; }
 
 template<bool rounded>
 struct InternalType {};

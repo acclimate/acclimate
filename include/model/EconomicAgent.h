@@ -21,12 +21,11 @@
 #ifndef ACCLIMATE_ECONOMICAGENT_H
 #define ACCLIMATE_ECONOMICAGENT_H
 
-#include <memory>
+#include <iterator>
+#include <numeric>
 #include <string>
-#include <vector>
 
 #include "acclimate.h"
-#include "model/Storage.h"
 #include "parameters.h"
 
 namespace acclimate {
@@ -35,11 +34,11 @@ class Consumer;
 class Firm;
 class Model;
 class Region;
-class Sector;
+class Storage;
 
 class EconomicAgent {
   public:
-    enum class Type { CONSUMER, FIRM };
+    enum class type_t { CONSUMER, FIRM };
 
   private:
     Parameters::AgentParameters parameters_;
@@ -48,9 +47,9 @@ class EconomicAgent {
     Forcing forcing_m = Forcing(1.0);
 
   public:
-    const Type type;
     owning_vector<Storage> input_storages;
     non_owning_ptr<Region> region;
+    const EconomicAgent::type_t type;
     const id_t id;
 
   protected:
@@ -62,12 +61,12 @@ class EconomicAgent {
     Parameters::AgentParameters const& parameters_writable() const;
     const Forcing& forcing() const { return forcing_m; }
     void set_forcing(const Forcing& forcing_p);
-    virtual Firm* as_firm();
-    virtual const Firm* as_firm() const;
-    virtual Consumer* as_consumer();
-    virtual const Consumer* as_consumer() const;
-    bool is_firm() const { return type == Type::FIRM; }
-    bool is_consumer() const { return type == Type::CONSUMER; }
+    bool is_firm() const { return type == EconomicAgent::type_t::FIRM; }
+    bool is_consumer() const { return type == EconomicAgent::type_t::CONSUMER; }
+    virtual Firm* as_firm() { throw log::error(this, "Not a firm"); }
+    virtual const Firm* as_firm() const { throw log::error(this, "Not a firm"); }
+    virtual Consumer* as_consumer() { throw log::error(this, "Not a consumer"); }
+    virtual const Consumer* as_consumer() const { throw log::error(this, "Not a consumer"); }
     virtual void iterate_consumption_and_production() = 0;
     virtual void iterate_expectation() = 0;
     virtual void iterate_purchase() = 0;

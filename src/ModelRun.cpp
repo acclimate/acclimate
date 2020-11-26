@@ -25,6 +25,8 @@
 #include <chrono>
 #include <cmath>
 #include <csignal>
+#include <ctime>
+#include <iosfwd>
 #include <string>
 
 #include "acclimate.h"
@@ -32,7 +34,6 @@
 #include "input/ModelInitializer.h"
 #include "model/EconomicAgent.h"
 #include "model/Model.h"
-#include "model/Region.h"
 #include "model/Sector.h"
 #include "openmp.h"
 #include "output/ArrayOutput.h"
@@ -100,19 +101,19 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
         ModelInitializer model_initializer(model, settings);
         model_initializer.initialize();
         if constexpr (options::DEBUGGING) {
-            model_initializer.print_network_characteristics();
+            model_initializer.debug_print_network_characteristics();
         }
         model_m.reset(model);
     }
 
     for (const auto& scenario_node : settings["scenarios"].as_sequence()) {
         Scenario* scenario = nullptr;
-        const auto& type = scenario_node["type"].template as<hstring>();
+        const auto& type = scenario_node["type"].as<hashed_string>();
         switch (type) {
-            case hstring::hash("events"): // TODO separate
+            case hash("events"):  // TODO separate
                 scenario = new Scenario(settings, scenario_node, model);
                 break;
-            case hstring::hash("event_series"):
+            case hash("event_series"):
                 scenario = new EventSeriesScenario(settings, scenario_node, model);
                 break;
             default:

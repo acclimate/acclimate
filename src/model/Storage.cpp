@@ -123,14 +123,14 @@ void Storage::add_initial_flow_Z_star(const Flow& flow_Z_star) {
     initial_content_S_star_ = round(initial_content_S_star_ + flow_Z_star * sector->initial_storage_fill_factor_psi);
     content_S_ = round(content_S_ + flow_Z_star * sector->initial_storage_fill_factor_psi);
     purchasing_manager->add_initial_demand_D_star(flow_Z_star);
-    if (economic_agent->type == EconomicAgent::Type::FIRM) {
+    if (economic_agent->type == EconomicAgent::type_t::FIRM) {
         economic_agent->as_firm()->add_initial_total_use_U_star(flow_Z_star);
     }
 }
 
 bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    if (economic_agent->type == EconomicAgent::Type::FIRM) {
+    if (economic_agent->type == EconomicAgent::type_t::FIRM) {
         economic_agent->as_firm()->subtract_initial_total_use_U_star(flow_Z_star);
     }
     if (initial_input_flow_I_star_.get_quantity() - flow_Z_star.get_quantity() >= FlowQuantity::precision) {
@@ -154,7 +154,7 @@ const Stock& Storage::content_S() const {
     return content_S_;
 }
 
-const Flow& Storage::used_flow_U(const EconomicAgent* const caller) const {
+const Flow& Storage::used_flow_U(const EconomicAgent* caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != economic_agent) {
             debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
@@ -163,7 +163,7 @@ const Flow& Storage::used_flow_U(const EconomicAgent* const caller) const {
     return used_flow_U_;
 }
 
-const Flow& Storage::desired_used_flow_U_tilde(const EconomicAgent* const caller) const {
+const Flow& Storage::desired_used_flow_U_tilde(const EconomicAgent* caller) const {
     if (caller != economic_agent) {
         debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
         debug::assertstepnot(this, IterationStep::EXPECTATION);

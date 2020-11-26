@@ -22,26 +22,23 @@
 #define ACCLIMATE_MODEL_H
 
 #include <cstddef>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "ModelRun.h"
 #include "acclimate.h"
-#include "model/GeoLocation.h"
-#include "model/Region.h"
-#include "model/Sector.h"
 #include "parameters.h"
 
 namespace acclimate {
 
-class Consumer;
 class EconomicAgent;
-class Firm;
-class ModelRun;
+class GeoLocation;
 class PurchasingManager;
+class Region;
+class Sector;
 
-class Model {
+class Model final {
     friend class ModelRun;
 
   private:

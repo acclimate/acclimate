@@ -22,26 +22,19 @@
 #define ACCLIMATE_SECTOR_H
 
 #include <string>
-#include <vector>
 
 #include "acclimate.h"
 #include "openmp.h"
 #include "parameters.h"
-
-namespace settings {
-class hstring;
-}
 
 namespace acclimate {
 
 class Model;
 class Firm;
 
-class Sector {
-    friend class Model;
-
+class Sector final {
   public:
-    enum class TransportType { AVIATION, IMMEDIATE, ROADSEA };
+    enum class transport_type_t { AVIATION, IMMEDIATE, ROADSEA };
 
   private:
     Demand total_demand_D_ = Demand(0.0);

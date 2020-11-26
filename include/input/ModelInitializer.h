@@ -21,23 +21,10 @@
 #ifndef ACCLIMATE_MODELINITIALIZER_H
 #define ACCLIMATE_MODELINITIALIZER_H
 
-#include <algorithm>
-#include <cstddef>
-#include <iterator>
-#include <memory>
 #include <string>
-#include <vector>
 
 #include "acclimate.h"
-#include "model/GeoEntity.h"
 #include "settingsnode.h"
-
-namespace mrio {
-
-template<typename ValueType, typename IndexType>
-class Table;
-
-}  // namespace mrio
 
 namespace acclimate {
 
@@ -49,54 +36,6 @@ class Region;
 class Sector;
 
 class ModelInitializer {
-  private:
-    class TemporaryGeoEntity {
-      private:
-        std::unique_ptr<GeoEntity> entity_m;
-
-      public:
-        bool used;
-
-      public:
-        TemporaryGeoEntity(GeoEntity* entity_p, bool used_p) : entity_m(entity_p), used(used_p) {}
-        ~TemporaryGeoEntity() {
-            if (used) {
-                (void)entity_m.release();
-            }
-        }
-        GeoEntity* entity() { return entity_m.get(); }
-    };
-
-    class Path {
-      private:
-        FloatType costs_m = 0;
-        std::vector<TemporaryGeoEntity*> points_m;
-
-      public:
-        Path() = default;
-        Path(FloatType costs_p, TemporaryGeoEntity* p1, TemporaryGeoEntity* p2, TemporaryGeoEntity* connection)
-            : costs_m(costs_p), points_m({p1, connection, p2}) {}
-        FloatType costs() const { return costs_m; }
-        bool empty() const { return points_m.empty(); }
-        const std::vector<TemporaryGeoEntity*>& points() const { return points_m; }
-        Path operator+(const Path& other) const {
-            Path res;
-            if (empty()) {
-                res.costs_m = other.costs_m;
-                res.points_m.assign(std::begin(other.points_m), std::end(other.points_m));
-            } else if (other.empty()) {
-                res.costs_m = costs_m;
-                res.points_m.assign(std::begin(points_m), std::end(points_m));
-            } else {
-                res.costs_m = costs_m + other.costs_m;
-                res.points_m.assign(std::begin(points_m), std::end(points_m));
-                res.points_m.resize(points_m.size() + other.points_m.size() - 1);
-                std::copy(std::begin(other.points_m), std::end(other.points_m), std::begin(res.points_m) + points_m.size() - 1);
-            }
-            return res;
-        }
-    };
-
   private:
     non_owning_ptr<Model> model_m;
     const settings::SettingsNode& settings;
@@ -112,7 +51,7 @@ class ModelInitializer {
     Sector* add_sector(const std::string& name);
     Region* add_region(const std::string& name);
     Firm* add_firm(std::string name, Sector* sector, Region* region);
-    Consumer* add_consumer(std::string name, Sector* sector, Region* region);
+    Consumer* add_consumer(std::string name, Region* region);
     EconomicAgent* add_standard_agent(Sector* sector, Region* region);
     void create_simple_transport_connection(Region* region_from, Region* region_to, TransportDelay transport_delay);
     void initialize_connection(Firm* firm_from, EconomicAgent* economic_agent_to, const Flow& flow);

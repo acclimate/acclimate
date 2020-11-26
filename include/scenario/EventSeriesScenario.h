@@ -34,9 +34,9 @@ class SettingsNode;
 }  // namespace settings
 
 namespace acclimate {
-class Model;
 
 class Firm;
+class Model;
 
 class EventSeriesScenario : public ExternalScenario {
   private:
@@ -44,10 +44,7 @@ class EventSeriesScenario : public ExternalScenario {
         friend class EventSeriesScenario;
 
       private:
-        using ExternalForcing::file;
-        using ExternalForcing::time_index;
-        using ExternalForcing::variable;
-        std::vector<Firm*> firms;
+        std::vector<Firm*> firms;  // TODO remove
         std::vector<Forcing> forcings;
         std::size_t regions_count;
         std::size_t sectors_count;
@@ -60,16 +57,11 @@ class EventSeriesScenario : public ExternalScenario {
     };
 
   private:
-    using ExternalScenario::forcing;
-
-  private:
     ExternalForcing* read_forcing_file(const std::string& filename, const std::string& variable_name) override;
     void read_forcings() override;
 
   public:
     EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
-    using ExternalScenario::id;
-    using ExternalScenario::model;
 };
 }  // namespace acclimate
 

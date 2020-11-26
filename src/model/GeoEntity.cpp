@@ -20,15 +20,12 @@
 
 #include "model/GeoEntity.h"
 
-#include <algorithm>
-#include <iterator>
-
 #include "acclimate.h"
 #include "model/TransportChainLink.h"
 
 namespace acclimate {
 
-GeoEntity::GeoEntity(Model* model_p, TransportDelay delay_p, Type type_p) : model_m(model_p), delay(delay_p), type_m(type_p) {}
+GeoEntity::GeoEntity(Model* model_p, TransportDelay delay_p, GeoEntity::type_t type_p) : model_m(model_p), delay(delay_p), entity_type(type_p) {}
 
 void GeoEntity::set_forcing_nu(Forcing forcing_nu_p) {
     for (auto link : transport_chain_links) {
@@ -40,15 +37,6 @@ GeoEntity::~GeoEntity() {
     for (auto link : transport_chain_links) {
         link->unregister_geoentity();
     }
-}
-
-void GeoEntity::remove_transport_chain_link(TransportChainLink* transport_chain_link) {
-    auto it = std::find_if(std::begin(transport_chain_links), std::end(transport_chain_links),
-                           [transport_chain_link](const auto l) { return l == transport_chain_link; });
-    if (it == std::end(transport_chain_links)) {
-        throw log::error(this, "Transport chain link ", transport_chain_link->id(), " not found");
-    }
-    transport_chain_links.erase(it);
 }
 
 }  // namespace acclimate

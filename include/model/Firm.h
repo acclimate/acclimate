@@ -34,7 +34,7 @@ class BusinessConnection;
 class Region;
 class Sector;
 
-class Firm : public EconomicAgent {
+class Firm final : public EconomicAgent {
   private:
     Flow initial_production_X_star_ = Flow(0.0);
     Flow production_X_ = Flow(0.0);  // quantity of production and its selling value

@@ -28,11 +28,11 @@
 #include "acclimate.h"
 #include "model/Firm.h"
 #include "model/Model.h"
+#include "model/Sector.h"
 #include "netcdfpp.h"
 #include "settingsnode.h"
 
 namespace acclimate {
-class Sector;
 
 EventSeriesScenario::EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
     : ExternalScenario(settings_p, std::move(scenario_node_p), model_p) {}
@@ -65,12 +65,12 @@ EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, con
     firms.reserve(regions_count * sectors_count);
     forcings.reserve(regions_count * sectors_count);
     for (const auto& sector_name : sectors) {
-        Sector* sector = model->find_sector(sector_name);
+        const auto* sector = model->sectors.find(sector_name);
         if (sector == nullptr) {
             throw log::error(this, "sector '", sector_name, "' not found");
         }
         for (const auto& region_name : regions) {
-            Firm* firm = model->find_firm(sector, region_name);
+            Firm* firm = nullptr;  // TODO model->find_firm(sector, region_name);
             if (firm == nullptr) {
                 log::warning(this, "firm '", sector_name, ":", region_name, "' not found");
             }

@@ -21,8 +21,6 @@
 #ifndef ACCLIMATE_RUN_H
 #define ACCLIMATE_RUN_H
 
-#include <features.h>  // for __STRING
-
 #include <array>
 #include <cstddef>
 #include <limits>
@@ -38,42 +36,47 @@ class SettingsNode;
 
 namespace acclimate {
 
-#define ACCLIMATE_ADD_EVENTS                                  \
-    ADD_ENUM_ITEM(NO_CONSUMPTION)                             \
-    ADD_ENUM_ITEM(STORAGE_UNDERRUN)                           \
-    ADD_ENUM_ITEM(STORAGE_OVERRUN)                            \
-    ADD_ENUM_ITEM(NO_PRODUCTION_SUPPLY_SHORTAGE)              \
-    ADD_ENUM_ITEM(NO_PRODUCTION_DEMAND_QUANTITY_SHORTAGE)     \
-    ADD_ENUM_ITEM(NO_PRODUCTION_DEMAND_VALUE_SHORTAGE)        \
-    ADD_ENUM_ITEM(NO_PRODUCTION_HIGH_COSTS)                   \
-    ADD_ENUM_ITEM(NO_EXP_PRODUCTION_SUPPLY_SHORTAGE)          \
-    ADD_ENUM_ITEM(NO_EXP_PRODUCTION_DEMAND_QUANTITY_SHORTAGE) \
-    ADD_ENUM_ITEM(NO_EXP_PRODUCTION_DEMAND_VALUE_SHORTAGE)    \
-    ADD_ENUM_ITEM(NO_EXP_PRODUCTION_HIGH_COSTS)               \
-    ADD_ENUM_ITEM(DEMAND_FULFILL_HISTORY_UNDERFLOW)           \
-    ADD_ENUM_ITEM(OPTIMIZER_TIMEOUT)                          \
-    ADD_ENUM_ITEM(OPTIMIZER_ROUNDOFF_LIMITED)
+enum class EventType : unsigned char {
+    NO_CONSUMPTION,
+    STORAGE_UNDERRUN,
+    STORAGE_OVERRUN,
+    NO_PRODUCTION_SUPPLY_SHORTAGE,
+    NO_PRODUCTION_DEMAND_QUANTITY_SHORTAGE,
+    NO_PRODUCTION_DEMAND_VALUE_SHORTAGE,
+    NO_PRODUCTION_HIGH_COSTS,
+    NO_EXP_PRODUCTION_SUPPLY_SHORTAGE,
+    NO_EXP_PRODUCTION_DEMAND_QUANTITY_SHORTAGE,
+    NO_EXP_PRODUCTION_DEMAND_VALUE_SHORTAGE,
+    NO_EXP_PRODUCTION_HIGH_COSTS,
+    DEMAND_FULFILL_HISTORY_UNDERFLOW,
+    OPTIMIZER_TIMEOUT,
+    OPTIMIZER_ROUNDOFF_LIMITED,
+};
 
-#define ADD_ENUM_ITEM(e) e,
-enum class EventType : unsigned char { ACCLIMATE_ADD_EVENTS };
-#undef ADD_ENUM_ITEM
-
-#define ADD_ENUM_ITEM(e) __STRING(e),
-constexpr std::array<const char*, static_cast<int>(EventType::OPTIMIZER_ROUNDOFF_LIMITED) + 1> EVENT_NAMES = {ACCLIMATE_ADD_EVENTS};
-#undef ADD_ENUM_ITEM
-
-#undef ACCLIMATE_ADD_EVENTS
+constexpr std::array<const char*, static_cast<int>(EventType::OPTIMIZER_ROUNDOFF_LIMITED) + 1> EVENT_NAMES = {
+    "NO_CONSUMPTION",
+    "STORAGE_UNDERRUN",
+    "STORAGE_OVERRUN",
+    "NO_PRODUCTION_SUPPLY_SHORTAGE",
+    "NO_PRODUCTION_DEMAND_QUANTITY_SHORTAGE",
+    "NO_PRODUCTION_DEMAND_VALUE_SHORTAGE",
+    "NO_PRODUCTION_HIGH_COSTS",
+    "NO_EXP_PRODUCTION_SUPPLY_SHORTAGE",
+    "NO_EXP_PRODUCTION_DEMAND_QUANTITY_SHORTAGE",
+    "NO_EXP_PRODUCTION_DEMAND_VALUE_SHORTAGE",
+    "NO_EXP_PRODUCTION_HIGH_COSTS",
+    "DEMAND_FULFILL_HISTORY_UNDERFLOW",
+    "OPTIMIZER_TIMEOUT",
+    "OPTIMIZER_ROUNDOFF_LIMITED",
+};
 
 class Model;
 class Scenario;
 class Output;
-class Region;
 class Sector;
 class EconomicAgent;
 
 class ModelRun {
-    friend class Acclimate;
-
   private:
     std::unique_ptr<Model> model_m;
     std::vector<std::unique_ptr<Scenario>> scenarios_m;

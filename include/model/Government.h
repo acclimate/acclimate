@@ -32,9 +32,9 @@ class Firm;
 class Model;
 class Region;
 
-class Government {
+class Government final {
   private:
-    Value budget_;
+    Value budget_m;
     std::unordered_map<Firm*, Ratio> taxed_firms;
 
   public:

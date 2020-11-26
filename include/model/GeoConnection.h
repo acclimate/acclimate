@@ -31,19 +31,19 @@ class Model;
 
 class GeoLocation;
 
-class GeoConnection : public GeoEntity {
+class GeoConnection final : public GeoEntity {
   public:
-    enum class Type { ROAD, AVIATION, SEAROUTE, UNSPECIFIED };
+    enum class type_t { ROAD, AVIATION, SEAROUTE, UNSPECIFIED };
 
   private:
     non_owning_ptr<GeoLocation> location1;
     non_owning_ptr<GeoLocation> location2;
 
   public:
-    const Type type;
+    const GeoConnection::type_t type;
 
   public:
-    GeoConnection(Model* model_m, TransportDelay delay, Type type_p, const GeoLocation* location1_p, const GeoLocation* location2_p);
+    GeoConnection(Model* model_m, TransportDelay delay, GeoConnection::type_t type_p, GeoLocation* location1_p, GeoLocation* location2_p);
     void invalidate_location(const GeoLocation* location);
 
     GeoConnection* as_connection() override { return this; }

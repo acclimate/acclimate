@@ -50,7 +50,7 @@ void Consumer::iterate_consumption_and_production() {
             assert(!isnan(last_reservation_price));
             // price is calculated from last desired used flow
             reservation_price = last_reservation_price;
-            model()->run()->event(EventType::NO_CONSUMPTION, this, nullptr, to_float(last_reservation_price));
+            model()->run()->event(EventType::NO_CONSUMPTION, this, to_float(last_reservation_price));
         }
         assert(reservation_price > 0.0);
 
