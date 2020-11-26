@@ -36,16 +36,13 @@ class Consumer : public EconomicAgent {
 
     // optimization parameters
     std::vector<FloatType> optimizer_consumption;
-    std::vector<double> lower_bounds;
-    std::vector<double> upper_bounds;
+    std::vector<FloatType> desired_quantity;  // vector for scaling of optimization
     std::vector<double> xtol_abs;
 
-    std::vector<FlowQuantity> possible_consumption;  // consumption limits considered in optimization
-    std::vector<Price> consumption_prices;           // prices to be considered in optimization
-    std::vector<Price> current_prices;               // current prices to enable optimization with some foresight
+    // consumption limits considered in optimization
+    std::vector<Price> consumption_prices;  // prices to be considered in optimization
     std::vector<Flow> desired_consumption;
-    std::vector<FlowQuantity> previous_consumption;
-    std::vector<Price> previous_prices;
+    std::vector<Flow> previous_consumption;
 
     FlowValue not_spent_budget;  // TODO: introduce real saving possibility, for now just trying to improve numerical stability
 
@@ -98,7 +95,8 @@ class Consumer : public EconomicAgent {
     FloatType equality_constraint(const double* x, double* grad);
     FloatType max_objective(const double* x, double* grad) const;
     void print_distribution(const std::vector<double>& demand_requests_D) const;
-
+    // scaling function
+    FloatType unscaled_demand(double d, int scaling_index) const;
     // some simple function
     std::vector<FlowQuantity> get_quantity_vector(std::vector<Flow> flow);
 

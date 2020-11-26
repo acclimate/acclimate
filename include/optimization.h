@@ -56,6 +56,9 @@ static int get_algorithm(const settings::hstring& name) {
             return NLOPT_LN_COBYLA;
         case settings::hstring::hash("isres"):
             return NLOPT_GN_ISRES;
+        case settings::hstring::hash("direct"):
+            return NLOPT_GN_DIRECT;
+
         default:
             throw log::error("unknown optimization alorithm '", name, "'");
     }
