@@ -89,6 +89,29 @@ class Region : public GeoLocation {
     const GeoRoute& find_path_to(Region* region, typename Sector::TransportType transport_type) const;
     Region* as_region() override { return this; }
     const Region* as_region() const override { return this; }
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("import"),
+                        [this]() {  //
+                            return import_flow_Z();
+                        })
+               && o.set(H::hash("export"),
+                        [this]() {  //
+                            return export_flow_Z();
+                        })
+               && o.set(H::hash("consumption"),
+                        [this]() {  //
+                            return consumption_C();
+                        })
+               && o.set(H::hash("gdp"),
+                        [this]() {  //
+                            return get_gdp();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

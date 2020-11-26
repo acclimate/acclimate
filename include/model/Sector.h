@@ -76,6 +76,25 @@ class Sector {
     Model* model() { return model_m; }
     const Model* model() const { return model_m; }
     const std::string& name() const { return id.name; }
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("offer_price"),
+                        [this]() {  //
+                            return total_production_X().get_price();
+                        })
+               && o.set(H::hash("total_production"),
+                        [this]() {  //
+                            return total_production_X();
+                        })
+               && o.set(H::hash("total_demand"),
+                        [this]() {  //
+                            return total_demand_D();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

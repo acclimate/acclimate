@@ -97,6 +97,17 @@ class Model {
     const ModelRun* run() const { return run_m; }
     const Model* model() const { return this; }
     std::string name() const { return "MODEL"; }
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("duration"),
+                        [this]() {  //
+                            return run()->duration();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

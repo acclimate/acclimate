@@ -581,7 +581,7 @@ void PurchasingManager::iterate_purchase() {
                     if constexpr (options::DEBUGGING) {
                         debug_print_distribution(demand_requests_D);
                     }
-                    model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, nullptr, storage->economic_agent);
+                    model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, storage->economic_agent);
                     if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                         throw log::error(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
                     } else {
@@ -592,7 +592,7 @@ void PurchasingManager::iterate_purchase() {
                 if constexpr (options::DEBUGGING) {
                     debug_print_distribution(demand_requests_D);
                 }
-                model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, nullptr, storage->economic_agent);
+                model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, storage->economic_agent);
                 if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                     throw log::error(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
                 } else {

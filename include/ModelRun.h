@@ -82,6 +82,7 @@ class ModelRun {
     std::size_t duration_m = 0;
     IterationStep step_m = IterationStep::INITIALIZATION;
     bool has_run = false;
+    std::string settings_string_m;
 
   private:
     void step(const IterationStep& step_p) { step_m = step_p; }
@@ -92,31 +93,22 @@ class ModelRun {
     void run();
     IterationStep step() const { return step_m; }
     unsigned int time() const { return time_m; }
-    const std::size_t& duration() const { return duration_m; }
+    std::size_t duration() const { return duration_m; }
+    const std::string& settings_string() const { return settings_string_m; }
     unsigned int thread_count() const;
     std::string timeinfo() const;
-    const Model* model() { return model_m.get(); }
-    const Output* output(const IndexType i) { return outputs_m[i].get(); }
-    void event(EventType type,
-               const Sector* sector_from,
-               const Region* region_from,
-               const Sector* sector_to,
-               const Region* region_to,
-               FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
-    void event(EventType type,
-               const Sector* sector_from,
-               const Region* region_from,
-               const EconomicAgent* economic_agent_to,
-               FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
-    void event(EventType type,
-               const EconomicAgent* economic_agent_from = nullptr,
-               const EconomicAgent* economic_agent_to = nullptr,
-               FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
+    const Output* output(const IndexType i) const { return outputs_m[i].get(); }
+    std::string now() const;
+    void event(EventType type, const EconomicAgent* economic_agent, FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
+    void event(EventType type, const Sector* sector, const EconomicAgent* economic_agent, FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
     void event(EventType type,
                const EconomicAgent* economic_agent_from,
-               const Sector* sector_to,
-               const Region* region_to,
+               const EconomicAgent* economic_agent_to,
                FloatType value = std::numeric_limits<FloatType>::quiet_NaN());
+
+    std::size_t total_timestep_count() const { return 1; }  // TODO
+    std::string calendar() const { return "standard"; }     // TODO
+    int baseyear() const { return 2010; }                   // TODO
 
     const char* name() const { return "RUN"; }
     const Model* model() const { return model_m.get(); }

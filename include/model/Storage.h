@@ -84,6 +84,69 @@ class Storage {
     Model* model();
     const Model* model() const;
     const std::string& name() const { return id.name; }
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("business_connections"),
+                        [this]() {  //
+                            return purchasing_manager->business_connections.size();
+                        })
+               && o.set(H::hash("content"),
+                        [this]() {  //
+                            return content_S();
+                        })
+               && o.set(H::hash("demand"),
+                        [this]() {  //
+                            return purchasing_manager->demand_D();
+                        })
+               && o.set(H::hash("desired_used_flow"),
+                        [this]() {  //
+                            return desired_used_flow_U_tilde();
+                        })
+               && o.set(H::hash("expected_costs"),
+                        [this]() {  //
+                            return purchasing_manager->expected_costs();
+                        })
+               && o.set(H::hash("input_flow"),
+                        [this]() {  //
+                            return last_input_flow_I();
+                        })
+               && o.set(H::hash("optimized_value"),
+                        [this]() {  //
+                            return purchasing_manager->optimized_value();
+                        })
+               && o.set(H::hash("possible_use"),
+                        [this]() {  //
+                            return last_possible_use_U_hat();
+                        })
+               && o.set(H::hash("purchase"),
+                        [this]() {  //
+                            return purchasing_manager->purchase();
+                        })
+               && o.set(H::hash("shipment"),
+                        [this]() {  //
+                            return purchasing_manager->get_sum_of_last_shipments();
+                        })
+               && o.set(H::hash("storage_demand"),
+                        [this]() {  //
+                            return purchasing_manager->storage_demand();
+                        })
+               && o.set(H::hash("total_transport_penalty"),
+                        [this]() {  //
+                            return purchasing_manager->total_transport_penalty();
+                        })
+               && o.set(H::hash("use"),
+                        [this]() {  //
+                            return purchasing_manager->demand_D();
+                        })
+               && o.set(H::hash("used_flow"),
+                        [this]() {  //
+                            return used_flow_U();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

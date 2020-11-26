@@ -75,6 +75,41 @@ class BusinessConnection {
 
     const Model* model() const;
     std::string name() const;
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("initial_flow"),
+                        [this]() {  //
+                            return initial_flow_Z_star();
+                        })
+               && o.set(H::hash("demand_request"),
+                        [this]() {  //
+                            return last_demand_request_D();
+                        })
+               && o.set(H::hash("flow_deficit"),
+                        [this]() {  //
+                            return get_flow_deficit();
+                        })
+               && o.set(H::hash("flow_mean"),
+                        [this]() {  //
+                            return get_flow_mean();
+                        })
+               && o.set(H::hash("received_flow"),
+                        [this]() {  //
+                            return last_delivery_Z();
+                        })
+               && o.set(H::hash("sent_flow"),
+                        [this]() {  //
+                            return last_shipment_Z();
+                        })
+               && o.set(H::hash("total_flow"),
+                        [this]() {  //
+                            return get_total_flow();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

@@ -71,11 +71,85 @@ class Firm : public EconomicAgent {
     FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_m); }
     FlowQuantity forced_maximal_production_quantity_lambda_beta_X_star() const;
     const Flow& initial_total_use_U_star() const { return initial_total_use_U_star_; }
-    Flow direct_loss() const;
-    Flow total_loss() const;
-    FlowValue total_value_loss() const { return (initial_production_X_star_ - production_X_).get_value(); }
 
     void debug_print_details() const override;
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return EconomicAgent::observe<Observer, H>(o)  //
+               && o.set(H::hash("communicated_possible_production"),
+                        [this]() {  //
+                            return sales_manager->communicated_parameters().possible_production_X_hat;
+                        })
+               && o.set(H::hash("desired_production_capacity"),
+                        [this]() {  //
+                            return capacity_manager->get_desired_production_capacity_p_tilde();
+                        })
+               && o.set(H::hash("direct_loss"),
+                        [this]() {  //
+                            return Flow::possibly_negative(round(initial_production_X_star_.get_quantity() * Forcing(1.0 - forcing_m)),
+                                                           production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0));
+                        })
+               && o.set(H::hash("expected_offer_price"),
+                        [this]() {  //
+                            return sales_manager->communicated_parameters().offer_price_n_bar;
+                        })
+               && o.set(H::hash("expected_production"),
+                        [this]() {  //
+                            return sales_manager->communicated_parameters().expected_production_X;
+                        })
+               && o.set(H::hash("forcing"),
+                        [this]() {  //
+                            return forcing();
+                        })
+               && o.set(H::hash("incoming_demand"),
+                        [this]() {  //
+                            return sales_manager->sum_demand_requests_D();
+                        })
+               && o.set(H::hash("offer_price"),
+                        [this]() {  //
+                            return sales_manager->communicated_parameters().production_X.get_price();
+                        })
+               && o.set(H::hash("production"),
+                        [this]() {  //
+                            return production_X();
+                        })
+               && o.set(H::hash("production_capacity"),
+                        [this]() {  //
+                            return capacity_manager->get_production_capacity_p();
+                        })
+               && o.set(H::hash("possible_production_capacity"),
+                        [this]() {  //
+                            return capacity_manager->get_possible_production_capacity_p_hat();
+                        })
+               && o.set(H::hash("tax"),
+                        [this]() {  //
+                            return sales_manager->get_tax();
+                        })
+               && o.set(H::hash("total_loss"),
+                        [this]() {  //
+                            return Flow::possibly_negative(round(initial_production_X_star_.get_quantity() - production_X_.get_quantity()),
+                                                           production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0));
+                        })
+               && o.set(H::hash("total_production_costs"),
+                        [this]() {  //
+                            return sales_manager->total_production_costs_C();
+                        })
+               && o.set(H::hash("total_revenue"),
+                        [this]() {  //
+                            return sales_manager->total_revenue_R();
+                        })
+               && o.set(H::hash("total_value_loss"),
+                        [this]() {  //
+                            return (initial_production_X_star_ - production_X_).get_value();
+                        })
+               && o.set(H::hash("unit_production_costs"),
+                        [this]() {  //
+                            return sales_manager->communicated_parameters().possible_production_X_hat.get_price();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

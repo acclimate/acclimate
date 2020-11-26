@@ -78,6 +78,38 @@ class EconomicAgent {
     Model* model();
     const Model* model() const;
     std::string name() const { return id.name; }
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("business_connections"),
+                        [this]() {  //
+                            return std::accumulate(std::begin(input_storages), std::end(input_storages), 0,
+                                                   [](int v, const auto& is) { return v + is->purchasing_manager->business_connections.size(); });
+                        })
+               && o.set(H::hash("consumption"),
+                        [this]() {  //
+                            return std::accumulate(std::begin(input_storages), std::end(input_storages), Demand(0.0),
+                                                   [](const Demand& d, const auto& is) { return d + is->used_flow_U(); });
+                        })
+               && o.set(H::hash("demand"),
+                        [this]() {  //
+                            return std::accumulate(std::begin(input_storages), std::end(input_storages), Demand(0.0),
+                                                   [](const Demand& d, const auto& is) { return d + is->purchasing_manager->demand_D(); });
+                        })
+               && o.set(H::hash("input_flow"),
+                        [this]() {  //
+                            return std::accumulate(std::begin(input_storages), std::end(input_storages), Demand(0.0),
+                                                   [](const Demand& d, const auto& is) { return d + is->last_input_flow_I(); });
+                        })
+               && o.set(H::hash("storage"),
+                        [this]() {  //
+                            return std::accumulate(std::begin(input_storages), std::end(input_storages), Stock(0.0),
+                                                   [](const Stock& s, const auto& is) { return s + is->content_S(); });
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

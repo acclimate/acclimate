@@ -21,14 +21,15 @@
 #ifndef ACCLIMATE_ARRAYOUTPUT_H
 #define ACCLIMATE_ARRAYOUTPUT_H
 
+#include <array>
 #include <cstddef>
-#include <memory>
-#include <unordered_map>
+#include <string>
 #include <utility>
 #include <vector>
 
-#include "ModelRun.h"
+#include "ModelRun.h"  // for EventType
 #include "acclimate.h"
+#include "openmp.h"
 #include "output/Output.h"
 
 namespace settings {
@@ -37,87 +38,61 @@ class SettingsNode;
 
 namespace acclimate {
 
+class EconomicAgent;
 class Model;
-class Region;
 class Sector;
 
 class ArrayOutput : public Output {
-  protected:
-    struct Target {
-        hstring name;
-        std::size_t index = 0;
-        Sector* sector;
-        Region* region;
-        std::string* firmname;
+  public:
+    using output_float_t = float;
 
-        Target(hstring name_p, std::size_t index_p, Sector* sector_p, Region* region_p)
-            : name(std::move(name_p)), index(index_p), sector(sector_p), region(region_p) {}
+    struct Variable {
+        std::string name;
+        hash_t name_hash;  // does not include _quantity/_value prefix
+        std::vector<output_float_t> data;
+
+        Variable(std::string name_p, hash_t name_hash_p) : name(std::move(name_p)), name_hash(name_hash_p) {}
     };
 
-  public:
-    struct Variable {
-        std::vector<FloatType> data;
-        std::vector<std::size_t> shape;  // without time
-        std::size_t size = 0;            // without time
-        void* meta = nullptr;
-
-        Variable(std::vector<FloatType> data_p, std::vector<std::size_t> shape_p, std::size_t size_p, void* meta_p)
-            : data(std::move(data_p)), shape(std::move(shape_p)), size(size_p), meta(meta_p) {}
+    template<std::size_t dim>
+    struct Observable {
+        std::array<std::vector<std::size_t>, dim> indices;
+        std::array<std::size_t, dim> sizes;
+        std::vector<Variable> variables;
     };
 
     struct Event {
         std::size_t time = 0;
         unsigned char type = 0;
-        int sector_from = 0;
-        int region_from = 0;
-        int sector_to = 0;
-        int region_to = 0;
-        FloatType value = 0;
+        long index1 = -1;
+        long index2 = -1;
+        output_float_t value = 0;
     };
 
   protected:
-    using Output::output_node;
-    std::size_t sectors_size = 0;
-    std::size_t regions_size = 0;
-    std::size_t firms_size = 0;
-    std::unordered_map<hstring::hash_type, Variable> variables;
-    std::vector<Target> stack;
+    // TODO supported several selections per observable
+    Observable<0> obs_model;
+    Observable<1> obs_firms;
+    Observable<1> obs_consumers;
+    Observable<1> obs_sectors;
+    Observable<1> obs_regions;
+    Observable<2> obs_flows;
+    Observable<2> obs_storages;
     std::vector<Event> events;
     bool include_events;
-    bool over_time;
+    bool only_current_timestep;
+    openmp::Lock event_lock;
 
-  protected:
-    void internal_write_value(const hstring& name, FloatType v, const hstring& suffix) override;
-    void internal_start_target(const hstring& name, Sector* sector, Region* region) override;
-    void internal_start_target(const hstring& name, Sector* sector) override;
-    void internal_start_target(const hstring& name, Region* region) override;
-    void internal_start_target(const hstring& name) override;
-    void internal_end_target() override;
-    void internal_iterate_begin() override;
-    std::size_t current_index() const;
-    Variable& create_variable(const hstring& path, const hstring& name, const hstring& suffix);
-    virtual void create_variable_meta(Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
-        UNUSED(v);
-        UNUSED(path);
-        UNUSED(name);
-        UNUSED(suffix);
-    }
-    virtual bool internal_handle_event(Event& event) {
-        UNUSED(event);
-        return true;
-    }
+    template<std::size_t dim>
+    void resize_data(Observable<dim>& obs);
 
   public:
-    ArrayOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p, bool over_time_p = true);
+    ArrayOutput(Model* model_p, const settings::SettingsNode& settings, bool only_current_timestep_p);
     virtual ~ArrayOutput() override = default;
-    void event(
-        EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) override;
-    void initialize() override;
-    const typename ArrayOutput::Variable& get_variable(const hstring& fullname) const;
-
-    const std::vector<Event>& get_events() const { return events; }
-    using Output::id;
-    using Output::model;
+    void event(EventType type, const Sector* sector, const EconomicAgent* economic_agent, FloatType value) override;
+    void event(EventType type, const EconomicAgent* economic_agent, FloatType value) override;
+    void event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) override;
+    void iterate() override;
 };
 }  // namespace acclimate
 

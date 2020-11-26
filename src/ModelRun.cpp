@@ -89,6 +89,12 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
         checkpoint::initialize();
     }
 
+    {
+        std::ostringstream ss;
+        ss << settings;
+        settings_string_m = ss.str();
+    }
+
     auto model = new Model(this);
     {
         ModelInitializer model_initializer(model, settings);
@@ -117,21 +123,21 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
 
     for (const auto& node : settings["outputs"].as_sequence()) {
         Output* output = nullptr;
-        const auto& type = node["format"].template as<hstring>();
+        const auto& type = node["format"].as<hashed_string>();
         switch (type) {
-            case hstring::hash("netcdf"):
-                output = new NetCDFOutput(settings, model, node);
+            // TODO case hash("watch"):
+            case hash("netcdf"):
+                output = new NetCDFOutput(model, node);
                 break;
-            case hstring::hash("array"):
-                output = new ArrayOutput(settings, model, node);
+            case hash("array"):
+                output = new ArrayOutput(model, node, false);
                 break;
-            case hstring::hash("progress"):
-                output = new ProgressOutput(settings, model, node);
+            case hash("progress"):
+                output = new ProgressOutput(model);
                 break;
             default:
                 throw log::error("Unknown output format '", type, "'");
         }
-        output->initialize();
         outputs_m.emplace_back(output);
     }
 }
@@ -231,39 +237,32 @@ ModelRun::~ModelRun() {
     model_m.reset();
 }
 
-void ModelRun::event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) {
-    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (sector_from == nullptr ? "" : sector_from->id()),
-              (sector_from != nullptr && region_from != nullptr ? ":" : ""), (region_from == nullptr ? "" : region_from->id()), "->",
-              (sector_to == nullptr ? "" : sector_to->id()), (sector_to != nullptr && region_to != nullptr ? ":" : ""),
-              (region_to == nullptr ? "" : region_to->id()), (std::isnan(value) ? "" : " = " + std::to_string(value)));
+std::string ModelRun::now() const {
+    std::string res = "0000-00-00 00:00:00";
+    auto t = std::time(nullptr);
+    std::strftime(&res[0], res.size() + 1, "%F %T", std::localtime(&t));
+    return res;
+}
+
+void ModelRun::event(EventType type, const Sector* sector, const EconomicAgent* economic_agent, FloatType value) {
+    log::info(this, EVENT_NAMES[static_cast<int>(type)], " ", sector->id, "->", economic_agent->id, std::isnan(value) ? "" : " = " + std::to_string(value));
     for (const auto& output : outputs_m) {
-        output->event(type, sector_from, region_from, sector_to, region_to, value);
+        output->event(type, sector, economic_agent, value);
     }
 }
 
-void ModelRun::event(EventType type, const Sector* sector_from, const Region* region_from, const EconomicAgent* economic_agent_to, FloatType value) {
-    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (sector_from == nullptr ? "" : sector_from->id()),
-              (sector_from != nullptr && region_from != nullptr ? ":" : ""), (region_from == nullptr ? "" : region_from->id()),
-              (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id()), (std::isnan(value) ? "" : " = " + std::to_string(value)));
+void ModelRun::event(EventType type, const EconomicAgent* economic_agent, FloatType value) {
+    log::info(this, EVENT_NAMES[static_cast<int>(type)], " ", economic_agent->id, std::isnan(value) ? "" : " = " + std::to_string(value));
     for (const auto& output : outputs_m) {
-        output->event(type, sector_from, region_from, economic_agent_to, value);
+        output->event(type, economic_agent, value);
     }
 }
 
 void ModelRun::event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) {
-    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (economic_agent_from == nullptr ? "" : economic_agent_from->id()),
-              (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id()), (std::isnan(value) ? "" : " = " + std::to_string(value)));
+    log::info(this, EVENT_NAMES[static_cast<int>(type)], " ", economic_agent_from->id, "->", economic_agent_to->id,
+              std::isnan(value) ? "" : " = " + std::to_string(value));
     for (const auto& output : outputs_m) {
         output->event(type, economic_agent_from, economic_agent_to, value);
-    }
-}
-
-void ModelRun::event(EventType type, const EconomicAgent* economic_agent_from, const Sector* sector_to, const Region* region_to, FloatType value) {
-    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->"),
-              (sector_to == nullptr ? "" : sector_to->id() + ":"), (region_to == nullptr ? "" : region_to->id()),
-              (std::isnan(value) ? "" : " = " + std::to_string(value)));
-    for (const auto& output : outputs_m) {
-        output->event(type, economic_agent_from, sector_to, region_to, value);
     }
 }
 

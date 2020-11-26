@@ -43,6 +43,11 @@ void Storage::iterate_consumption_and_production() {
     purchasing_manager->iterate_consumption_and_production();
 }
 
+Flow Storage::last_possible_use_U_hat() const {
+    debug::assertstep(this, IterationStep::OUTPUT);
+    return content_S_ / model()->delta_t() + last_input_flow_I();
+}
+
 Flow Storage::estimate_possible_use_U_hat() const {
     debug::assertstep(this, IterationStep::EXPECTATION);
     return content_S_ / model()->delta_t() + next_input_flow_I();
@@ -70,7 +75,7 @@ void Storage::calc_content_S() {
     auto former_content = content_S_;
     content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * model()->delta_t());
     if (content_S_.get_quantity() <= model()->parameters().min_storage * initial_content_S_star_.get_quantity()) {
-        model()->run()->event(EventType::STORAGE_UNDERRUN, sector, nullptr, economic_agent);
+        model()->run()->event(EventType::STORAGE_UNDERRUN, sector, economic_agent);
         Quantity quantity = model()->parameters().min_storage * initial_content_S_star_.get_quantity();
         content_S_ = Stock(quantity, quantity * former_content.get_price());
     }
@@ -78,7 +83,7 @@ void Storage::calc_content_S() {
 
     Stock maxStock = initial_content_S_star_ * forcing_mu_ * sector->upper_storage_limit_omega;
     if (maxStock.get_quantity() < content_S_.get_quantity()) {
-        model()->run()->event(EventType::STORAGE_OVERRUN, sector, nullptr, economic_agent, to_float(content_S_.get_quantity() - maxStock.get_quantity()));
+        model()->run()->event(EventType::STORAGE_OVERRUN, sector, economic_agent, to_float(content_S_.get_quantity() - maxStock.get_quantity()));
         const Price tmp = content_S_.get_price();
         content_S_ = maxStock;
         content_S_.set_price(tmp);

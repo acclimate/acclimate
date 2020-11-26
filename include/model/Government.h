@@ -57,6 +57,17 @@ class Government {
 
     const Model* model() const;
     std::string name() const;
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("budget"),
+                        [this]() {  //
+                            budget();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 
