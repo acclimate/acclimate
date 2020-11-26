@@ -35,9 +35,11 @@ class GeoConnection : public GeoEntity {
   public:
     enum class Type { ROAD, AVIATION, SEAROUTE, UNSPECIFIED };
 
+  private:
+    non_owning_ptr<GeoLocation> location1;
+    non_owning_ptr<GeoLocation> location2;
+
   public:
-    const GeoLocation* location1;  // TODO encapsulate
-    const GeoLocation* location2;  // TODO encapsulate
     const Type type;
 
   public:

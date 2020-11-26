@@ -38,20 +38,7 @@ namespace acclimate {
 
 Model::Model(ModelRun* const run_p) : run_m(run_p) {}
 
-Region* Model::add_region(std::string name) {
-    auto region = new Region(this, std::move(name), regions.size());
-    regions.emplace_back(region);
-    return region;
-}
-
-Sector* Model::add_sector(std::string name,
-                          const Ratio& upper_storage_limit_omega_p,
-                          const Time& initial_storage_fill_factor_psi_p,
-                          typename Sector::TransportType transport_type_p) {
-    auto sector = new Sector(this, std::move(name), sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
-    sectors.emplace_back(sector);
-    return sector;
-}
+Model::~Model() = default;  // needed to use forward declares for std::unique_ptr
 
 void Model::start() {
     time_ = start_time_;
@@ -66,7 +53,6 @@ void Model::start() {
     if constexpr (options::PARALLELIZATION) {
         std::random_device rd;
         std::mt19937 g(rd());
-        std::shuffle(std::begin(economic_agents), std::end(economic_agents), g);
         std::shuffle(std::begin(purchasing_managers), std::end(purchasing_managers), g);
     }
 }
@@ -85,8 +71,7 @@ void Model::iterate_consumption_and_production() {
 
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
-        auto& p = economic_agents[i];
-        p.first->iterate_consumption_and_production();
+        economic_agents[i]->iterate_consumption_and_production();
     }
 }
 
@@ -99,8 +84,7 @@ void Model::iterate_expectation() {
 
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
-        auto& p = economic_agents[i];
-        p.first->iterate_expectation();
+        economic_agents[i]->iterate_expectation();
     }
 }
 
@@ -133,83 +117,8 @@ void Model::iterate_investment() {
 
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
-        auto& p = economic_agents[i];
-        p.first->iterate_investment();
+        economic_agents[i]->iterate_investment();
     }
-}
-
-Region* Model::find_region(const std::string& name) const {
-    auto it = std::find_if(std::begin(regions), std::end(regions), [name](const auto& r) { return r->id() == name; });
-    if (it == std::end(regions)) {
-        return nullptr;
-    }
-    return it->get();
-}
-
-Sector* Model::find_sector(const std::string& name) const {
-    auto it = std::find_if(std::begin(sectors), std::end(sectors), [name](const auto& s) { return s->id() == name; });
-    if (it == std::end(sectors)) {
-        return nullptr;
-    }
-    return it->get();
-}
-
-Firm* Model::find_firm(const std::string& sector_name, const std::string& region_name) const {
-    Sector* sector = find_sector(sector_name);
-    if (sector != nullptr) {
-        return find_firm(sector, region_name);  // NOTE: not necessarily unique!
-    }
-    return nullptr;
-}
-
-Firm* Model::find_firm(const Sector* sector, const std::string& region_name) const {
-    auto it = std::find_if(std::begin(sector->firms), std::end(sector->firms), [region_name](const auto f) { return f->region->id() == region_name; });
-    if (it == std::end(sector->firms)) {
-        return nullptr;
-    }
-    return *it;  // NOTE: not necessarily unique!
-}
-
-Firm* Model::find_firm(const std::string& name, const Sector* sector, const Region* region) const {
-    auto it = std::find_if(std::begin(sector->firms), std::end(sector->firms), [region, name](const auto f) { return f->region == region && f->id() == name; });
-    if (it == std::end(sector->firms)) {
-        return nullptr;
-    }
-    return *it;
-}
-
-Consumer* Model::find_consumer(const Region* region) const {
-    auto it = std::find_if(std::begin(region->economic_agents), std::end(region->economic_agents),
-                           [](const auto& ea) { return ea->type == EconomicAgent::Type::CONSUMER; });
-    if (it == std::end(region->economic_agents)) {
-        return nullptr;
-    }
-    return it->get()->as_consumer();  // NOTE: not necessarily unique!
-}
-
-Consumer* Model::find_consumer(const std::string& region_name) const {
-    Region* region = find_region(region_name);
-    if (region != nullptr) {
-        return find_consumer(region);  // NOTE: not necessarily unique!
-    }
-    return nullptr;
-}
-
-Consumer* Model::find_consumer(const std::string& name, const Region* region) const {
-    auto it = std::find_if(std::begin(region->economic_agents), std::end(region->economic_agents),
-                           [name](const auto& ea) { return ea->type == EconomicAgent::Type::CONSUMER && ea->id() == name; });
-    if (it == std::end(region->economic_agents)) {
-        return nullptr;
-    }
-    return it->get()->as_consumer();
-}
-
-GeoLocation* Model::find_location(const std::string& name) const {
-    auto it = std::find_if(std::begin(other_locations), std::end(other_locations), [name](const auto& l) { return l->id() == name; });
-    if (it == std::end(other_locations)) {
-        return nullptr;
-    }
-    return it->get();
 }
 
 void Model::switch_registers() {

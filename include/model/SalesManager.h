@@ -60,7 +60,7 @@ class SalesManager {
     } supply_distribution_scenario;  // to distribute production among demand requests
 
   public:
-    Firm* const firm;
+    non_owning_ptr<Firm> firm;
     std::vector<std::shared_ptr<BusinessConnection>> business_connections;
 
   private:

@@ -36,7 +36,7 @@ class CapacityManager {
     Flow possible_production_X_hat_ = Flow(0.0);
 
   public:
-    Firm* const firm;
+    non_owning_ptr<Firm> firm;
     const Ratio possible_overcapacity_ratio_beta;
 
   private:

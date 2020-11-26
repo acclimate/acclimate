@@ -66,20 +66,16 @@ class Region : public GeoLocation {
     openmp::Lock economic_agents_lock;
 
   public:
-    using GeoLocation::connections;
-    std::vector<std::unique_ptr<EconomicAgent>> economic_agents;
-
-  private:
-    Region(Model* model_p, std::string id_p, IndexType index_p);
+    non_owning_vector<EconomicAgent> economic_agents;
 
   public:
-    ~Region() override = default;
+    ~Region() override;
     const Flow& consumption_C() const;
     const Flow& import_flow_Z() const;
     const Flow& export_flow_Z() const;
     void set_government(Government* government_p);
     Government* government();
-    Government const* government() const;
+    const Government* government() const;
     const Parameters::RegionParameters& parameters() const { return parameters_m; }
     const Parameters::RegionParameters& parameters_writable() const;
     IndexType index() const { return index_m; }
@@ -94,9 +90,6 @@ class Region : public GeoLocation {
     const GeoRoute& find_path_to(Region* region, typename Sector::TransportType transport_type) const;
     Region* as_region() override { return this; }
     const Region* as_region() const override { return this; }
-    using GeoLocation::id;
-    using GeoLocation::model;
-    void remove_economic_agent(EconomicAgent* economic_agent);
 };
 }  // namespace acclimate
 

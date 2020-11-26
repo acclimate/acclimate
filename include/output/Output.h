@@ -47,7 +47,6 @@ class Output {
   protected:
     std::string settings_string;
     settings::SettingsNode output_node;
-    Model* const model_m;
     std::time_t start_time;
 
   private:
@@ -89,6 +88,7 @@ class Output {
     virtual void internal_start_target(const hstring& name, Region* region);
     virtual void internal_start_target(const hstring& name);
     virtual void internal_end_target();
+    non_owning_ptr<Model> model_m;
 
   public:
     Output(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);

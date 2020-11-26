@@ -32,9 +32,9 @@ GeoConnection::GeoConnection(Model* model_m, TransportDelay delay, Type type_p, 
 
 void GeoConnection::invalidate_location(const GeoLocation* location) {
     if (location1 == location) {
-        location1 = nullptr;
+        location1.invalidate();
     } else if (location2 == location) {
-        location2 = nullptr;
+        location2.invalidate();
     } else {
         throw log::error(this, "Location not part of this connection or already invalidated");
     }

@@ -20,8 +20,6 @@
 
 #include "model/BusinessConnection.h"
 
-#include <vector>
-
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
@@ -65,6 +63,8 @@ BusinessConnection::BusinessConnection(PurchasingManager* buyer_p, SalesManager*
         }
     }
 }
+
+BusinessConnection::~BusinessConnection() = default;  // needed to use forward declares for std::unique_ptr
 
 FloatType BusinessConnection::get_minimum_passage() const {
     TransportChainLink* link = first_transport_link.get();

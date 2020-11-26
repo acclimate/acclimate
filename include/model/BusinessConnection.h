@@ -48,18 +48,17 @@ class BusinessConnection {
     std::unique_ptr<TransportChainLink> first_transport_link;
 
   public:
-    PurchasingManager* buyer;  // TODO encapsulate
-    SalesManager* seller;      // TODO encapsulate
+    non_owning_ptr<PurchasingManager> buyer;
+    non_owning_ptr<SalesManager> seller;
 
   public:
     BusinessConnection(PurchasingManager* buyer_p, SalesManager* seller_p, const Flow& initial_flow_Z_star_p);
+    ~BusinessConnection();
     const Flow& last_shipment_Z(const SalesManager* caller = nullptr) const;
     const Flow& last_delivery_Z(const SalesManager* const caller = nullptr) const;
     const Demand& last_demand_request_D(const PurchasingManager* const caller = nullptr) const;
     const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; }
     void initial_flow_Z_star(const Flow& new_initial_flow_Z_star);
-    void invalidate_buyer() { buyer = nullptr; }
-    void invalidate_seller() { seller = nullptr; }
     std::size_t get_id(const TransportChainLink* transport_chain_link) const;
     Flow get_flow_mean() const;
     FlowQuantity get_flow_deficit() const;

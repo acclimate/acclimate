@@ -22,7 +22,6 @@
 
 #include <iomanip>
 #include <memory>
-#include <vector>
 
 #include "acclimate.h"
 #include "model/Firm.h"

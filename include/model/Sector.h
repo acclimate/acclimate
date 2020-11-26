@@ -52,13 +52,11 @@ class Sector {
     openmp::Lock total_production_X_lock;
     Flow last_total_production_X_m = Flow(0.0);
     Parameters::SectorParameters parameters_m;
-    Model* const model_m;
+    non_owning_ptr<Model> model_m;
 
   public:
     const Ratio upper_storage_limit_omega;
     const Time initial_storage_fill_factor_psi;
-    const TransportType transport_type;
-    std::vector<Firm*> firms;
 
   private:
     Sector(Model* model_p,
@@ -67,6 +65,7 @@ class Sector {
            Ratio upper_storage_limit_omega_p,
            Time initial_storage_fill_factor_psi_p,
            TransportType transport_type_p);
+    non_owning_vector<Firm> firms;
 
   public:
     static TransportType map_transport_type(const settings::hstring& transport_type);

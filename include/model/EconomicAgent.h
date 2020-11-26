@@ -50,16 +50,15 @@ class EconomicAgent {
     std::string name;
 
   public:
-    Sector* const sector;
-    Region* const region;
-    std::vector<std::unique_ptr<Storage>> input_storages;
     const Type type;
+    owning_vector<Storage> input_storages;
+    non_owning_ptr<Region> region;
 
   protected:
     EconomicAgent(std::string name_p, Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p);
 
   public:
-    virtual ~EconomicAgent() = default;
+    virtual ~EconomicAgent();
     const Parameters::AgentParameters& parameters() const { return parameters_; }
     Parameters::AgentParameters const& parameters_writable() const;
     const Forcing& forcing() const { return forcing_; }

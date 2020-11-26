@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <utility>
-#include <vector>
 
 #include "acclimate.h"
 #include "model/CapacityManager.h"

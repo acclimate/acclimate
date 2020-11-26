@@ -48,9 +48,9 @@ GeoLocation::~GeoLocation() {
     }
 }
 
-void GeoLocation::set_centroid(std::unique_ptr<GeoPoint>& centroid_p) {
+void GeoLocation::set_centroid(FloatType lon_p, FloatType lat_p) {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    centroid_m = std::move(centroid_p);
+    centroid_m = std::make_unique<GeoPoint>(lon_p, lat_p);
 }
 
 }  // namespace acclimate

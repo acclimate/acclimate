@@ -38,7 +38,7 @@ class Government {
     std::unordered_map<Firm*, Ratio> taxed_firms;
 
   public:
-    const Region* region;
+    non_owning_ptr<Region> region;
 
   private:
     void collect_tax();
@@ -47,6 +47,7 @@ class Government {
 
   public:
     explicit Government(Region* region_p);
+    ~Government();
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();

@@ -65,6 +65,7 @@ void EconomicAgent::remove_storage(Storage* storage) {
     auto it = std::find_if(std::begin(input_storages), std::end(input_storages), [storage](const auto& is) { return is.get() == storage; });
     input_storages.erase(it);
 }
+EconomicAgent::~EconomicAgent() = default;  // needed to use forward declares for std::unique_ptr
 
 Model* EconomicAgent::model() const { return sector->model(); }
 

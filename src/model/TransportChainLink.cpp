@@ -49,14 +49,14 @@ TransportChainLink::TransportChainLink(BusinessConnection* business_connection_p
       transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
       pos(0),
       forcing_nu(-1) {
-    if (geo_entity != nullptr) {
-        geo_entity->transport_chain_links.push_back(this);
+    if (geo_entity.valid()) {
+        geo_entity->transport_chain_links.add(this);
     }
 }
 
 TransportChainLink::~TransportChainLink() {
-    if (geo_entity != nullptr) {
-        geo_entity->remove_transport_chain_link(this);
+    if (geo_entity.valid()) {
+        geo_entity->transport_chain_links.remove(this);
     }
 }
 

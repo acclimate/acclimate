@@ -34,6 +34,7 @@
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/GeoConnection.h"
+#include "model/GeoEntity.h"
 #include "model/GeoLocation.h"
 #include "model/GeoPoint.h"
 #include "model/GeoRoute.h"

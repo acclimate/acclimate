@@ -37,11 +37,11 @@ class GeoEntity {
 
   protected:
     Type type_m;
-    Model* const model_m;
+    non_owning_ptr<Model> model_m;
 
   public:
     const TransportDelay delay;
-    std::vector<TransportChainLink*> transport_chain_links;
+    non_owning_vector<TransportChainLink> transport_chain_links;
 
   public:
     GeoEntity(Model* model_p, TransportDelay delay_p, Type type_p);

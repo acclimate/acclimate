@@ -43,11 +43,11 @@ class TransportChainLink {
     std::vector<AnnotatedFlow> transport_queue;
     TransportDelay pos;
     std::unique_ptr<TransportChainLink> next_transport_chain_link;
-    GeoEntity* geo_entity;
+    non_owning_ptr<GeoEntity> geo_entity;
 
   public:
     const TransportDelay initial_transport_delay_tau;
-    BusinessConnection* const business_connection;
+    non_owning_ptr<BusinessConnection> business_connection;
 
   private:
     TransportChainLink(BusinessConnection* business_connection_p,
@@ -65,9 +65,9 @@ class TransportChainLink {
     Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
     FlowQuantity get_flow_deficit() const;
-    void unregister_geoentity() { geo_entity = nullptr; }
     Model* model() const;
     std::string id() const;
+    void unregister_geoentity() { geo_entity.invalidate(); }
 };
 }  // namespace acclimate
 

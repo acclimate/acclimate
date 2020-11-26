@@ -98,7 +98,7 @@ class ModelInitializer {
     };
 
   private:
-    Model* const model_m;
+    non_owning_ptr<Model> model_m;
     const settings::SettingsNode& settings;
 
   private:

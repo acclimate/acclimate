@@ -35,6 +35,8 @@ namespace acclimate {
 
 Government::Government(Region* region_p) : region(region_p), budget_(0.0) {}
 
+Government::~Government() = default;  // needed to use forward declares for std::unique_ptr
+
 void Government::collect_tax() {
     debug::assertstep(this, IterationStep::EXPECTATION);
     budget_ = std::accumulate(std::begin(taxed_firms), std::end(taxed_firms), Value(0.0),

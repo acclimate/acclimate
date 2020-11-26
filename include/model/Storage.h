@@ -48,15 +48,16 @@ class Storage {
     Parameters::StorageParameters parameters_;
 
   public:
-    Sector* const sector;
-    EconomicAgent* const economic_agent;
-    std::unique_ptr<PurchasingManager> const purchasing_manager;
+    non_owning_ptr<Sector> sector;
+    non_owning_ptr<EconomicAgent> economic_agent;
+    const std::unique_ptr<PurchasingManager> purchasing_manager;
 
   private:
     void calc_content_S();
 
   public:
     Storage(Sector* sector_p, EconomicAgent* economic_agent_p);
+    ~Storage();
     const Stock& content_S() const;
     const Flow& used_flow_U(const EconomicAgent* const caller = nullptr) const;
     const Flow& desired_used_flow_U_tilde(const EconomicAgent* const caller = nullptr) const;

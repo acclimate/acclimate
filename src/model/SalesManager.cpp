@@ -82,7 +82,7 @@ bool SalesManager::remove_business_connection(BusinessConnection* business_conne
 
 SalesManager::~SalesManager() {
     for (auto& bc : business_connections) {
-        bc->invalidate_seller();
+        bc->seller.invalidate();
     }
 }
 

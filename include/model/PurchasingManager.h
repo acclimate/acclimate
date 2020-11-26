@@ -55,7 +55,7 @@ class PurchasingManager {
     std::vector<double> xtol_abs;
 
   public:
-    Storage* const storage;
+    non_owning_ptr<Storage> storage;
     std::vector<std::shared_ptr<BusinessConnection>> business_connections;
 
   private:

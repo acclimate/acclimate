@@ -44,11 +44,9 @@ class Firm : public EconomicAgent {
     std::shared_ptr<BusinessConnection> self_supply_connection_;
 
   public:
-    using EconomicAgent::input_storages;
-    using EconomicAgent::region;
-    using EconomicAgent::sector;
-    std::unique_ptr<CapacityManager> const capacity_manager;
-    std::unique_ptr<SalesManager> const sales_manager;
+    non_owning_ptr<Sector> sector;
+    const std::unique_ptr<CapacityManager> capacity_manager;
+    const std::unique_ptr<SalesManager> sales_manager;
 
   private:
     void produce_X();

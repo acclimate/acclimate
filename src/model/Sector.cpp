@@ -72,14 +72,6 @@ void Sector::iterate_consumption_and_production() {
     total_production_X_m = Flow(0.0);
 }
 
-void Sector::remove_firm(Firm* firm) {
-    auto it = std::find_if(std::begin(firms), std::end(firms), [firm](const auto f) { return f == firm; });
-    if (it == std::end(firms)) {
-        throw log::error(this, "Firm ", firm->id(), " not found");
-    }
-    firms.erase(it);
-}
-
 Sector::TransportType Sector::map_transport_type(const settings::hstring& transport_type) {
     switch (transport_type) {
         case settings::hstring::hash("aviation"):

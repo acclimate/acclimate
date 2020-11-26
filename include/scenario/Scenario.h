@@ -36,7 +36,7 @@ class Scenario {
   protected:
     settings::SettingsNode scenario_node;
     const settings::SettingsNode& settings;
-    Model* const model_m;
+    non_owning_ptr<Model> model_m;
 
   protected:
     void set_firm_property(Firm* firm, const settings::SettingsNode& node, bool reset);

@@ -42,7 +42,7 @@ class ExternalForcing {
 
   public:
     ExternalForcing(std::string filename, std::string variable_name);
-    virtual ~ExternalForcing() = default;
+    virtual ~ExternalForcing();
     int next_timestep();
     std::string calendar_str() const;
     std::string time_units_str() const;

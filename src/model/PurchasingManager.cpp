@@ -57,7 +57,7 @@ bool PurchasingManager::remove_business_connection(const BusinessConnection* bus
     }
     business_connections.erase(it);
     if (business_connections.empty()) {
-        storage->economic_agent->remove_storage(storage);
+        storage->economic_agent->input_storages.remove(storage);
         return true;
     }
     return false;
@@ -98,7 +98,7 @@ Flow PurchasingManager::get_sum_of_last_shipments() const {
 
 PurchasingManager::~PurchasingManager() {
     for (auto& bc : business_connections) {
-        bc->invalidate_buyer();
+        bc->buyer.invalidate();
     }
 }
 

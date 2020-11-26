@@ -33,6 +33,8 @@ namespace acclimate {
 Storage::Storage(Sector* sector_p, EconomicAgent* economic_agent_p)
     : sector(sector_p), economic_agent(economic_agent_p), purchasing_manager(new PurchasingManager(this)) {}
 
+Storage::~Storage() = default;  // needed to use forward declares for std::unique_ptr
+
 void Storage::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     calc_content_S();
@@ -135,7 +137,7 @@ bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
         purchasing_manager->subtract_initial_demand_D_star(flow_Z_star);
         return false;
     }
-    economic_agent->remove_storage(this);
+    economic_agent->input_storages.remove(this);
     return true;
 }
 

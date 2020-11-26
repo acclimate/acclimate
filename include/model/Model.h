@@ -54,13 +54,13 @@ class Model {
     Parameters::ModelParameters parameters_;
     bool no_self_supply_ = false;
     std::vector<std::pair<PurchasingManager*, std::size_t>> purchasing_managers;
-    ModelRun* const run_m;
+    non_owning_ptr<ModelRun> run_m;
 
   public:
-    std::vector<std::unique_ptr<Sector>> sectors;
-    std::vector<std::unique_ptr<Region>> regions;
-    std::vector<std::unique_ptr<GeoLocation>> other_locations;
-    std::vector<std::pair<EconomicAgent*, std::size_t>> economic_agents;
+    owning_vector<Sector> sectors;
+    owning_vector<Region> regions;
+    owning_vector<GeoLocation> other_locations;
+    owning_vector<EconomicAgent> economic_agents;
 
   private:
     explicit Model(ModelRun* run_p);
@@ -68,7 +68,7 @@ class Model {
   public:
     Model(const Model& other) = delete;
     Model(Model&& other) = default;
-    const Model* model() const { return this; }
+    ~Model();
     const Time& time() const { return time_; }
     const Time& start_time() const { return start_time_; };
     const Time& stop_time() const { return stop_time_; };
