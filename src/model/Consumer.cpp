@@ -75,11 +75,11 @@ void Consumer::iterate_purchase() {
 }
 
 void Consumer::iterate_investment() {
-     debug::assertstep(this, IterationStep::INVESTMENT);
-    growth_rate_ = 5.425525e-5;
-    for (const auto& is : input_storages) {
-        is->iterate_investment();
-    }
+    debug::assertstep(this, IterationStep::INVESTMENT);
+//    growth_rate_ = 5.425525e-5;
+//    for (const auto& is : input_storages) {
+//        is->iterate_investment();
+//    }
 }
 
 void Consumer::print_details() const {

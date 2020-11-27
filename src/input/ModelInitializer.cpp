@@ -88,6 +88,9 @@ settings::SettingsNode ModelInitializer::get_firm_property(const std::string& se
 Firm* ModelInitializer::add_firm(Sector* sector, Region* region) {
     auto firm =
         new Firm(sector, region, static_cast<Ratio>(get_firm_property(sector->id(), region->id(), "possible_overcapacity_ratio").template as<double>()));
+    firm->parameters_writable().target_dividend_payout_ratio = get_firm_property(sector->id(), region->id(), "target_dividend_payout_ratio").template as<double>();
+//    firm->parameters_writable().initial_growth_rate = pow(1 + get_firm_property(sector->id(), region->id(), "initial_growth_rate_p_a").template as<double>(), 1/365) - 1;
+    firm->parameters_writable().initial_growth_rate = get_firm_property(sector->id(), region->id(), "initial_growth_rate_p_a").template as<double>();
     region->economic_agents.emplace_back(firm);
     sector->firms.push_back(firm);
     return firm;
@@ -885,6 +888,7 @@ void ModelInitializer::post_initialize() {
     for (auto& sector : model()->sectors) {
         for (auto& firm : sector->firms) {
             firm->sales_manager->initialize();
+            firm->initialize_investment();
         }
     }
 }

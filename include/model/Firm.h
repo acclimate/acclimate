@@ -42,6 +42,12 @@ class Firm : public EconomicAgent {
     Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
     Flow initial_total_use_U_star_ = Flow(0.0);
     std::shared_ptr<BusinessConnection> self_supply_connection_;
+    FlowValue profit_ = FlowValue(0.0);
+    FlowValue dividend_paid_ = FlowValue(0.0);
+    FlowValue investment_ = FlowValue(0.0);
+    double dividend_payout_ratio_ = 0.0;
+    FlowValue productive_capital_ = FlowValue(0.0); // TODO decide which value the capital should be measured in (i.e. how much is it still 'worth' once prices have changed?)
+    Parameters::AgentParameters parameters_;
 
   public:
     using EconomicAgent::input_storages;
@@ -49,6 +55,7 @@ class Firm : public EconomicAgent {
     using EconomicAgent::sector;
     std::unique_ptr<CapacityManager> const capacity_manager;
     std::unique_ptr<SalesManager> const sales_manager;
+    Parameters::AgentParameters& parameters_writable();
 
   private:
     void produce_X();
@@ -63,6 +70,7 @@ class Firm : public EconomicAgent {
     void subtract_initial_production_X_star(const Flow& initial_production_flow_X_star);
     void add_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
     void subtract_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
+    void initialize_investment();
     Firm* as_firm() override { return this; }
     const Firm* as_firm() const override { return this; }
     const BusinessConnection* self_supply_connection() const;
@@ -78,6 +86,11 @@ class Firm : public EconomicAgent {
     Flow direct_loss() const;
     Flow total_loss() const;
     FlowValue total_value_loss() const { return (initial_production_X_star_ - production_X_).get_value(); }
+    FlowValue profit() const { return profit_; }
+    double dividend_payout_ratio() const { return dividend_payout_ratio_; }
+    FlowValue dividend_paid() const { return dividend_paid_; }
+    FlowValue productive_capital() const { return productive_capital_; }
+    FlowValue investment() const { return investment_; }
     using EconomicAgent::id;
     using EconomicAgent::model;
     using EconomicAgent::growth_rate;

@@ -26,7 +26,10 @@
 namespace acclimate {
 
 struct Parameters {
-    struct AgentParameters {};
+    struct AgentParameters {
+        double target_dividend_payout_ratio = 0.0;
+        double initial_growth_rate = 0.0;
+    };
 
     struct ModelParameters {
         Price cheapest_price_range_width = Price(0.0);

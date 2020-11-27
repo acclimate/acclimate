@@ -46,7 +46,7 @@ void Storage::iterate_investment() {
     if (economic_agent->is_consumer()) {
         baseline_used_flow_U_star_ += baseline_used_flow_U_star_ * economic_agent->growth_rate();
     }
-    initial_content_S_star_ += initial_content_S_star_ * economic_agent->growth_rate();
+//    initial_content_S_star_ += initial_content_S_star_ * economic_agent->growth_rate();
     purchasing_manager->iterate_investment();
 }
 

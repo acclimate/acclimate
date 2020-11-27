@@ -108,6 +108,15 @@ void Output::write_firm_parameters(const Firm* p, const settings::SettingsNode& 
             case hstring::hash("growth_rate"):
                 internal_write_value(name, p->growth_rate());
                 break;
+            case hstring::hash("dividend_payout_ratio"):
+                internal_write_value(name, p->dividend_payout_ratio());
+                break;
+            case hstring::hash("productive_capital"):
+                internal_write_value(name, p->productive_capital());
+                break;
+            case hstring::hash("investment"):
+                internal_write_value(name, p->investment());
+                break;
             case hstring::hash("incoming_demand"):
                 internal_write_value(name, p->sales_manager->sum_demand_requests_D());
                 break;
@@ -163,6 +172,16 @@ bool Output::write_firm_parameter(const Firm* p, const hstring& name) {
             break;
         case hstring::hash("tax"):
             internal_write_value(name, p->sales_manager->get_tax());
+            break;
+        case hstring::hash("initial_production"):
+            if (model()->is_first_timestep()) {
+                internal_write_value(name, p->initial_production_X_star());
+            }
+            break;
+        case hstring::hash("initial_total_use"):
+            if (model()->is_first_timestep()) {
+                internal_write_value(name, p->initial_total_use_U_star());
+            }
             break;
         default:
             return false;
