@@ -98,6 +98,9 @@ Firm* ModelInitializer::add_firm(Sector* sector, Region* region) {
 
 Consumer* ModelInitializer::add_consumer(Region* region) {
     auto consumer = new Consumer(region);
+    const settings::SettingsNode& consumers_node = settings["consumers"];
+    consumers_node.require();
+    consumer->parameters_writable().initial_growth_rate = get_named_property(consumers_node, "ALL", "initial_growth_rate_p_a").template as<double>();
     region->economic_agents.emplace_back(consumer);
     return consumer;
 }
@@ -888,7 +891,7 @@ void ModelInitializer::post_initialize() {
     for (auto& sector : model()->sectors) {
         for (auto& firm : sector->firms) {
             firm->sales_manager->initialize();
-            firm->initialize_investment();
+//            firm->initialize_investment();
         }
     }
 }

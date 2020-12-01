@@ -343,7 +343,7 @@ void Output::write_connection_parameters(const BusinessConnection* b, const sett
                 internal_write_value(name, b->last_shipment_Z());
                 break;
             case hstring::hash("received_flow"):
-                internal_write_value(name, b->last_delivery_Z());
+                internal_write_value(name, b->last_delivery_Z().current);
                 break;
             case hstring::hash("demand_request"):
                 internal_write_value(name, b->last_demand_request_D());
@@ -504,7 +504,7 @@ void Output::write_region_parameters(const Region* region, const settings::Setti
                 for (const auto& ea : region->economic_agents) {
                     if (ea->is_firm()) {
                         for (const auto& bc : ea->as_firm()->sales_manager->business_connections) {
-                            flows[bc->buyer->storage->economic_agent->region->index()] += bc->last_delivery_Z();
+                            flows[bc->buyer->storage->economic_agent->region->index()] += bc->last_delivery_Z().current;
                         }
                     }
                 }

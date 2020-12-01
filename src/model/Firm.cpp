@@ -100,12 +100,12 @@ void Firm::subtract_initial_total_use_U_star(const Flow& initial_use_flow_U_star
     }
 }
 
-void Firm::initialize_investment() {
-    debug::assertstep(this, IterationStep::INITIALIZATION);
-    investment_ = (initial_production_X_star_ - initial_total_use_U_star_).get_value() * (1 - parameters_.target_dividend_payout_ratio);
-    growth_rate_ = parameters_.initial_growth_rate;
-    productive_capital_ = investment_ / parameters_.initial_growth_rate;
-}
+//void Firm::initialize_investment() {
+//        debug::assertstep(this, IterationStep::INITIALIZATION);
+//        investment_ = (initial_production_X_star_ - initial_total_use_U_star_).get_value() * (1 - parameters_.target_dividend_payout_ratio);
+//        growth_rate_ = parameters_.initial_growth_rate;
+//        productive_capital_ = investment_ / parameters_.initial_growth_rate;
+//    }
 
 void Firm::iterate_purchase() {
     debug::assertstep(this, IterationStep::PURCHASE);
@@ -126,7 +126,8 @@ void Firm::iterate_investment() {
         dividend_paid_ = FlowValue(0.0);
     }
     investment_ = (1 - dividend_payout_ratio_) * profit_;
-    growth_rate_ = investment_ / productive_capital_;
+//    growth_rate_ = investment_ / productive_capital_;
+    growth_rate_ = parameters_.initial_growth_rate;
     productive_capital_ += investment_;
     initial_production_X_star_ += initial_production_X_star_ * growth_rate_;
     for (const auto& is : input_storages) {

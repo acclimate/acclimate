@@ -70,7 +70,6 @@ class Firm : public EconomicAgent {
     void subtract_initial_production_X_star(const Flow& initial_production_flow_X_star);
     void add_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
     void subtract_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
-    void initialize_investment();
     Firm* as_firm() override { return this; }
     const Firm* as_firm() const override { return this; }
     const BusinessConnection* self_supply_connection() const;
@@ -91,6 +90,7 @@ class Firm : public EconomicAgent {
     FlowValue dividend_paid() const { return dividend_paid_; }
     FlowValue productive_capital() const { return productive_capital_; }
     FlowValue investment() const { return investment_; }
+//    void initialize_investment();
     using EconomicAgent::id;
     using EconomicAgent::model;
     using EconomicAgent::growth_rate;

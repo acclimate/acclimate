@@ -41,7 +41,7 @@ BusinessConnection::BusinessConnection(PurchasingManager* buyer_p, SalesManager*
     : buyer(buyer_p),
       demand_fulfill_history_(1.0),
       initial_flow_Z_star_(initial_flow_Z_star_p),
-      last_delivery_Z_(initial_flow_Z_star_p),
+      last_delivery_Z_(AnnotatedFlow(initial_flow_Z_star_p, initial_flow_Z_star_p.get_quantity())),
       last_demand_request_D_(initial_flow_Z_star_p),
       seller(seller_p),
       transport_costs(0.0),
@@ -103,10 +103,10 @@ TransportDelay BusinessConnection::get_transport_delay_tau() const {
     return res;
 }
 
-void BusinessConnection::deliver_flow_Z(const Flow& flow_Z) {
+void BusinessConnection::deliver_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star_p) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     buyer->storage->push_flow_Z(flow_Z);
-    last_delivery_Z_ = flow_Z;
+    last_delivery_Z_ = AnnotatedFlow(flow_Z, initial_flow_Z_star_p);
     if (!get_domestic()) {
         buyer->storage->economic_agent->region->add_import_Z(flow_Z);
     }
@@ -133,7 +133,7 @@ void BusinessConnection::send_demand_request_D(const Demand& demand_request_D) {
 Flow BusinessConnection::get_flow_mean() const {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
-    Flow res = last_delivery_Z_;
+    Flow res = last_delivery_Z_.current;
     TransportDelay delay = 0;
     while (link != nullptr) {
         res += link->get_total_flow();
@@ -146,7 +146,8 @@ Flow BusinessConnection::get_flow_mean() const {
 FlowQuantity BusinessConnection::get_flow_deficit() const {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link.get();
-    FlowQuantity res = initial_flow_Z_star_.get_quantity() - last_delivery_Z_.get_quantity();
+    FlowQuantity res = last_delivery_Z_.initial - last_delivery_Z_.current.get_quantity();
+//    FlowQuantity res = initial_flow_Z_star_.get_quantity() - last_delivery_Z_.current.get_quantity();
     while (link != nullptr) {
         res += link->get_flow_deficit();
         link = link->next_transport_chain_link.get();
@@ -156,7 +157,7 @@ FlowQuantity BusinessConnection::get_flow_deficit() const {
 
 Flow BusinessConnection::get_total_flow() const {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    return round(get_transport_flow() + last_delivery_Z_);
+    return round(get_transport_flow() + last_delivery_Z_.current);
 }
 
 Flow BusinessConnection::get_transport_flow() const {
@@ -207,7 +208,7 @@ const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller
     return last_shipment_Z_;
 }
 
-const Flow& BusinessConnection::last_delivery_Z(const SalesManager* const caller) const {
+const AnnotatedFlow & BusinessConnection::last_delivery_Z(const SalesManager* const caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != seller) {
             debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);

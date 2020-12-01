@@ -39,7 +39,7 @@ class BusinessConnection {
   private:
     Demand last_demand_request_D_;
     Flow initial_flow_Z_star_;
-    Flow last_delivery_Z_;
+    AnnotatedFlow last_delivery_Z_;
     Flow last_shipment_Z_;
     Price transport_costs = Price(0.0);
     Ratio demand_fulfill_history_ = Ratio(1.0);
@@ -54,7 +54,7 @@ class BusinessConnection {
   public:
     BusinessConnection(PurchasingManager* buyer_p, SalesManager* seller_p, const Flow& initial_flow_Z_star_p);
     const Flow& last_shipment_Z(const SalesManager* caller = nullptr) const;
-    const Flow& last_delivery_Z(const SalesManager* const caller = nullptr) const;
+    const AnnotatedFlow & last_delivery_Z(const SalesManager* const caller = nullptr) const;
     const Demand& last_demand_request_D(const PurchasingManager* const caller = nullptr) const;
     const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; }
     void initial_flow_Z_star(const Flow& new_initial_flow_Z_star);
@@ -70,7 +70,7 @@ class BusinessConnection {
     FloatType get_minimum_passage() const;
     TransportDelay get_transport_delay_tau() const;
     void push_flow_Z(const Flow& flow_Z);
-    void deliver_flow_Z(const Flow& flow_Z);
+    void deliver_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star_p);
     void send_demand_request_D(const Demand& demand_request_D);
     bool get_domestic() const;
     Model* model() const;

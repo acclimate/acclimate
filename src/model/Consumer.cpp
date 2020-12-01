@@ -77,9 +77,10 @@ void Consumer::iterate_purchase() {
 void Consumer::iterate_investment() {
     debug::assertstep(this, IterationStep::INVESTMENT);
 //    growth_rate_ = 5.425525e-5;
-//    for (const auto& is : input_storages) {
-//        is->iterate_investment();
-//    }
+    growth_rate_ = parameters_.initial_growth_rate;
+    for (const auto& is : input_storages) {
+        is->iterate_investment();
+    }
 }
 
 void Consumer::print_details() const {
@@ -89,6 +90,11 @@ void Consumer::print_details() const {
             is->purchasing_manager->print_details();
         }
     }
+}
+
+Parameters::AgentParameters& Consumer::parameters_writable() {
+    debug::assertstep(this, IterationStep::INITIALIZATION);
+    return parameters_;
 }
 
 }  // namespace acclimate

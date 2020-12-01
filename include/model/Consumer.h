@@ -31,6 +31,7 @@ class Consumer : public EconomicAgent {
   private:
     using EconomicAgent::forcing_;
     using EconomicAgent::growth_rate_;
+    Parameters::AgentParameters parameters_;
 
   public:
     using EconomicAgent::input_storages;
@@ -48,6 +49,7 @@ class Consumer : public EconomicAgent {
     using EconomicAgent::growth_rate;
     // DEBUG
     void print_details() const override;
+    Parameters::AgentParameters& parameters_writable();
 };
 }  // namespace acclimate
 
