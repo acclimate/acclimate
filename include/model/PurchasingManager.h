@@ -45,6 +45,7 @@ class PurchasingManager {
     Demand demand_D_ = Demand(0.0);
     FloatType optimized_value_ = 0.0;
     Demand purchase_ = Demand(0.0);
+    Quantity S_shortage_ = Quantity(0.0);
     FlowQuantity desired_purchase_ = FlowQuantity(0.0);
     FlowValue expected_costs_ = FlowValue(0.0);
     FlowValue total_transport_penalty_ = FlowValue(0.0);
@@ -104,6 +105,7 @@ class PurchasingManager {
     void iterate_investment();
     void add_initial_demand_D_star(const Demand& demand_D_p);
     void subtract_initial_demand_D_star(const Demand& demand_D_p);
+    Quantity s_shortage() {return S_shortage_;};
     Model* model() const;
     std::string id() const;
     // DEBUG

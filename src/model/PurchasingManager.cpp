@@ -507,11 +507,17 @@ void PurchasingManager::iterate_purchase() {
     xtol_abs.clear();
     xtol_abs.reserve(business_connections.size());
 
-    const auto S_shortage = get_flow_deficit() * model()->delta_t() + storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity();
+//    const auto S_shortage_ = get_flow_deficit() * model()->delta_t() + storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity();
+
+    S_shortage_ = get_flow_deficit() * model()->delta_t() + storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity();
+
+//    if (storage->economic_agent->is_consumer()){
+//        log::info(this, (get_flow_deficit() * model()->delta_t()) / S_shortage_);
+//    }
 
     desired_purchase_ = storage->desired_used_flow_U_tilde().get_quantity()  // desired used flow is either last or expected flow
-                        + S_shortage
-                              / (S_shortage > 0.0 ? storage->sector->parameters().target_storage_refill_time    // storage level low
+                        + S_shortage_
+                              / (S_shortage_ > 0.0 ? storage->sector->parameters().target_storage_refill_time    // storage level low
                                                   : storage->sector->parameters().target_storage_withdraw_time  // storage level high
                                 );
 

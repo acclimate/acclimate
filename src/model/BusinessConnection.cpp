@@ -87,7 +87,11 @@ bool BusinessConnection::get_domestic() const { return (buyer->storage->economic
 void BusinessConnection::push_flow_Z(const Flow& flow_Z) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     last_shipment_Z_ = round(flow_Z);
+//    if (last_shipment_Z_ > initial_flow_Z_star_.get_quantity() || last_shipment_Z_ < initial_flow_Z_star_.get_quantity()) {
+//        log::info(this, initial_flow_Z_star_.get_quantity() / last_shipment_Z_.get_quantity());
+//    }
     first_transport_link->push_flow_Z(last_shipment_Z_, initial_flow_Z_star_.get_quantity());
+//    first_transport_link->push_flow_Z(last_shipment_Z_, flow_Z.get_quantity());
     if (!get_domestic()) {
         seller->firm->region->add_export_Z(last_shipment_Z_);
     }
@@ -148,6 +152,12 @@ FlowQuantity BusinessConnection::get_flow_deficit() const {
     TransportChainLink* link = first_transport_link.get();
     FlowQuantity res = last_delivery_Z_.initial - last_delivery_Z_.current.get_quantity();
 //    FlowQuantity res = initial_flow_Z_star_.get_quantity() - last_delivery_Z_.current.get_quantity();
+//    if (last_delivery_Z_.initial > last_delivery_Z_.current.get_quantity() || last_delivery_Z_.initial < last_delivery_Z_.current.get_quantity()) {
+        if (buyer->storage->economic_agent->is_consumer() && current_step(*model()) != IterationStep::OUTPUT) {
+            log::info(this, last_delivery_Z_.initial, ' ', last_delivery_Z_.current.get_quantity());
+        }
+//    }
+//    log::info(this, buyer->storage->economic_agent->growth_rate());
     while (link != nullptr) {
         res += link->get_flow_deficit();
         link = link->next_transport_chain_link.get();

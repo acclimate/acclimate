@@ -274,6 +274,9 @@ void Output::write_input_storage_parameters(const Storage* s, const settings::Se
             case hstring::hash("business_connections"):
                 internal_write_value(name, s->purchasing_manager->business_connections.size());
                 break;
+            case hstring::hash("s_shortage"):
+                internal_write_value(name, s->purchasing_manager->s_shortage());
+                break;
             default:
                 if (!write_input_storage_parameter(s, name)) {
                     parameter_not_found(name);

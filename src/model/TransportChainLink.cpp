@@ -77,9 +77,9 @@ void TransportChainLink::push_flow_Z(const Flow& flow_Z, const FlowQuantity& ini
         }
         overflow = overflow + front_flow_Z.current - flow_to_push;
         if (next_transport_chain_link) {
-            next_transport_chain_link->push_flow_Z(flow_to_push, front_flow_Z.initial);
+            next_transport_chain_link->push_flow_Z(flow_to_push, initial_flow_Z_star);
         } else {
-            business_connection->deliver_flow_Z(flow_to_push, front_flow_Z.initial);
+            business_connection->deliver_flow_Z(flow_to_push, initial_flow_Z_star);
         }
     } else {
         if (forcing_nu < 0) {
