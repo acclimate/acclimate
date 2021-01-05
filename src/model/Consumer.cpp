@@ -70,39 +70,20 @@ void Consumer::initialize() {
         double budget_share = to_float(previous_consumption[r].get_value()) / to_float(budget);
         share_factors.push_back(pow(budget_share, 1 / substitution_coefficient));
     }
-    if (utility_autodiff)
-        baseline_utility = linear_utility_function(baseline_consumption);  // baseline utility for scaling
-    else
-        baseline_utility = CES_utility_function(baseline_consumption);
+
+    baseline_utility = utility_autodiff ? baseline_utility = CES_utility_function(baseline_consumption)
+                                        : CES_utility_function(baseline_consumption);  // baseline utility for scaling
 }
 
 // TODO: more sophisticated scaling than normalizing with baseline utility might improve optimization?!
 
 // test with automatic differentiation
 
-FloatType Consumer::linear_utility_function(std::vector<FloatType> consumption_demands) const {
-    FloatType utility;
-
-    for (std::size_t r = 0; r < goods_num; ++r) {
-        utility += consumption_demands[r];
-    }
-
-    return utility;
-}
-
-FloatType Consumer::linear_utility_function(std::vector<Flow> consumption_demands) const {
-    FloatType utility;
-    for (std::size_t r = 0; r < goods_num; ++r) {
-        utility += to_float(consumption_demands[r].get_quantity());
-    }
-    return utility;
-}
-
-autodiff::Value<FloatType> const Consumer::autodiff_linear_utility_function(autodiff::Variable<FloatType> consumption_demands) const {
+autodiff::Value<FloatType> const Consumer::autodiff_CES_utility_function(autodiff::Variable<FloatType> consumption_demands) const {
     autodiff::Value<FloatType> utility = {goods_num, 0.0};
 
     for (std::size_t r = 0; r < goods_num; ++r) {
-        utility += (consumption_demands[r]);
+        utility += pow(consumption_demands[r], substitution_exponent) * share_factors[r];
     }
     return utility;
 }
@@ -111,7 +92,7 @@ autodiff::Value<FloatType> const Consumer::autodiff_linear_utility_function(auto
 FloatType Consumer::CES_utility_function(std::vector<FloatType> consumption_demands) const {
     FloatType utility = 0.0;
     for (std::size_t r = 0; r < goods_num; ++r) {
-        utility += pow((consumption_demands[r]), substitution_exponent) * share_factors[r];
+        utility += pow(consumption_demands[r], substitution_exponent) * share_factors[r];
     }
     return utility;  // outer exponent not relevant for optimization (at least for sigma >1)
 }
@@ -137,11 +118,21 @@ FloatType Consumer::equality_constraint(const double* x, double* grad) {
         consumption_cost += (unscaled_demand(x[r], r) * to_float(consumption_prices[r]));
     }
     if (grad != nullptr) {
-        if (utility_autodiff)
-            for (std::size_t r = 0; r < goods_num; ++r)
-                grad[r] = 1;  // TODO: redesign autodiffutility as global variable such that derivative can be called upon from here, i.e. grad[r] =
-                              // autodiffutility.derivative()[r]
-        else
+        if (utility_autodiff) {
+            autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, goods_num, goods_num, 0);
+            var_optimizer_consumption = optimizer_consumption;
+            autodiff::Value<FloatType> autodiffutility = autodiff_CES_utility_function(var_optimizer_consumption);
+            if (grad != nullptr) {
+                std::copy(&autodiffutility.derivative()[0], &autodiffutility.derivative()[goods_num], grad);
+                if (options::OPTIMIZATION_WARNINGS) {
+                    for (std::size_t r = 0; r < goods_num; ++r) {
+                        if (grad[r] > MAX_GRADIENT) {
+                            log::warning(this, ": large gradient of ", grad[r]);
+                        }
+                    }
+                }
+            }  // TODO: redesign autodiffutility as global variable such that derivative can be called upon from here, i.e. grad[r] =
+        } else
             for (std::size_t r = 0; r < goods_num; ++r) grad[r] = CES_marginal_utility(r, unscaled_demand(x[r], r));
         if (options::OPTIMIZATION_WARNINGS) {
             for (std::size_t r = 0; r < goods_num; ++r) {
@@ -159,16 +150,15 @@ FloatType Consumer::equality_constraint(const double* x, double* grad) {
 }
 
 FloatType Consumer::max_objective(const double* x, double* grad) const {
-    std::vector<FloatType> consumption_vector;
-    consumption_vector.reserve(goods_num);
+    std::vector<FloatType> consumption_vector = std::vector<FloatType>(goods_num, 0.0);
     for (std::size_t r = 0; r < goods_num; ++r) {
         assert(!std::isnan(x[r]));
-        consumption_vector.push_back(unscaled_demand(x[r], r));
+        consumption_vector[r] = (unscaled_demand(x[r], r));
     }
     if (utility_autodiff) {
         autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, goods_num, goods_num, 0);
         var_optimizer_consumption = optimizer_consumption;
-        autodiff::Value<FloatType> autodiffutility = autodiff_linear_utility_function(var_optimizer_consumption);
+        autodiff::Value<FloatType> autodiffutility = autodiff_CES_utility_function(var_optimizer_consumption);
         if (grad != nullptr) {
             std::copy(&autodiffutility.derivative()[0], &autodiffutility.derivative()[goods_num], grad);
             if (options::OPTIMIZATION_WARNINGS) {
@@ -179,7 +169,9 @@ FloatType Consumer::max_objective(const double* x, double* grad) const {
                 }
             }
         }
-        return autodiffutility.value();
+        if (verbose_consumer)
+            std::cout << "utility \t" << CES_utility_function(consumption_vector) << "\n";
+        return CES_utility_function(consumption_vector);
     } else {
         FloatType CES_utility = CES_utility_function(consumption_vector);
         for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
@@ -192,6 +184,8 @@ FloatType Consumer::max_objective(const double* x, double* grad) const {
                 }
             }
         }
+        if (verbose_consumer)
+            std::cout << "utility \t" << CES_utility << "\n";
         return CES_utility;
     }
 }
@@ -203,6 +197,9 @@ void Consumer::iterate_consumption_and_production() {
         // TODO: extend by alternative prices of most recent goods
         std::vector<Flow> possible_consumption;
         std::vector<Price> current_prices;
+
+        consumption_prices.clear();
+        consumption_prices.reserve(goods_num);
 
         for (std::size_t r = 0; r < goods_num; ++r) {
             possible_consumption.push_back(input_storages[r]->get_possible_use_U_hat());
@@ -368,7 +365,7 @@ void Consumer::iterate_consumption_and_production() {
             desired_consumption.push_back(to_float(used_flow_U.get_quantity()));
         }
     }
-    utility = utility_autodiff ? linear_utility_function(desired_consumption) : CES_utility_function(desired_consumption);
+    utility = CES_utility_function(desired_consumption) / baseline_utility;
 }
 
 void Consumer::iterate_expectation() { debug::assertstep(this, IterationStep::EXPECTATION); }
@@ -385,22 +382,6 @@ void Consumer::iterate_investment() {
     // for (const auto& is : input_storages) {
     //     is->purchasing_manager->iterate_investment();
     // }
-}
-
-std::vector<FlowQuantity> get_quantity_vector(std::vector<Flow>& flow) {
-    std::vector<FlowQuantity> quantity;
-    for (auto& flow_r : flow) {
-        quantity.push_back(flow_r.get_quantity());
-    }
-    return quantity;
-}
-
-std::vector<FloatType> get_float_vector(std::vector<FlowQuantity> flow_quantity) {
-    std::vector<FloatType> floats;
-    for (auto& flow_r : flow_quantity) {
-        floats.push_back(to_float(flow_r));
-    }
-    return floats;
 }
 
 double Consumer::get_utility() const { return utility; }

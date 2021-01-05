@@ -42,7 +42,6 @@ class Consumer : public EconomicAgent {
     size_t size = 4;
 
     std::vector<double> xtol_abs;
-    std::vector<FloatType> desired_quantity;
     std::vector<FloatType> upper_bounds;
     std::vector<FloatType> lower_bounds;
 
@@ -101,11 +100,9 @@ class Consumer : public EconomicAgent {
     FloatType CES_marginal_utility(int index_of_good, double consumption_demand) const;
 
     // for autodiff test: some simple utility functions
-    bool utility_autodiff = false;
-    autodiff::Value<FloatType> autodiffutility{goods_num, 0.0};
-    autodiff::Value<FloatType> const autodiff_linear_utility_function(autodiff::Variable<FloatType> consumption_demands) const;
-    FloatType linear_utility_function(std::vector<FloatType> consumption_demands) const;
-    FloatType linear_utility_function(std::vector<Flow> consumption_demands) const;
+    bool utility_autodiff = true;
+    autodiff::Value<FloatType> autodiffutilityautodiffutility{goods_num, 0.0};
+    autodiff::Value<FloatType> const autodiff_CES_utility_function(autodiff::Variable<FloatType> consumption_demands) const;
 
     // functions for constrained optimization
     FloatType equality_constraint(const double* x, double* grad);
@@ -113,9 +110,6 @@ class Consumer : public EconomicAgent {
     void print_distribution(const std::vector<double>& demand_requests_D) const;
     // scaling function
     FloatType unscaled_demand(double d, int scaling_index) const;
-    // some simple function
-    std::vector<FlowQuantity> get_quantity_vector(std::vector<Flow> flow);
-    std::vector<FloatType> get_float_vector(std::vector<FlowQuantity>& flow_quantity);
 
     // getters and setters
     double get_utility() const;
