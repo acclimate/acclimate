@@ -21,6 +21,8 @@
 #ifndef ACCLIMATE_CONSUMER_H
 #define ACCLIMATE_CONSUMER_H
 
+#include <settingsnode.h>
+
 #include "autodiff.h"
 #include "model/EconomicAgent.h"
 
@@ -44,6 +46,7 @@ class Consumer : public EconomicAgent {
     std::vector<double> xtol_abs;
     std::vector<FloatType> upper_bounds;
     std::vector<FloatType> lower_bounds;
+    std::vector<FloatType> global_upper_bounds;
 
     // consumption limits considered in optimization
     std::vector<Price> consumption_prices;  // prices to be considered in optimization
@@ -91,7 +94,7 @@ class Consumer : public EconomicAgent {
     using EconomicAgent::model;
 
     // DEBUG
-    bool verbose_consumer = false;
+    bool verbose_consumer = true;
     void print_details() const override;
 
     // CES utility specific funtions TODO: check if replacing by abstract funtions suitable
@@ -104,7 +107,14 @@ class Consumer : public EconomicAgent {
     autodiff::Value<FloatType> autodiffutilityautodiffutility{goods_num, 0.0};
     autodiff::Value<FloatType> const autodiff_CES_utility_function(autodiff::Variable<FloatType> consumption_demands) const;
 
+    // some stuff to enalbe local comparison of old consumer and utilitarian
+    std::vector<FloatType> utilitarian_consumption_optimization();
+    void utilitarian_consumption_execution();
+    std::vector<FloatType> utilitarian_consumption;
+    FloatType local_optimal_utility;
+
     // functions for constrained optimization
+    void consumption_optimize(optimization::Optimization& optimizer);
     FloatType equality_constraint(const double* x, double* grad);
     FloatType max_objective(const double* x, double* grad) const;
     void print_distribution(const std::vector<double>& demand_requests_D) const;
@@ -113,6 +123,7 @@ class Consumer : public EconomicAgent {
 
     // getters and setters
     double get_utility() const;
+    double get_local_optimal_utility() const;
 };
 }  // namespace acclimate
 

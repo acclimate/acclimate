@@ -883,7 +883,11 @@ void ModelInitializer::pre_initialize() {
     model()->parameters_writable().relative_transport_penalty = parameters["relative_transport_penalty"].as<bool>();
     model()->parameters_writable().optimization_algorithm = optimization::get_algorithm(parameters["optimization_algorithm"].as<settings::hstring>("slsqp"));
     model()->parameters_writable().utility_optimization_algorithm =
-        optimization::get_algorithm(parameters["optimization_algorithm"].as<settings::hstring>("slsqp"));
+        optimization::get_algorithm(parameters["utility_optimization_algorithm"].as<settings::hstring>("slsqp"));
+    model()->parameters_writable().global_optimization_algorithm =
+        optimization::get_algorithm(parameters["global_optimization_algorithm"].as<settings::hstring>("mlsl_low_discrepancy"));
+    model()->parameters_writable().lagrangian_algorithm =
+        optimization::get_algorithm(parameters["lagrangian_optimization_algorithm"].as<settings::hstring>("augmented_lagrangian"));
     if (parameters["cost_correction"].as<bool>(false)) {
         throw log::error(this, "parameter cost_correction not supported anymore");
     }

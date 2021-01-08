@@ -220,6 +220,9 @@ bool Output::write_consumer_parameter(const Consumer* c, const hstring& name) {
         case hstring::hash("utility"):
             internal_write_value(name, c->get_utility());
             break;
+        case hstring::hash("local_optimal_utility"):
+            internal_write_value(name, c->get_local_optimal_utility());
+            break;
         default:
             return false;
     }

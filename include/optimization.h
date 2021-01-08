@@ -58,6 +58,10 @@ static int get_algorithm(const settings::hstring& name) {
             return NLOPT_GN_ISRES;
         case settings::hstring::hash("direct"):
             return NLOPT_GN_DIRECT;
+        case settings::hstring::hash("mlsl_low_discrepancy"):
+            return NLOPT_G_MLSL_LDS;
+        case settings::hstring::hash("augmented_lagrangian"):
+            return NLOPT_AUGLAG;
 
         default:
             throw log::error("unknown optimization alorithm '", name, "'");
@@ -132,6 +136,8 @@ class Optimization {
     void maxeval(int v) { check(nlopt_set_maxeval(opt, v)); }
     void maxtime(double v) { check(nlopt_set_maxtime(opt, v)); }  // timeout given in sec
 
+    void set_local_algorithm(nlopt_opt local_algorithm) { nlopt_set_local_optimizer(opt, local_algorithm); }
+
     unsigned int dim() const { return dim_m; }
     double optimized_value() const { return optimized_value_m; }
     bool roundoff_limited() const { return last_result == NLOPT_ROUNDOFF_LIMITED; }
@@ -167,6 +173,8 @@ class Optimization {
         check(nlopt_set_max_objective(
             opt, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->max_objective(x, grad); }, handler));
     }
+
+    nlopt_opt get_optimizer() { return opt; }
 };
 
 }  // namespace acclimate::optimization
