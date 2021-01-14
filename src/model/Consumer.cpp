@@ -50,7 +50,6 @@ void Consumer::initialize() {
     share_factors.reserve(goods_num);
     previous_consumption.reserve(goods_num);
     baseline_consumption.reserve(goods_num);
-    desired_consumption.reserve(goods_num);
 
     // initialize previous consumption as starting values, calculate budget
 
@@ -62,7 +61,6 @@ void Consumer::initialize() {
         previous_consumption.push_back(initial_consumption);
         budget += initial_consumption.get_value();
         baseline_consumption.push_back(initial_consumption);
-        desired_consumption.push_back(to_float(initial_consumption.get_quantity()));
     }
 
     // initialize share factors, potentiated already to speed up function calls
@@ -72,7 +70,7 @@ void Consumer::initialize() {
     }
 
     baseline_utility = utility_autodiff ? baseline_utility = CES_utility_function(baseline_consumption)
-                                        : CES_utility_function(baseline_consumption);  // baseline utility for scaling
+                                        : baseline_utility = CES_utility_function(baseline_consumption);  // baseline utility for scaling
 }
 
 // TODO: more sophisticated scaling than normalizing with baseline utility might improve optimization?!
@@ -114,6 +112,8 @@ FloatType Consumer::CES_marginal_utility(int index_of_good, double consumption_d
 FloatType Consumer::equality_constraint(const double* x, double* grad) {
     consumption_cost = 0.0;
     for (std::size_t r = 0; r < goods_num; ++r) {
+        if (std::isnan(x[r]))
+            return 1;
         assert(!std::isnan(x[r]));
         consumption_cost += (unscaled_demand(x[r], r) * to_float(consumption_prices[r]));
     }
@@ -144,14 +144,14 @@ FloatType Consumer::equality_constraint(const double* x, double* grad) {
     }
     available_budget = to_float(budget + not_spent_budget) * 1.0;
     expenditure_ratio = consumption_cost / available_budget;
-    if (verbose_consumer)
-        std::cout << "expenditure ratio \t" << expenditure_ratio << "\n";
     return expenditure_ratio - 1;
 }
 
 FloatType Consumer::max_objective(const double* x, double* grad) const {
     std::vector<FloatType> consumption_vector = std::vector<FloatType>(goods_num, 0.0);
     for (std::size_t r = 0; r < goods_num; ++r) {
+        if (std::isnan(x[r]))
+            return 0.0;
         assert(!std::isnan(x[r]));
         consumption_vector[r] = (unscaled_demand(x[r], r));
     }
@@ -169,11 +169,7 @@ FloatType Consumer::max_objective(const double* x, double* grad) const {
                 }
             }
         }
-        if (verbose_consumer)
-            std::cout << "utility \t" << CES_utility_function(consumption_vector) << "\n";
-        return CES_utility_function(consumption_vector);
     } else {
-        FloatType CES_utility = CES_utility_function(consumption_vector);
         for (std::size_t r = 0; r < desired_consumption.size(); ++r) {
             if (grad != nullptr) {
                 grad[r] = CES_marginal_utility(r, consumption_vector[r]);
@@ -184,31 +180,28 @@ FloatType Consumer::max_objective(const double* x, double* grad) const {
                 }
             }
         }
-        return CES_utility;
     }
+    return CES_utility_function(consumption_vector);
 }
 
 void Consumer::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    desired_consumption = std::vector<FloatType>(goods_num);
     if (utilitarian) {
         utilitarian_consumption_optimization();
-        utilitarian_consumption_execution();
+        utilitarian_consumption_execution(desired_consumption);
         local_optimal_utility =
             CES_utility_function(desired_consumption) / baseline_utility;  // just making sure the field has data, identical to utility in this case
     } else {
         // calculate local optimal utility consumption for comparison:
-        utilitarian_consumption = utilitarian_consumption_optimization();
         if (verbose_consumer) {
             std::cout << "\n local utilitarian  consumption optimization \n";
-            for (std::size_t r = 0; r < goods_num; ++r) {
-                std::cout << utilitarian_consumption[r];
-                std::cout << "\t";
-            }
-            std::cout << "\n";
         }
+        utilitarian_consumption = utilitarian_consumption_optimization();
         local_optimal_utility = CES_utility_function(utilitarian_consumption) / baseline_utility;
         // old consumer to be used for comparison
-        desired_consumption = std::vector<FloatType>();
+        desired_consumption.clear();
+        desired_consumption.reserve(goods_num);
         previous_consumption.clear();
         previous_consumption.reserve(goods_num);
         for (const auto& is : input_storages) {
@@ -249,33 +242,35 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
     std::vector<Price> current_prices;
     consumption_prices.clear();
     consumption_prices.reserve(goods_num);
-    for (std::size_t r = 0; r < goods_num; ++r) {
-        possible_consumption.push_back(input_storages[r]->get_possible_use_U_hat());
-        Price current_price = round(input_storages[r]->current_input_flow_I().get_price());
-        consumption_prices.push_back(possible_consumption[r].get_price());
-        current_prices.push_back(current_price);  // using this would be giving the consumer some "foresight" by optimizing using the current price of
-        // new goods, not just the average price of storage goo
-    }
-    // consumer has to decide what goods he would like to get most. here based on utility function
-    // start optimization at previous consumption, guarantees stability in undisturbed baseline
-    // while potentially speeding up optimization in case of small price changes
-
-    for (std::size_t r = 0; r < goods_num; ++r) {
-        desired_consumption[r] = to_float(previous_consumption[r].get_quantity());
-    }
-    // adjust if price changes make baseline consumption to expensive - scaling with elasticity
     std::vector<FloatType> feasibile_consumption = std::vector<FloatType>(goods_num);
     std::vector<FloatType> single_good_maximum_consumption = std::vector<FloatType>(goods_num);
+
     for (std::size_t r = 0; r < goods_num; ++r) {
+        possible_consumption.push_back(input_storages[r]->get_possible_use_U_hat());
+        FlowQuantity possible_consumption_quantity = (possible_consumption[r].get_quantity());
+        Price current_price = round(input_storages[r]->current_input_flow_I().get_price());
+        consumption_prices.push_back(possible_consumption[r].get_price());
+        // consumption_prices.push_back(current_price);  // using this would be giving the consumer some "foresight" by optimizing using the current price of
+        // new goods, not just the average price of storage goods
+        // start optimization at previous consumption, guarantees stability in undisturbed baseline
+        // while potentially speeding up optimization in case of small price changes
+        auto desired_consumption_flow = (to_float(previous_consumption[r].get_quantity()) == 0.0) ? baseline_consumption[r] : previous_consumption[r];
+        desired_consumption[r] = (to_float(desired_consumption_flow.get_quantity()));
+        // adjust if price changes make previous consumption to expensive - scaling with elasticity
         feasibile_consumption[r] =
-            pow(to_float(consumption_prices[r]) / to_float(previous_consumption[r].get_price()), input_storages[r]->parameters().consumption_price_elasticity);
-        single_good_maximum_consumption[r] =
-            std::min(1.0, budget / possible_consumption[r].get_value()) * (to_float(possible_consumption[r].get_quantity()) / desired_consumption[r]);
+            pow(to_float(consumption_prices[r]) / to_float(desired_consumption_flow.get_price()), input_storages[r]->parameters().consumption_price_elasticity);
+        desired_consumption[r] = round(std::min(desired_consumption[r], to_float(possible_consumption_quantity)));
+        if (desired_consumption[r] == 0)
+            single_good_maximum_consumption[r] = 0;
+        else
+            single_good_maximum_consumption[r] = std::min(1.0, to_float(budget) / (to_float(possible_consumption_quantity) * to_float(consumption_prices[r])))
+                                                 * ((to_float(possible_consumption_quantity)) / (desired_consumption[r]));
         // TODO: more sophisticated use of price elasticity
     }
     // utility optimization
     // set parameters
     xtol_abs = std::vector(goods_num, FlowQuantity::precision);
+    xtol_abs_global = std::vector(goods_num, 0.1);
     optimizer_consumption = std::vector<double>(goods_num);  // use normalized variable for optimization to improve?! performance
 
     upper_bounds = std::vector<FloatType>(goods_num);
@@ -283,11 +278,17 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
     lower_bounds = std::vector<FloatType>(goods_num, 0.0);
 
     for (std::size_t r = 0; r < goods_num; ++r) {
-        // adjust starting value to fit budget constraint:
-        optimizer_consumption[r] = feasibile_consumption[r];
         // set bounds
         upper_bounds[r] = single_good_maximum_consumption[r];
-        global_upper_bounds[r] = single_good_maximum_consumption[r];
+        optimizer_consumption[r] = std::min(feasibile_consumption[r], upper_bounds[r]);
+    }
+    if (verbose_consumer) {
+        std::cout << "\n upper bounds \n";
+        for (std::size_t r = 0; r < goods_num; ++r) {
+            std::cout << upper_bounds[r];
+            std::cout << "\t";
+        }
+        std::cout << "\n";
     }
 
     // define  lagrangian optimizer to pass equality constraint to algorithm which cant use it directly:
@@ -303,40 +304,35 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
                                                goods_num);  // TODO keep and only recreate when resize is needed
 
     // set parameters: are passed from lagrangian to global to local:
-    lagrangian_optimizer.add_equality_constraint(this, FlowValue::precision);
+    lagrangian_optimizer.add_equality_constraint(this, 0.01);
     lagrangian_optimizer.add_max_objective(this);
     lagrangian_optimizer.xtol(xtol_abs);
     lagrangian_optimizer.lower_bounds(lower_bounds);
-    lagrangian_optimizer.upper_bounds(global_upper_bounds);
-    lagrangian_optimizer.maxeval(10);
+    lagrangian_optimizer.upper_bounds(upper_bounds);
+    lagrangian_optimizer.maxeval(100000);
     lagrangian_optimizer.maxtime(model()->parameters().optimization_timeout);
 
-    // nested optimizers need stopping rule
-    global_optimizer.xtol(xtol_abs);
-    local_optimizer.xtol(xtol_abs);
-
-    local_optimizer.add_equality_constraint(this, FlowValue::precision);
-    local_optimizer.add_max_objective(this);
+    //    local_optimizer.add_equality_constraint(this, FlowValue::precision);
+    //    local_optimizer.add_max_objective(this);
     local_optimizer.xtol(xtol_abs);
     local_optimizer.lower_bounds(lower_bounds);
-    local_optimizer.upper_bounds(global_upper_bounds);
-    local_optimizer.maxeval(10);
+    local_optimizer.upper_bounds(upper_bounds);
+    local_optimizer.maxeval(model()->parameters().optimization_maxiter);
     local_optimizer.maxtime(model()->parameters().optimization_timeout);
 
-    global_optimizer.add_max_objective(this);
     global_optimizer.xtol(xtol_abs);
+    global_optimizer.maxeval(1000);
     global_optimizer.lower_bounds(lower_bounds);
-    global_optimizer.upper_bounds(global_upper_bounds);
-    global_optimizer.maxeval(10);
+    global_optimizer.upper_bounds(upper_bounds);
     global_optimizer.maxtime(model()->parameters().optimization_timeout);
 
     global_optimizer.set_local_algorithm(local_optimizer.get_optimizer());
-    nlopt_set_population(global_optimizer.get_optimizer(), 10000);  // number of random sampling points per iteration
+    nlopt_set_population(global_optimizer.get_optimizer(), 10);  // one might adjust number of random sampling points per iteration
 
     lagrangian_optimizer.set_local_algorithm(global_optimizer.get_optimizer());
     // start combined global local optimizer optimizer
 
-    consumption_optimize(local_optimizer);
+    consumption_optimize(lagrangian_optimizer);
 
     // set consumption and previous consumption
     for (std::size_t r = 0; r < goods_num; ++r) {
@@ -360,8 +356,7 @@ void Consumer::consumption_optimize(optimization::Optimization& optimizer) {
         if (verbose_consumer) {
             std::cout << "\n distribution after pre-optimization \n";
             for (std::size_t r = 0; r < goods_num; ++r) {
-                std::cout << optimizer_consumption[r];
-                std::cout << "\t";
+                std::cout << optimizer_consumption[r] << "\t";
             }
             std::cout << "\n";
         }
@@ -406,21 +401,21 @@ void Consumer::consumption_optimize(optimization::Optimization& optimizer) {
     }
 }
 
-void Consumer::utilitarian_consumption_execution() {
+void Consumer::utilitarian_consumption_execution(std::vector<FloatType> desired_consumption) {
     // initialize available budget
     not_spent_budget += budget;
     previous_consumption.clear();
     previous_consumption.reserve(goods_num);
     for (std::size_t r = 0; r < goods_num; ++r) {
         // withdraw consumption from storage
-        Flow desired_consumption_flow = (Flow(FlowQuantity(unscaled_demand(optimizer_consumption[r], r)), consumption_prices[r]));
-        input_storages[r]->set_desired_used_flow_U_tilde(round(desired_consumption_flow));
-        input_storages[r]->use_content_S(round(desired_consumption_flow));
-        region->add_consumption_flow_Y(round(desired_consumption_flow));
+        Flow desired_consumption_flow = (Flow(FlowQuantity(desired_consumption[r]), consumption_prices[r]));
+        input_storages[r]->set_desired_used_flow_U_tilde((desired_consumption_flow));
+        input_storages[r]->use_content_S((desired_consumption_flow));
+        region->add_consumption_flow_Y((desired_consumption_flow));
         // consume goods
         input_storages[r]->iterate_consumption_and_production();
         // adjust previous consumption
-        previous_consumption[r] = round(desired_consumption_flow);
+        previous_consumption[r] = (desired_consumption_flow);
         // adjust non-spent budget
         not_spent_budget -= round(desired_consumption_flow).get_value();
     }
@@ -492,6 +487,6 @@ void Consumer::print_distribution(const std::vector<double>& consumption_demands
         }
     }
 }
-FloatType Consumer::unscaled_demand(double d, int scaling_index) const { return d * desired_consumption[scaling_index]; }
+FloatType Consumer::unscaled_demand(FloatType d, int scaling_index) const { return d * desired_consumption[scaling_index]; }
 
 }  // namespace acclimate

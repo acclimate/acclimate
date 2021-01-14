@@ -44,6 +44,7 @@ class Consumer : public EconomicAgent {
     size_t size = 4;
 
     std::vector<double> xtol_abs;
+    std::vector<double> xtol_abs_global;
     std::vector<FloatType> upper_bounds;
     std::vector<FloatType> lower_bounds;
     std::vector<FloatType> global_upper_bounds;
@@ -109,7 +110,7 @@ class Consumer : public EconomicAgent {
 
     // some stuff to enalbe local comparison of old consumer and utilitarian
     std::vector<FloatType> utilitarian_consumption_optimization();
-    void utilitarian_consumption_execution();
+    void utilitarian_consumption_execution(std::vector<FloatType> desired_consumption);
     std::vector<FloatType> utilitarian_consumption;
     FloatType local_optimal_utility;
 
