@@ -28,7 +28,7 @@
 
 namespace acclimate::optimization {
 
-static int get_algorithm(const hashed_string& name) {
+inline int get_algorithm(const hashed_string& name) {
     switch (name) {
         case hash("slsqp"):
             return NLOPT_LD_SLSQP;

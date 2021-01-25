@@ -42,9 +42,12 @@ class Output {
     virtual void checkpoint_resume() {}
     virtual void checkpoint_stop() {}
     virtual void end() {}
-    virtual void event(EventType type, const EconomicAgent* economic_agent, FloatType value) {}
-    virtual void event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) {}
-    virtual void event(EventType type, const Sector* sector, const EconomicAgent* economic_agent, FloatType value) {}
+    virtual void event(EventType /* type */, const EconomicAgent* /* economic_agent */, FloatType /* value */) {}
+    virtual void event(EventType /* type */,
+                       const EconomicAgent* /* economic_agent_from */,
+                       const EconomicAgent* /* economic_agent_to */,
+                       FloatType /* value */) {}
+    virtual void event(EventType /* type */, const Sector* /* sector */, const EconomicAgent* /* economic_agent */, FloatType /* value */) {}
     virtual void iterate() {}
     virtual void start() {}
 

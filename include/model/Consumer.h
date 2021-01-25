@@ -21,11 +21,11 @@
 #ifndef ACCLIMATE_CONSUMER_H
 #define ACCLIMATE_CONSUMER_H
 
+#include "acclimate.h"
 #include "model/EconomicAgent.h"
 
 namespace acclimate {
 
-class id_t;
 class Region;
 
 class Consumer final : public EconomicAgent {

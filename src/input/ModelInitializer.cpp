@@ -274,10 +274,10 @@ void ModelInitializer::clean_network() {
 void ModelInitializer::debug_print_network_characteristics() const {
     if constexpr (options::DEBUGGING) {
         FloatType average_transport_delay = 0;
-        unsigned int region_wo_firm_count = 0;
+        std::size_t region_wo_firm_count = 0;
         for (const auto& region : model()->regions) {
             FloatType average_transport_delay_region = 0;
-            unsigned int firm_count = 0;
+            std::size_t firm_count = 0;
             for (const auto& economic_agent : region->economic_agents) {
                 if (economic_agent->type == EconomicAgent::type_t::FIRM) {
                     FloatType average_tranport_delay_economic_agent = 0;
@@ -668,7 +668,7 @@ void ModelInitializer::read_transport_times_csv(const std::string& index_filenam
     if (!index_file) {
         throw log::error(this, "Could not open index file '", index_filename, "'");
     }
-    unsigned int index = 0;
+    std::size_t index = 0;
     while (true) {
         std::string line;
         if (!getline(index_file, line)) {
@@ -743,11 +743,11 @@ void ModelInitializer::build_artificial_network() {
     if (skewness < 1) {
         throw log::error(this, "Skewness must be >= 1");
     }
-    const auto sectors_cnt = network["sectors"].as<unsigned int>();
+    const auto sectors_cnt = network["sectors"].as<std::size_t>();
     for (std::size_t i = 0; i < sectors_cnt; ++i) {
         add_sector("SEC" + std::to_string(i + 1));
     }
-    const auto regions_cnt = network["regions"].as<unsigned int>();
+    const auto regions_cnt = network["regions"].as<std::size_t>();
     for (std::size_t i = 0; i < regions_cnt; ++i) {
         Region* region = add_region("RG" + std::to_string(i));
         add_consumer("FCON:RG" + std::to_string(i), region);
@@ -837,9 +837,9 @@ void ModelInitializer::build_agent_network() {
             } else if (flows_var.check_dimensions({"index"})) {
                 const auto agents_count = file.dimension("index").require().size();
                 economic_agents.reserve(agents_count);
-                const auto index_sector = file.variable("index_sector").require().require_dimensions({"index"}).get<unsigned int>();
-                const auto index_region = file.variable("index_region").require().require_dimensions({"index"}).get<unsigned int>();
-                for (unsigned int i = 0; i < agents_count; ++i) {
+                const auto index_sector = file.variable("index_sector").require().require_dimensions({"index"}).get<std::size_t>();
+                const auto index_region = file.variable("index_region").require().require_dimensions({"index"}).get<std::size_t>();
+                for (std::size_t i = 0; i < agents_count; ++i) {
                     economic_agents.push_back(add_standard_agent(model()->sectors[index_sector[i]], model()->regions[index_region[i]]));
                 }
 
@@ -852,7 +852,7 @@ void ModelInitializer::build_agent_network() {
 
                 const auto agent_types = file.variable("agent_type").require().require_dimensions({"agent_type"}).get<std::string>();
                 {
-                    for (int i = 0; i < agent_types.size(); ++i) {
+                    for (std::size_t i = 0; i < agent_types.size(); ++i) {
                         const auto& type = agent_types[i];
                         if (type == "firm") {
                             type_firm = i;
@@ -869,7 +869,7 @@ void ModelInitializer::build_agent_network() {
                     std::uint32_t region;
                 };
                 const auto agents = file.variable("agent").require().require_dimensions({"agent"}).require_compound<AgentCompound>(4).get<AgentCompound>();
-                for (unsigned int i = 0; i < agents_count; ++i) {
+                for (std::size_t i = 0; i < agents_count; ++i) {
                     if (agents[i].region >= model()->regions.size()) {
                         throw log::error(this, "Region out of range for ", agents[i].name, " in '", filename, "'");
                     }

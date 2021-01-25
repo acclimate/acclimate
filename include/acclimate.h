@@ -71,15 +71,6 @@ inline void to_stream(Stream& s, Arg&& arg, Args&&... args) {
     to_stream(s, std::forward<Args>(args)...);
 }
 
-template<typename... Args>
-inline void output(Args&&... args) {
-#pragma omp critical(output)
-    {
-        to_stream(std::cout, std::forward<Args>(args)...);
-        std::cout << std::endl;
-    }
-}
-
 template<class>
 struct to_void {
     typedef void type;
@@ -130,6 +121,19 @@ inline void info(Arg&& arg, Args&&... args) {
             }
             std::cout << std::endl;
         }
+    }
+}
+
+template<typename Arg, typename... Args>
+inline void debug(Arg&& arg, Args&&... args) {
+#pragma omp critical(output)
+    {
+        if constexpr (std::is_pointer<Arg>::value && detail::has_model_and_name<typename std::remove_pointer<Arg>::type>::value) {
+            detail::to_stream(std::cout, timeinfo(*arg->model()), ", ", arg->name(), ": ", std::forward<Args>(args)...);
+        } else {
+            detail::to_stream(std::cout, std::forward<Arg>(arg), std::forward<Args>(args)...);
+        }
+        std::cout << std::endl;
     }
 }
 
