@@ -547,17 +547,15 @@ void ArrayOutput::iterate() {
         if (indices.empty()) {
             for (std::size_t i = 0; i < vec.size(); ++i) {
                 const auto* agent = vec[i];
-                const auto n = offset + i * obs_storages.sizes[0];
                 for (const auto& storage : agent->input_storages) {
-                    collector.collect(storage.get(), n + storage->id.index());
+                    collector.collect(storage.get(), offset + storage->sector->id.index() * obs_storages.sizes[1] + i);
                 }
             }
         } else {
             for (std::size_t i = 0; i < indices.size(); ++i) {
                 const auto* agent = vec[indices[i]];
-                const auto n = offset + i * obs_storages.sizes[0];
                 for (const auto& storage : agent->input_storages) {
-                    collector.collect(storage.get(), n + storage->id.index());
+                    collector.collect(storage.get(), offset + storage->sector->id.index() * obs_storages.sizes[1] + i);
                 }
             }
         }

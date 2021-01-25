@@ -80,7 +80,17 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
             const std::string& type = target.first;
             const settings::SettingsNode& it = target.second;
             if (type == "firm") {
-                if (it.has("sector")) {
+                if (it.has("id")) {
+                    const auto agent_name = it["id"].as<std::string>();
+                    auto* agent = model()->economic_agents.find(agent_name);
+                    if (agent == nullptr) {
+                        throw log::error(this, "Agent ", agent_name, " not found");
+                    }
+                    if (!agent->is_firm()) {
+                        throw log::error(this, "Agent ", agent_name, " is not a firm");
+                    }
+                    set_firm_property(agent->as_firm(), it, reset);
+                } else if (it.has("sector")) {
                     auto* sector = model()->sectors.find(it["sector"].as<std::string>());
                     if (sector == nullptr) {
                         throw log::error(this, "Sector ", it["sector"].as<std::string>(), " not found");

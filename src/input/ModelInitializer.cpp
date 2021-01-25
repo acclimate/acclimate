@@ -102,6 +102,7 @@ Firm* ModelInitializer::add_firm(std::string name, Sector* sector, Region* regio
         id_t(std::move(name)), sector, region,
         static_cast<Ratio>(get_firm_property(name, sector->name(), region->name(), "possible_overcapacity_ratio").as<FloatType>()));
     sector->firms.add(firm);
+    region->economic_agents.add(firm);
     return firm;
 }
 
@@ -162,7 +163,7 @@ void ModelInitializer::initialize_connection(Firm* firm_from, EconomicAgent* eco
         return;
     }
     auto sector_from = firm_from->sector;
-    auto input_storage = economic_agent_to->input_storages.find(sector_from->name());
+    auto input_storage = economic_agent_to->input_storages.find(sector_from->name() + "->" + economic_agent_to->name());
     if (input_storage == nullptr) {
         input_storage = economic_agent_to->input_storages.add(sector_from, economic_agent_to);
         if (economic_agent_to->is_consumer()) {
