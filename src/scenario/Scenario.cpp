@@ -81,34 +81,31 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
             const settings::SettingsNode& it = target.second;
             if (type == "firm") {
                 if (it.has("sector")) {
+                    auto* sector = model()->sectors.find(it["sector"].as<std::string>());
+                    if (sector == nullptr) {
+                        throw log::error(this, "Sector ", it["sector"].as<std::string>(), " not found");
+                    }
                     if (it.has("region")) {
-                        Firm* firm = nullptr;  // TODO model()->find_firm(it["sector"].as<std::string>(), it["region"].as<std::string>());
-                        if (firm != nullptr) {
-                            set_firm_property(firm, it, reset);
-                        } else {
+                        Firm* firm = sector->firms.find(it["sector"].as<std::string>() + ":" + it["region"].as<std::string>());
+                        if (firm == nullptr) {
                             throw log::error(this, "Firm ", it["sector"].as<std::string>(), ":", it["region"].as<std::string>(), " not found");
                         }
+                        set_firm_property(firm, it, reset);
                     } else {
-                        auto* sector = model()->sectors.find(it["sector"].as<std::string>());
-                        if (sector != nullptr) {
-                            for (auto& p : sector->firms) {
-                                set_firm_property(p, it, reset);
-                            }
-                        } else {
-                            throw log::error(this, "Sector ", it["sector"].as<std::string>(), " not found");
+                        for (auto& p : sector->firms) {
+                            set_firm_property(p, it, reset);
                         }
                     }
                 } else {
                     if (it.has("region")) {
                         Region* region = model()->regions.find(it["region"].as<std::string>());
-                        if (region != nullptr) {
-                            for (auto& ea : region->economic_agents) {
-                                if (ea->type == EconomicAgent::type_t::FIRM) {
-                                    set_firm_property(ea->as_firm(), it, reset);
-                                }
-                            }
-                        } else {
+                        if (region == nullptr) {
                             throw log::error(this, "Region ", it["region"].as<std::string>(), " not found");
+                        }
+                        for (auto& ea : region->economic_agents) {
+                            if (ea->type == EconomicAgent::type_t::FIRM) {
+                                set_firm_property(ea->as_firm(), it, reset);
+                            }
                         }
                     } else {
                         for (auto& s : model()->sectors) {
@@ -120,11 +117,14 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
                 }
             } else if (type == "consumer") {
                 if (it.has("region")) {
-                    Consumer* consumer = nullptr;  // TODO model()->find_consumer(it["region"].as<std::string>());
-                    if (consumer != nullptr) {
-                        set_consumer_property(consumer, it, reset);
-                    } else {
-                        throw log::error(this, "Consumer ", it["region"].as<std::string>(), " not found");
+                    Region* region = model()->regions.find(it["region"].as<std::string>());
+                    if (region == nullptr) {
+                        throw log::error(this, "Region ", it["region"].as<std::string>(), " not found");
+                    }
+                    for (auto& ea : region->economic_agents) {
+                        if (ea->type == EconomicAgent::type_t::CONSUMER) {
+                            set_consumer_property(ea->as_consumer(), it, reset);
+                        }
                     }
                 } else {
                     for (auto& r : model()->regions) {
@@ -138,11 +138,10 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
             } else if (type == "sea") {
                 if (it.has("sea_route")) {
                     auto* location = model()->other_locations.find(it["sea_route"].as<std::string>());
-                    if (location != nullptr) {
-                        set_location_property(location, it, reset);
-                    } else {
+                    if (location == nullptr) {
                         throw log::error(this, "Sea route ", it["sea_route"].as<std::string>(), " not found");
                     }
+                    set_location_property(location, it, reset);
                 }
             }
         }

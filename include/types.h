@@ -119,7 +119,7 @@ class non_owning_vector final {
         if (it == std::end(v)) {
             return nullptr;
         }
-        return it->get();
+        return *it;
     }
     template<typename Function>
     const T* find_if(Function&& f) const {
@@ -127,7 +127,7 @@ class non_owning_vector final {
         if (it == std::end(v)) {
             return nullptr;
         }
-        return it->get();
+        return *it;
     }
 
     T* find(hash_t name_hash) {
@@ -264,7 +264,7 @@ class id_t {
     const std::string name;
     const hash_t name_hash;
 
-    explicit id_t(std::string name_p) : name_hash(hash(name_p.c_str())), name(std::move(name_p)) {}
+    explicit id_t(std::string name_p) : name(std::move(name_p)), name_hash(hash(name.c_str())) {}
 
     std::size_t index() const { return index_m; }
 
