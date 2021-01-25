@@ -117,7 +117,9 @@ FloatType Consumer::equality_constraint(const double* x, double* grad) {
     }
     if (grad != nullptr) {
         if (utility_autodiff) {
+            autodiff::Variable<FloatType> var_optimizer_consumption{0, goods_num, goods_num, 0.0};
             var_optimizer_consumption = consumption_vector;
+            autodiff::Value<FloatType> autodiffutility{goods_num, 0.0};
             autodiffutility = autodiff_CES_utility_function(var_optimizer_consumption);
             std::copy(&autodiffutility.derivative()[0], &autodiffutility.derivative()[goods_num], grad);
             if (options::OPTIMIZATION_WARNINGS) {
@@ -143,7 +145,6 @@ FloatType Consumer::equality_constraint(const double* x, double* grad) {
 }
 
 FloatType Consumer::max_objective(const double* x, double* grad) {
-    // std::vector<FloatType> local_consumption_vector = std::vector<FloatType>(goods_num);
     for (std::size_t r = 0; r < goods_num; ++r) {
         if (std::isnan(x[r]))
             return 0.0;
@@ -151,7 +152,7 @@ FloatType Consumer::max_objective(const double* x, double* grad) {
         consumption_vector[r] = unscaled_demand(x[r], r);
     }
     if (utility_autodiff) {
-        // autodiff::Variable<FloatType> var2_optimizer_consumption{0, goods_num, goods_num, 0.0};
+        autodiff::Variable<FloatType> var_optimizer_consumption{0, goods_num, goods_num, 0.0};
         var_optimizer_consumption = consumption_vector;
         autodiff::Value<FloatType> autodiffutility{goods_num, 0.0};
         autodiffutility = autodiff_CES_utility_function(var_optimizer_consumption);
