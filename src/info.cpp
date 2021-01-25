@@ -1,6 +1,6 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
-  Christian Otto <christian.otto@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
+                          Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
 
@@ -32,7 +32,7 @@ const char* info =
     "                        agent-based model acclimate. J. Econ. Dyn. Control. 83, 232-269.\n"
     "\n"
     "Source:                 https://github.com/acclimate/acclimate\n"
-    "License:                AGPL, (c) 2014-2017 S. Willner, C. Otto (see LICENSE file)\n"
+    "License:                AGPL, (c) 2014-2020 S. Willner, C. Otto (see LICENSE file)\n"
     "\n"
     "Build time:             " __DATE__ " " __TIME__
     "\n"

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -65,6 +65,6 @@ inline unsigned int get_thread_count() {
 #endif
 }
 
-};  // namespace acclimate::openmp
+}  // namespace acclimate::openmp
 
 #endif

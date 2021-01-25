@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -37,6 +37,6 @@ class exception : public std::runtime_error {
 
 class return_after_checkpoint : public std::exception {};
 
-};  // namespace acclimate
+}  // namespace acclimate
 
 #endif

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -50,7 +50,7 @@ class Scenario {
     virtual ~Scenario() = default;
     virtual void start() {}
     virtual void end() {}
-    virtual bool iterate();
+    virtual void iterate();
     virtual std::string calendar_str() const { return "standard"; }
     virtual std::string time_units_str() const;
 

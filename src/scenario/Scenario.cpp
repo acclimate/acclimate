@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -149,7 +149,7 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
     }
 }
 
-bool Scenario::iterate() {
+void Scenario::iterate() {
     for (const auto& event : scenario_node["events"].as_sequence()) {
         const std::string& type = event["type"].as<std::string>();
         if (type == "shock") {
@@ -162,7 +162,6 @@ bool Scenario::iterate() {
             }
         }
     }
-    return true;
 }
 
 std::string Scenario::time_units_str() const {

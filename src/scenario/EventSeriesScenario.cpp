@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -67,7 +67,7 @@ EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, con
     for (const auto& sector_name : sectors) {
         const auto* sector = model->sectors.find(sector_name);
         if (sector == nullptr) {
-            throw log::error(this, "sector '", sector_name, "' not found");
+            throw log::error(this, "Sector '", sector_name, "' not found");
         }
         for (const auto& region_name : regions) {
             Firm* firm = nullptr;  // TODO model->find_firm(sector, region_name);

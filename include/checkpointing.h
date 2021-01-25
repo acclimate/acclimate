@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -28,6 +28,6 @@ extern volatile bool is_scheduled;
 extern void initialize();
 extern void write();
 
-};  // namespace acclimate::checkpoint
+}  // namespace acclimate::checkpoint
 
 #endif

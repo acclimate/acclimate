@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
                           Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
@@ -68,7 +68,16 @@ inline void to_stream(Stream& s, Arg&& arg) {
 template<class Stream, typename Arg, typename... Args>
 inline void to_stream(Stream& s, Arg&& arg, Args&&... args) {
     s << arg;
-    to_stream(s, args...);
+    to_stream(s, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+inline void output(Args&&... args) {
+#pragma omp critical(output)
+    {
+        to_stream(std::cout, std::forward<Args>(args)...);
+        std::cout << std::endl;
+    }
 }
 
 template<class>
@@ -134,6 +143,9 @@ inline void assertstep(const Caller* c, IterationStep s) {
         if (current_step(*c->model()) != s) {
             throw log::error(c, "should be in ", ITERATION_STEP_NAMES[static_cast<int>(s)], " step");
         }
+    } else {
+        (void)c;
+        (void)s;
     }
 }
 
@@ -143,6 +155,9 @@ inline void assertstepnot(const Caller* c, IterationStep s) {
         if (current_step(*c->model()) == s) {
             throw log::error(c, "should NOT be in ", ITERATION_STEP_NAMES[static_cast<int>(s)], " step");
         }
+    } else {
+        (void)c;
+        (void)s;
     }
 }
 
@@ -152,6 +167,10 @@ inline void assertstepor(const Caller* c, IterationStep s1, IterationStep s2) {
         if (current_step(*c->model()) != s1 && current_step(*c->model()) != s2) {
             throw log::error(c, "should be in ", ITERATION_STEP_NAMES[static_cast<int>(s1)], " or ", ITERATION_STEP_NAMES[static_cast<int>(s2)], " step");
         }
+    } else {
+        (void)c;
+        (void)s1;
+        (void)s2;
     }
 }
 

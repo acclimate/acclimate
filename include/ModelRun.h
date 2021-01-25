@@ -1,6 +1,6 @@
 /*
-  Copyright (C) 2014-2017 Sven Willner <sven.willner@pik-potsdam.de>
-  Christian Otto <christian.otto@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
+                          Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
 
