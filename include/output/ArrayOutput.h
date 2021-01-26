@@ -44,7 +44,7 @@ class Sector;
 
 class ArrayOutput : public Output {
   public:
-    using output_float_t = float;
+    using output_float_t = double;
 
     struct Variable {
         std::string name;
@@ -70,7 +70,6 @@ class ArrayOutput : public Output {
     };
 
   protected:
-    // TODO supported several selections per observable
     Observable<0> obs_model;
     Observable<1> obs_firms;
     Observable<1> obs_consumers;

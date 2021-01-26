@@ -64,15 +64,17 @@ void NetCDFOutput::create_group(const char* name,
     auto group = file->add_group(name);
     std::vector<int> dims(default_dims.size());
     dims[0] = default_dims[0].id();
-    for (std::size_t i = 0; i < dim; ++i) {
-        if (observable.indices[i].empty()) {
-            dims[i + 1] = default_dims[i + 1].id();
-        } else {
-            dims[i + 1] = group.add_dimension(index_names[i], observable.indices[i].size()).id();
-            assert(observable.indices[i].size() == observable.sizes[i]);
-            netCDF::Variable var = group.add_variable<std::size_t>(index_names[i], std::vector<int>{dims[i + 1]});
-            var.set_compression(false, compression_level);
-            var.set<std::size_t>(observable.indices[i]);
+    if constexpr (dim > 0) {
+        for (std::size_t i = 0; i < dim; ++i) {
+            if (observable.indices[i].empty()) {
+                dims[i + 1] = default_dims[i + 1].id();
+            } else {
+                dims[i + 1] = group.add_dimension(index_names[i], observable.indices[i].size()).id();
+                assert(observable.indices[i].size() == observable.sizes[i]);
+                netCDF::Variable var = group.add_variable<std::size_t>(index_names[i], std::vector<int>{dims[i + 1]});
+                var.set_compression(false, compression_level);
+                var.set<std::size_t>(observable.indices[i]);
+            }
         }
     }
     std::transform(std::begin(observable.variables), std::end(observable.variables), std::back_inserter(nc_variables), [&](const auto& obs_var) {

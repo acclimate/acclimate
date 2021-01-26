@@ -160,8 +160,10 @@ class WriteVariables {
 template<std::size_t dim>
 void ArrayOutput::resize_data(Observable<dim>& obs) {
     auto size = only_current_timestep ? 1 : model()->run()->total_timestep_count();
-    for (std::size_t i = 0; i < dim; ++i) {
-        size *= obs.sizes[i];
+    if constexpr (dim > 0) {
+        for (std::size_t i = 0; i < dim; ++i) {
+            size *= obs.sizes[i];
+        }
     }
     for (auto& var : obs.variables) {
         var.data.resize(size, std::numeric_limits<output_float_t>::quiet_NaN());
