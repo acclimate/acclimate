@@ -96,6 +96,11 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
         settings_string_m = ss.str();
     }
 
+    const settings::SettingsNode& scenario_node = settings["scenario"];
+    start_time_m = scenario_node["start"].as<Time>();
+    stop_time_m = scenario_node["stop"].as<Time>();
+    baseyear_m = scenario_node["baseyear"].as<int>(2000);
+
     auto model = new Model(this);
     {
         ModelInitializer model_initializer(model, settings);
@@ -106,20 +111,18 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
         model_m.reset(model);
     }
 
-    for (const auto& scenario_node : settings["scenarios"].as_sequence()) {
-        Scenario* scenario = nullptr;
+    {
         const auto& type = scenario_node["type"].as<hashed_string>();
         switch (type) {
             case hash("events"):  // TODO separate
-                scenario = new Scenario(settings, scenario_node, model);
+                scenario = std::make_unique<Scenario>(settings, scenario_node, model_m.get());
                 break;
             case hash("event_series"):
-                scenario = new EventSeriesScenario(settings, scenario_node, model);
+                scenario = std::make_unique<EventSeriesScenario>(settings, scenario_node, model_m.get());
                 break;
             default:
                 throw log::error("Unknown scenario type '", type, "'");
         }
-        scenarios_m.emplace_back(scenario);
     }
 
     for (const auto& node : settings["outputs"].as_sequence()) {
@@ -153,9 +156,8 @@ void ModelRun::run() {
 
     step(IterationStep::INITIALIZATION);
 
-    for (const auto& scenario : scenarios_m) {
-        scenario->start();
-    }
+    scenario->start();
+    model_m->time_m = start_time_m;
     model_m->start();
     for (const auto& output : outputs_m) {
         output->start();
@@ -165,10 +167,8 @@ void ModelRun::run() {
     step(IterationStep::SCENARIO);
     auto t0 = std::chrono::high_resolution_clock::now();
 
-    while (!model_m->done()) {
-        for (const auto& scenario : scenarios_m) {
-            scenario->iterate();
-        }
+    while (!done()) {
+        scenario->iterate();
         log::info(this, "Iteration started");
 
         model_m->switch_registers();
@@ -226,17 +226,20 @@ void ModelRun::run() {
 
 ModelRun::~ModelRun() {
     if (!options::CHECKPOINTING || !checkpoint::is_scheduled) {
-        for (auto& scenario : scenarios_m) {
-            scenario->end();
-        }
+        scenario->end();
         for (auto& output : outputs_m) {
             output->end();
         }
     }
     outputs_m.clear();
-    scenarios_m.clear();
     model_m.reset();
 }
+
+bool ModelRun::done() const { return model_m->time() > stop_time_m; }
+
+std::string ModelRun::calendar() const { return scenario->calendar_str(); }
+
+std::size_t ModelRun::total_timestep_count() const { return (stop_time_m - start_time_m) / model_m->delta_t() + 1; }
 
 std::string ModelRun::now() const {
     std::string res = "0000-00-00 00:00:00";

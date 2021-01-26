@@ -42,8 +42,7 @@ Model::Model(ModelRun* run_p) : run_m(run_p) {}
 Model::~Model() = default;  // needed to use forward declares for std::unique_ptr
 
 void Model::start() {
-    time_ = start_time_;
-    timestep_ = 0;
+    timestep_m = 0;
     for (const auto& economic_agent : economic_agents) {
         std::transform(std::begin(economic_agent->input_storages), std::end(economic_agent->input_storages), std::back_inserter(purchasing_managers),
                        [](const auto& is) { return std::make_pair(is->purchasing_manager.get(), 0); });
@@ -121,38 +120,28 @@ void Model::iterate_investment() {
 
 void Model::switch_registers() {
     debug::assertstep(this, IterationStep::SCENARIO);
-    current_register_ = 1 - current_register_;
+    current_register_m = 1 - current_register_m;
 }
 
 void Model::tick() {
     debug::assertstep(this, IterationStep::SCENARIO);
-    time_ += delta_t_;
-    ++timestep_;
+    time_m += delta_t_m;
+    ++timestep_m;
 }
 
 void Model::set_delta_t(const Time& delta_t_p) {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    delta_t_ = delta_t_p;
-}
-
-void Model::set_start_time(const Time& start_time) {
-    debug::assertstep(this, IterationStep::INITIALIZATION);
-    start_time_ = start_time;
-}
-
-void Model::set_stop_time(const Time& stop_time) {
-    debug::assertstep(this, IterationStep::INITIALIZATION);
-    stop_time_ = stop_time;
+    delta_t_m = delta_t_p;
 }
 
 void Model::no_self_supply(bool no_self_supply_p) {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    no_self_supply_ = no_self_supply_p;
+    no_self_supply_m = no_self_supply_p;
 }
 
 Parameters::ModelParameters& Model::parameters_writable() {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    return parameters_;
+    return parameters_m;
 }
 
 std::string timeinfo(const Model& m) { return m.run()->timeinfo(); }

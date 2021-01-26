@@ -42,14 +42,12 @@ class Model final {
     friend class ModelRun;
 
   private:
-    Time time_ = Time(0.0);
-    Time start_time_ = Time(0.0);
-    Time stop_time_ = Time(0.0);
-    TimeStep timestep_ = 0;
-    Time delta_t_ = Time(1.0);
-    unsigned char current_register_ = 1;
-    Parameters::ModelParameters parameters_;
-    bool no_self_supply_ = false;
+    Time time_m = Time(0.0);
+    TimeStep timestep_m = 0;
+    Time delta_t_m = Time(1.0);
+    unsigned char current_register_m = 1;
+    Parameters::ModelParameters parameters_m;
+    bool no_self_supply_m = false;
     std::vector<std::pair<PurchasingManager*, std::size_t>> purchasing_managers;
     non_owning_ptr<ModelRun> run_m;
 
@@ -66,23 +64,18 @@ class Model final {
     Model(const Model& other) = delete;
     Model(Model&& other) = default;
     ~Model();
-    const Time& time() const { return time_; }
-    const Time& start_time() const { return start_time_; };
-    const Time& stop_time() const { return stop_time_; };
-    const TimeStep& timestep() const { return timestep_; }
-    const Time& delta_t() const { return delta_t_; }
-    bool done() const { return time() > stop_time(); };
-    bool is_first_timestep() const { return timestep_ == 0; }
+    const Time& time() const { return time_m; }
+    const TimeStep& timestep() const { return timestep_m; }
+    const Time& delta_t() const { return delta_t_m; }
+    bool is_first_timestep() const { return timestep_m == 0; }
     void switch_registers();
     void tick();
-    const bool& no_self_supply() const { return no_self_supply_; }
-    void set_start_time(const Time& start_time);
-    void set_stop_time(const Time& stop_time);
+    const bool& no_self_supply() const { return no_self_supply_m; }
     void set_delta_t(const Time& delta_t_p);
     void no_self_supply(bool no_self_supply_p);
-    const unsigned char& current_register() const { return current_register_; }
-    unsigned char other_register() const { return 1 - current_register_; }
-    const Parameters::ModelParameters& parameters() const { return parameters_; }
+    const unsigned char& current_register() const { return current_register_m; }
+    unsigned char other_register() const { return 1 - current_register_m; }
+    const Parameters::ModelParameters& parameters() const { return parameters_m; }
     Parameters::ModelParameters& parameters_writable();
     void start();
     void iterate_consumption_and_production();
