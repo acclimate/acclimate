@@ -590,6 +590,16 @@ void PurchasingManager::iterate_purchase() {
                         log::warning(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
                     }
                 }
+            } else if (opt.maxeval_reached()) {
+                if constexpr (options::DEBUGGING) {
+                    debug_print_distribution(demand_requests_D);
+                }
+                model()->run()->event(EventType::OPTIMIZER_MAXITER, storage->sector, storage->economic_agent);
+                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                    throw log::error(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
+                } else {
+                    log::warning(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
+                }
             } else if (opt.maxtime_reached()) {
                 if constexpr (options::DEBUGGING) {
                     debug_print_distribution(demand_requests_D);
@@ -610,12 +620,7 @@ void PurchasingManager::iterate_purchase() {
         if constexpr (options::DEBUGGING) {
             debug_print_distribution(demand_requests_D);
         }
-        // TODO maxiter limit is ok, the rest fatal
-        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-            throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
-        } else {
-            log::warning(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
-        }
+        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
     }
 
     FloatType costs = 0.0;
