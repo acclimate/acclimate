@@ -191,12 +191,6 @@ class owning_vector final {
         return item;
     }
 
-    T* add_raw(T* item) {  // TODO remove
-        item->id.override_index(v.size());
-        v.emplace_back(item);
-        return item;
-    }
-
     bool empty() const { return v.empty(); }
 
     template<typename Function>

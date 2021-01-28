@@ -366,9 +366,10 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
         explicit TemporaryGeoEntity(GeoEntity* entity_p) : entity_m(entity_p) {}
         ~TemporaryGeoEntity() {
             if (used) {
-                (void)entity_m.release();
+                release();
             }
         }
+        void release() { (void)entity_m.release(); }
         GeoEntity* entity() { return entity_m.get(); }
     };
 
@@ -383,9 +384,9 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
                 continue;
             }
         } else if (types[i] == type_port) {
-            location = new GeoLocation(model(), id_t(names[i]), port_delay, GeoLocation::type_t::PORT);
+            location = model()->other_locations.add(model(), id_t(names[i]), port_delay, GeoLocation::type_t::PORT);
         } else if (types[i] == type_sea) {
-            location = new GeoLocation(model(), id_t(names[i]), 0, GeoLocation::type_t::SEA);
+            location = model()->other_locations.add(model(), id_t(names[i]), 0, GeoLocation::type_t::SEA);
         } else {
             throw log::error(this, "Invalid location type for '", names[i], "'");
         }
@@ -469,29 +470,31 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
     }
 
     // find cheapest connections
-    bool done = false;
-    while (!done) {
-        log::info(this, "Find cheapest paths iteration...");
-        done = true;
-        for (std::size_t i = 0; i < size; ++i) {
-            for (std::size_t j = 0; j < size; ++j) {
-                auto* p = &paths[i * size + j];
-                for (std::size_t via = 0; via < size; ++via) {
-                    if (via == i || via == j) {
-                        continue;
-                    }
-                    const auto& p1 = paths[i * size + via];
-                    if (p1.empty()) {  // no connection from i to via
-                        continue;
-                    }
-                    const auto& p2 = paths[via * size + j];
-                    if (p2.empty()) {  // no connection from via to j
-                        continue;
-                    }
-                    if (p->empty() || p1.costs() + p2.costs() < p->costs()) {
-                        paths[i * size + j] = p1 + p2;
-                        p = &paths[i * size + j];
-                        done = false;
+    {
+        bool done = false;
+        while (!done) {
+            log::info(this, "Find cheapest paths iteration...");
+            done = true;
+            for (std::size_t i = 0; i < size; ++i) {
+                for (std::size_t j = 0; j < size; ++j) {
+                    auto* p = &paths[i * size + j];
+                    for (std::size_t via = 0; via < size; ++via) {
+                        if (via == i || via == j) {
+                            continue;
+                        }
+                        const auto& p1 = paths[i * size + via];
+                        if (p1.empty()) {  // no connection from i to via
+                            continue;
+                        }
+                        const auto& p2 = paths[via * size + j];
+                        if (p2.empty()) {  // no connection from via to j
+                            continue;
+                        }
+                        if (p->empty() || p1.costs() + p2.costs() < p->costs()) {
+                            paths[i * size + j] = p1 + p2;
+                            p = &paths[i * size + j];
+                            done = false;
+                        }
                     }
                 }
             }
@@ -499,23 +502,25 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
     }
 
     // mark everything used
-    bool found = true;
-    while (found) {
-        found = false;
-        for (std::size_t i = 0; i < size; ++i) {
-            auto& p1 = locations[i];
-            if (p1->used) {  // regions are already marked used
-                for (std::size_t j = 0; j < size; ++j) {
-                    auto& p2 = locations[j];
-                    if (p2->used) {  // regions are already marked used
-                        auto& path = paths[i * size + j].locations();
-                        if (path.empty()) {
-                            throw log::error(this, "No roadsea transport connection from ", p1->entity()->as_location()->name(), " to ",
-                                             p2->entity()->as_location()->name());
-                        }
-                        for (std::size_t k = 1; k < path.size() - 1; ++k) {
-                            found = found || !path[k]->used;
-                            path[k]->used = true;
+    {
+        bool found = true;
+        while (found) {
+            found = false;
+            for (std::size_t i = 0; i < size; ++i) {
+                auto& p1 = locations[i];
+                if (p1->used) {  // regions are already marked used
+                    for (std::size_t j = 0; j < size; ++j) {
+                        auto& p2 = locations[j];
+                        if (p2->used) {  // regions are already marked used
+                            auto& path = paths[i * size + j].locations();
+                            if (path.empty()) {
+                                throw log::error(this, "No roadsea transport connection from ", p1->entity()->as_location()->name(), " to ",
+                                                 p2->entity()->as_location()->name());
+                            }
+                            for (std::size_t k = 1; k < path.size() - 1; ++k) {
+                                found = found || !path[k]->used;
+                                path[k]->used = true;
+                            }
                         }
                     }
                 }
@@ -524,52 +529,57 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
     }
 
     // add connections to locations actually used and create routes between regions
-    for (std::size_t i = 0; i < size; ++i) {
-        auto& p1 = locations[i];
-        if (p1->used) {
+    {
+        std::vector<GeoLocation*> to_remove;
+        for (std::size_t i = 0; i < size; ++i) {
+            auto& p1 = locations[i];
             auto* l1 = p1->entity()->as_location();
-            if (l1->type != GeoLocation::type_t::REGION) {
-                model()->other_locations.add_raw(l1);
+            if (!p1->used && l1->type != GeoLocation::type_t::REGION) {
+                to_remove.push_back(l1);
+                p1->release();
             }
-            for (std::size_t j = 0; j < size; ++j) {
-                auto& p2 = locations[j];
-                if (p2->used) {
-                    auto* l2 = p2->entity()->as_location();
-                    auto& path = paths[i * size + j].locations();
-                    if (!path.empty()) {
-                        if (path.size() == 3 && i < j) {  // direct connection, only once per i/j combination
-                            auto c = std::shared_ptr<GeoConnection>(path[1]->entity()->as_connection());
-                            l1->connections.push_back(c);
-                            l2->connections.push_back(c);
+            if (p1->used) {
+                for (std::size_t j = 0; j < size; ++j) {
+                    auto& p2 = locations[j];
+                    if (p2->used) {
+                        auto* l2 = p2->entity()->as_location();
+                        auto& path = paths[i * size + j].locations();
+                        if (!path.empty()) {
+                            if (path.size() == 3 && i < j) {  // direct connection, only once per i/j combination
+                                auto c = std::shared_ptr<GeoConnection>(path[1]->entity()->as_connection());
+                                l1->connections.push_back(c);
+                                l2->connections.push_back(c);
+                            }
+                            if (l1->type == GeoLocation::type_t::REGION && l2->type == GeoLocation::type_t::REGION) {
+                                // create roadsea route
+                                auto* r1 = l1->as_region();
+                                auto* r2 = l2->as_region();
+                                GeoRoute route;
+                                route.path.reserve(path.size() - 2);
+                                for (std::size_t k = 1; k < path.size() - 1; ++k) {
+                                    route.path.add(path[k]->entity());
+                                }
+                                r1->routes.emplace(std::make_pair(r2->id.index(), Sector::transport_type_t::ROADSEA), route);
+                            }
                         }
                         if (l1->type == GeoLocation::type_t::REGION && l2->type == GeoLocation::type_t::REGION) {
-                            // create roadsea route
+                            // create aviation route
+                            const auto distance = l1->centroid()->distance_to(*l2->centroid());
+                            const auto delay = iround(distance / aviation_speed / 24. / to_float(model()->delta_t()));
+                            auto c = std::make_shared<GeoConnection>(model(), delay, GeoConnection::type_t::AVIATION, l1, l2);
+                            l1->connections.push_back(c);
+                            l2->connections.push_back(c);
                             auto* r1 = l1->as_region();
                             auto* r2 = l2->as_region();
                             GeoRoute route;
-                            route.path.reserve(path.size() - 2);
-                            for (std::size_t k = 1; k < path.size() - 1; ++k) {
-                                route.path.add(path[k]->entity());
-                            }
-                            r1->routes.emplace(std::make_pair(r2->id.index(), Sector::transport_type_t::ROADSEA), route);
+                            route.path.add(c.get());
+                            r1->routes.emplace(std::make_pair(r2->id.index(), Sector::transport_type_t::AVIATION), route);
                         }
-                    }
-                    if (l1->type == GeoLocation::type_t::REGION && l2->type == GeoLocation::type_t::REGION) {
-                        // create aviation route
-                        const auto distance = l1->centroid()->distance_to(*l2->centroid());
-                        const auto delay = iround(distance / aviation_speed / 24. / to_float(model()->delta_t()));
-                        auto c = std::make_shared<GeoConnection>(model(), delay, GeoConnection::type_t::AVIATION, l1, l2);
-                        l1->connections.push_back(c);
-                        l2->connections.push_back(c);
-                        auto* r1 = l1->as_region();
-                        auto* r2 = l2->as_region();
-                        GeoRoute route;
-                        route.path.add(c.get());
-                        r1->routes.emplace(std::make_pair(r2->id.index(), Sector::transport_type_t::AVIATION), route);
                     }
                 }
             }
         }
+        model()->other_locations.remove(to_remove);
     }
 }
 
