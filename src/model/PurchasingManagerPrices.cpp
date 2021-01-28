@@ -716,10 +716,7 @@ void PurchasingManagerPrices<ModelVariant>::calc_optimization_parameters(std::ve
             const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
             assert(X_max <= X_hat);
             const FloatType lower_limit = 0.0;
-            FloatType upper_limit = X_max - ratio_X_expected_to_X * (X - Z_last);
-            if (bc->get_minimum_passage() < 1.0 && upper_limit > bc->get_minimum_passage() * to_float(bc->initial_flow_Z_star().get_quantity())) {
-                upper_limit = bc->get_minimum_passage() * to_float(bc->initial_flow_Z_star().get_quantity());
-            }
+            const FloatType upper_limit = X_max - ratio_X_expected_to_X * (X - Z_last);
             // in expected_average_price_E_n_r may happen, but it could also be the case that the optimizer does not respect D_r in [D_r_min,D_r_max]
             if (upper_limit > 0.0) {
                 const FloatType initial_value = std::min(upper_limit, std::max(lower_limit, ratio_X_expected_to_X * Z_last));
