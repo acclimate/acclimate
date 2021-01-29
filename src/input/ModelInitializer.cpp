@@ -882,17 +882,26 @@ void ModelInitializer::pre_initialize() {
     }
     model()->parameters_writable().relative_transport_penalty = parameters["relative_transport_penalty"].as<bool>();
     model()->parameters_writable().optimization_algorithm = optimization::get_algorithm(parameters["optimization_algorithm"].as<settings::hstring>("slsqp"));
+
+    if (parameters["cost_correction"].as<bool>(false)) {
+        throw log::error(this, "parameter cost_correction not supported anymore");
+    }
+    model()->parameters_writable().consumer_utilitarian = parameters["consumer_utilitarian"].as<bool>();
+
+    const auto input = parameters["consumer_baskets"].as_sequence();
+    int baskets_num = 0;
+    for (auto input_basket : input) {
+        model()->parameters_writable().consumer_baskets.push_back(input_basket.to_vector<int>());
+    }
+    model()->parameters_writable().consumer_basket_substitution_coefficients = parameters["basket_substitution_coefficients"].to_vector<double>();
     model()->parameters_writable().utility_optimization_algorithm =
         optimization::get_algorithm(parameters["utility_optimization_algorithm"].as<settings::hstring>("slsqp"));
     model()->parameters_writable().global_optimization_algorithm =
         optimization::get_algorithm(parameters["global_optimization_algorithm"].as<settings::hstring>("mlsl_low_discrepancy"));
+    model()->parameters_writable().global_optimization_maxiter =
+        parameters["global_optimization_maxiter"].as<int>(model()->parameters_writable().global_optimization_maxiter);
     model()->parameters_writable().lagrangian_algorithm =
         optimization::get_algorithm(parameters["lagrangian_optimization_algorithm"].as<settings::hstring>("augmented_lagrangian"));
-    if (parameters["cost_correction"].as<bool>(false)) {
-        throw log::error(this, "parameter cost_correction not supported anymore");
-    }
-
-    model()->parameters_writable().consumer_utilitarian = parameters["consumer_utilitarian"].as<bool>();
 }
 
 void ModelInitializer::post_initialize() {

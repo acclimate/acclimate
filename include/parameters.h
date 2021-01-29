@@ -47,8 +47,11 @@ struct Parameters {
         int global_optimization_algorithm;
         int lagrangian_algorithm;
         int optimization_maxiter;           // maximal iteration
+        int global_optimization_maxiter;    // maximal iteration of global algo for utility
         unsigned int optimization_timeout;  // timeout in sec
         bool consumer_utilitarian;
+        std::vector<std::vector<int>> consumer_baskets;
+        std::vector<double> consumer_basket_substitution_coefficients;
     };
 
     struct RegionParameters {};
