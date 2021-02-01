@@ -58,7 +58,6 @@ void Consumer::initialize() {
     baseline_consumption.reserve(goods_num);
     consumption_vector = std::vector<FloatType>(goods_num);
     // initialize previous consumption as starting values, calculate budget
-
     budget = FlowValue(0.0);
     not_spent_budget = FlowValue(0.0);
     for (std::size_t r = 0; r < goods_num; ++r) {
@@ -96,26 +95,26 @@ void Consumer::initialize() {
 
 // more complex nested utility function: goods are classified e.g. into necessary, relevant and other goods.
 
-autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption_demands) const {
-    autodiff::Value<FloatType> consumption_utility = {goods_num, 0.0};
+autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption_demands) {
+    autodiff_consumption_utility = {goods_num, 0.0};
     for (std::size_t basket = 0; basket < baskets_num; ++basket) {
-        autodiff::Value<FloatType> basket_consumption_utility = {goods_num, 0.0};
+        autodiff_basket_consumption_utility = {goods_num, 0.0};
         for (std::size_t good = 0; good < goods_num; ++good) {
             if (find(goods_basket[basket].begin(), goods_basket[basket].end(), good) != goods_basket[basket].end()) {
-                basket_consumption_utility += pow(consumption_demands[good], substitution_exponent[basket]) * share_factors[good];
+                autodiff_basket_consumption_utility += pow(consumption_demands[good], substitution_exponent[basket]) * share_factors[good];
             }
         }
-        basket_consumption_utility = pow(basket_consumption_utility, 1 / substitution_coefficient[basket]);
-        consumption_utility += pow(basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
+        autodiff_basket_consumption_utility = pow(autodiff_basket_consumption_utility, 1 / substitution_coefficient[basket]);
+        autodiff_consumption_utility += pow(autodiff_basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
-    return consumption_utility;
+    return autodiff_consumption_utility;
 }
 
 // definition of a nested CES utility function:
-FloatType Consumer::CES_utility_function(const std::vector<FloatType>& consumption_demands) const {
-    FloatType consumption_utility = 0.0;
+FloatType Consumer::CES_utility_function(const std::vector<FloatType>& consumption_demands) {
+    consumption_utility = 0.0;
     for (std::size_t basket = 0; basket < baskets_num; ++basket) {
-        FloatType basket_consumption_utility = 0;
+        basket_consumption_utility = 0;
         for (std::size_t good = 0; good < goods_num; ++good) {
             if (find(goods_basket[basket].begin(), goods_basket[basket].end(), good) != goods_basket[basket].end()) {
                 basket_consumption_utility += pow(consumption_demands[good], substitution_exponent[basket]) * share_factors[good];
@@ -126,10 +125,10 @@ FloatType Consumer::CES_utility_function(const std::vector<FloatType>& consumpti
     }
     return consumption_utility;  // outer exponent not relevant for optimization (at least for sigma >1)
 }
-FloatType Consumer::CES_utility_function(const std::vector<Flow>& consumption_demands) const {
-    FloatType consumption_utility = 0.0;
+FloatType Consumer::CES_utility_function(const std::vector<Flow>& consumption_demands) {
+    consumption_utility = 0.0;
     for (std::size_t basket = 0; basket < baskets_num; ++basket) {
-        FloatType basket_consumption_utility = 0;
+        basket_consumption_utility = 0.0;
         for (std::size_t good = 0; good < goods_num; ++good) {
             if (find(goods_basket[basket].begin(), goods_basket[basket].end(), good) != goods_basket[basket].end()) {
                 basket_consumption_utility += pow(to_float(consumption_demands[good].get_quantity()), substitution_exponent[basket]) * share_factors[good];
@@ -143,27 +142,14 @@ FloatType Consumer::CES_utility_function(const std::vector<Flow>& consumption_de
 
 // TODO: more complex budget function might be useful, e.g. opportunity for saving etc.
 FloatType Consumer::inequality_constraint(const double* x, double* grad) {
-    consumption_cost = 0.0;
+    consumption_budget = to_float(budget + not_spent_budget);
     for (std::size_t r = 0; r < goods_num; ++r) {
         assert(!std::isnan(x[r]));
         consumption_vector[r] = unscaled_demand(x[r], r);
-        consumption_cost += consumption_vector[r] * to_float(consumption_prices[r]);
+        consumption_budget -= consumption_vector[r] * to_float(consumption_prices[r]);
     }
-    if (grad != nullptr) {
-        var_optimizer_consumption = consumption_vector;
-        autodiffutility = autodiff_nested_CES_utility_function(var_optimizer_consumption);
-        std::copy(std::begin(autodiffutility.derivative()), std::end(autodiffutility.derivative()), grad);
-        if constexpr (options::OPTIMIZATION_WARNINGS) {
-            for (std::size_t r = 0; r < goods_num; ++r) {
-                if (grad[r] > MAX_GRADIENT) {
-                    log::warning(this, ": large gradient of ", grad[r]);
-                }
-            }
-        }  // TODO: redesign autodiffutility as global variable such that derivative can be called upon from here, i.e. grad[r] =
-    }
-    available_budget = to_float(budget + not_spent_budget);
-    expenditure_ratio = consumption_cost / available_budget;
-    return consumption_cost - available_budget;
+    grad = fill_gradient(grad);
+    return consumption_budget * -1;  // since inequality constraint checks for <=0, we need to switch the sign
 }
 
 FloatType Consumer::max_objective(const double* x, double* grad) {
@@ -173,6 +159,11 @@ FloatType Consumer::max_objective(const double* x, double* grad) {
     }
     var_optimizer_consumption = consumption_vector;
     autodiffutility = autodiff_nested_CES_utility_function(var_optimizer_consumption);
+    grad = fill_gradient(grad);
+    return autodiffutility.value();
+}
+
+double* Consumer::fill_gradient(double* grad) {
     if (grad != nullptr) {
         std::copy(std::begin(autodiffutility.derivative()), std::end(autodiffutility.derivative()), grad);
         if constexpr (options::OPTIMIZATION_WARNINGS) {
@@ -183,7 +174,7 @@ FloatType Consumer::max_objective(const double* x, double* grad) {
             }
         }
     }
-    return CES_utility_function(consumption_vector);
+    return grad;
 }
 
 void Consumer::iterate_consumption_and_production() {

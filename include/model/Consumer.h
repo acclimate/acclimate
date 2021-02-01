@@ -64,10 +64,13 @@ class Consumer : public EconomicAgent {
 
     std::vector<FloatType> consumption_vector;  // vector to store actual, unscaled consumption
     // variables for equality constraint, pre-allocated to increase efficiency
-    FloatType consumption_cost;
+    FloatType consumption_budget;
     FloatType available_budget;
-    FloatType expenditure_ratio;
-    // variables for max objective , pre-allocated to increase efficiency
+    // variables for utiltiy function , pre-allocated to increase efficiency
+    FloatType consumption_utility;
+    FloatType basket_consumption_utility;
+    autodiff::Value<FloatType> autodiff_consumption_utility{goods_num, 0.0};
+    autodiff::Value<FloatType> autodiff_basket_consumption_utility{goods_num, 0.0};
 
   public:
     using EconomicAgent::input_storages;
@@ -100,8 +103,8 @@ class Consumer : public EconomicAgent {
     void print_details() const override;
 
     // CES utility specific funtions TODO: check if replacing by abstract funtions suitable
-    FloatType CES_utility_function(const std::vector<FloatType>& consumption_demands) const;
-    FloatType CES_utility_function(const std::vector<Flow>& consumption_demands) const;
+    FloatType CES_utility_function(const std::vector<FloatType>& consumption_demands);
+    FloatType CES_utility_function(const std::vector<Flow>& consumption_demands);
 
     // for autodiff test: some simple utility functions
     autodiff::Variable<FloatType> var_optimizer_consumption{0, goods_num, goods_num, 0.0};
@@ -109,7 +112,7 @@ class Consumer : public EconomicAgent {
     autodiff::Value<FloatType> autodiffutility{goods_num, 0.0};
 
     // for nested utility function
-    autodiff::Value<FloatType> autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption_demands) const;
+    autodiff::Value<FloatType> autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption_demands);
 
     // some stuff to enalbe local comparison of old consumer and utilitarian
     std::vector<FloatType> utilitarian_consumption_optimization();
@@ -122,6 +125,7 @@ class Consumer : public EconomicAgent {
     FloatType inequality_constraint(const double* x, double* grad);
     FloatType equality_constraint(const double* x, double* grad);
     FloatType max_objective(const double* x, double* grad);
+    double* fill_gradient(double* grad);
     void print_distribution(const std::vector<FloatType>& demand_requests_D) const;
     // scaling function
     FloatType unscaled_demand(const FloatType scaling_factor, int scaling_index) const;
