@@ -47,7 +47,13 @@ void Consumer::initialize() {
 
     goods_basket = model()->parameters_writable().consumer_baskets;
     baskets_num = goods_basket.size();
+
     goods_num = input_storages.size();
+    autodiffutility = {goods_num, 0.0};
+    autodiff_basket_consumption_utility = {goods_num, 0.0};
+    autodiff_consumption_utility = {goods_num, 0.0};
+    var_optimizer_consumption = autodiff::Variable<FloatType>(0, goods_num, goods_num, 0.0);
+
     std::cout << baskets_num;
     basket_share_factors.reserve(baskets_num);
     substitution_coefficient.reserve(baskets_num);
@@ -272,8 +278,8 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
     for (std::size_t r = 0; r < goods_num; ++r) {
         // set bounds
         upper_bounds[r] = single_good_maximum_consumption[r];
-        lower_bounds[r] = consumption_scaling[r] * 0.1;  // lower bound of exactly 0 is violated by Nlopt - bug?! - thus keeping minimum consumption level
         optimizer_consumption[r] = std::min(consumption_scaling[r], upper_bounds[r]);
+        lower_bounds[r] = optimizer_consumption[r] * 0.1;  // lower bound of exactly 0 is violated by Nlopt - bug?! - thus keeping minimum consumption level
     }
     if constexpr (VERBOSE_CONSUMER) {
         std::cout << "\n upper bounds \n";

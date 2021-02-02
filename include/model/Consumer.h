@@ -69,8 +69,8 @@ class Consumer : public EconomicAgent {
     // variables for utiltiy function , pre-allocated to increase efficiency
     FloatType consumption_utility;
     FloatType basket_consumption_utility;
-    autodiff::Value<FloatType> autodiff_consumption_utility{goods_num, 0.0};
-    autodiff::Value<FloatType> autodiff_basket_consumption_utility{goods_num, 0.0};
+    autodiff::Value<FloatType> autodiff_consumption_utility = autodiff::Value<FloatType>(0, 0);
+    autodiff::Value<FloatType> autodiff_basket_consumption_utility = autodiff::Value<FloatType>(0, 0);
 
   public:
     using EconomicAgent::input_storages;
@@ -107,9 +107,9 @@ class Consumer : public EconomicAgent {
     FloatType CES_utility_function(const std::vector<Flow>& consumption_demands);
 
     // for autodiff test: some simple utility functions
-    autodiff::Variable<FloatType> var_optimizer_consumption{0, goods_num, goods_num, 0.0};
+    autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, 0, 0, 0);
 
-    autodiff::Value<FloatType> autodiffutility{goods_num, 0.0};
+    autodiff::Value<FloatType> autodiffutility = autodiff::Value<FloatType>(0, 0);
 
     // for nested utility function
     autodiff::Value<FloatType> autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption_demands);
