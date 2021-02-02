@@ -35,7 +35,7 @@ class SettingsNode;
 
 namespace acclimate {
 
-class Firm;
+class EconomicAgent;
 class Model;
 
 class EventSeriesScenario : public ExternalScenario {
@@ -44,7 +44,7 @@ class EventSeriesScenario : public ExternalScenario {
         friend class EventSeriesScenario;
 
       private:
-        std::vector<Firm*> firms;  // TODO remove
+        std::vector<EconomicAgent*> agents;  // TODO remove
         std::vector<Forcing> forcings;
         std::size_t regions_count;
         std::size_t sectors_count;
@@ -53,7 +53,7 @@ class EventSeriesScenario : public ExternalScenario {
         void read_data() override;
 
       public:
-        EventForcing(const std::string& filename, const std::string& variable_name, const Model* model);
+        EventForcing(const std::string& filename, const std::string& variable_name, Model* model);
     };
 
   private:

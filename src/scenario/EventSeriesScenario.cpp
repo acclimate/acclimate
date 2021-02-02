@@ -43,12 +43,12 @@ ExternalForcing* EventSeriesScenario::read_forcing_file(const std::string& filen
 
 void EventSeriesScenario::read_forcings() {
     auto forcing_l = static_cast<EventForcing*>(forcing.get());  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
-    for (std::size_t i = 0; i < forcing_l->firms.size(); ++i) {
-        if (forcing_l->firms[i] != nullptr) {
+    for (std::size_t i = 0; i < forcing_l->agents.size(); ++i) {
+        if (forcing_l->agents[i] != nullptr) {
             if (std::isnan(forcing_l->forcings[i])) {
-                forcing_l->firms[i]->set_forcing(1.0);
+                forcing_l->agents[i]->set_forcing(1.0);
             } else {
-                forcing_l->firms[i]->set_forcing(forcing_l->forcings[i]);
+                forcing_l->agents[i]->set_forcing(forcing_l->forcings[i]);
             }
         }
     }
@@ -56,13 +56,13 @@ void EventSeriesScenario::read_forcings() {
 
 void EventSeriesScenario::EventForcing::read_data() { variable->read<Forcing, 3>(&forcings[0], {time_index, 0, 0}, {1, sectors_count, regions_count}); }
 
-EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, const std::string& variable_name, const Model* model)
+EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, const std::string& variable_name, Model* model)
     : ExternalForcing(filename, variable_name) {
     const auto regions = file.variable("region").require().get<std::string>();
     const auto sectors = file.variable("sector").require().get<std::string>();
     regions_count = regions.size();
     sectors_count = sectors.size();
-    firms.reserve(regions_count * sectors_count);
+    agents.reserve(regions_count * sectors_count);
     forcings.reserve(regions_count * sectors_count);
     for (const auto& sector_name : sectors) {
         const auto* sector = model->sectors.find(sector_name);
@@ -70,11 +70,12 @@ EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, con
             throw log::error(this, "Sector '", sector_name, "' not found");
         }
         for (const auto& region_name : regions) {
-            Firm* firm = nullptr;  // TODO model->find_firm(sector, region_name);
-            if (firm == nullptr) {
-                log::warning(this, "firm '", sector_name, ":", region_name, "' not found");
+            const auto name = sector_name + ":" + region_name;
+            auto* agent = model->economic_agents.find(name);
+            if (agent == nullptr) {
+                log::warning(this, "Agent ", name, " not found");
             }
-            firms.push_back(firm);
+            agents.push_back(agent);
             forcings.push_back(1.0);
         }
     }
