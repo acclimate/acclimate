@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <ctime>
 #include <iterator>
 #include <limits>
@@ -30,6 +31,7 @@
 #include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
+#include "model/Firm.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
@@ -92,13 +94,14 @@ void NetCDFOutput::start() {
     const auto dim_agent = file->add_dimension("agent", model()->economic_agents.size());
     const auto dim_event = file->add_dimension("event");
     const auto dim_event_type = file->add_dimension("event_type", EVENT_NAMES.size());
-    auto event_compound_type = file->add_type_compound("event_compound_type", sizeof(ArrayOutput::Event));
-    event_compound_type.add_compound_field<decltype(ArrayOutput::Event::time)>("time", offsetof(ArrayOutput::Event, time));
-    event_compound_type.add_compound_field<decltype(ArrayOutput::Event::type)>("type", offsetof(ArrayOutput::Event, type));
-    event_compound_type.add_compound_field<decltype(ArrayOutput::Event::index1)>("index1", offsetof(ArrayOutput::Event, index1));
-    event_compound_type.add_compound_field<decltype(ArrayOutput::Event::index2)>("index2", offsetof(ArrayOutput::Event, index2));
-    event_compound_type.add_compound_field<decltype(ArrayOutput::Event::value)>("value", offsetof(ArrayOutput::Event, value));
-    var_events = std::make_unique<netCDF::Variable>(file->add_variable("events", event_compound_type.id(), {dim_event}));
+
+    auto event_t = file->add_type_compound("event_t", sizeof(ArrayOutput::Event));
+    event_t.add_compound_field<decltype(ArrayOutput::Event::time)>("time", offsetof(ArrayOutput::Event, time));
+    event_t.add_compound_field<decltype(ArrayOutput::Event::type)>("type", offsetof(ArrayOutput::Event, type));
+    event_t.add_compound_field<decltype(ArrayOutput::Event::index1)>("index1", offsetof(ArrayOutput::Event, index1));
+    event_t.add_compound_field<decltype(ArrayOutput::Event::index2)>("index2", offsetof(ArrayOutput::Event, index2));
+    event_t.add_compound_field<decltype(ArrayOutput::Event::value)>("value", offsetof(ArrayOutput::Event, value));
+    var_events = std::make_unique<netCDF::Variable>(file->add_variable("events", event_t, {dim_event}));
     var_events->set_compression(false, compression_level);
 
     var_time = std::make_unique<netCDF::Variable>(file->add_variable<int>("time", {dim_time}));
@@ -107,7 +110,7 @@ void NetCDFOutput::start() {
     var_time->add_attribute("units").set<std::string>(std::string("days since ") + std::to_string(model()->run()->baseyear()) + "-1-1");
 
     include_events = true;
-    auto event_type_var = file->add_variable<std::string>("event_types", {dim_event_type});
+    auto event_type_var = file->add_variable<std::string>("event_type", {dim_event_type});
     event_type_var.set_compression(false, compression_level);
     for (std::size_t i = 0; i < EVENT_NAMES.size(); ++i) {
         event_type_var.set<const char*, 1>(EVENT_NAMES[i], {i});
@@ -125,11 +128,39 @@ void NetCDFOutput::start() {
         region_var.set<std::string, 1>(model()->regions[i]->name(), {i});
     }
 
-    // TODO proper agent output
-    auto agent_var = file->add_variable<std::string>("agent", {dim_agent});
-    agent_var.set_compression(false, compression_level);
-    for (std::size_t i = 0; i < model()->economic_agents.size(); ++i) {
-        agent_var.set<std::string, 1>(model()->economic_agents[i]->name(), {i});
+    {
+        const auto dim_agent_type = file->add_dimension("agent_type", 2);
+        file->add_variable<std::string>("agent_type", {dim_agent_type}).set<std::string>({"firm", "consumer"});
+
+        struct AgentCompound {
+            char name[25];
+            std::uint8_t agent_type;
+            std::uint32_t sector;
+            std::uint32_t region;
+        };
+        auto agent_t = file->add_type_compound<AgentCompound>("agent_t");
+        agent_t.add_compound_field_array<decltype(AgentCompound::name)>("name", offsetof(AgentCompound, name), {25});
+        agent_t.add_compound_field<decltype(AgentCompound::agent_type)>("agent_type", offsetof(AgentCompound, agent_type));
+        agent_t.add_compound_field<decltype(AgentCompound::sector)>("sector", offsetof(AgentCompound, sector));
+        agent_t.add_compound_field<decltype(AgentCompound::region)>("region", offsetof(AgentCompound, region));
+
+        auto agent_var = file->add_variable("agent", agent_t, {dim_agent});
+        agent_var.set_compression(false, compression_level);
+        AgentCompound value;
+        value.name[sizeof(value.name) / sizeof(value.name[0]) - 1] = '\0';
+        for (std::size_t i = 0; i < model()->economic_agents.size(); ++i) {
+            const auto* agent = model()->economic_agents[i];
+            std::strncpy(value.name, agent->name().c_str(), sizeof(value.name) / sizeof(value.name[0]) - 1);
+            if (agent->is_firm()) {
+                value.agent_type = 0;
+                value.sector = agent->as_firm()->sector->id.index();
+            } else {
+                value.agent_type = 1;
+                value.sector = 0;
+            }
+            value.region = agent->region->id.index();
+            agent_var.set<AgentCompound, 1>(value, {i});
+        }
     }
 
     file->add_attribute("settings").set<std::string>(model()->run()->settings_string());
