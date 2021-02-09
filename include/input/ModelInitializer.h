@@ -45,6 +45,7 @@ class ModelInitializer {
                                              const std::string& sector_name,
                                              const std::string& region_name,
                                              const std::string& property_name) const;
+    settings::SettingsNode get_consumer_property(const std::string& name, const std::string& region_name, const std::string& property_name) const;
     settings::SettingsNode get_named_property(const settings::SettingsNode& node_settings,
                                               const std::string& node_name,
                                               const std::string& property_name) const;

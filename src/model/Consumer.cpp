@@ -42,30 +42,32 @@ static constexpr bool VERBOSE_CONSUMER = true;
 namespace acclimate {
 // TODO: in the long run abstract consumer with different implementations would be nice
 
-Consumer::Consumer(id_t id_p, Region* region_p, FloatType substitution_coefficient_p)
+Consumer::Consumer(id_t id_p,
+                   Region* region_p,
+                   FloatType inter_basket_substitution_coefficient_p,
+                   std::vector<std::vector<int>> consumer_baskets_p,
+                   std::vector<FloatType> intra_basket_substitution_coefficients_p)
     : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::CONSUMER) {
-    inter_basket_substitution_coefficient = substitution_coefficient_p;
+    inter_basket_substitution_coefficient = inter_basket_substitution_coefficient_p;
     inter_basket_substitution_exponent = (inter_basket_substitution_coefficient - 1) / inter_basket_substitution_coefficient;
+    goods_basket = consumer_baskets_p;
+    baskets_num = goods_basket.size();
+    intra_basket_substitution_coefficient.reserve(baskets_num);
+    intra_basket_substitution_exponent = std::vector<FloatType>(baskets_num);
+    intra_basket_substitution_coefficient = intra_basket_substitution_coefficients_p;
 }
 
 void Consumer::initialize() {
     debug::assertstep(this, IterationStep::INITIALIZATION);
     utilitarian = model()->parameters_writable().consumer_utilitarian;
-
-    goods_basket = model()->parameters_writable().consumer_baskets;
-    baskets_num = goods_basket.size();
-
     goods_num = input_storages.size();
     autodiffutility = {goods_num, 0.0};
     autodiff_basket_consumption_utility = {goods_num, 0.0};
     autodiff_consumption_utility = {goods_num, 0.0};
     var_optimizer_consumption = autodiff::Variable<FloatType>(0, goods_num, goods_num, 0.0);
 
-    std::cout << baskets_num;
     basket_share_factors.reserve(baskets_num);
-    substitution_coefficient.reserve(baskets_num);
-    substitution_exponent = std::vector<FloatType>(baskets_num);
-    substitution_coefficient = model()->parameters_writable().consumer_basket_substitution_coefficients;
+
     share_factors.reserve(goods_num);
     previous_consumption.reserve(goods_num);
     baseline_consumption.reserve(goods_num);
@@ -95,11 +97,11 @@ void Consumer::initialize() {
             if (find(goods_basket[basket].begin(), goods_basket[basket].end(), good) != goods_basket[basket].end()) {
                 share_factors[good] = share_factors[good] / basket_share_factors[basket];  // normalize nested share factors to 1
             }
-            share_factors[good] = pow(share_factors[good], 1 / substitution_coefficient[basket]);  // already exponentiated for utility function
+            share_factors[good] = pow(share_factors[good], 1 / intra_basket_substitution_coefficient[basket]);  // already exponentiated for utility function
         }
         basket_share_factors[basket] =
             pow(basket_share_factors[basket], 1 / inter_basket_substitution_coefficient);  // already exponentiated for utility function
-        substitution_exponent[basket] = (substitution_coefficient[basket] - 1) / substitution_coefficient[basket];
+        intra_basket_substitution_exponent[basket] = (intra_basket_substitution_coefficient[basket] - 1) / intra_basket_substitution_coefficient[basket];
     }
     baseline_utility = CES_utility_function(baseline_consumption);  // baseline utility for scaling
 }
@@ -114,10 +116,10 @@ autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const 
         autodiff_basket_consumption_utility = {goods_num, 0.0};
         for (std::size_t good = 0; good < goods_num; ++good) {
             if (find(goods_basket[basket].begin(), goods_basket[basket].end(), good) != goods_basket[basket].end()) {
-                autodiff_basket_consumption_utility += pow(consumption_demands[good], substitution_exponent[basket]) * share_factors[good];
+                autodiff_basket_consumption_utility += pow(consumption_demands[good], intra_basket_substitution_exponent[basket]) * share_factors[good];
             }
         }
-        autodiff_basket_consumption_utility = pow(autodiff_basket_consumption_utility, 1 / substitution_coefficient[basket]);
+        autodiff_basket_consumption_utility = pow(autodiff_basket_consumption_utility, 1 / intra_basket_substitution_coefficient[basket]);
         autodiff_consumption_utility += pow(autodiff_basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
     return autodiff_consumption_utility;
@@ -130,10 +132,10 @@ FloatType Consumer::CES_utility_function(const std::vector<FloatType>& consumpti
         basket_consumption_utility = 0;
         for (std::size_t good = 0; good < goods_num; ++good) {
             if (find(goods_basket[basket].begin(), goods_basket[basket].end(), good) != goods_basket[basket].end()) {
-                basket_consumption_utility += pow(consumption_demands[good], substitution_exponent[basket]) * share_factors[good];
+                basket_consumption_utility += pow(consumption_demands[good], intra_basket_substitution_exponent[basket]) * share_factors[good];
             }
         }
-        basket_consumption_utility = pow(basket_consumption_utility, 1 / substitution_coefficient[basket]);
+        basket_consumption_utility = pow(basket_consumption_utility, 1 / intra_basket_substitution_coefficient[basket]);
         consumption_utility += pow(basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
     return consumption_utility;  // outer exponent not relevant for optimization (at least for sigma >1)
@@ -144,10 +146,11 @@ FloatType Consumer::CES_utility_function(const std::vector<Flow>& consumption_de
         basket_consumption_utility = 0.0;
         for (std::size_t good = 0; good < goods_num; ++good) {
             if (find(goods_basket[basket].begin(), goods_basket[basket].end(), good) != goods_basket[basket].end()) {
-                basket_consumption_utility += pow(to_float(consumption_demands[good].get_quantity()), substitution_exponent[basket]) * share_factors[good];
+                basket_consumption_utility +=
+                    pow(to_float(consumption_demands[good].get_quantity()), intra_basket_substitution_exponent[basket]) * share_factors[good];
             }
         }
-        basket_consumption_utility = pow(basket_consumption_utility, 1 / substitution_coefficient[basket]);
+        basket_consumption_utility = pow(basket_consumption_utility, 1 / intra_basket_substitution_coefficient[basket]);
         consumption_utility += pow(basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
     return consumption_utility;  // outer exponent not relevant for optimization (at least for sigma >1)
@@ -474,12 +477,12 @@ void Consumer::debug_print_distribution(const std::vector<double>& consumption_d
                 print_row("grad", grad[r]);
                 print_row("share factor", share_factors[r]);
                 print_row("substitution coefficient", inter_basket_substitution_coefficient);
-                print_row("consumption request", unscaled_demand(optimizer_consumption[r], r));
+                print_row("consumption request", unscaled_demand(consumption_demands[r], r));
                 print_row("starting value consumption request", desired_consumption[r]);
                 print_row("consumption price", consumption_prices[r]);
                 print_row("current utility", utility / baseline_utility);
                 print_row("current total budget", budget);
-                print_row("current spending for this good", optimizer_consumption[r] * desired_consumption[r] * consumption_prices[r]);
+                print_row("current spending for this good", consumption_demands[r] * desired_consumption[r] * consumption_prices[r]);
 
                 std::cout << '\n';
             }

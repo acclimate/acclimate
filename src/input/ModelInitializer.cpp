@@ -103,13 +103,34 @@ Firm* ModelInitializer::add_firm(std::string name, Sector* sector, Region* regio
     return firm;
 }
 
+settings::SettingsNode ModelInitializer::get_consumer_property(const std::string& name,
+                                                               const std::string& region_name,
+                                                               const std::string& property_name) const {
+    const settings::SettingsNode& consumer_settings = settings["consumers"];
+
+    if (consumer_settings.has(name) && consumer_settings[name].has(property_name)) {
+        return consumer_settings[name][property_name];
+    }
+    if (consumer_settings.has(region_name) && consumer_settings[region_name].has(property_name)) {
+        return consumer_settings[region_name][property_name];
+    }
+    return consumer_settings["ALL"][property_name];
+}
+
 Consumer* ModelInitializer::add_consumer(std::string name, Region* region) {
     if (model()->economic_agents.find(name) != nullptr) {
         throw log::error(this, "Ambiguous agent name", name);
     }
-    // always initialize with substitution coefficient to allow utility comparison
-    const auto substitution_coefficient = get_named_property(settings["consumers"], "ALL", "substitution_coefficient").template as<FloatType>();
-    auto* consumer = model()->economic_agents.add<Consumer>(id_t(std::move(name)), region, substitution_coefficient);
+    const auto consumer_baskets = get_consumer_property(name, region->name(), "consumer_baskets");
+    std::vector<std::vector<int>> consumer_baskets_vector;
+    for (auto input_basket : consumer_baskets.as_sequence()) {
+        consumer_baskets_vector.push_back(input_basket.to_vector<int>());
+    }
+    const auto consumer_basket_substitution_coefficients = get_consumer_property(name, region->name(), "basket_substitution_coefficients").to_vector<double>();
+
+    auto* consumer = model()->economic_agents.add<Consumer>(
+        id_t(std::move(name)), region, get_consumer_property(name, region->name(), "intra_basket_substitution_coefficient").as<FloatType>(),
+        consumer_baskets_vector, consumer_basket_substitution_coefficients);
     region->economic_agents.add(consumer);
     return consumer;
 }
@@ -1011,11 +1032,6 @@ void ModelInitializer::pre_initialize() {
         throw log::error(this, "parameter cost_correction not supported anymore");
     }
     model()->parameters_writable().consumer_utilitarian = parameters["consumer_utilitarian"].as<bool>();
-
-    for (auto input_basket : parameters["consumer_baskets"].as_sequence()) {
-        model()->parameters_writable().consumer_baskets.push_back(input_basket.to_vector<int>());
-    }
-    model()->parameters_writable().consumer_basket_substitution_coefficients = parameters["basket_substitution_coefficients"].to_vector<double>();
     model()->parameters_writable().utility_optimization_algorithm =
         optimization::get_algorithm(parameters["utility_optimization_algorithm"].as<hashed_string>("slsqp"));
     model()->parameters_writable().global_optimization_algorithm =

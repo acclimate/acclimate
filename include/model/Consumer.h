@@ -81,11 +81,15 @@ class Consumer final : public EconomicAgent {
     FloatType inter_basket_substitution_exponent;
     std::vector<FloatType> basket_share_factors;
     std::vector<FloatType> share_factors;
-    std::vector<FloatType> substitution_coefficient;
-    std::vector<FloatType> substitution_exponent;
+    std::vector<FloatType> intra_basket_substitution_coefficient;
+    std::vector<FloatType> intra_basket_substitution_exponent;
 
   public:
-    Consumer(id_t id_p, Region* region_p, FloatType substitution_coefficient);
+    Consumer(id_t id_p,
+             Region* region_p,
+             FloatType inter_basket_substitution_coefficient_p,
+             std::vector<std::vector<int>> consumer_baskets_p,
+             std::vector<FloatType> intra_basket_substitution_coefficients_p);
 
     Consumer* as_consumer() override { return this; };
     const Consumer* as_consumer() const override { return this; };
