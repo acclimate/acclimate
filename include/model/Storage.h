@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "acclimate.h"
 #include "model/PurchasingManager.h"
@@ -35,7 +36,7 @@ class EconomicAgent;
 class Model;
 class Sector;
 
-class Storage {
+class Storage final {
   private:
     Flow input_flow_I_[3] = {Flow(0.0), Flow(0.0), Flow(0.0)};
     Forcing forcing_mu_ = Forcing(1.0);
@@ -48,18 +49,20 @@ class Storage {
     Parameters::StorageParameters parameters_;
 
   public:
-    Sector* const sector;
-    EconomicAgent* const economic_agent;
-    std::unique_ptr<PurchasingManager> const purchasing_manager;
+    non_owning_ptr<Sector> sector;
+    non_owning_ptr<EconomicAgent> economic_agent;
+    const std::unique_ptr<PurchasingManager> purchasing_manager;
+    const id_t id;
 
   private:
     void calc_content_S();
 
   public:
     Storage(Sector* sector_p, EconomicAgent* economic_agent_p);
+    ~Storage();
     const Stock& content_S() const;
-    const Flow& used_flow_U(const EconomicAgent* const caller = nullptr) const;
-    const Flow& desired_used_flow_U_tilde(const EconomicAgent* const caller = nullptr) const;
+    const Flow& used_flow_U(const EconomicAgent* caller = nullptr) const;
+    const Flow& desired_used_flow_U_tilde(const EconomicAgent* caller = nullptr) const;
     const Stock& initial_content_S_star() const { return initial_content_S_star_; }
     const Flow& initial_input_flow_I_star() const { return initial_input_flow_I_star_; }
     const Flow& initial_used_flow_U_star() const { return initial_input_flow_I_star_; }  // == initial_used_flow_U_star
@@ -67,6 +70,7 @@ class Storage {
     Parameters::StorageParameters& parameters_writable();
     void set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p);
     void use_content_S(const Flow& used_flow_U_current);
+    Flow last_possible_use_U_hat() const;
     Flow estimate_possible_use_U_hat() const;
     Flow get_possible_use_U_hat() const;
     void push_flow_Z(const Flow& flow_Z);
@@ -78,8 +82,73 @@ class Storage {
     void add_initial_flow_Z_star(const Flow& flow_Z_star);
     bool subtract_initial_flow_Z_star(const Flow& flow_Z_star);
     void iterate_consumption_and_production();
-    Model* model() const;
-    std::string id() const;
+
+    Model* model();
+    const Model* model() const;
+    const std::string& name() const { return id.name; }
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("business_connections"),
+                        [this]() {  //
+                            return purchasing_manager->business_connections.size();
+                        })
+               && o.set(H::hash("content"),
+                        [this]() {  //
+                            return content_S();
+                        })
+               && o.set(H::hash("demand"),
+                        [this]() {  //
+                            return purchasing_manager->demand_D();
+                        })
+               && o.set(H::hash("desired_used_flow"),
+                        [this]() {  //
+                            return desired_used_flow_U_tilde();
+                        })
+               && o.set(H::hash("expected_costs"),
+                        [this]() {  //
+                            return purchasing_manager->expected_costs();
+                        })
+               && o.set(H::hash("input_flow"),
+                        [this]() {  //
+                            return last_input_flow_I();
+                        })
+               && o.set(H::hash("optimized_value"),
+                        [this]() {  //
+                            return purchasing_manager->optimized_value();
+                        })
+               && o.set(H::hash("possible_use"),
+                        [this]() {  //
+                            return last_possible_use_U_hat();
+                        })
+               && o.set(H::hash("purchase"),
+                        [this]() {  //
+                            return purchasing_manager->purchase();
+                        })
+               && o.set(H::hash("shipment"),
+                        [this]() {  //
+                            return purchasing_manager->get_sum_of_last_shipments();
+                        })
+               && o.set(H::hash("storage_demand"),
+                        [this]() {  //
+                            return purchasing_manager->storage_demand();
+                        })
+               && o.set(H::hash("total_transport_penalty"),
+                        [this]() {  //
+                            return purchasing_manager->total_transport_penalty();
+                        })
+               && o.set(H::hash("use"),
+                        [this]() {  //
+                            return purchasing_manager->demand_D();
+                        })
+               && o.set(H::hash("used_flow"),
+                        [this]() {  //
+                            return used_flow_U();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

@@ -22,46 +22,40 @@
 #define ACCLIMATE_MODEL_H
 
 #include <cstddef>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "ModelRun.h"
 #include "acclimate.h"
-#include "model/GeoLocation.h"
-#include "model/Region.h"
-#include "model/Sector.h"
 #include "parameters.h"
 
 namespace acclimate {
 
-class Consumer;
 class EconomicAgent;
-class Firm;
-class ModelRun;
+class GeoLocation;
 class PurchasingManager;
+class Region;
+class Sector;
 
-class Model {
+class Model final {
     friend class ModelRun;
 
   private:
-    Time time_ = Time(0.0);
-    Time start_time_ = Time(0.0);
-    Time stop_time_ = Time(0.0);
-    TimeStep timestep_ = 0;
-    Time delta_t_ = Time(1.0);
-    unsigned char current_register_ = 1;
-    Parameters::ModelParameters parameters_;
-    bool no_self_supply_ = false;
+    Time time_m = Time(0.0);
+    TimeStep timestep_m = 0;
+    Time delta_t_m = Time(1.0);
+    unsigned char current_register_m = 1;
+    Parameters::ModelParameters parameters_m;
+    bool no_self_supply_m = false;
     std::vector<std::pair<PurchasingManager*, std::size_t>> purchasing_managers;
-    std::vector<std::pair<EconomicAgent*, std::size_t>> economic_agents;
-    ModelRun* const run_m;
+    non_owning_ptr<ModelRun> run_m;
 
   public:
-    std::vector<std::unique_ptr<Sector>> sectors;
-    std::vector<std::unique_ptr<Region>> regions;
-    std::vector<std::unique_ptr<GeoLocation>> other_locations;
-    Sector* const consumption_sector;
+    owning_vector<Sector> sectors;
+    owning_vector<Region> regions;
+    owning_vector<GeoLocation> other_locations;
+    owning_vector<EconomicAgent> economic_agents;
 
   private:
     explicit Model(ModelRun* run_p);
@@ -69,44 +63,41 @@ class Model {
   public:
     Model(const Model& other) = delete;
     Model(Model&& other) = default;
-    const Model* model() const { return this; }
-    const Time& time() const { return time_; }
-    const Time& start_time() const { return start_time_; };
-    const Time& stop_time() const { return stop_time_; };
-    const TimeStep& timestep() const { return timestep_; }
-    const Time& delta_t() const { return delta_t_; }
-    bool done() const { return time() > stop_time(); };
-    bool is_first_timestep() const { return timestep_ == 0; }
+    ~Model();
+    const Time& time() const { return time_m; }
+    const TimeStep& timestep() const { return timestep_m; }
+    const Time& delta_t() const { return delta_t_m; }
+    bool is_first_timestep() const { return timestep_m == 0; }
     void switch_registers();
     void tick();
-    const bool& no_self_supply() const { return no_self_supply_; }
-    void set_start_time(const Time& start_time);
-    void set_stop_time(const Time& stop_time);
+    const bool& no_self_supply() const { return no_self_supply_m; }
     void set_delta_t(const Time& delta_t_p);
     void no_self_supply(bool no_self_supply_p);
-    const unsigned char& current_register() const { return current_register_; }
-    unsigned char other_register() const { return 1 - current_register_; }
-    const Parameters::ModelParameters& parameters() const { return parameters_; }
+    const unsigned char& current_register() const { return current_register_m; }
+    unsigned char other_register() const { return 1 - current_register_m; }
+    const Parameters::ModelParameters& parameters() const { return parameters_m; }
     Parameters::ModelParameters& parameters_writable();
-    Region* add_region(std::string name);
-    Sector* add_sector(std::string name,
-                       const Ratio& upper_storage_limit_omega_p,
-                       const Time& initial_storage_fill_factor_psi_p,
-                       typename Sector::TransportType transport_type_p);
     void start();
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
-    Region* find_region(const std::string& name) const;
-    Sector* find_sector(const std::string& name) const;
-    Firm* find_firm(const std::string& sector_name, const std::string& region_name) const;
-    Firm* find_firm(Sector* sector, const std::string& region_name) const;
-    Consumer* find_consumer(Region* region) const;
-    Consumer* find_consumer(const std::string& region_name) const;
-    GeoLocation* find_location(const std::string& name) const;
-    ModelRun* run() const { return run_m; }
-    std::string id() const { return "MODEL"; }
+
+    ModelRun* run() { return run_m; }
+    const ModelRun* run() const { return run_m; }
+    const Model* model() const { return this; }
+    std::string name() const { return "MODEL"; }
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("duration"),
+                        [this]() {  //
+                            return run()->duration();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

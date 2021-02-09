@@ -21,12 +21,11 @@
 #ifndef ACCLIMATE_ECONOMICAGENT_H
 #define ACCLIMATE_ECONOMICAGENT_H
 
-#include <memory>
+#include <iterator>
+#include <numeric>
 #include <string>
-#include <vector>
 
 #include "acclimate.h"
-#include "model/Storage.h"
 #include "parameters.h"
 
 namespace acclimate {
@@ -35,49 +34,81 @@ class Consumer;
 class Firm;
 class Model;
 class Region;
-class Sector;
+class Storage;
 
 class EconomicAgent {
   public:
-    enum class Type { CONSUMER, FIRM };
+    enum class type_t { CONSUMER, FIRM };
 
   private:
     Parameters::AgentParameters parameters_;
 
   protected:
-    Forcing forcing_ = Forcing(1.0);
+    Forcing forcing_m = Forcing(1.0);
 
   public:
-    Sector* const sector;
-    Region* const region;
-    std::vector<std::unique_ptr<Storage>> input_storages;
-    const Type type;
+    owning_vector<Storage> input_storages;
+    non_owning_ptr<Region> region;
+    const EconomicAgent::type_t type;
+    const id_t id;
 
   protected:
-    EconomicAgent(Sector* sector_p, Region* region_p, const EconomicAgent::Type& type_p);
+    EconomicAgent(id_t id_p, Region* region_p, EconomicAgent::type_t type_p);
 
   public:
-    virtual ~EconomicAgent() = default;
+    virtual ~EconomicAgent();
     const Parameters::AgentParameters& parameters() const { return parameters_; }
     Parameters::AgentParameters const& parameters_writable() const;
-    const Forcing& forcing() const { return forcing_; }
+    const Forcing& forcing() const { return forcing_m; }
     void set_forcing(const Forcing& forcing_p);
-    virtual Firm* as_firm();
-    virtual const Firm* as_firm() const;
-    virtual Consumer* as_consumer();
-    virtual const Consumer* as_consumer() const;
-    bool is_firm() const { return type == Type::FIRM; }
-    bool is_consumer() const { return type == Type::CONSUMER; }
+    bool is_firm() const { return type == EconomicAgent::type_t::FIRM; }
+    bool is_consumer() const { return type == EconomicAgent::type_t::CONSUMER; }
+    virtual Firm* as_firm() { throw log::error(this, "Not a firm"); }
+    virtual const Firm* as_firm() const { throw log::error(this, "Not a firm"); }
+    virtual Consumer* as_consumer() { throw log::error(this, "Not a consumer"); }
+    virtual const Consumer* as_consumer() const { throw log::error(this, "Not a consumer"); }
     virtual void iterate_consumption_and_production() = 0;
     virtual void iterate_expectation() = 0;
     virtual void iterate_purchase() = 0;
     virtual void iterate_investment() = 0;
-    Storage* find_input_storage(const std::string& sector_name) const;
-    void remove_storage(Storage* storage);
-    Model* model() const;
-    virtual std::string id() const;
-    // DEBUG
-    virtual void print_details() const = 0;
+
+    virtual void debug_print_details() const = 0;
+
+    Model* model();
+    const Model* model() const;
+    std::string name() const { return id.name; }
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("business_connections"),
+                        [this]() {  //
+                            return std::accumulate(std::begin(input_storages), std::end(input_storages), 0,
+                                                   [](int v, const auto& is) { return v + is->purchasing_manager->business_connections.size(); });
+                        })
+               && o.set(H::hash("consumption"),
+                        [this]() {  //
+                            return std::accumulate(std::begin(input_storages), std::end(input_storages), Demand(0.0),
+                                                   [](const Demand& d, const auto& is) { return d + is->used_flow_U(); });
+                        })
+               && o.set(H::hash("demand"),
+                        [this]() {  //
+                            return std::accumulate(std::begin(input_storages), std::end(input_storages), Demand(0.0),
+                                                   [](const Demand& d, const auto& is) { return d + is->purchasing_manager->demand_D(); });
+                        })
+               && o.set(H::hash("input_flow"),
+                        [this]() {  //
+                            return std::accumulate(std::begin(input_storages), std::end(input_storages), Demand(0.0),
+                                                   [](const Demand& d, const auto& is) { return d + is->last_input_flow_I(); });
+                        })
+               && o.set(H::hash("storage"),
+                        [this]() {  //
+                            return std::accumulate(std::begin(input_storages), std::end(input_storages), Stock(0.0),
+                                                   [](const Stock& s, const auto& is) { return s + is->content_S(); });
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

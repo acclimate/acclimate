@@ -22,16 +22,17 @@
 #define ACCLIMATE_GEOROUTE_H
 
 #include <string>
-#include <vector>
+
+#include "acclimate.h"
 
 namespace acclimate {
 
 class GeoEntity;
 
-class GeoRoute {
+class GeoRoute final {
   public:
-    std::vector<GeoEntity*> path;
-    std::string id() const;
+    non_owning_vector<GeoEntity> path;
+    std::string name() const;
 };
 }  // namespace acclimate
 

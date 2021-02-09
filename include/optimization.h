@@ -24,31 +24,31 @@
 #include <stdexcept>
 
 #include "nlopt.h"  // IWYU pragma: export
-#include "settingsnode.h"
+#include "types.h"
 
 namespace acclimate::optimization {
 
-static int get_algorithm(const settings::hstring& name) {
+inline int get_algorithm(const hashed_string& name) {
     switch (name) {
-        case settings::hstring::hash("slsqp"):
+        case hash("slsqp"):
             return NLOPT_LD_SLSQP;
-        case settings::hstring::hash("mma"):
+        case hash("mma"):
             return NLOPT_LD_MMA;
-        case settings::hstring::hash("ccsaq"):
+        case hash("ccsaq"):
             return NLOPT_LD_CCSAQ;
-        case settings::hstring::hash("lbfgs"):
+        case hash("lbfgs"):
             return NLOPT_LD_LBFGS;
-        case settings::hstring::hash("tnewton_precond_restart"):
+        case hash("tnewton_precond_restart"):
             return NLOPT_LD_TNEWTON_PRECOND_RESTART;
-        case settings::hstring::hash("tnewton_precond"):
+        case hash("tnewton_precond"):
             return NLOPT_LD_TNEWTON_PRECOND;
-        case settings::hstring::hash("tnewton_restart"):
+        case hash("tnewton_restart"):
             return NLOPT_LD_TNEWTON_RESTART;
-        case settings::hstring::hash("tnewton"):
+        case hash("tnewton"):
             return NLOPT_LD_TNEWTON;
-        case settings::hstring::hash("var1"):
+        case hash("var1"):
             return NLOPT_LD_VAR1;
-        case settings::hstring::hash("var2"):
+        case hash("var2"):
             return NLOPT_LD_VAR2;
         default:
             throw log::error("unknown optimization alorithm '", name, "'");
@@ -110,8 +110,6 @@ class Optimization {
 
   public:
     Optimization(nlopt_algorithm algorithm, unsigned int dim_p) : opt(nlopt_create(algorithm, dim_p)), dim_m(dim_p) {}
-    Optimization(const settings::hstring& algorithm_name, unsigned int dim_p)
-        : Optimization(static_cast<nlopt_algorithm>(get_algorithm(algorithm_name)), dim_p) {}
     ~Optimization() { nlopt_destroy(opt); }
 
     // double& xtol(std::size_t i) { return opt->xtol_abs[i]; }

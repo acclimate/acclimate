@@ -21,31 +21,24 @@
 #ifndef ACCLIMATE_CONSUMER_H
 #define ACCLIMATE_CONSUMER_H
 
+#include "acclimate.h"
 #include "model/EconomicAgent.h"
 
 namespace acclimate {
 
 class Region;
 
-class Consumer : public EconomicAgent {
-  private:
-    using EconomicAgent::forcing_;
-
-  public:
-    using EconomicAgent::input_storages;
-    using EconomicAgent::region;
-
+class Consumer final : public EconomicAgent {
   public:
     Consumer* as_consumer() override { return this; };
-    explicit Consumer(Region* region_p);
+    const Consumer* as_consumer() const override { return this; };
+    Consumer(id_t id_p, Region* region_p);
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;
     void iterate_investment() override;
-    using EconomicAgent::id;
-    using EconomicAgent::model;
-    // DEBUG
-    void print_details() const override;
+
+    void debug_print_details() const override;
 };
 }  // namespace acclimate
 

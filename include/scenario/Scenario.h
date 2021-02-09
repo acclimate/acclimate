@@ -23,6 +23,7 @@
 
 #include <string>
 
+#include "acclimate.h"
 #include "settingsnode.h"
 
 namespace acclimate {
@@ -36,7 +37,7 @@ class Scenario {
   protected:
     settings::SettingsNode scenario_node;
     const settings::SettingsNode& settings;
-    Model* const model_m;
+    non_owning_ptr<Model> model_m;
 
   protected:
     void set_firm_property(Firm* firm, const settings::SettingsNode& node, bool reset);
@@ -52,8 +53,10 @@ class Scenario {
     virtual void iterate();
     virtual std::string calendar_str() const { return "standard"; }
     virtual std::string time_units_str() const;
-    Model* model() const { return model_m; }
-    virtual std::string id() const { return "SCENARIO"; }
+
+    Model* model() { return model_m; }
+    const Model* model() const { return model_m; }
+    virtual std::string name() const { return "SCENARIO"; }
 };
 }  // namespace acclimate
 

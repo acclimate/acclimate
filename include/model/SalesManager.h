@@ -42,7 +42,7 @@ struct SupplyParameters {
     Flow possible_production_X_hat = Flow(0.0);  // price = unit_production_costs_n_c
 };
 
-class SalesManager {
+class SalesManager final {
   private:
     Demand sum_demand_requests_D_ = Demand(0.0);
     openmp::Lock sum_demand_requests_D_lock;
@@ -54,13 +54,13 @@ class SalesManager {
     Flow estimated_possible_production_X_hat_ = Flow(0.0);
     Ratio tax_ = Ratio(0.0);
     struct {
-        typename std::vector<std::shared_ptr<BusinessConnection>>::iterator connection_not_served_completely;
+        std::vector<std::shared_ptr<BusinessConnection>>::iterator connection_not_served_completely;
         Price price_cheapest_buyer_accepted_in_optimization = Price(0.0);  // Price of cheapest connection that has been considered in the profit optimization
         Flow flow_not_served_completely = Flow(0.0);
     } supply_distribution_scenario;  // to distribute production among demand requests
 
   public:
-    Firm* const firm;
+    non_owning_ptr<Firm> firm;
     std::vector<std::shared_ptr<BusinessConnection>> business_connections;
 
   private:
@@ -82,8 +82,8 @@ class SalesManager {
                                        const Price& n_min_p,
                                        const Price& precision_p) const;
     void print_parameters() const;
-    void print_connections(typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
-                           typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const;
+    void print_connections(std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
+                           std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const;
 
   public:
     explicit SalesManager(Firm* firm_p);
@@ -108,10 +108,12 @@ class SalesManager {
     FlowValue calc_production_extension_penalty_P(const FlowQuantity& production_quantity_X) const;
     Price calc_marginal_production_extension_penalty(const FlowQuantity& production_quantity_X) const;
     Price calc_marginal_production_costs(const FlowQuantity& production_quantity_X, const Price& unit_production_costs_n_c) const;
-    Model* model() const;
-    std::string id() const;
-    // DEBUG
-    void print_details() const;
+
+    void debug_print_details() const;
+
+    Model* model();
+    const Model* model() const;
+    std::string name() const;
 };
 }  // namespace acclimate
 

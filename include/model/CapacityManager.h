@@ -30,13 +30,13 @@ namespace acclimate {
 class Firm;
 class Model;
 
-class CapacityManager {
+class CapacityManager final {
   private:
     Flow desired_production_X_tilde_ = Flow(0.0);
     Flow possible_production_X_hat_ = Flow(0.0);
 
   public:
-    Firm* const firm;
+    non_owning_ptr<Firm> firm;
     const Ratio possible_overcapacity_ratio_beta;
 
   private:
@@ -54,10 +54,11 @@ class CapacityManager {
     Flow get_possible_production_X_hat() const;
     Flow estimate_possible_production_X_hat() const;
     Flow calc_production_X();
-    Model* model() const;
-    std::string id() const;
-    // DEBUG
-    void print_inputs() const;
+
+    void debug_print_inputs() const;
+
+    const Model* model() const;
+    std::string name() const;
 };
 }  // namespace acclimate
 

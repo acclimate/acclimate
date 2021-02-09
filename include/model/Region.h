@@ -23,33 +23,28 @@
 
 #include <cstddef>
 #include <memory>
-#include <string>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 
 #include "acclimate.h"
-#include "model/EconomicAgent.h"
 #include "model/GeoLocation.h"
 #include "model/GeoRoute.h"  // IWYU pragma: keep
-#include "model/Government.h"
 #include "model/Sector.h"
 #include "openmp.h"
 #include "parameters.h"
 
 namespace acclimate {
 
+class EconomicAgent;
+class Government;
 class Model;
 
-class Region : public GeoLocation {
-    friend class Model;
+class Region final : public GeoLocation {
     friend class ModelInitializer;
 
   private:
     struct route_hash {
-        std::size_t operator()(const std::pair<IndexType, typename Sector::TransportType>& p) const {
-            return (p.first << 3) | (static_cast<IntType>(p.second));
-        }
+        std::size_t operator()(const std::pair<IndexType, Sector::transport_type_t>& p) const { return (p.first << 3) | (static_cast<IntType>(p.second)); }
     };
 
   private:
@@ -59,30 +54,25 @@ class Region : public GeoLocation {
     openmp::Lock import_flow_Z_lock;
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
     openmp::Lock consumption_flow_Y_lock;
-    std::unordered_map<std::pair<IndexType, typename Sector::TransportType>, GeoRoute, route_hash> routes;
+    std::unordered_map<std::pair<IndexType, Sector::transport_type_t>, GeoRoute, route_hash> routes;  // TODO improve
     std::unique_ptr<Government> government_m;
-    const IndexType index_m;
     Parameters::RegionParameters parameters_m;
     openmp::Lock economic_agents_lock;
 
   public:
-    using GeoLocation::connections;
-    std::vector<std::unique_ptr<EconomicAgent>> economic_agents;
-
-  private:
-    Region(Model* model_p, std::string id_p, IndexType index_p);
+    non_owning_vector<EconomicAgent> economic_agents;
 
   public:
-    ~Region() override = default;
+    Region(Model* model_p, id_t id_p);
+    ~Region() override;
     const Flow& consumption_C() const;
     const Flow& import_flow_Z() const;
     const Flow& export_flow_Z() const;
     void set_government(Government* government_p);
     Government* government();
-    Government const* government() const;
+    const Government* government() const;
     const Parameters::RegionParameters& parameters() const { return parameters_m; }
     const Parameters::RegionParameters& parameters_writable() const;
-    IndexType index() const { return index_m; }
     void add_export_Z(const Flow& export_flow_Z_p);
     void add_import_Z(const Flow& import_flow_Z_p);
     void add_consumption_flow_Y(const Flow& consumption_flow_Y_p);
@@ -91,12 +81,32 @@ class Region : public GeoLocation {
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
-    const GeoRoute& find_path_to(Region* region, typename Sector::TransportType transport_type) const;
+    GeoRoute& find_path_to(Region* region, Sector::transport_type_t transport_type);
     Region* as_region() override { return this; }
     const Region* as_region() const override { return this; }
-    using GeoLocation::id;
-    using GeoLocation::model;
-    void remove_economic_agent(EconomicAgent* economic_agent);
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("import"),
+                        [this]() {  //
+                            return import_flow_Z();
+                        })
+               && o.set(H::hash("export"),
+                        [this]() {  //
+                            return export_flow_Z();
+                        })
+               && o.set(H::hash("consumption"),
+                        [this]() {  //
+                            return consumption_C();
+                        })
+               && o.set(H::hash("gdp"),
+                        [this]() {  //
+                            return get_gdp();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

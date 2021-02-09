@@ -23,52 +23,33 @@
 #include <algorithm>
 #include <chrono>
 #include <iterator>
-#include <ostream>
+#include <memory>
 #include <random>
-#include <type_traits>
 
 #include "ModelRun.h"
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
-#include "model/Firm.h"  // IWYU pragma: keep
+#include "model/GeoLocation.h"
 #include "model/PurchasingManager.h"
 #include "model/Region.h"
+#include "model/Sector.h"
+#include "model/Storage.h"  // IWYU pragma: keep
 
 namespace acclimate {
 
-Model::Model(ModelRun* const run_p) : run_m(run_p), consumption_sector(new Sector(this, "FCON", 0, Ratio(0.0), Time(0.0), Sector::TransportType::IMMEDIATE)) {
-    sectors.emplace_back(consumption_sector);
-}
+Model::Model(ModelRun* run_p) : run_m(run_p) {}
 
-Region* Model::add_region(std::string name) {
-    auto region = new Region(this, std::move(name), regions.size());
-    regions.emplace_back(region);
-    return region;
-}
-
-Sector* Model::add_sector(std::string name,
-                          const Ratio& upper_storage_limit_omega_p,
-                          const Time& initial_storage_fill_factor_psi_p,
-                          typename Sector::TransportType transport_type_p) {
-    auto sector = new Sector(this, std::move(name), sectors.size(), upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p, transport_type_p);
-    sectors.emplace_back(sector);
-    return sector;
-}
+Model::~Model() = default;  // needed to use forward declares for std::unique_ptr
 
 void Model::start() {
-    time_ = start_time_;
-    timestep_ = 0;
-    for (const auto& region : regions) {
-        for (const auto& economic_agent : region->economic_agents) {
-            economic_agents.emplace_back(std::make_pair(economic_agent.get(), 0));
-            std::transform(std::begin(economic_agent->input_storages), std::end(economic_agent->input_storages), std::back_inserter(purchasing_managers),
-                           [](const auto& is) { return std::make_pair(is->purchasing_manager.get(), 0); });
-        }
+    timestep_m = 0;
+    for (const auto& economic_agent : economic_agents) {
+        std::transform(std::begin(economic_agent->input_storages), std::end(economic_agent->input_storages), std::back_inserter(purchasing_managers),
+                       [](const auto& is) { return std::make_pair(is->purchasing_manager.get(), 0); });
     }
     if constexpr (options::PARALLELIZATION) {
         std::random_device rd;
         std::mt19937 g(rd());
-        std::shuffle(std::begin(economic_agents), std::end(economic_agents), g);
         std::shuffle(std::begin(purchasing_managers), std::end(purchasing_managers), g);
     }
 }
@@ -87,8 +68,7 @@ void Model::iterate_consumption_and_production() {
 
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
-        auto& p = economic_agents[i];
-        p.first->iterate_consumption_and_production();
+        economic_agents[i]->iterate_consumption_and_production();
     }
 }
 
@@ -101,8 +81,7 @@ void Model::iterate_expectation() {
 
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
-        auto& p = economic_agents[i];
-        p.first->iterate_expectation();
+        economic_agents[i]->iterate_expectation();
     }
 }
 
@@ -135,102 +114,34 @@ void Model::iterate_investment() {
 
 #pragma omp parallel for default(shared) schedule(guided)
     for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
-        auto& p = economic_agents[i];
-        p.first->iterate_investment();
+        economic_agents[i]->iterate_investment();
     }
-}
-
-Region* Model::find_region(const std::string& name) const {
-    auto it = std::find_if(std::begin(regions), std::end(regions), [name](const auto& r) { return r->id() == name; });
-    if (it == std::end(regions)) {
-        return nullptr;
-    }
-    return it->get();
-}
-
-Sector* Model::find_sector(const std::string& name) const {
-    auto it = std::find_if(std::begin(sectors), std::end(sectors), [name](const auto& s) { return s->id() == name; });
-    if (it == std::end(sectors)) {
-        return nullptr;
-    }
-    return it->get();
-}
-
-Firm* Model::find_firm(const std::string& sector_name, const std::string& region_name) const {
-    Sector* sector = find_sector(sector_name);
-    if (sector != nullptr) {
-        return find_firm(sector, region_name);
-    }
-    return nullptr;
-}
-
-Firm* Model::find_firm(Sector* sector, const std::string& region_name) const {
-    auto it = std::find_if(std::begin(sector->firms), std::end(sector->firms), [region_name](const auto f) { return f->region->id() == region_name; });
-    if (it == std::end(sector->firms)) {
-        return nullptr;
-    }
-    return *it;
-}
-
-Consumer* Model::find_consumer(Region* region) const {
-    auto it = std::find_if(std::begin(region->economic_agents), std::end(region->economic_agents),
-                           [](const auto& ea) { return ea->type == EconomicAgent::Type::CONSUMER; });
-    if (it == std::end(region->economic_agents)) {
-        return nullptr;
-    }
-    return it->get()->as_consumer();
-}
-
-Consumer* Model::find_consumer(const std::string& region_name) const {
-    Region* region = find_region(region_name);
-    if (region != nullptr) {
-        return find_consumer(region);
-    }
-    return nullptr;
-}
-
-GeoLocation* Model::find_location(const std::string& name) const {
-    auto it = std::find_if(std::begin(other_locations), std::end(other_locations), [name](const auto& l) { return l->id() == name; });
-    if (it == std::end(other_locations)) {
-        return nullptr;
-    }
-    return it->get();
 }
 
 void Model::switch_registers() {
     debug::assertstep(this, IterationStep::SCENARIO);
-    current_register_ = 1 - current_register_;
+    current_register_m = 1 - current_register_m;
 }
 
 void Model::tick() {
     debug::assertstep(this, IterationStep::SCENARIO);
-    time_ += delta_t_;
-    ++timestep_;
+    time_m += delta_t_m;
+    ++timestep_m;
 }
 
 void Model::set_delta_t(const Time& delta_t_p) {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    delta_t_ = delta_t_p;
-}
-
-void Model::set_start_time(const Time& start_time) {
-    debug::assertstep(this, IterationStep::INITIALIZATION);
-    start_time_ = start_time;
-}
-
-void Model::set_stop_time(const Time& stop_time) {
-    debug::assertstep(this, IterationStep::INITIALIZATION);
-    stop_time_ = stop_time;
+    delta_t_m = delta_t_p;
 }
 
 void Model::no_self_supply(bool no_self_supply_p) {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    no_self_supply_ = no_self_supply_p;
+    no_self_supply_m = no_self_supply_p;
 }
 
 Parameters::ModelParameters& Model::parameters_writable() {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    return parameters_;
+    return parameters_m;
 }
 
 std::string timeinfo(const Model& m) { return m.run()->timeinfo(); }

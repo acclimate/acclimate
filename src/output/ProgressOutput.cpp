@@ -20,34 +20,28 @@
 
 #include "output/ProgressOutput.h"
 
-#include <cstddef>
-#include <utility>
+#include <memory>
 
+#include "ModelRun.h"
+#include "model/Model.h"
 #include "progressbar.h"
-#include "settingsnode.h"
 
 namespace acclimate {
 
-ProgressOutput::ProgressOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)
-    : Output(settings_p, model_p, std::move(output_node_p)) {}
-
-void ProgressOutput::initialize() {
-    const auto total = output_node["total"].template as<std::size_t>();
-    bar = std::make_unique<progressbar::ProgressBar>(total);
-}
+ProgressOutput::ProgressOutput(Model* model_p) : Output(model_p), bar(model_p->run()->total_timestep_count()) {}
 
 void ProgressOutput::checkpoint_stop() {
-    bar->println("     [ Checkpointing ]", false);
-    bar->abort();
+    bar.println("     [ Checkpointing ]", false);
+    bar.abort();
 }
 
 void ProgressOutput::checkpoint_resume() {
-    bar->reset_eta();
-    bar->resume();
+    bar.reset_eta();
+    bar.resume();
 }
 
-void ProgressOutput::internal_end() { bar->close(); }
+void ProgressOutput::end() { bar.close(); }
 
-void ProgressOutput::internal_iterate_end() { ++(*bar); }
+void ProgressOutput::iterate() { ++bar; }
 
 }  // namespace acclimate

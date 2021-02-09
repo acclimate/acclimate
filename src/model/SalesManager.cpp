@@ -68,7 +68,7 @@ bool SalesManager::remove_business_connection(BusinessConnection* business_conne
     auto it = std::find_if(std::begin(business_connections), std::end(business_connections),
                            [business_connection](const auto& bc) { return bc.get() == business_connection; });
     if (it == std::end(business_connections)) {
-        throw log::error(this, "Business connection ", business_connection->id(), " not found");
+        throw log::error(this, "Business connection ", business_connection->name(), " not found");
     }
     business_connections.erase(it);
     if constexpr (options::DEBUGGING) {
@@ -82,13 +82,14 @@ bool SalesManager::remove_business_connection(BusinessConnection* business_conne
 
 SalesManager::~SalesManager() {
     for (auto& bc : business_connections) {
-        bc->invalidate_seller();
+        bc->seller.invalidate();
     }
 }
 
-Model* SalesManager::model() const { return firm->model(); }
+Model* SalesManager::model() { return firm->model(); }
+const Model* SalesManager::model() const { return firm->model(); }
 
-std::string SalesManager::id() const { return firm->id(); }
+std::string SalesManager::name() const { return firm->name(); }
 
 const Demand& SalesManager::sum_demand_requests_D() const {
     debug::assertstepnot(this, IterationStep::PURCHASE);
@@ -144,10 +145,8 @@ void SalesManager::distribute() {
         for (auto& not_served_bc : business_connections) {
             not_served_bc->push_flow_Z(Flow(0.0));
         }
-    } else {  // non-zero production to distribute
-        // DEBUG
-        unsigned int pushed_flows = 0;
-        //
+    } else {                            // non-zero production to distribute
+        unsigned int pushed_flows = 0;  // only used when debugging
         assert(!isnan(supply_distribution_scenario.price_cheapest_buyer_accepted_in_optimization));
         Price cheapest_price_range_half_width(0.0);
         if (model()->parameters().cheapest_price_range_generic_size) {
@@ -801,11 +800,11 @@ void SalesManager::impose_tax(const Ratio tax_p) {
 
 FlowValue SalesManager::get_tax() const { return tax_ * firm->production_X().get_value(); }
 
-void SalesManager::print_details() const {
+void SalesManager::debug_print_details() const {
     if constexpr (options::DEBUGGING) {
         log::info(this, business_connections.size(), " outputs:");
         for (const auto& bc : business_connections) {
-            log::info(this, "    ", bc->id(), "  Z_star= ", std::setw(11), bc->initial_flow_Z_star().get_quantity());
+            log::info(this, "    ", bc->name(), "  Z_star= ", std::setw(11), bc->initial_flow_Z_star().get_quantity());
         }
     }
 }
@@ -842,16 +841,16 @@ void SalesManager::print_parameters() const {
     }
 }
 
-void SalesManager::print_connections(typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
-                                     typename std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const {
+void SalesManager::print_connections(std::vector<std::shared_ptr<BusinessConnection>>::const_iterator begin_equally_distributed,
+                                     std::vector<std::shared_ptr<BusinessConnection>>::const_iterator end_equally_distributed) const {
     if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
         {
-            std::cout << model()->run()->timeinfo() << ", " << id() << ": supply distribution for " << business_connections.size() << " outputs:\n";
+            std::cout << model()->run()->timeinfo() << ", " << name() << ": supply distribution for " << business_connections.size() << " outputs:\n";
             auto sum = FlowQuantity(0.0);
             auto initial_sum = FlowQuantity(0.0);
             for (const auto& bc : business_connections) {
-                std::cout << "      " << bc->id() << " :\n";
+                std::cout << "      " << bc->name() << " :\n";
                 print_row("n", bc->last_demand_request_D().get_price());
                 print_row("D_r", bc->last_demand_request_D().get_quantity());
                 print_row("D_star", bc->initial_flow_Z_star().get_quantity());
@@ -862,15 +861,15 @@ void SalesManager::print_connections(typename std::vector<std::shared_ptr<Busine
                 initial_sum += bc->initial_flow_Z_star().get_quantity();
             }
             if (supply_distribution_scenario.connection_not_served_completely != business_connections.end()) {
-                std::cout << "      not completely served: " << (*supply_distribution_scenario.connection_not_served_completely)->id() << '\n';
+                std::cout << "      not completely served: " << (*supply_distribution_scenario.connection_not_served_completely)->name() << '\n';
             } else {
                 std::cout << "      all connections served completely\n";
             }
             if (begin_equally_distributed != business_connections.end()) {
-                std::cout << "      first_equal_distribution: " << (*begin_equally_distributed)->id() << '\n';
+                std::cout << "      first_equal_distribution: " << (*begin_equally_distributed)->name() << '\n';
             }
             if (end_equally_distributed != business_connections.end()) {
-                std::cout << "      last_equal_distribution:  " << (*end_equally_distributed)->id() << '\n';
+                std::cout << "      last_equal_distribution:  " << (*end_equally_distributed)->name() << '\n';
             }
             std::cout << "      Sums:\n";
             print_row("sum D_r", sum);

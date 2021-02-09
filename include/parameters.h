@@ -25,6 +25,8 @@
 
 namespace acclimate {
 
+// TODO get rid of Parameters struct
+
 struct Parameters {
     struct AgentParameters {};
 

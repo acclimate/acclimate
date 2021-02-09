@@ -37,32 +37,35 @@ class Region;
 
 class GeoLocation : public GeoEntity {
   public:
-    enum class Type { REGION, SEA, PORT };
+    enum class type_t { REGION, SEA, PORT };
 
   protected:
     std::unique_ptr<GeoPoint> centroid_m;
-    const std::string id_m;
 
   public:
     std::vector<std::shared_ptr<GeoConnection>> connections;
-    const Type type;
+    const GeoLocation::type_t type;
+    const id_t id;
 
   public:
-    GeoLocation(Model* model_m, TransportDelay delay_p, Type type_p, std::string id_p);
+    GeoLocation(Model* model_p, id_t id_p, TransportDelay delay_p, GeoLocation::type_t type_p);
     virtual ~GeoLocation() override;
-    void set_centroid(std::unique_ptr<GeoPoint>& centroid_p);
+    void set_centroid(FloatType lon_p, FloatType lat_p);
     const GeoPoint* centroid() const { return centroid_m.get(); }
     void remove_connection(const GeoConnection* connection);
+
+    GeoLocation* as_location() override { return this; }
+    const GeoLocation* as_location() const override { return this; }
     virtual Region* as_region() {
-        assert(type == Type::REGION);
+        assert(type == GeoLocation::type_t::REGION);
         return nullptr;
     }
     virtual const Region* as_region() const {
-        assert(type == Type::REGION);
+        assert(type == GeoLocation::type_t::REGION);
         return nullptr;
     }
-    using GeoEntity::model;
-    std::string id() const override { return id_m; }
+
+    std::string name() const override { return id.name; }
 };
 }  // namespace acclimate
 
