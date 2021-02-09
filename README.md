@@ -31,10 +31,6 @@ External dependecies:
 - [NetCDF C](https://www.unidata.ucar.edu/software/netcdf)
   - used for reading and writing of NetCDF files
   - Source code: [Unidata/netcdf-c](https://github.com/Unidata/netcdf-c)
-- [NetCDF CXX4](https://www.unidata.ucar.edu/software/netcdf) (C++ bindings for NetCDF)
-  - used for reading and writing of NetCDF files
-  - will be built in by default
-  - Source code: [Unidata/netcdf-cxx4](https://github.com/Unidata/netcdf-cxx4)
 - [NLOpt](http://ab-initio.mit.edu/wiki/index.php/NLopt)
   - used for numerical optimization
   - will be built in by default
@@ -50,8 +46,8 @@ Further built-in dependecies (included in this repository as subtrees):
   - used for compilation
 - [swillner/cpp-library](https://github.com/swillner/cpp-library)
   - some minor helper functions, e.g. for progress bar
-- [swillner/libmrio](https://github.com/swillner/libmrio)
-  - used for handling of multi-regional input-output tables
+- [swillner/netcdfpp](https://github.com/swillner/netcdfpp)
+  - used for reading and writing NetCDF files
 - [swillner/settingsnode](https://github.com/swillner/settingsnode)
   - used for reading settings files
 

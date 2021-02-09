@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <utility>
-#include <vector>
 
 #include "acclimate.h"
 #include "model/CapacityManager.h"
@@ -34,12 +33,13 @@
 
 namespace acclimate {
 
-Firm::Firm(Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
-    : EconomicAgent(sector_p, region_p, EconomicAgent::Type::FIRM),
+Firm::Firm(id_t id_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
+    : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::FIRM),
+      sector(sector_p),
       capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta_p)),
       sales_manager(new SalesManager(this)) {}
 
-void Firm::initialize() { this->sales_manager->initialize(); }
+void Firm::initialize() { sales_manager->initialize(); }
 
 void Firm::produce_X() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
@@ -119,7 +119,7 @@ void Firm::iterate_investment() {
 Flow Firm::maximal_production_beta_X_star() const { return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta); }
 
 FlowQuantity Firm::forced_maximal_production_quantity_lambda_beta_X_star() const {
-    return round(initial_production_X_star_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
+    return round(initial_production_X_star_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_m));
 }
 
 const BusinessConnection* Firm::self_supply_connection() const {
@@ -137,23 +137,13 @@ const Flow& Firm::production_X() const {
     return production_X_;
 }
 
-Flow Firm::direct_loss() const {
-    return Flow::possibly_negative(round(initial_production_X_star_.get_quantity() * Forcing(1.0 - forcing_)),
-                                   production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0));
-}
-
-Flow Firm::total_loss() const {
-    return Flow::possibly_negative(round(initial_production_X_star_.get_quantity() - production_X_.get_quantity()),
-                                   production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0));
-}
-
-void Firm::print_details() const {
+void Firm::debug_print_details() const {
     if constexpr (options::DEBUGGING) {
         log::info(this, "X_star= ", initial_production_X_star_.get_quantity(), ":");
         for (const auto& input_storage : input_storages) {
-            input_storage->purchasing_manager->print_details();
+            input_storage->purchasing_manager->debug_print_details();
         }
-        sales_manager->print_details();
+        sales_manager->debug_print_details();
     }
 }
 

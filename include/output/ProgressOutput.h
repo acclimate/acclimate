@@ -21,37 +21,23 @@
 #ifndef ACCLIMATE_PROGRESSOUTPUT_H
 #define ACCLIMATE_PROGRESSOUTPUT_H
 
-#include <memory>
-
 #include "output/Output.h"
 #include "progressbar.h"
-
-namespace settings {
-class SettingsNode;
-}  // namespace settings
 
 namespace acclimate {
 
 class Model;
 
-class ProgressOutput : public Output {
+class ProgressOutput final : public Output {
   private:
-    std::unique_ptr<progressbar::ProgressBar> bar;
+    progressbar::ProgressBar bar;
 
   public:
-    using Output::output_node;
-
-  private:
-    void internal_iterate_end() override;
-    void internal_end() override;
-
-  public:
-    ProgressOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);
-    void initialize() override;
+    ProgressOutput(Model* model_p);
+    void iterate() override;
+    void end() override;
     void checkpoint_resume() override;
     void checkpoint_stop() override;
-    using Output::id;
-    using Output::model;
 };
 }  // namespace acclimate
 

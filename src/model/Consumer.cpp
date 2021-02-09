@@ -1,6 +1,6 @@
 /*
-  Copyright (C) 2014-2020 Sven Willner<sven.willner@pik-potsdam.de>
-                          Christian Otto<christian.otto@pik-potsdam.de>
+  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
+                          Christian Otto <christian.otto@pik-potsdam.de>
 
   This file is part of Acclimate.
 
@@ -15,16 +15,25 @@
   GNU Affero General Public License for more details.
 
   You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see<http://www.gnu.org/licenses/>.
+  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "model/Consumer.h"
 
-#include <optimization.h>
+#include <algorithm>
+#include <cmath>
+#include <memory>
+#include <utility>
 
 #include "ModelRun.h"
+#include "acclimate.h"
 #include "autodiff.h"
 #include "model/Model.h"
+#include "model/PurchasingManager.h"
+#include "model/Region.h"
+#include "model/Storage.h"
+#include "optimization.h"
+#include "parameters.h"
 
 static constexpr auto MAX_GRADIENT = 1e3;  // TODO: any need to modify?
 static constexpr bool IGNORE_ROUNDOFFLIMITED = false;
@@ -33,10 +42,8 @@ static constexpr bool VERBOSE_CONSUMER = true;
 namespace acclimate {
 // TODO: in the long run abstract consumer with different implementations would be nice
 
-Consumer::Consumer(Region* region_p) : EconomicAgent(region_p->model()->consumption_sector, region_p, EconomicAgent::Type::CONSUMER) {}
-
-Consumer::Consumer(Region* region_p, FloatType substitution_coefficient_p)
-    : EconomicAgent(region_p->model()->consumption_sector, region_p, EconomicAgent::Type::CONSUMER) {
+Consumer::Consumer(id_t id_p, Region* region_p, FloatType substitution_coefficient_p)
+    : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::CONSUMER) {
     inter_basket_substitution_coefficient = substitution_coefficient_p;
     inter_basket_substitution_exponent = (inter_basket_substitution_coefficient - 1) / inter_basket_substitution_coefficient;
 }
@@ -218,7 +225,7 @@ void Consumer::iterate_consumption_and_production() {
             }
             assert(reservation_price > 0.0);
 
-            const Flow desired_used_flow_U_tilde = Flow(round(is->initial_input_flow_I_star().get_quantity() * forcing_
+            const Flow desired_used_flow_U_tilde = Flow(round(is->initial_input_flow_I_star().get_quantity() * forcing_m
                                                               * pow(reservation_price / Price(1.0), is->parameters().consumption_price_elasticity)),
                                                         reservation_price);
             const Flow used_flow_U =
@@ -361,9 +368,9 @@ void Consumer::consumption_optimize(optimization::Optimization& optimizer) {
             if (optimizer.roundoff_limited()) {
                 if constexpr (!IGNORE_ROUNDOFFLIMITED) {
                     if constexpr (options::DEBUGGING) {
-                        print_distribution(optimizer_consumption);
+                        debug_print_distribution(optimizer_consumption);
                     }
-                    model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, this->region->model()->consumption_sector, nullptr, this);
+                    model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, this);
                     if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                         throw log::error(this, "optimization is roundoff limited (for ", goods_num, " consumption goods)");
                     } else {
@@ -373,9 +380,9 @@ void Consumer::consumption_optimize(optimization::Optimization& optimizer) {
             }
         } else if (optimizer.maxtime_reached()) {
             if constexpr (options::DEBUGGING) {
-                print_distribution(optimizer_consumption);
+                debug_print_distribution(optimizer_consumption);
             }
-            model()->run()->event(EventType::OPTIMIZER_TIMEOUT, this->region->model()->consumption_sector, nullptr, this);
+            model()->run()->event(EventType::OPTIMIZER_TIMEOUT, this);
             if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                 throw log::error(this, "optimization timed out (for ", goods_num, " inputs)");
             } else {
@@ -387,7 +394,7 @@ void Consumer::consumption_optimize(optimization::Optimization& optimizer) {
         }
     } catch (const optimization::failure& ex) {
         if constexpr (options::DEBUGGING) {
-            print_distribution(optimizer_consumption);  // TODO: change to vector of flows?
+            debug_print_distribution(optimizer_consumption);  // TODO: change to vector of flows?
         }
         // TODO maxiter limit is ok, the rest fatal
         if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
@@ -435,12 +442,12 @@ void Consumer::iterate_investment() {
     // }
 }
 
-void Consumer::print_details() const {
+void Consumer::debug_print_details() const {
     // TODO: adjust this to give info on U(x), budget, starting values, etc.
     if constexpr (options::DEBUGGING) {
         log::info(this);
         for (const auto& is : input_storages) {
-            is->purchasing_manager->print_details();
+            is->purchasing_manager->debug_print_details();
         }
     }
 }
@@ -455,15 +462,15 @@ static void print_row(T1 a, T2 b, T3 c) {
     std::cout << "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n";
 }
 
-void Consumer::print_distribution(const std::vector<double>& consumption_demands) const {
+void Consumer::debug_print_distribution(const std::vector<double>& consumption_demands) const {
     if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
         {
-            std::cout << model()->run()->timeinfo() << ", " << id() << ": demand distribution for " << goods_num << " inputs :\n";
+            std::cout << model()->run()->timeinfo() << ", " << name() << ": demand distribution for " << goods_num << " inputs :\n";
             std::vector<FloatType> grad(goods_num);
             // max_objective(&consumption_demands[0], &grad[0]);
             for (std::size_t r = 0; r < goods_num; ++r) {
-                std::cout << "      " << this->id() << " :\n";
+                std::cout << "      " << name() << " :\n";
                 print_row("grad", grad[r]);
                 print_row("share factor", share_factors[r]);
                 print_row("substitution coefficient", inter_basket_substitution_coefficient);

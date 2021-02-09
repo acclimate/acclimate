@@ -22,35 +22,42 @@
 #define ACCLIMATE_GEOENTITY_H
 
 #include <string>
-#include <vector>
 
 #include "acclimate.h"
 
 namespace acclimate {
 
+class GeoConnection;
+class GeoLocation;
 class Model;
 class TransportChainLink;
 
 class GeoEntity {
   public:
-    enum class Type { LOCATION, CONNECTION };
+    enum class type_t { LOCATION, CONNECTION };
 
   protected:
-    Type type_m;
-    Model* const model_m;
+    non_owning_ptr<Model> model_m;
 
   public:
     const TransportDelay delay;
-    std::vector<TransportChainLink*> transport_chain_links;
+    const GeoEntity::type_t entity_type;
+    non_owning_vector<TransportChainLink> transport_chain_links;
 
   public:
-    GeoEntity(Model* model_p, TransportDelay delay_p, Type type_p);
+    GeoEntity(Model* model_p, TransportDelay delay_p, GeoEntity::type_t type_p);
     virtual ~GeoEntity();
-    Type type() const { return type_m; }
     void set_forcing_nu(Forcing forcing_nu_p);
-    void remove_transport_chain_link(TransportChainLink* transport_chain_link);
-    Model* model() const { return model_m; }
-    virtual std::string id() const = 0;
+
+    virtual GeoConnection* as_connection() { throw log::error(this, "Not a connection"); }
+    virtual const GeoConnection* as_connection() const { throw log::error(this, "Not a connection"); }
+
+    virtual GeoLocation* as_location() { throw log::error(this, "Not a location"); }
+    virtual const GeoLocation* as_location() const { throw log::error(this, "Not a location"); }
+
+    Model* model() { return model_m; }
+    const Model* model() const { return model_m; }
+    virtual std::string name() const = 0;
 };
 }  // namespace acclimate
 

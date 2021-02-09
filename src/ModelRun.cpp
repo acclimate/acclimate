@@ -25,6 +25,8 @@
 #include <chrono>
 #include <cmath>
 #include <csignal>
+#include <ctime>
+#include <iosfwd>
 #include <string>
 
 #include "acclimate.h"
@@ -32,26 +34,14 @@
 #include "input/ModelInitializer.h"
 #include "model/EconomicAgent.h"
 #include "model/Model.h"
-#include "model/Region.h"
 #include "model/Sector.h"
 #include "openmp.h"
 #include "output/ArrayOutput.h"
-#include "output/ConsoleOutput.h"
-#include "output/DamageOutput.h"
-#include "output/GnuplotOutput.h"
-#include "output/HistogramOutput.h"
-#include "output/JSONNetworkOutput.h"
-#include "output/JSONOutput.h"
 #include "output/NetCDFOutput.h"
 #include "output/Output.h"
 #include "output/ProgressOutput.h"
-#include "scenario/DirectPopulation.h"
 #include "scenario/EventSeriesScenario.h"
-#include "scenario/Flooding.h"
-#include "scenario/HeatLaborProductivity.h"
-#include "scenario/Hurricanes.h"
 #include "scenario/Scenario.h"
-#include "scenario/Taxes.h"
 #include "settingsnode.h"
 
 namespace acclimate {
@@ -100,99 +90,74 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
         checkpoint::initialize();
     }
 
+    {
+        std::ostringstream ss;
+        ss << settings;
+        settings_string_m = ss.str();
+    }
+
+    const settings::SettingsNode& scenario_node = settings["scenario"];
+    start_time_m = scenario_node["start"].as<Time>();
+    stop_time_m = scenario_node["stop"].as<Time>();
+    baseyear_m = scenario_node["baseyear"].as<int>(2000);
+
     auto model = new Model(this);
     {
         ModelInitializer model_initializer(model, settings);
         model_initializer.initialize();
         if constexpr (options::DEBUGGING) {
-            model_initializer.print_network_characteristics();
+            model_initializer.debug_print_network_characteristics();
         }
         model_m.reset(model);
     }
 
-    for (const auto& scenario_node : settings["scenarios"].as_sequence()) {
-        Scenario* scenario = nullptr;
-        const auto& type = scenario_node["type"].template as<hstring>();
+    {
+        const auto& type = scenario_node["type"].as<hashed_string>();
         switch (type) {
-            case hstring::hash("events"):
-                scenario = new Scenario(settings, scenario_node, model);
+            case hash("events"):  // TODO separate
+                scenario = std::make_unique<Scenario>(settings, scenario_node, model_m.get());
                 break;
-            case hstring::hash("taxes"):
-                scenario = new Taxes(settings, scenario_node, model);
-                break;
-            case hstring::hash("flooding"):
-                scenario = new Flooding(settings, scenario_node, model);
-                break;
-            case hstring::hash("hurricanes"):
-                scenario = new Hurricanes(settings, scenario_node, model);
-                break;
-            case hstring::hash("direct_population"):
-                scenario = new DirectPopulation(settings, scenario_node, model);
-                break;
-            case hstring::hash("heat_labor_productivity"):
-                scenario = new HeatLaborProductivity(settings, scenario_node, model);
-                break;
-            case hstring::hash("event_series"):
-                scenario = new EventSeriesScenario(settings, scenario_node, model);
+            case hash("event_series"):
+                scenario = std::make_unique<EventSeriesScenario>(settings, scenario_node, model_m.get());
                 break;
             default:
                 throw log::error("Unknown scenario type '", type, "'");
         }
-        scenarios_m.emplace_back(scenario);
     }
 
     for (const auto& node : settings["outputs"].as_sequence()) {
         Output* output = nullptr;
-        const auto& type = node["format"].template as<hstring>();
+        const auto& type = node["format"].as<hashed_string>();
         switch (type) {
-            case hstring::hash("console"):
-                output = new ConsoleOutput(settings, model, node);
+            // TODO case hash("watch"):
+            case hash("netcdf"):
+                output = new NetCDFOutput(model, node);
                 break;
-            case hstring::hash("json"):
-                output = new JSONOutput(settings, model, node);
+            case hash("array"):
+                output = new ArrayOutput(model, node, false);
                 break;
-            case hstring::hash("json_network"):
-                output = new JSONNetworkOutput(settings, model, node);
-                break;
-            case hstring::hash("netcdf"):
-                output = new NetCDFOutput(settings, model, node);
-                break;
-            case hstring::hash("histogram"):
-                output = new HistogramOutput(settings, model, node);
-                break;
-            case hstring::hash("gnuplot"):
-                output = new GnuplotOutput(settings, model, node);
-                break;
-            case hstring::hash("damage"):
-                output = new DamageOutput(settings, model, node);
-                break;
-            case hstring::hash("array"):
-                output = new ArrayOutput(settings, model, node);
-                break;
-            case hstring::hash("progress"):
-                output = new ProgressOutput(settings, model, node);
+            case hash("progress"):
+                output = new ProgressOutput(model);
                 break;
             default:
                 throw log::error("Unknown output format '", type, "'");
         }
-        output->initialize();
         outputs_m.emplace_back(output);
     }
 }
 
 void ModelRun::run() {
     if (has_run) {
-        throw log::error("model has already run");
+        throw log::error(this, "Model has already run");
     }
     has_run = true;
 
-    log::info("Starting model run on max. ", thread_count(), " threads");
+    log::info(this, "Starting model run on max. ", thread_count(), " threads");
 
     step(IterationStep::INITIALIZATION);
 
-    for (const auto& scenario : scenarios_m) {
-        scenario->start();
-    }
+    scenario->start();
+    model_m->time_m = start_time_m;
     model_m->start();
     for (const auto& output : outputs_m) {
         output->start();
@@ -202,11 +167,9 @@ void ModelRun::run() {
     step(IterationStep::SCENARIO);
     auto t0 = std::chrono::high_resolution_clock::now();
 
-    while (!model_m->done()) {
-        for (const auto& scenario : scenarios_m) {
-            scenario->iterate();
-        }
-        log::info("Iteration started");
+    while (!done()) {
+        scenario->iterate();
+        log::info(this, "Iteration started");
 
         model_m->switch_registers();
 
@@ -227,27 +190,27 @@ void ModelRun::run() {
         t0 = t1;
 
         step(IterationStep::OUTPUT);
-        log::info("Iteration took ", duration_m, " ms");
+        log::info(this, "Iteration took ", duration_m, " ms");
         for (const auto& output : outputs_m) {
             output->iterate();
         }
 
         if constexpr (options::DEBUGGING) {
             auto t2 = std::chrono::high_resolution_clock::now();
-            log::info("Output took ", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count(), " ms");
+            log::info(this, "Output took ", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count(), " ms");
             t0 = t2;
         }
 
         if constexpr (options::CHECKPOINTING) {
             if (checkpoint::is_scheduled) {
-                log::info("Writing checkpoint");
+                log::info(this, "Writing checkpoint");
                 for (const auto& output : outputs_m) {
                     output->checkpoint_stop();
                 }
 
                 checkpoint::write();
 
-                log::info("Resuming from checkpoint");
+                log::info(this, "Resuming from checkpoint");
                 t0 = std::chrono::high_resolution_clock::now();
                 for (const auto& output : outputs_m) {
                     output->checkpoint_resume();
@@ -263,51 +226,47 @@ void ModelRun::run() {
 
 ModelRun::~ModelRun() {
     if (!options::CHECKPOINTING || !checkpoint::is_scheduled) {
-        for (auto& scenario : scenarios_m) {
-            scenario->end();
-        }
+        scenario->end();
         for (auto& output : outputs_m) {
             output->end();
         }
     }
     outputs_m.clear();
-    scenarios_m.clear();
     model_m.reset();
 }
 
-void ModelRun::event(EventType type, const Sector* sector_from, const Region* region_from, const Sector* sector_to, const Region* region_to, FloatType value) {
-    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (sector_from == nullptr ? "" : sector_from->id()),
-              (sector_from != nullptr && region_from != nullptr ? ":" : ""), (region_from == nullptr ? "" : region_from->id()), "->",
-              (sector_to == nullptr ? "" : sector_to->id()), (sector_to != nullptr && region_to != nullptr ? ":" : ""),
-              (region_to == nullptr ? "" : region_to->id()), (std::isnan(value) ? "" : " = " + std::to_string(value)));
+bool ModelRun::done() const { return model_m->time() > stop_time_m; }
+
+std::string ModelRun::calendar() const { return scenario->calendar_str(); }
+
+std::size_t ModelRun::total_timestep_count() const { return (stop_time_m - start_time_m) / model_m->delta_t() + 1; }
+
+std::string ModelRun::now() const {
+    std::string res = "0000-00-00 00:00:00";
+    auto t = std::time(nullptr);
+    std::strftime(&res[0], res.size() + 1, "%F %T", std::localtime(&t));
+    return res;
+}
+
+void ModelRun::event(EventType type, const Sector* sector, const EconomicAgent* economic_agent, FloatType value) {
+    log::info(this, EVENT_NAMES[static_cast<int>(type)], " ", sector->id, "->", economic_agent->id, std::isnan(value) ? "" : " = " + std::to_string(value));
     for (const auto& output : outputs_m) {
-        output->event(type, sector_from, region_from, sector_to, region_to, value);
+        output->event(type, sector, economic_agent, value);
     }
 }
 
-void ModelRun::event(EventType type, const Sector* sector_from, const Region* region_from, const EconomicAgent* economic_agent_to, FloatType value) {
-    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (sector_from == nullptr ? "" : sector_from->id()),
-              (sector_from != nullptr && region_from != nullptr ? ":" : ""), (region_from == nullptr ? "" : region_from->id()),
-              (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id()), (std::isnan(value) ? "" : " = " + std::to_string(value)));
+void ModelRun::event(EventType type, const EconomicAgent* economic_agent, FloatType value) {
+    log::info(this, EVENT_NAMES[static_cast<int>(type)], " ", economic_agent->id, std::isnan(value) ? "" : " = " + std::to_string(value));
     for (const auto& output : outputs_m) {
-        output->event(type, sector_from, region_from, economic_agent_to, value);
+        output->event(type, economic_agent, value);
     }
 }
 
 void ModelRun::event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) {
-    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (economic_agent_from == nullptr ? "" : economic_agent_from->id()),
-              (economic_agent_to == nullptr ? "" : "->" + economic_agent_to->id()), (std::isnan(value) ? "" : " = " + std::to_string(value)));
+    log::info(this, EVENT_NAMES[static_cast<int>(type)], " ", economic_agent_from->id, "->", economic_agent_to->id,
+              std::isnan(value) ? "" : " = " + std::to_string(value));
     for (const auto& output : outputs_m) {
         output->event(type, economic_agent_from, economic_agent_to, value);
-    }
-}
-
-void ModelRun::event(EventType type, const EconomicAgent* economic_agent_from, const Sector* sector_to, const Region* region_to, FloatType value) {
-    log::info(EVENT_NAMES[static_cast<int>(type)], " ", (economic_agent_from == nullptr ? "" : economic_agent_from->id() + "->"),
-              (sector_to == nullptr ? "" : sector_to->id() + ":"), (region_to == nullptr ? "" : region_to->id()),
-              (std::isnan(value) ? "" : " = " + std::to_string(value)));
-    for (const auto& output : outputs_m) {
-        output->event(type, economic_agent_from, sector_to, region_to, value);
     }
 }
 

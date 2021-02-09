@@ -1,11 +1,9 @@
-/build/
 *~
-compile_commands.json
 .dir-locals.el
+.vscode/
+/build*/
 GPATH
 GRTAGS
 GSYMS
 GTAGS
-/output/
-/settings/
-.vscode/
+compile_commands.json

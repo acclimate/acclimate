@@ -20,8 +20,6 @@
 
 #include "model/BusinessConnection.h"
 
-#include <vector>
-
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
@@ -47,15 +45,15 @@ BusinessConnection::BusinessConnection(PurchasingManager* buyer_p, SalesManager*
       transport_costs(0.0),
       last_shipment_Z_(initial_flow_Z_star_p),
       time_(seller_p->model()->time()) {
-    if (seller->firm->sector->transport_type == Sector::TransportType::IMMEDIATE || buyer->storage->economic_agent->region == seller->firm->region) {
+    if (seller->firm->sector->transport_type == Sector::transport_type_t::IMMEDIATE || buyer->storage->economic_agent->region == seller->firm->region) {
         first_transport_link.reset(new TransportChainLink(this, 0, initial_flow_Z_star_p, nullptr));
     } else {
-        const auto& route = seller->firm->region->find_path_to(buyer->storage->economic_agent->region, seller->firm->sector->transport_type);
+        auto& route = seller->firm->region->find_path_to(buyer->storage->economic_agent->region, seller->firm->sector->transport_type);
         assert(route.path.size() > 0);
         TransportChainLink* link;
         for (std::size_t i = 0; i < route.path.size(); ++i) {
-            GeoEntity* p = route.path[i];
-            auto new_link = new TransportChainLink(this, p->delay, initial_flow_Z_star_p, p);
+            auto* p = route.path[i];
+            auto* new_link = new TransportChainLink(this, p->delay, initial_flow_Z_star_p, p);
             if (i == 0) {
                 first_transport_link.reset(new_link);
             } else {
@@ -65,6 +63,8 @@ BusinessConnection::BusinessConnection(PurchasingManager* buyer_p, SalesManager*
         }
     }
 }
+
+BusinessConnection::~BusinessConnection() = default;  // needed to use forward declares for std::unique_ptr
 
 FloatType BusinessConnection::get_minimum_passage() const {
     TransportChainLink* link = first_transport_link.get();
@@ -192,13 +192,13 @@ FloatType BusinessConnection::get_stddeviation() const {
     return res;
 }
 
-Model* BusinessConnection::model() const { return buyer->model(); }
+const Model* BusinessConnection::model() const { return buyer->model(); }
 
-std::string BusinessConnection::id() const {
-    return (seller != nullptr ? seller->id() : "INVALID") + "->" + (buyer != nullptr ? buyer->storage->economic_agent->id() : "INVALID");
+std::string BusinessConnection::name() const {
+    return (seller.valid() ? seller->name() : "INVALID") + "->" + (buyer.valid() ? buyer->storage->economic_agent->name() : "INVALID");
 }
 
-const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller) const {
+const Flow& BusinessConnection::last_shipment_Z(const SalesManager* caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != seller) {
             debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
@@ -207,7 +207,7 @@ const Flow& BusinessConnection::last_shipment_Z(const SalesManager* const caller
     return last_shipment_Z_;
 }
 
-const Flow& BusinessConnection::last_delivery_Z(const SalesManager* const caller) const {
+const Flow& BusinessConnection::last_delivery_Z(const SalesManager* caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != seller) {
             debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
@@ -216,7 +216,7 @@ const Flow& BusinessConnection::last_delivery_Z(const SalesManager* const caller
     return last_delivery_Z_;
 }
 
-const Demand& BusinessConnection::last_demand_request_D(const PurchasingManager* const caller) const {
+const Demand& BusinessConnection::last_demand_request_D(const PurchasingManager* caller) const {
     if constexpr (options::DEBUGGING) {
         if (caller != buyer) {
             debug::assertstepnot(this, IterationStep::PURCHASE);

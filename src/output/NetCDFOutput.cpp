@@ -20,205 +20,224 @@
 
 #include "output/NetCDFOutput.h"
 
+#include <algorithm>
 #include <array>
+#include <cstring>
 #include <ctime>
+#include <iterator>
 #include <limits>
 #include <ostream>
-#include <utility>
 
 #include "ModelRun.h"
 #include "acclimate.h"
+#include "model/EconomicAgent.h"
+#include "model/Firm.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "model/Sector.h"
+#include "netcdfpp.h"
 #include "settingsnode.h"
 #include "version.h"
 
-struct tm;
-
 namespace acclimate {
 
-NetCDFOutput::NetCDFOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p)
-    : ArrayOutput(settings_p, model_p, std::move(output_node_p), false) {
-    flush_freq = 1;
-    event_cnt = 0;
-    const settings::SettingsNode& run = settings_p["run"];
-    calendar = run["calendar"].as<std::string>("standard");
-    if (run.has("baseyear")) {
-        time_units = std::string("days since ") + std::to_string(run["baseyear"].template as<unsigned int>()) + "-1-1";
-    } else {
-        time_units = "days since 0-1-1";
-    }
-}
-
-void NetCDFOutput::initialize() {
-    ArrayOutput::initialize();
-    flush_freq = output_node["flush"].template as<TimeStep>();
-    if (!output_node.has("file")) {
+NetCDFOutput::NetCDFOutput(Model* model_p, const settings::SettingsNode& settings) : ArrayOutput(model_p, settings, true) {
+    flush_freq = settings["flush"].as<TimeStep>(1);
+    if (const auto& filename_node = settings["file"]; !filename_node.empty()) {
+        filename = filename_node.as<std::string>();
+    } else {  // no filename given, use timestamp instead
         std::ostringstream ss;
         ss << std::time(nullptr);
         ss << ".nc";
         filename = ss.str();
-    } else {
-        filename = output_node["file"].template as<std::string>();
     }
-    file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::replace, netCDF::NcFile::nc4);
-    if (!file) {
-        throw log::error(this, "Could not create output file ", filename);
+    file = std::make_unique<netCDF::File>(filename, 'w');
+}
+
+template<std::size_t dim>
+void NetCDFOutput::create_group(const char* name,
+                                const std::array<netCDF::Dimension, dim + 1>& default_dims,
+                                const std::array<const char*, dim>& index_names,
+                                const Observable<dim>& observable,
+                                std::vector<netCDF::Variable>& nc_variables) {
+    if (observable.variables.empty()) {
+        return;
     }
+    auto group = file->add_group(name);
+    std::vector<int> dims(default_dims.size());
+    dims[0] = default_dims[0].id();
+    if constexpr (dim > 0) {
+        for (std::size_t i = 0; i < dim; ++i) {
+            if (observable.indices[i].empty()) {
+                dims[i + 1] = default_dims[i + 1].id();
+            } else {
+                dims[i + 1] = group.add_dimension(index_names[i], observable.indices[i].size()).id();
+                assert(observable.indices[i].size() == observable.sizes[i]);
+                netCDF::Variable var = group.add_variable<std::size_t>(index_names[i], std::vector<int>{dims[i + 1]});
+                var.set_compression(false, compression_level);
+                var.set<std::size_t>(observable.indices[i]);
+            }
+        }
+    }
+    std::transform(std::begin(observable.variables), std::end(observable.variables), std::back_inserter(nc_variables), [&](const auto& obs_var) {
+        auto nc_var = group.add_variable<output_float_t>(obs_var.name, dims);
+        nc_var.set_compression(false, compression_level);
+        nc_var.set_fill(std::numeric_limits<output_float_t>::quiet_NaN());
+        return nc_var;
+    });
+}
 
-    dim_time = file->addDim("time");
-    dim_sector = file->addDim("sector", sectors_size);
-    dim_region = file->addDim("region", regions_size);
-    netCDF::NcDim dim_event = file->addDim("event");
-    netCDF::NcDim dim_event_type = file->addDim("event_type", EVENT_NAMES.size());
-    netCDF::NcCompoundType event_compound_type = file->addCompoundType("event_compound_type", sizeof(typename ArrayOutput::Event));
-    event_compound_type.addMember("time", netCDF::NcType::nc_UINT, offsetof(typename ArrayOutput::Event, time));
-    event_compound_type.addMember("type", netCDF::NcType::nc_UBYTE, offsetof(typename ArrayOutput::Event, type));
-    event_compound_type.addMember("sector_from", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput::Event, sector_from));
-    event_compound_type.addMember("region_from", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput::Event, region_from));
-    event_compound_type.addMember("sector_to", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput::Event, sector_to));
-    event_compound_type.addMember("region_to", netCDF::NcType::nc_INT, offsetof(typename ArrayOutput::Event, region_to));
-    event_compound_type.addMember("value", netCDF::NcType::nc_DOUBLE, offsetof(typename ArrayOutput::Event, value));
-    var_events = file->addVar("events", event_compound_type, {dim_event});
-    var_events.setCompression(false, true, compression_level);
+void NetCDFOutput::start() {
+    const auto dim_time = file->add_dimension("time");
+    const auto dim_sector = file->add_dimension("sector", model()->sectors.size());
+    const auto dim_region = file->add_dimension("region", model()->regions.size());
+    const auto dim_agent = file->add_dimension("agent", model()->economic_agents.size());
+    const auto dim_event = file->add_dimension("event");
+    const auto dim_event_type = file->add_dimension("event_type", EVENT_NAMES.size());
 
-    var_time_variable = file->addVar("time", netCDF::NcType::nc_INT, {dim_time});
-    var_time_variable.setCompression(false, true, compression_level);
-    var_time_variable.putAtt("calendar", calendar);
-    var_time_variable.putAtt("units", time_units);
+    auto event_t = file->add_type_compound("event_t", sizeof(ArrayOutput::Event));
+    event_t.add_compound_field<decltype(ArrayOutput::Event::time)>("time", offsetof(ArrayOutput::Event, time));
+    event_t.add_compound_field<decltype(ArrayOutput::Event::type)>("type", offsetof(ArrayOutput::Event, type));
+    event_t.add_compound_field<decltype(ArrayOutput::Event::index1)>("index1", offsetof(ArrayOutput::Event, index1));
+    event_t.add_compound_field<decltype(ArrayOutput::Event::index2)>("index2", offsetof(ArrayOutput::Event, index2));
+    event_t.add_compound_field<decltype(ArrayOutput::Event::value)>("value", offsetof(ArrayOutput::Event, value));
+    var_events = std::make_unique<netCDF::Variable>(file->add_variable("events", event_t, {dim_event}));
+    var_events->set_compression(false, compression_level);
+
+    var_time = std::make_unique<netCDF::Variable>(file->add_variable<int>("time", {dim_time}));
+    var_time->set_compression(false, compression_level);
+    var_time->add_attribute("calendar").set<std::string>(model()->run()->calendar());
+    var_time->add_attribute("units").set<std::string>(std::string("days since ") + std::to_string(model()->run()->baseyear()) + "-1-1");
 
     include_events = true;
-    const auto& event_type_var = file->addVar("event_types", netCDF::NcType::nc_STRING, {dim_event_type});
-    event_type_var.setCompression(false, true, compression_level);
+    auto event_type_var = file->add_variable<std::string>("event_type", {dim_event_type});
+    event_type_var.set_compression(false, compression_level);
     for (std::size_t i = 0; i < EVENT_NAMES.size(); ++i) {
-        event_type_var.putVar({i}, std::string(EVENT_NAMES[i]));
+        event_type_var.set<const char*, 1>(EVENT_NAMES[i], {i});
     }
 
-    const auto& sector_var = file->addVar("sector", netCDF::NcType::nc_STRING, {dim_sector});
-    sector_var.setCompression(false, true, compression_level);
+    auto sector_var = file->add_variable<std::string>("sector", {dim_sector});
+    sector_var.set_compression(false, compression_level);
     for (std::size_t i = 0; i < model()->sectors.size(); ++i) {
-        sector_var.putVar({i}, model()->sectors[i]->id());
+        sector_var.set<std::string, 1>(model()->sectors[i]->name(), {i});
     }
 
-    const auto& region_var = file->addVar("region", netCDF::NcType::nc_STRING, {dim_region});
-    region_var.setCompression(false, true, compression_level);
+    auto region_var = file->add_variable<std::string>("region", {dim_region});
+    region_var.set_compression(false, compression_level);
     for (std::size_t i = 0; i < model()->regions.size(); ++i) {
-        region_var.putVar({i}, model()->regions[i]->id());
+        region_var.set<std::string, 1>(model()->regions[i]->name(), {i});
     }
-}
 
-void NetCDFOutput::internal_write_header(tm* timestamp, unsigned int max_threads) {
-    std::string str = std::asctime(timestamp);
-    str.erase(str.end() - 1);
-    file->putAtt("start_time", str);
-    file->putAtt("max_threads", netCDF::NcType::nc_INT, max_threads);
-    file->putAtt("version", version);
-    auto options_group = file->addGroup("options");
-    for (const auto& option : options::options) {
-        options_group.putAtt(option.name, netCDF::NcType::nc_BYTE, option.value ? 1 : 0);
+    {
+        const auto dim_agent_type = file->add_dimension("agent_type", 2);
+        file->add_variable<std::string>("agent_type", {dim_agent_type}).set<std::string>({"firm", "consumer"});
+
+        struct AgentCompound {
+            char name[25];
+            std::uint8_t agent_type;
+            std::uint32_t sector;
+            std::uint32_t region;
+        };
+        auto agent_t = file->add_type_compound<AgentCompound>("agent_t");
+        agent_t.add_compound_field_array<decltype(AgentCompound::name)>("name", offsetof(AgentCompound, name), {25});
+        agent_t.add_compound_field<decltype(AgentCompound::agent_type)>("agent_type", offsetof(AgentCompound, agent_type));
+        agent_t.add_compound_field<decltype(AgentCompound::sector)>("sector", offsetof(AgentCompound, sector));
+        agent_t.add_compound_field<decltype(AgentCompound::region)>("region", offsetof(AgentCompound, region));
+
+        auto agent_var = file->add_variable("agent", agent_t, {dim_agent});
+        agent_var.set_compression(false, compression_level);
+        AgentCompound value;
+        value.name[sizeof(value.name) / sizeof(value.name[0]) - 1] = '\0';
+        for (std::size_t i = 0; i < model()->economic_agents.size(); ++i) {
+            const auto* agent = model()->economic_agents[i];
+            std::strncpy(value.name, agent->name().c_str(), sizeof(value.name) / sizeof(value.name[0]) - 1);
+            if (agent->is_firm()) {
+                value.agent_type = 0;
+                value.sector = agent->as_firm()->sector->id.index();
+            } else {
+                value.agent_type = 1;
+                value.sector = 0;
+            }
+            value.region = agent->region->id.index();
+            agent_var.set<AgentCompound, 1>(value, {i});
+        }
     }
+
+    file->add_attribute("settings").set<std::string>(model()->run()->settings_string());
+    file->add_attribute("start_time").set<std::string>(model()->run()->now());
+    file->add_attribute("max_threads").set<int>(model()->run()->thread_count());
+    file->add_attribute("version").set<std::string>(version);
     if (has_diff) {
-        file->putAtt("diff", git_diff);
+        file->add_attribute("diff").set<std::string>(git_diff);
+    }
+
+    auto options_group = file->add_group("options");
+    for (const auto& option : options::options) {
+        options_group.add_attribute(option.name).set<unsigned char>(option.value ? 1 : 0);
+    }
+
+    create_group<0>("model", {dim_time}, {}, obs_model, vars_model);
+    create_group<1>("firms", {dim_time, dim_agent}, {"firm_index"}, obs_firms, vars_firms);
+    create_group<1>("consumers", {dim_time, dim_agent}, {"consumer_index"}, obs_consumers, vars_consumers);
+    create_group<1>("sectors", {dim_time, dim_sector}, {"sector_index"}, obs_sectors, vars_sectors);
+    create_group<1>("regions", {dim_time, dim_region}, {"region_index"}, obs_regions, vars_regions);
+    create_group<2>("storages", {dim_time, dim_sector, dim_agent}, {"sector_input_index", "agent_index"}, obs_storages, vars_storages);
+    create_group<2>("flows", {dim_time, dim_agent, dim_agent}, {"agent_from_index", "agent_to_index"}, obs_flows, vars_flows);
+}
+
+void NetCDFOutput::end() {
+    file->add_attribute("end_time").set<std::string>(model()->run()->now());
+    file->close();
+}
+
+template<>
+void NetCDFOutput::write_variables(const Observable<0>& observable, std::vector<netCDF::Variable>& nc_variables) {
+    for (std::size_t i = 0; i < nc_variables.size(); ++i) {
+        nc_variables[i].set<output_float_t, 1>(observable.variables[i].data[0], {model()->timestep()});
     }
 }
 
-void NetCDFOutput::internal_write_footer(tm* duration) { file->putAtt("duration", netCDF::NcType::nc_INT, std::mktime(duration)); }
-
-void NetCDFOutput::internal_write_settings() { file->putAtt("settings", settings_string); }
-
-void NetCDFOutput::create_variable_meta(typename ArrayOutput::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) {
-    auto meta = new VariableMeta();
-    std::vector<netCDF::NcDim> dims;
-    meta->index.push_back(0);
-    meta->sizes.push_back(1);
-    dims.push_back(dim_time);
-    for (const auto& t : stack) {
-        if (t.sector != nullptr) {
-            meta->index.push_back(0);
-            meta->sizes.push_back(sectors_size);
-            dims.push_back(dim_sector);
-        }
-        if (t.region != nullptr) {
-            meta->index.push_back(0);
-            meta->sizes.push_back(regions_size);
-            dims.push_back(dim_region);
-        }
+template<>
+void NetCDFOutput::write_variables(const Observable<1>& observable, std::vector<netCDF::Variable>& nc_variables) {
+    for (std::size_t i = 0; i < nc_variables.size(); ++i) {
+        nc_variables[i].set<output_float_t, 2>(observable.variables[i].data, {model()->timestep(), 0}, {1, observable.sizes[0]});
     }
-    netCDF::NcGroup& group = create_group(path);
-    netCDF::NcVar nc_var = group.addVar(std::string(name) + std::string(suffix), netCDF::NcType::nc_DOUBLE, dims);
-    meta->nc_var = nc_var;
-    meta->nc_var.setFill(true, std::numeric_limits<FloatType>::quiet_NaN());
-    meta->nc_var.setCompression(false, true, compression_level);
-    v.meta = meta;
 }
 
-netCDF::NcGroup& NetCDFOutput::create_group(const hstring& name) {
-    auto group_it = groups.find(name);
-    if (group_it == groups.end()) {
-        group_it = groups.emplace(name, file->addGroup(name)).first;
+template<>
+void NetCDFOutput::write_variables(const Observable<2>& observable, std::vector<netCDF::Variable>& nc_variables) {
+    for (std::size_t i = 0; i < nc_variables.size(); ++i) {
+        nc_variables[i].set<output_float_t, 3>(observable.variables[i].data, {model()->timestep(), 0, 0}, {1, observable.sizes[0], observable.sizes[1]});
     }
-    return (*group_it).second;
 }
 
-void NetCDFOutput::internal_iterate_begin() {
-    ArrayOutput::internal_iterate_begin();
-    var_time_variable.putVar({model()->timestep()}, to_float(model()->time()));
-}
+void NetCDFOutput::iterate() {
+    var_time->set<output_float_t, 1>(to_float(model()->time()), {model()->timestep()});
 
-void NetCDFOutput::internal_iterate_end() {
-    for (auto& var : variables) {
-        auto* meta = static_cast<VariableMeta*>(var.second.meta);
-        meta->index[0] = model()->timestep();
-        meta->sizes[0] = 1;
-        meta->nc_var.putVar(meta->index, meta->sizes, &var.second.data[0]);
+    ArrayOutput::iterate();
+
+    write_variables(obs_model, vars_model);
+    write_variables(obs_firms, vars_firms);
+    write_variables(obs_consumers, vars_consumers);
+    write_variables(obs_sectors, vars_sectors);
+    write_variables(obs_regions, vars_regions);
+    write_variables(obs_storages, vars_storages);
+    write_variables(obs_flows, vars_flows);
+
+    if (!events.empty()) {
+        var_events->set<Event, 1>(events, {event_cnt}, {events.size()});
+        event_cnt += events.size();
     }
+
     if (flush_freq > 0) {
         if ((model()->timestep() % flush_freq) == 0) {
-            flush();
+            file->sync();
         }
     }
 }
 
-void NetCDFOutput::internal_end() {
-    if (file) {
-        file->close();
-        file.reset();
-    }
-}
+void NetCDFOutput::checkpoint_stop() { file->close(); }
 
-bool NetCDFOutput::internal_handle_event(typename ArrayOutput::Event& event) {
-    netcdf_event_lock.call([&]() {
-        var_events.putVar({event_cnt}, &event);
-        ++event_cnt;
-    });
-    return false;
-}
-
-void NetCDFOutput::checkpoint_stop() {
-    if (file) {
-        file->close();
-        file.reset();
-    }
-}
-
-void NetCDFOutput::checkpoint_resume() {
-    file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::write, netCDF::NcFile::nc4);
-    if (!file) {
-        throw log::error(this, "Could not open output file ", filename);
-    }
-}
-
-void NetCDFOutput::flush() {
-    if (file) {
-        file->sync();
-    }
-}
-
-NetCDFOutput::~NetCDFOutput() {
-    for (auto& var : variables) {
-        delete static_cast<VariableMeta*>(var.second.meta);
-    }
-}
+void NetCDFOutput::checkpoint_resume() { file->open(filename, 'a'); }
 
 }  // namespace acclimate

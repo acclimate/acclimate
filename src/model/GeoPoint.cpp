@@ -24,15 +24,15 @@
 
 namespace acclimate {
 
-GeoPoint::GeoPoint(FloatType lon_p, FloatType lat_p) : lon_(lon_p), lat_(lat_p) {}
+GeoPoint::GeoPoint(FloatType lon_p, FloatType lat_p) : lon_m(lon_p), lat_m(lat_p) {}
 
 FloatType GeoPoint::distance_to(const GeoPoint& other) const {
     const auto R = 6371;
     const auto PI = 3.14159265;
-    const auto latsin = std::sin((other.lat_ - lat_) * PI / 360);
-    const auto lonsin = std::sin((other.lon_ - lon_) * PI / 360);
+    const auto latsin = std::sin((other.lat_m - lat_m) * PI / 360);
+    const auto lonsin = std::sin((other.lon_m - lon_m) * PI / 360);
 
-    const auto a = latsin * latsin + cos(other.lat_ * PI / 180) * cos(lat_ * PI / 180) * lonsin * lonsin;
+    const auto a = latsin * latsin + cos(other.lat_m * PI / 180) * cos(lat_m * PI / 180) * lonsin * lonsin;
     return 2 * R * std::atan2(std::sqrt(a), std::sqrt(1 - a));
 }
 }  // namespace acclimate

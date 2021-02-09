@@ -20,54 +20,33 @@
 
 #include "scenario/ExternalForcing.h"
 
-#include <cstddef>
 #include <utility>
 
-#include "acclimate.h"
-#include "netcdftools.h"
+#include "netcdfpp.h"
 
 namespace acclimate {
 
-ExternalForcing::ExternalForcing(std::string filename_p, const std::string& variable_name) : filename(std::move(filename_p)) {
-    try {
-        file = std::make_unique<netCDF::NcFile>(filename, netCDF::NcFile::read, netCDF::NcFile::nc4);
-    } catch (netCDF::exceptions::NcException& ex) {
-        throw log::error("Could not open '", filename, "'");
-    }
-    variable = file->getVar(variable_name);
-    time_variable = file->getVar("time");
-    time_index_count = time_variable.getDim(0).getSize();
+ExternalForcing::ExternalForcing(std::string filename, std::string variable_name) {
+    file.open(std::move(filename), 'r');
+    variable = std::make_unique<netCDF::Variable>(file.variable(std::move(variable_name)).require());
+    time_variable = std::make_unique<netCDF::Variable>(file.variable("time").require());
+    time_index_count = time_variable->size();
     time_index = 0;
 }
+
+ExternalForcing::~ExternalForcing() = default;  // needed to use forward declares for std::unique_ptr
 
 int ExternalForcing::next_timestep() {
     if (time_index >= time_index_count) {
         return -1;
     }
     read_data();
-    int day;
-    time_variable.getVar({time_index}, {1}, &day);
+    auto day = time_variable->get<int, 1>({time_index});
     time_index++;
     return day;
 }
 
-std::string ExternalForcing::calendar_str() const {
-    try {
-        std::string res;
-        time_variable.getAtt("calendar").getValues(res);
-        return res;
-    } catch (netCDF::exceptions::NcException& e) {
-        throw log::error("Could not read calendar attribute in ", filename, ": ", e.what());
-    }
-}
+std::string ExternalForcing::calendar_str() const { return time_variable->attribute("calendar").require().get_string(); }
 
-std::string ExternalForcing::time_units_str() const {
-    try {
-        std::string res;
-        time_variable.getAtt("units").getValues(res);
-        return res;
-    } catch (netCDF::exceptions::NcException& e) {
-        throw log::error("could not read time units attribute in ", filename, ": ", e.what());
-    }
-}
+std::string ExternalForcing::time_units_str() const { return time_variable->attribute("units").require().get_string(); }
 }  // namespace acclimate

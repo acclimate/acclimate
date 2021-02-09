@@ -22,55 +22,40 @@
 #define ACCLIMATE_SECTOR_H
 
 #include <string>
-#include <vector>
 
 #include "acclimate.h"
 #include "openmp.h"
 #include "parameters.h"
-
-namespace settings {
-class hstring;
-}
 
 namespace acclimate {
 
 class Model;
 class Firm;
 
-class Sector {
-    friend class Model;
-
+class Sector final {
   public:
-    enum class TransportType { AVIATION, IMMEDIATE, ROADSEA };
+    enum class transport_type_t { AVIATION, IMMEDIATE, ROADSEA };
 
   private:
-    const IndexType index_m;
-    const std::string id_m;
     Demand total_demand_D_ = Demand(0.0);
     openmp::Lock total_demand_D_lock;
     Flow total_production_X_m = Flow(0.0);
     openmp::Lock total_production_X_lock;
     Flow last_total_production_X_m = Flow(0.0);
     Parameters::SectorParameters parameters_m;
-    Model* const model_m;
+    non_owning_ptr<Model> model_m;
 
   public:
+    const id_t id;
     const Ratio upper_storage_limit_omega;
     const Time initial_storage_fill_factor_psi;
-    const TransportType transport_type;
-    std::vector<Firm*> firms;
-
-  private:
-    Sector(Model* model_p,
-           std::string id_p,
-           IndexType index_p,
-           Ratio upper_storage_limit_omega_p,
-           Time initial_storage_fill_factor_psi_p,
-           TransportType transport_type_p);
+    const transport_type_t transport_type;
+    non_owning_vector<Firm> firms;
 
   public:
-    static TransportType map_transport_type(const settings::hstring& transport_type);
-    static const char* unmap_transport_type(TransportType transport_type);
+    Sector(Model* model_p, id_t id_p, Ratio upper_storage_limit_omega_p, Time initial_storage_fill_factor_psi_p, transport_type_t transport_type_p);
+    static transport_type_t map_transport_type(const hashed_string& transport_type);
+    static const char* unmap_transport_type(transport_type_t transport_type);
     const Demand& total_demand_D() const;
     const Demand& total_production_X() const;
     const Parameters::SectorParameters& parameters() const { return parameters_m; }
@@ -80,12 +65,29 @@ class Sector {
     void add_initial_production_X(const Flow& production_X);
     void subtract_initial_production_X(const Flow& production_X);
     void iterate_consumption_and_production();
-    void remove_firm(Firm* firm);
 
-    IndexType index() const { return index_m; }
+    Model* model() { return model_m; }
+    const Model* model() const { return model_m; }
+    const std::string& name() const { return id.name; }
 
-    Model* model() const { return model_m; }
-    const std::string& id() const { return id_m; }
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("offer_price"),
+                        [this]() {  //
+                            return total_production_X().get_price();
+                        })
+               && o.set(H::hash("total_production"),
+                        [this]() {  //
+                            return total_production_X();
+                        })
+               && o.set(H::hash("total_demand"),
+                        [this]() {  //
+                            return total_demand_D();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

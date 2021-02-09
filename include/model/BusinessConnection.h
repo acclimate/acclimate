@@ -26,7 +26,6 @@
 #include <string>
 
 #include "acclimate.h"
-#include "model/TransportChainLink.h"
 #include "openmp.h"
 
 namespace acclimate {
@@ -34,8 +33,9 @@ namespace acclimate {
 class Model;
 class PurchasingManager;
 class SalesManager;
+class TransportChainLink;
 
-class BusinessConnection {
+class BusinessConnection final {
   private:
     Demand last_demand_request_D_;
     Flow initial_flow_Z_star_;
@@ -48,18 +48,17 @@ class BusinessConnection {
     std::unique_ptr<TransportChainLink> first_transport_link;
 
   public:
-    PurchasingManager* buyer;  // TODO encapsulate
-    SalesManager* seller;      // TODO encapsulate
+    non_owning_ptr<PurchasingManager> buyer;
+    non_owning_ptr<SalesManager> seller;
 
   public:
     BusinessConnection(PurchasingManager* buyer_p, SalesManager* seller_p, const Flow& initial_flow_Z_star_p);
+    ~BusinessConnection();
     const Flow& last_shipment_Z(const SalesManager* caller = nullptr) const;
-    const Flow& last_delivery_Z(const SalesManager* const caller = nullptr) const;
-    const Demand& last_demand_request_D(const PurchasingManager* const caller = nullptr) const;
+    const Flow& last_delivery_Z(const SalesManager* caller = nullptr) const;
+    const Demand& last_demand_request_D(const PurchasingManager* caller = nullptr) const;
     const Flow& initial_flow_Z_star() const { return initial_flow_Z_star_; }
     void initial_flow_Z_star(const Flow& new_initial_flow_Z_star);
-    void invalidate_buyer() { buyer = nullptr; }
-    void invalidate_seller() { seller = nullptr; }
     std::size_t get_id(const TransportChainLink* transport_chain_link) const;
     Flow get_flow_mean() const;
     FlowQuantity get_flow_deficit() const;
@@ -73,8 +72,44 @@ class BusinessConnection {
     void deliver_flow_Z(const Flow& flow_Z);
     void send_demand_request_D(const Demand& demand_request_D);
     bool get_domestic() const;
-    Model* model() const;
-    std::string id() const;
+
+    const Model* model() const;
+    std::string name() const;
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("initial_flow"),
+                        [this]() {  //
+                            return initial_flow_Z_star();
+                        })
+               && o.set(H::hash("demand_request"),
+                        [this]() {  //
+                            return last_demand_request_D();
+                        })
+               && o.set(H::hash("flow_deficit"),
+                        [this]() {  //
+                            return get_flow_deficit();
+                        })
+               && o.set(H::hash("flow_mean"),
+                        [this]() {  //
+                            return get_flow_mean();
+                        })
+               && o.set(H::hash("received_flow"),
+                        [this]() {  //
+                            return last_delivery_Z();
+                        })
+               && o.set(H::hash("sent_flow"),
+                        [this]() {  //
+                            return last_shipment_Z();
+                        })
+               && o.set(H::hash("total_flow"),
+                        [this]() {  //
+                            return get_total_flow();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

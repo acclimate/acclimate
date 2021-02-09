@@ -27,21 +27,19 @@ namespace acclimate {
 
 class Model;
 
-GeoConnection::GeoConnection(Model* model_m, TransportDelay delay, Type type_p, const GeoLocation* location1_p, const GeoLocation* location2_p)
-    : GeoEntity(model_m, delay, GeoEntity::Type::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
+GeoConnection::GeoConnection(Model* model_m, TransportDelay delay, GeoConnection::type_t type_p, GeoLocation* location1_p, GeoLocation* location2_p)
+    : GeoEntity(model_m, delay, GeoEntity::type_t::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
 
 void GeoConnection::invalidate_location(const GeoLocation* location) {
     if (location1 == location) {
-        location1 = nullptr;
+        location1.invalidate();
     } else if (location2 == location) {
-        location2 = nullptr;
+        location2.invalidate();
     } else {
         throw log::error(this, "Location not part of this connection or already invalidated");
     }
 }
 
-std::string GeoConnection::id() const {
-    return (location1 != nullptr ? location1->id() : "INVALID") + "-" + (location2 != nullptr ? location2->id() : "INVALID");
-}
+std::string GeoConnection::name() const { return (location1 ? location1->name() : "INVALID") + "-" + (location2 ? location2->name() : "INVALID"); }
 
 }  // namespace acclimate

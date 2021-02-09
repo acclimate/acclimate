@@ -21,8 +21,7 @@
 #ifndef ACCLIMATE_CONSUMER_H
 #define ACCLIMATE_CONSUMER_H
 
-#include <settingsnode.h>
-
+#include "acclimate.h"
 #include "autodiff.h"
 #include "model/EconomicAgent.h"
 
@@ -30,10 +29,11 @@ namespace acclimate {
 
 class Region;
 
-class Consumer : public EconomicAgent {
-  private:
-    using EconomicAgent::forcing_;
+namespace optimization {
+class Optimization;
+}
 
+class Consumer final : public EconomicAgent {
   private:
     bool utilitarian;
 
@@ -85,10 +85,10 @@ class Consumer : public EconomicAgent {
     std::vector<FloatType> substitution_exponent;
 
   public:
-    Consumer* as_consumer() override { return this; };
-    explicit Consumer(Region* region_p);
+    Consumer(id_t id_p, Region* region_p, FloatType substitution_coefficient);
 
-    explicit Consumer(Region* region_p, FloatType substitution_coefficient);
+    Consumer* as_consumer() override { return this; };
+    const Consumer* as_consumer() const override { return this; };
 
     void initialize() override;
 
@@ -96,18 +96,16 @@ class Consumer : public EconomicAgent {
     void iterate_expectation() override;
     void iterate_purchase() override;
     void iterate_investment() override;
-    using EconomicAgent::id;
-    using EconomicAgent::model;
 
-    // DEBUG
-    void print_details() const override;
+    void debug_print_details() const override;
+    void debug_print_distribution(const std::vector<FloatType>& demand_requests_D) const;
 
     // CES utility specific funtions TODO: check if replacing by abstract funtions suitable
     FloatType CES_utility_function(const std::vector<FloatType>& consumption_demands);
     FloatType CES_utility_function(const std::vector<Flow>& consumption_demands);
 
     // for autodiff test: some simple utility functions
-    autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, 0, 0, 0);
+    autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, 0);
 
     autodiff::Value<FloatType> autodiffutility = autodiff::Value<FloatType>(0, 0);
 
@@ -126,13 +124,27 @@ class Consumer : public EconomicAgent {
     FloatType equality_constraint(const double* x, double* grad);
     FloatType max_objective(const double* x, double* grad);
     double* fill_gradient(double* grad);
-    void print_distribution(const std::vector<FloatType>& demand_requests_D) const;
     // scaling function
     FloatType unscaled_demand(const FloatType scaling_factor, int scaling_index) const;
 
     // getters and setters
     double get_utility() const { return utility; }
     double get_local_optimal_utility() const { return local_optimal_utility; }
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return EconomicAgent::observe<Observer, H>(o)  //
+               && o.set(H::hash("utility"),
+                        [this]() {  //
+                            return get_utility();
+                        })
+               && o.set(H::hash("local_optimal_utility"),
+                        [this]() {  //
+                            return get_local_optimal_utility();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

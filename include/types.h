@@ -21,11 +21,13 @@
 #ifndef ACCLIMATE_TYPES_H
 #define ACCLIMATE_TYPES_H
 
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <string>
+#include <vector>
 
 // IWYU pragma: private, include "acclimate.h"
 
@@ -49,9 +51,225 @@ namespace acclimate {
     {}
 #endif
 
-using FloatType = double;
-using IntType = long;
-using IndexType = int;
+using hash_t = std::uint64_t;
+constexpr hash_t hash(const char* str, hash_t prev = 5381) { return *str != '\0' ? hash(str + 1, prev * 33 + *str) : prev; }
+constexpr hash_t hash_append(hash_t prefix, const char* str) { return hash(str, prefix); }
+
+class hashed_string final {
+  public:
+    using base_type = std::string;  // enable settingsnode to read hash_string
+
+  private:
+    const std::string str_m;
+    const hash_t hash_m;
+
+  public:
+    explicit hashed_string(std::string str_p) : str_m(std::move(str_p)), hash_m(hash(str_m.c_str())) {}
+    operator hash_t() const { return hash_m; }             // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    operator const std::string&() const { return str_m; }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    friend std::ostream& operator<<(std::ostream& lhs, const hashed_string& rhs) { return lhs << rhs.str_m; }
+};
+
+template<typename T>
+class non_owning_ptr final {
+  private:
+    T* p;
+
+  public:
+    non_owning_ptr(T* p_p) noexcept : p(p_p) {}
+    const non_owning_ptr& operator=(const non_owning_ptr&) = delete;
+
+    operator T*() { return p; }              // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    operator const T*() const { return p; }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+
+    T* operator->() { return p; }
+    const T* operator->() const { return p; }
+
+    bool valid() const { return p != nullptr; }
+    void invalidate() { p = nullptr; }
+};
+
+template<typename T>
+class non_owning_vector final {
+  private:
+    std::vector<T*> v;
+
+  public:
+    using iterator = typename std::vector<T*>::iterator;
+    using const_iterator = typename std::vector<T*>::const_iterator;
+
+    iterator begin() noexcept { return v.begin(); }
+    const_iterator begin() const noexcept { return v.begin(); }
+    const_iterator cbegin() const noexcept { return v.begin(); }
+
+    iterator end() noexcept { return v.end(); }
+    const_iterator end() const noexcept { return v.end(); }
+    const_iterator cend() const noexcept { return v.end(); }
+
+    T* add(T* item) {
+        v.emplace_back(item);
+        return item;
+    }
+
+    bool empty() const { return v.empty(); }
+
+    template<typename Function>
+    T* find_if(Function&& f) {
+        auto it = std::find_if(std::begin(v), std::end(v), f);
+        if (it == std::end(v)) {
+            return nullptr;
+        }
+        return *it;
+    }
+    template<typename Function>
+    const T* find_if(Function&& f) const {
+        auto it = std::find_if(std::begin(v), std::end(v), f);
+        if (it == std::end(v)) {
+            return nullptr;
+        }
+        return *it;
+    }
+
+    T* find(hash_t name_hash) {
+        return find_if([name_hash](const auto& i) { return i->id.name_hash == name_hash; });
+    }
+    const T* find(hash_t name_hash) const {
+        return find_if([name_hash](const auto& i) { return i->id.name_hash == name_hash; });
+    }
+
+    T* find(const std::string& name) { return find(hash(name.c_str())); }
+    const T* find(const std::string& name) const { return find(hash(name.c_str())); }
+
+    T* operator[](std::size_t i) { return v[i]; }
+    const T* operator[](std::size_t i) const { return v[i]; }
+
+    bool remove(T* item) {
+        const auto& it = std::find_if(std::begin(v), std::end(v), [item](T* i) { return i == item; });
+        if (it == std::end(v)) {
+            return false;
+        }
+        v.erase(it);
+        return true;
+    }
+
+    void reserve(std::size_t size_m) { v.reserve(size_m); }
+
+    void shrink_to_fit() { v.shrink_to_fit(); }
+
+    std::size_t size() const { return v.size(); }
+};
+
+template<typename T>
+class owning_vector final {
+  private:
+    std::vector<std::unique_ptr<T>> v;
+
+    void remove_and_update(std::size_t index, std::size_t update_end) {
+        v.erase(std::begin(v) + index);
+        for (auto i = index; i < update_end - 1; ++i) {  // -1 because element has been removed before
+            v[i]->id.override_index(i);
+        }
+    }
+
+  public:
+    using iterator = typename std::vector<std::unique_ptr<T>>::iterator;
+    using const_iterator = typename std::vector<std::unique_ptr<T>>::const_iterator;
+
+    iterator begin() noexcept { return v.begin(); }
+    const_iterator begin() const noexcept { return v.begin(); }
+    const_iterator cbegin() const noexcept { return v.begin(); }
+
+    iterator end() noexcept { return v.end(); }
+    const_iterator end() const noexcept { return v.end(); }
+    const_iterator cend() const noexcept { return v.end(); }
+
+    template<typename U = T, typename... Args>
+    U* add(Args... args) {
+        U* item = new U(std::forward<Args>(args)...);
+        item->id.override_index(v.size());
+        v.emplace_back(item);
+        return item;
+    }
+
+    bool empty() const { return v.empty(); }
+
+    template<typename Function>
+    T* find_if(Function&& f) {
+        auto it = std::find_if(std::begin(v), std::end(v), f);
+        if (it == std::end(v)) {
+            return nullptr;
+        }
+        return it->get();
+    }
+    template<typename Function>
+    const T* find_if(Function&& f) const {
+        auto it = std::find_if(std::begin(v), std::end(v), f);
+        if (it == std::end(v)) {
+            return nullptr;
+        }
+        return it->get();
+    }
+
+    T* find(hash_t name_hash) {
+        return find_if([name_hash](const auto& i) { return i->id.name_hash == name_hash; });
+    }
+    const T* find(hash_t name_hash) const {
+        return find_if([name_hash](const auto& i) { return i->id.name_hash == name_hash; });
+    }
+
+    T* find(const std::string& name) { return find(hash(name.c_str())); }
+    const T* find(const std::string& name) const { return find(hash(name.c_str())); }
+
+    T* operator[](std::size_t i) { return v[i].get(); }
+    const T* operator[](std::size_t i) const { return v[i].get(); }
+
+    void remove(T* item) { remove_and_update(item->id.index(), v.size()); }
+
+    // `items` needs to be sorted by index!
+    void remove(const std::vector<T*> items) {
+        std::size_t last_p1 = 0;
+        for (std::size_t i = 0; i < items.size(); ++i) {
+            const auto index = items[i]->id.index();
+            if (index < last_p1) {
+                throw std::runtime_error("items to remove not properly sorted");
+            }
+            last_p1 = index + 1;
+            remove_and_update(index - i,  // -i because so many elements have been remove already up to here
+                              (i + 1 < items.size()) ? items[i + 1]->id.index() - i : v.size());
+        }
+    }
+
+    void reserve(std::size_t size_m) { v.reserve(size_m); }
+
+    void shrink_to_fit() { v.shrink_to_fit(); }
+
+    std::size_t size() const { return v.size(); }
+};
+
+class id_t {
+    template<typename T>
+    friend class owning_vector;
+
+  private:
+    mutable std::size_t index_m = 0;
+    void override_index(std::size_t index_p) const { index_m = index_p; }
+
+  public:
+    const std::string name;
+    const hash_t name_hash;
+
+    explicit id_t(std::string name_p) : name(std::move(name_p)), name_hash(hash(name.c_str())) {}
+
+    std::size_t index() const { return index_m; }
+
+    constexpr bool operator==(const id_t& rhs) const { return index_m == rhs.index_m && name_hash == rhs.name_hash; }
+    constexpr bool operator!=(const id_t& rhs) const { return index_m != rhs.index_m || name_hash != rhs.name_hash; }
+    friend std::ostream& operator<<(std::ostream& lhs, const id_t& rhs) { return lhs << rhs.name; }
+};
+
+using FloatType = double;  // TODO rename to lower case
+using IntType = long;      // TODO rename to lower case
+using IndexType = int;     // TODO rename to lower case
 
 using TransportDelay = unsigned int;
 using Distance = TransportDelay;
@@ -74,6 +292,8 @@ inline IntType iround(FloatType x) {
         return std::round(x);
     }
 }
+
+constexpr FloatType to_float(FloatType v) { return v; }
 
 template<bool rounded>
 struct InternalType {};

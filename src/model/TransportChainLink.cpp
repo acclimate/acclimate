@@ -49,14 +49,14 @@ TransportChainLink::TransportChainLink(BusinessConnection* business_connection_p
       transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
       pos(0),
       forcing_nu(-1) {
-    if (geo_entity != nullptr) {
-        geo_entity->transport_chain_links.push_back(this);
+    if (geo_entity.valid()) {
+        geo_entity->transport_chain_links.add(this);
     }
 }
 
 TransportChainLink::~TransportChainLink() {
-    if (geo_entity != nullptr) {
-        geo_entity->remove_transport_chain_link(this);
+    if (geo_entity.valid()) {
+        geo_entity->transport_chain_links.remove(this);
     }
 }
 
@@ -130,11 +130,11 @@ FlowQuantity TransportChainLink::get_flow_deficit() const {
                  - overflow.get_quantity());
 }
 
-Model* TransportChainLink::model() const { return business_connection->model(); }
+const Model* TransportChainLink::model() const { return business_connection->model(); }
 
-std::string TransportChainLink::id() const {
-    return (business_connection->seller != nullptr ? business_connection->seller->id() : "INVALID") + "-" + std::to_string(business_connection->get_id(this))
-           + "->" + (business_connection->buyer != nullptr ? business_connection->buyer->storage->economic_agent->id() : "INVALID");
+std::string TransportChainLink::name() const {
+    return (business_connection->seller.valid() ? business_connection->seller->name() : "INVALID") + "-" + std::to_string(business_connection->get_id(this))
+           + "->" + (business_connection->buyer.valid() ? business_connection->buyer->storage->economic_agent->name() : "INVALID");
 }
 
 }  // namespace acclimate

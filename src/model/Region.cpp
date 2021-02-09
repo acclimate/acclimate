@@ -20,18 +20,19 @@
 
 #include "model/Region.h"
 
-#include <algorithm>
 #include <iterator>
+#include <type_traits>
 #include <utility>
 
 #include "acclimate.h"
-#include "model/EconomicAgent.h"
 #include "model/Government.h"
 #include "model/Model.h"
 
 namespace acclimate {
 
-Region::Region(Model* model_p, std::string id_p, IndexType index_p) : GeoLocation(model_p, 0, GeoLocation::Type::REGION, std::move(id_p)), index_m(index_p) {}
+Region::Region(Model* model_p, id_t id_p) : GeoLocation(model_p, std::move(id_p), 0, GeoLocation::type_t::REGION) {}
+
+Region::~Region() = default;
 
 void Region::add_export_Z(const Flow& export_flow_Z_p) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
@@ -83,22 +84,12 @@ void Region::iterate_investment() {
     }
 }
 
-const GeoRoute& Region::find_path_to(Region* region, typename Sector::TransportType transport_type) const {
-    const auto& it = routes.find(std::make_pair(region->index(), transport_type));
+GeoRoute& Region::find_path_to(Region* region, Sector::transport_type_t transport_type) {
+    const auto& it = routes.find(std::make_pair(region->id.index(), transport_type));
     if (it == std::end(routes)) {
-        throw log::error(this, "No transport data from ", id(), " to ", region->id(), " via ", Sector::unmap_transport_type(transport_type));
+        throw log::error(this, "No transport data from ", name(), " to ", region->name(), " via ", Sector::unmap_transport_type(transport_type));
     }
     return it->second;
-}
-
-void Region::remove_economic_agent(EconomicAgent* economic_agent) {
-    economic_agents_lock.call([&]() {
-        auto it = std::find_if(std::begin(economic_agents), std::end(economic_agents), [economic_agent](const auto& ea) { return ea.get() == economic_agent; });
-        if (it == std::end(economic_agents)) {
-            throw log::error(this, "Agent ", economic_agent->id(), " not found");
-        }
-        economic_agents.erase(it);
-    });
 }
 
 const Flow& Region::consumption_C() const {
@@ -118,17 +109,15 @@ const Flow& Region::export_flow_Z() const {
 
 void Region::set_government(Government* government_p) {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    if constexpr (options::DEBUGGING) {
-        if (government_m) {
-            throw log::error(this, "Government already set");
-        }
+    if (government_m) {
+        throw log::error(this, "Government already set");
     }
     government_m.reset(government_p);
 }
 
 Government* Region::government() { return government_m.get(); }
 
-Government const* Region::government() const { return government_m.get(); }
+const Government* Region::government() const { return government_m.get(); }
 
 const Parameters::RegionParameters& Region::parameters_writable() const {
     debug::assertstep(this, IterationStep::INITIALIZATION);

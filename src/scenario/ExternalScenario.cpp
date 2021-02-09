@@ -28,7 +28,9 @@
 #include <utility>
 
 #include "acclimate.h"
+#include "model/EconomicAgent.h"
 #include "model/Model.h"
+#include "model/Region.h"
 #include "scenario/ExternalForcing.h"
 #include "settingsnode.h"
 
@@ -52,7 +54,7 @@ std::string ExternalScenario::fill_template(const std::string& in) const {
         start += std::strlen(beg_mark);
         std::string key = in.substr(start, stop - start);
         if (key != "index") {
-            ss << scenario_node["parameters"][key.c_str()].template as<std::string>();
+            ss << scenario_node["parameters"][key.c_str()].as<std::string>();
         } else {
             ss << file_index;
         }

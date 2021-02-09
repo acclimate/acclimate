@@ -32,13 +32,13 @@ class Firm;
 class Model;
 class Region;
 
-class Government {
+class Government final {
   private:
-    Value budget_;
+    Value budget_m;
     std::unordered_map<Firm*, Ratio> taxed_firms;
 
   public:
-    const Region* region;
+    non_owning_ptr<Region> region;
 
   private:
     void collect_tax();
@@ -47,14 +47,27 @@ class Government {
 
   public:
     explicit Government(Region* region_p);
+    ~Government();
     void iterate_consumption_and_production();
     void iterate_expectation();
     void iterate_purchase();
     void iterate_investment();
     void define_tax(const std::string& sector, const Ratio& tax_ratio_p);
-    const Value& budget() const { return budget_; }
-    Model* model() const;
-    std::string id() const;
+    const Value& budget() const { return budget_m; }
+
+    const Model* model() const;
+    std::string name() const;
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("budget"),
+                        [this]() {  //
+                            budget();
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

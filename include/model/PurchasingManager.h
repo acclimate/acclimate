@@ -38,7 +38,7 @@ namespace optimization {
 class Optimization;
 }
 
-class PurchasingManager {
+class PurchasingManager final {
     friend class optimization::Optimization;
 
   private:
@@ -55,7 +55,7 @@ class PurchasingManager {
     std::vector<double> xtol_abs;
 
   public:
-    Storage* const storage;
+    non_owning_ptr<Storage> storage;
     std::vector<std::shared_ptr<BusinessConnection>> business_connections;
 
   private:
@@ -81,13 +81,13 @@ class PurchasingManager {
     FloatType grad_expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const;
     FloatType partial_D_r_transport_penalty(FloatType D_r, const BusinessConnection* business_connection) const;
     static FlowQuantity calc_analytical_approximation_X_max(const BusinessConnection* bc);
-    // DEBUG
-    void print_distribution(const std::vector<double>& demand_requests_D) const;
+
+    void debug_print_distribution(const std::vector<double>& demand_requests_D) const;
 
   public:
     explicit PurchasingManager(Storage* storage_p);
     ~PurchasingManager();
-    const Demand& demand_D(const EconomicAgent* const caller = nullptr) const;
+    const Demand& demand_D(const EconomicAgent* caller = nullptr) const;
     FlowQuantity get_flow_deficit() const;
     Flow get_transport_flow() const;
     Flow get_sum_of_last_shipments() const;
@@ -96,17 +96,19 @@ class PurchasingManager {
     FloatType optimized_value() const;
     Demand storage_demand() const;
     const Demand& purchase() const;
-    const FlowValue& expected_costs(const EconomicAgent* const caller = nullptr) const;
+    const FlowValue& expected_costs(const EconomicAgent* caller = nullptr) const;
     const FlowValue& total_transport_penalty() const;
     Flow get_disequilibrium() const;
     FloatType get_stddeviation() const;
     void iterate_purchase();
     void add_initial_demand_D_star(const Demand& demand_D_p);
     void subtract_initial_demand_D_star(const Demand& demand_D_p);
-    Model* model() const;
-    std::string id() const;
-    // DEBUG
-    void print_details() const;
+
+    void debug_print_details() const;
+
+    const Model* model() const;
+    Model* model();
+    std::string name() const;
 };
 }  // namespace acclimate
 

@@ -7,6 +7,6 @@
 [submodule "lib/cpp-library"]
 	path = lib/cpp-library
 	url = https://github.com/swillner/cpp-library
-[submodule "lib/libmrio"]
-	path = lib/libmrio
-	url = https://github.com/swillner/libmrio
+[submodule "lib/netcdfpp"]
+	path = lib/netcdfpp
+	url = https://github.com/swillner/netcdfpp

@@ -21,79 +21,66 @@
 #ifndef ACCLIMATE_NETCDFOUTPUT_H
 #define ACCLIMATE_NETCDFOUTPUT_H
 
+#include <array>
 #include <cstddef>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "acclimate.h"
-#include "netcdftools.h"
-#include "openmp.h"
 #include "output/ArrayOutput.h"
-#include "output/Output.h"
+
+namespace netCDF {
+class Dimension;  // IWYU pragma: keep
+class File;       // IWYU pragma: keep
+class Variable;   // IWYU pragma: keep
+}  // namespace netCDF
 
 namespace settings {
 class SettingsNode;
 }  // namespace settings
 
-struct tm;
-
 namespace acclimate {
 
 class Model;
 
-class NetCDFOutput : public ArrayOutput {
+class NetCDFOutput final : public ArrayOutput {
   private:
-    struct VariableMeta {
-        std::vector<std::size_t> index;
-        std::vector<std::size_t> sizes;
-        netCDF::NcVar nc_var;
-    };
-
-  private:
-    using ArrayOutput::include_events;
-    using ArrayOutput::regions_size;
-    using ArrayOutput::sectors_size;
-    using ArrayOutput::stack;
-    using ArrayOutput::variables;
-    using Output::output_node;
-    using Output::settings_string;
     static constexpr auto compression_level = 7;
-    netCDF::NcDim dim_time;
-    netCDF::NcDim dim_sector;
-    netCDF::NcDim dim_region;
-    std::unordered_map<hstring::hash_type, netCDF::NcGroup> groups;
-    std::unique_ptr<netCDF::NcFile> file;
-    netCDF::NcVar var_events;
-    netCDF::NcVar var_time_variable;
-    TimeStep flush_freq;
-    unsigned int event_cnt;
+    TimeStep flush_freq = 1;
+    unsigned int event_cnt = 0;
     std::string filename;
-    openmp::Lock netcdf_event_lock;
-    std::string calendar;
-    std::string time_units;
+
+    std::unique_ptr<netCDF::File> file;
+    std::unique_ptr<netCDF::Variable> var_events;
+    std::unique_ptr<netCDF::Variable> var_time;
+
+    std::vector<netCDF::Variable> vars_model;
+    std::vector<netCDF::Variable> vars_firms;
+    std::vector<netCDF::Variable> vars_consumers;
+    std::vector<netCDF::Variable> vars_sectors;
+    std::vector<netCDF::Variable> vars_regions;
+    std::vector<netCDF::Variable> vars_storages;
+    std::vector<netCDF::Variable> vars_flows;
 
   private:
-    void internal_write_header(tm* timestamp, unsigned int max_threads) override;
-    void internal_write_footer(tm* duration) override;
-    void internal_write_settings() override;
-    void internal_iterate_begin() override;
-    void internal_iterate_end() override;
-    void internal_end() override;
-    netCDF::NcGroup& create_group(const hstring& name);
-    void create_variable_meta(typename ArrayOutput::Variable& v, const hstring& path, const hstring& name, const hstring& suffix) override;
-    bool internal_handle_event(typename ArrayOutput::Event& event) override;
+    template<std::size_t dim>
+    void write_variables(const Observable<dim>& observable, std::vector<netCDF::Variable>& nc_variables);
+
+    template<std::size_t dim>
+    void create_group(const char* name,
+                      const std::array<netCDF::Dimension, dim + 1>& default_dims,
+                      const std::array<const char*, dim>& index_names,
+                      const Observable<dim>& observable,
+                      std::vector<netCDF::Variable>& nc_variables);
 
   public:
-    NetCDFOutput(const settings::SettingsNode& settings_p, Model* model_p, settings::SettingsNode output_node_p);
-    ~NetCDFOutput() override;
-    void initialize() override;
-    void flush() override;
-    void checkpoint_stop() override;
+    NetCDFOutput(Model* model_p, const settings::SettingsNode& settings);
     void checkpoint_resume() override;
-    using Output::id;
-    using Output::model;
+    void checkpoint_stop() override;
+    void end() override;
+    void iterate() override;
+    void start() override;
 };
 }  // namespace acclimate
 
