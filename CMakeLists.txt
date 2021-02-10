@@ -36,22 +36,19 @@ else()
   add_executable(acclimate ${ACCLIMATE_SOURCES} src/main.cpp)
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
   target_compile_options(acclimate PUBLIC -fno-math-errno -fno-rtti)
   add_custom_command(
-    TARGET acclimate
-    POST_BUILD
-    COMMAND ${CMAKE_STRIP} acclimate
+          TARGET acclimate
+          POST_BUILD
+          COMMAND ${CMAKE_STRIP} acclimate
   )
-endif()
+endif ()
 
 target_include_directories(acclimate PRIVATE include lib/cpp-library)
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel"
-)# icc 19 does not yet fully support c++17, but we only need features it does support
-  target_compile_options(acclimate PUBLIC -std=c++17)
-else()
-  target_compile_features(acclimate PUBLIC cxx_std_17)
-endif()
+# icc 19 does not yet fully support c++17, but we only need features it does support
+target_compile_options(acclimate PUBLIC -std=c++17)
+
 
 add_system_paths()
 add_doxygen_documentation(doc doc)
@@ -60,7 +57,7 @@ set_build_type_specifics(acclimate)
 add_git_version(acclimate WITH_DIFF)
 
 option(ACCLIMATE_PARALLELIZATION "" ON)
-if(ACCLIMATE_PARALLELIZATION)
+if (ACCLIMATE_PARALLELIZATION)
   find_package(OpenMP REQUIRED)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
