@@ -837,8 +837,6 @@ void ModelInitializer::build_agent_network() {
                 add_region(region);
             }
 
-            std::vector<EconomicAgent*> economic_agents;
-
             auto flows_var = ([&file]() {
                 auto tmp = file.variable("flows");
                 if (tmp) {
@@ -849,34 +847,34 @@ void ModelInitializer::build_agent_network() {
 
             if (flows_var.check_dimensions({"sector", "region", "sector", "region"})) {
                 const auto agents_count = sectors_count * regions_count;
-                economic_agents.reserve(agents_count);
+                model()->economic_agents.reserve(agents_count);
                 for (auto& sector : model()->sectors) {
                     for (auto& region : model()->regions) {
-                        economic_agents.push_back(add_standard_agent(sector.get(), region.get()));
+                        add_standard_agent(sector.get(), region.get());
                     }
                 }
 
             } else if (flows_var.check_dimensions({"region", "sector", "region", "sector"})) {
                 const auto agents_count = regions_count * sectors_count;
-                economic_agents.reserve(agents_count);
+                model()->economic_agents.reserve(agents_count);
                 for (auto& region : model()->regions) {
                     for (auto& sector : model()->sectors) {
-                        economic_agents.push_back(add_standard_agent(sector.get(), region.get()));
+                        add_standard_agent(sector.get(), region.get());
                     }
                 }
 
-            } else if (flows_var.check_dimensions({"index"})) {
+            } else if (flows_var.check_dimensions({"index", "index"})) {
                 const auto agents_count = file.dimension("index").require().size();
-                economic_agents.reserve(agents_count);
-                const auto index_sector = file.variable("index_sector").require().require_dimensions({"index"}).get<std::size_t>();
-                const auto index_region = file.variable("index_region").require().require_dimensions({"index"}).get<std::size_t>();
+                model()->economic_agents.reserve(agents_count);
+                const auto index_sector = file.variable("index_sector").require().require_dimensions({"index"}).get<unsigned long long>();
+                const auto index_region = file.variable("index_region").require().require_dimensions({"index"}).get<unsigned long long>();
                 for (std::size_t i = 0; i < agents_count; ++i) {
-                    economic_agents.push_back(add_standard_agent(model()->sectors[index_sector[i]], model()->regions[index_region[i]]));
+                    add_standard_agent(model()->sectors[index_sector[i]], model()->regions[index_region[i]]);
                 }
 
             } else if (flows_var.check_dimensions({"flow"})) {
                 const auto agents_count = file.dimension("agent").require().size();
-                economic_agents.reserve(agents_count);
+                model()->economic_agents.reserve(agents_count);
 
                 int type_firm = -1;
                 int type_consumer = -1;
@@ -906,13 +904,13 @@ void ModelInitializer::build_agent_network() {
                     }
                     auto* region = model()->regions[agents[i].region];
                     if (agents[i].agent_type == type_consumer) {
-                        economic_agents.push_back(add_consumer(agents[i].name, region));
+                        add_consumer(agents[i].name, region);
                     } else if (agents[i].agent_type == type_firm) {
                         if (agents[i].sector >= model()->sectors.size()) {
                             throw log::error(this, "Sector out of range for ", agents[i].name, " in '", filename, "'");
                         }
                         auto* sector = model()->sectors[agents[i].sector];
-                        economic_agents.push_back(add_firm(agents[i].name, sector, region));
+                        add_firm(agents[i].name, sector, region);
                     } else {
                         throw log::error(this, "Unkown agent type ", agent_types.at(agents[i].agent_type), " in '", filename, "'");
                     }
@@ -924,7 +922,7 @@ void ModelInitializer::build_agent_network() {
 
             build_transport_network();
 
-            const auto agents_count = economic_agents.size();
+            const auto agents_count = model()->economic_agents.size();
 
             if (flows_var.check_dimensions({"flow"})) {
                 struct FlowCompound {
@@ -935,7 +933,7 @@ void ModelInitializer::build_agent_network() {
                 const auto flows = flows_var.require_compound<FlowCompound>(3).get<FlowCompound>();
                 for (const auto& flow : flows) {
                     if (flow.value > flow_threshold) {
-                        initialize_connection(economic_agents[flow.agent_from]->as_firm(), economic_agents[flow.agent_to],
+                        initialize_connection(model()->economic_agents[flow.agent_from]->as_firm(), model()->economic_agents[flow.agent_to],
                                               round(FlowQuantity(flow.value) * time_factor));
                     }
                 }
@@ -943,13 +941,13 @@ void ModelInitializer::build_agent_network() {
             } else {
                 const auto flows = flows_var.require_size(agents_count * agents_count).get<float>();  // use float to save memory
                 auto d = std::begin(flows);
-                for (auto& source : economic_agents) {
+                for (auto& source : model()->economic_agents) {
                     if (source->type == EconomicAgent::type_t::FIRM) {
                         Firm* firm_from = source->as_firm();
-                        for (auto& target : economic_agents) {
+                        for (auto& target : model()->economic_agents) {
                             const FlowQuantity flow = round(FlowQuantity(*d) * time_factor);
                             if (*d > flow_threshold && flow > daily_flow_threshold) {
-                                initialize_connection(firm_from, target, flow);
+                                initialize_connection(firm_from, target.get(), flow);
                             }
                             ++d;
                         }
