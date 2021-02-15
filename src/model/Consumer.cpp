@@ -300,25 +300,12 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
         std::cout << "\n";
     }
 
-    // define  lagrangian optimizer to pass (in)equality constraints to global algorithm which cant use it directly:
-    optimization::Optimization lagrangian_optimizer(static_cast<nlopt_algorithm>(model()->parameters().lagrangian_algorithm),
-                                                    goods_num);  // TODO keep and only recreate when resize is needed
 
-    // define global optimizer to use random sampling MLSL algorithm as global search, before local optimization via local_optimizer:
-    optimization::Optimization global_optimizer(static_cast<nlopt_algorithm>(model()->parameters().global_optimization_algorithm),
-                                                goods_num);  // TODO keep and only recreate when resize is needed
     // define local optimizer
     optimization::Optimization local_optimizer(static_cast<nlopt_algorithm>(model()->parameters().utility_optimization_algorithm),
                                                goods_num);  // TODO keep and only recreate when resize is needed
 
     // set parameters
-    lagrangian_optimizer.add_inequality_constraint(this, FlowValue::precision);
-    lagrangian_optimizer.add_max_objective(this);
-    lagrangian_optimizer.xtol(xtol_abs_global);
-    lagrangian_optimizer.lower_bounds(lower_bounds);
-    lagrangian_optimizer.upper_bounds(upper_bounds);
-    lagrangian_optimizer.maxeval(model()->parameters().optimization_maxiter);
-    lagrangian_optimizer.maxtime(model()->parameters().optimization_timeout);
 
     local_optimizer.add_inequality_constraint(this, FlowValue::precision);
     local_optimizer.add_max_objective(this);
@@ -328,19 +315,40 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
     local_optimizer.maxeval(model()->parameters().optimization_maxiter);
     local_optimizer.maxtime(model()->parameters().optimization_timeout);
 
-    global_optimizer.xtol(xtol_abs_global);
-    global_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
-    global_optimizer.lower_bounds(lower_bounds);
-    global_optimizer.upper_bounds(upper_bounds);
-    global_optimizer.maxtime(model()->parameters().optimization_timeout);
+    if (model()->parameters().global_optimization == true) {
+        // define  lagrangian optimizer to pass (in)equality constraints to global algorithm which cant use it directly:
+        optimization::Optimization lagrangian_optimizer(static_cast<nlopt_algorithm>(model()->parameters().lagrangian_algorithm),
+                                                        goods_num);  // TODO keep and only recreate when resize is needed
+        lagrangian_optimizer.add_inequality_constraint(this, FlowValue::precision);
+        lagrangian_optimizer.add_max_objective(this);
+        lagrangian_optimizer.xtol(xtol_abs_global);
+        lagrangian_optimizer.lower_bounds(lower_bounds);
+        lagrangian_optimizer.upper_bounds(upper_bounds);
+        lagrangian_optimizer.maxeval(model()->parameters().optimization_maxiter);
+        lagrangian_optimizer.maxtime(model()->parameters().optimization_timeout);
 
-    global_optimizer.set_local_algorithm(local_optimizer.get_optimizer());
-    nlopt_set_population(global_optimizer.get_optimizer(),
-                         0);  // one might adjust number of random sampling points per iteration (algorithm chooses if left at 0)
+        // define global optimizer to use random sampling MLSL algorithm as global search, before local optimization via local_optimizer:
+        optimization::Optimization global_optimizer(static_cast<nlopt_algorithm>(model()->parameters().global_optimization_algorithm),
+                                                    goods_num);  // TODO keep and only recreate when resize is needed
 
-    // start combined global local optimizer optimizer
-    lagrangian_optimizer.set_local_algorithm(global_optimizer.get_optimizer());
-    consumption_optimize(lagrangian_optimizer);
+        global_optimizer.xtol(xtol_abs_global);
+        global_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
+        global_optimizer.lower_bounds(lower_bounds);
+        global_optimizer.upper_bounds(upper_bounds);
+        global_optimizer.maxtime(model()->parameters().optimization_timeout);
+
+        global_optimizer.set_local_algorithm(local_optimizer.get_optimizer());
+        nlopt_set_population(global_optimizer.get_optimizer(),
+                             0);  // one might adjust number of random sampling points per iteration (algorithm chooses if left at 0)
+
+        // start combined global local optimizer optimizer
+        lagrangian_optimizer.set_local_algorithm(global_optimizer.get_optimizer());
+
+        consumption_optimize(lagrangian_optimizer);
+    } else {
+        consumption_optimize(local_optimizer);
+    }
+
     // set consumption and previous consumption
     for (std::size_t r = 0; r < goods_num; ++r) {
         Flow desired_consumption_flow = (Flow(FlowQuantity(unscaled_demand(optimizer_consumption[r], r)), consumption_prices[r]));

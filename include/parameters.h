@@ -52,6 +52,7 @@ struct Parameters {
         int global_optimization_maxiter;    // maximal iteration of global algo for utility
         unsigned int optimization_timeout;  // timeout in sec
         bool consumer_utilitarian;
+        bool global_optimization;
     };
 
     struct RegionParameters {};
