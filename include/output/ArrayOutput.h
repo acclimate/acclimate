@@ -56,7 +56,7 @@ class ArrayOutput : public Output {
 
     template<std::size_t dim>
     struct Observable {
-        std::array<std::vector<std::size_t>, dim> indices;
+        std::array<std::vector<unsigned long long>, dim> indices;
         std::array<std::size_t, dim> sizes;
         std::vector<Variable> variables;
     };

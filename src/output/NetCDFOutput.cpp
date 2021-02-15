@@ -75,7 +75,7 @@ void NetCDFOutput::create_group(const char* name,
                 assert(observable.indices[i].size() == observable.sizes[i]);
                 netCDF::Variable var = group.add_variable<std::size_t>(index_names[i], std::vector<int>{dims[i + 1]});
                 var.set_compression(false, compression_level);
-                var.set<std::size_t>(observable.indices[i]);
+                var.set<unsigned long long>(observable.indices[i]);
             }
         }
     }
