@@ -50,11 +50,15 @@ Consumer::Consumer(id_t id_p,
     : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::CONSUMER) {
     inter_basket_substitution_coefficient = inter_basket_substitution_coefficient_p;
     inter_basket_substitution_exponent = (inter_basket_substitution_coefficient - 1) / inter_basket_substitution_coefficient;
-    goods_basket = consumer_baskets_p;
+    goods_basket = std::move(consumer_baskets_p);
     baskets_num = goods_basket.size();
+    for (auto basket : goods_basket) {
+        for (auto i_sector : basket) std::cout << i_sector;
+        std::cout << "\n";
+    }
     intra_basket_substitution_coefficient.reserve(baskets_num);
     intra_basket_substitution_exponent = std::vector<FloatType>(baskets_num);
-    intra_basket_substitution_coefficient = intra_basket_substitution_coefficients_p;
+    intra_basket_substitution_coefficient = std::move(intra_basket_substitution_coefficients_p);
 }
 
 void Consumer::initialize() {

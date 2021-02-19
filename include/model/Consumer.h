@@ -37,8 +37,8 @@ class Consumer final : public EconomicAgent {
   private:
     bool utilitarian;
 
-    size_t goods_num = 1;
-    size_t baskets_num = 1;
+    size_t goods_num;
+    size_t baskets_num;
     std::vector<std::vector<int>> goods_basket;
 
     // optimization parameters

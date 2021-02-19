@@ -122,11 +122,16 @@ Consumer* ModelInitializer::add_consumer(std::string name, Region* region) {
         throw log::error(this, "Ambiguous agent name", name);
     }
     const auto consumer_baskets = get_consumer_property(name, region->name(), "consumer_baskets");
+    std::vector<FloatType> consumer_basket_substitution_coefficients;
     std::vector<std::vector<int>> consumer_baskets_vector;
     for (auto input_basket : consumer_baskets.as_sequence()) {
-        consumer_baskets_vector.push_back(input_basket.to_vector<int>());
+        std::vector<int> basket_vector;
+        for (auto i_sector : input_basket["sectors"].to_vector<std::string>()) {
+            basket_vector.push_back(model()->sectors.find(i_sector)->id.index() - 1);  // index shift needed to start at 0
+        }
+        consumer_baskets_vector.push_back(basket_vector);
+        consumer_basket_substitution_coefficients.push_back(static_cast<FloatType>(input_basket["substituition_coefficient"].as<FloatType>()));
     }
-    const auto consumer_basket_substitution_coefficients = get_consumer_property(name, region->name(), "basket_substitution_coefficients").to_vector<double>();
 
     auto* consumer = model()->economic_agents.add<Consumer>(
         id_t(std::move(name)), region, get_consumer_property(name, region->name(), "intra_basket_substitution_coefficient").as<FloatType>(),
