@@ -429,6 +429,7 @@ void Consumer::utilitarian_consumption_execution(std::vector<FloatType> requeste
         // adjust non-spent budget
         not_spent_budget -= desired_consumption_flow.get_value();
     }
+    not_spent_budget = FlowValue(0.0);  // introduces instability, therefore "disable" not_spent_budget TODO: fix this
 }
 
 void Consumer::iterate_expectation() { debug::assertstep(this, IterationStep::EXPECTATION); }
