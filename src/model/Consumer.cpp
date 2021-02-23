@@ -283,13 +283,13 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
     xtol_abs_global = std::vector(goods_num, 0.1);
     optimizer_consumption = std::vector<double>(goods_num);  // use normalized variable for optimization to improve?! performance
     upper_bounds = std::vector<FloatType>(goods_num);
-    lower_bounds = std::vector<FloatType>(goods_num, 0.0);
+    lower_bounds =
+        std::vector<FloatType>(goods_num, 0.00000001);  // lower bound of exactly 0 is violated by Nlopt - bug?! - thus keeping minimum consumption level
 
     for (std::size_t r = 0; r < goods_num; ++r) {
         // set bounds
         upper_bounds[r] = single_good_maximum_consumption[r];
         optimizer_consumption[r] = std::min(consumption_scaling[r], upper_bounds[r]);
-        lower_bounds[r] = optimizer_consumption[r] * 0.1;  // lower bound of exactly 0 is violated by Nlopt - bug?! - thus keeping minimum consumption level
     }
     if constexpr (VERBOSE_CONSUMER) {
         log::info(this, "\"upper bounds\"");
@@ -429,7 +429,6 @@ void Consumer::utilitarian_consumption_execution(std::vector<FloatType> requeste
         // adjust non-spent budget
         not_spent_budget -= desired_consumption_flow.get_value();
     }
-    not_spent_budget = FlowValue(0.0);
 }
 
 void Consumer::iterate_expectation() { debug::assertstep(this, IterationStep::EXPECTATION); }
