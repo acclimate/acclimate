@@ -111,7 +111,7 @@ class failure : public std::runtime_error {
 class Optimization {
   private:
     nlopt_opt opt;
-    nlopt_result last_result;
+    nlopt_result last_result = NLOPT_SUCCESS;
     double optimized_value_m;
     unsigned int dim_m;
 

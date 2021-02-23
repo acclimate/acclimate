@@ -71,7 +71,6 @@ void Consumer::initialize() {
     share_factors.reserve(goods_num);
     previous_consumption.reserve(goods_num);
     baseline_consumption.reserve(goods_num);
-    consumption_vector = std::vector<FloatType>(goods_num);
     // initialize previous consumption as starting values, calculate budget
     budget = FlowValue(0.0);
     not_spent_budget = FlowValue(0.0);
@@ -163,31 +162,31 @@ FloatType Consumer::inequality_constraint(const double* x, double* grad) {
     consumption_budget = to_float(budget + not_spent_budget);
     for (std::size_t r = 0; r < goods_num; ++r) {
         assert(!std::isnan(x[r]));
-        consumption_vector[r] = unscaled_demand(x[r], r);
-        consumption_budget -= consumption_vector[r] * to_float(consumption_prices[r]);
+        consumption_budget -= unscaled_demand(x[r], r) * to_float(consumption_prices[r]);
         if (grad != nullptr) {
-            grad[r] = (desired_consumption[r] * to_float(consumption_prices[r]));
+            grad[r] = desired_consumption[r] * to_float(consumption_prices[r]);
             if constexpr (options::OPTIMIZATION_WARNINGS) {
+                assert(!std::isnan(grad[r]));
                 if (grad[r] > MAX_GRADIENT) {
                     log::warning(this, ": large gradient of ", grad[r]);
                 }
             }
         }
     }
-    return consumption_budget * -1;  // since inequality constraint checks for <=0, we need to switch the sign
+    return -consumption_budget;  // since inequality constraint checks for <=0, we need to switch the sign
 }
 
 FloatType Consumer::max_objective(const double* x, double* grad) {
     for (std::size_t r = 0; r < goods_num; ++r) {
         assert(!std::isnan(x[r]));
-        consumption_vector[r] = unscaled_demand(x[r], r);
+        var_optimizer_consumption.value()[r] = unscaled_demand(x[r], r);
     }
-    var_optimizer_consumption = consumption_vector;
     autodiffutility = autodiff_nested_CES_utility_function(var_optimizer_consumption);
     if (grad != nullptr) {
         std::copy(std::begin(autodiffutility.derivative()), std::end(autodiffutility.derivative()), grad);
         if constexpr (options::OPTIMIZATION_WARNINGS) {
             for (std::size_t r = 0; r < goods_num; ++r) {
+                assert(!std::isnan(grad[r]));
                 if (grad[r] > MAX_GRADIENT) {
                     log::warning(this, ": large gradient of ", grad[r]);
                 }
@@ -208,7 +207,7 @@ void Consumer::iterate_consumption_and_production() {
     } else {
         // calculate local optimal utility consumption for comparison:
         if constexpr (VERBOSE_CONSUMER) {
-            log::info(this, "local utilitarian  consumption optimization:");
+            log::info(this, "local utilitarian consumption optimization:");
         }
         utilitarian_consumption = utilitarian_consumption_optimization();
         local_optimal_utility = CES_utility_function(utilitarian_consumption) / baseline_utility;
@@ -298,7 +297,7 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
     if constexpr (VERBOSE_CONSUMER) {
         log::info(this, "\"upper bounds\"");
         for (std::size_t r = 0; r < goods_num; ++r) {
-            log::info(this, "sector:", model()->sectors[r + 1]->name(), "\t upper bound:", upper_bounds[r]);
+            log::info(input_storages[r], "upper bound: ", upper_bounds[r]);
         }
     }
 
@@ -307,18 +306,17 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
                                                goods_num);  // TODO keep and only recreate when resize is needed
 
     // set parameters
-
     local_optimizer.xtol(xtol_abs);
     local_optimizer.lower_bounds(lower_bounds);
     local_optimizer.upper_bounds(upper_bounds);
     local_optimizer.maxeval(model()->parameters().optimization_maxiter);
     local_optimizer.maxtime(model()->parameters().optimization_timeout);
 
-    if (model()->parameters().global_optimization == true) {
+    if (model()->parameters().global_optimization) {
         // define  lagrangian optimizer to pass (in)equality constraints to global algorithm which cant use it directly:
         optimization::Optimization lagrangian_optimizer(static_cast<nlopt_algorithm>(model()->parameters().lagrangian_algorithm),
                                                         goods_num);  // TODO keep and only recreate when resize is needed
-        if (model()->parameters().budget_inequality_constrained == true) {
+        if (model()->parameters().budget_inequality_constrained) {
             lagrangian_optimizer.add_inequality_constraint(this, FlowValue::precision);
         } else {
             lagrangian_optimizer.add_equality_constraint(this, FlowValue::precision);
@@ -335,9 +333,9 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
                                                     goods_num);  // TODO keep and only recreate when resize is needed
 
         global_optimizer.xtol(xtol_abs_global);
-        global_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
         global_optimizer.lower_bounds(lower_bounds);
         global_optimizer.upper_bounds(upper_bounds);
+        global_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
         global_optimizer.maxtime(model()->parameters().optimization_timeout);
 
         global_optimizer.set_local_algorithm(local_optimizer.get_optimizer());
@@ -349,7 +347,7 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
 
         consumption_optimize(lagrangian_optimizer);
     } else {
-        if (model()->parameters().budget_inequality_constrained == true) {
+        if (model()->parameters().budget_inequality_constrained) {
             local_optimizer.add_inequality_constraint(this, FlowValue::precision);
         } else {
             local_optimizer.add_equality_constraint(this, FlowValue::precision);
@@ -360,8 +358,8 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
 
     // set consumption and previous consumption
     for (std::size_t r = 0; r < goods_num; ++r) {
-        Flow desired_consumption_flow = (Flow(FlowQuantity(unscaled_demand(optimizer_consumption[r], r)), consumption_prices[r]));
-        desired_consumption[r] = (to_float(desired_consumption_flow.get_quantity()));
+        Flow desired_consumption_flow = Flow(FlowQuantity(unscaled_demand(optimizer_consumption[r], r)), consumption_prices[r]);
+        desired_consumption[r] = to_float(desired_consumption_flow.get_quantity());
     }
     return desired_consumption;
 }
@@ -371,21 +369,22 @@ void Consumer::consumption_optimize(optimization::Optimization& optimizer) {
         if constexpr (VERBOSE_CONSUMER) {
             log::info(this, "distribution before optimization");
             for (std::size_t r = 0; r < goods_num; ++r) {
-                log::info(this, "sector:", model()->sectors[r + 1]->name(), "\t target consumption:", optimizer_consumption[r]);
+                log::info(input_storages[r], "target consumption: ", optimizer_consumption[r]);
             }
         }
         const auto res = optimizer.optimize(optimizer_consumption);
         if constexpr (VERBOSE_CONSUMER) {
             log::info(this, "distribution after optimization");
             for (std::size_t r = 0; r < goods_num; ++r) {
-                log::info(this, "sector:", model()->sectors[r + 1]->name(), "\t optimized consumption:", optimizer_consumption[r]);
+                log::info(input_storages[r], "optimized consumption: ", optimizer_consumption[r]);
             }
         }
+
         if (!res && !optimizer.xtol_reached()) {
             if (optimizer.roundoff_limited()) {
                 if constexpr (!IGNORE_ROUNDOFFLIMITED) {
                     if constexpr (options::DEBUGGING) {
-                        debug_print_distribution(optimizer_consumption);
+                        debug_print_distribution();
                     }
                     model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, this);
                     if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
@@ -394,31 +393,35 @@ void Consumer::consumption_optimize(optimization::Optimization& optimizer) {
                         log::warning(this, "optimization is roundoff limited (for ", goods_num, " consumption goods)");
                     }
                 }
-            }
-        } else if (optimizer.maxtime_reached()) {
-            if constexpr (options::DEBUGGING) {
-                debug_print_distribution(optimizer_consumption);
-            }
-            model()->run()->event(EventType::OPTIMIZER_TIMEOUT, this);
-            if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                throw log::error(this, "optimization timed out (for ", goods_num, " inputs)");
+            } else if (optimizer.maxeval_reached()) {
+                if constexpr (options::DEBUGGING) {
+                    debug_print_distribution();
+                }
+                model()->run()->event(EventType::OPTIMIZER_MAXITER, this);
+                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                    throw log::error(this, "optimization reached maximum iterations (for ", goods_num, " consumption goods)");
+                } else {
+                    log::warning(this, "optimization reached maximum iterations (for ", goods_num, " consumption goods)");
+                }
+            } else if (optimizer.maxtime_reached()) {
+                if constexpr (options::DEBUGGING) {
+                    debug_print_distribution();
+                }
+                model()->run()->event(EventType::OPTIMIZER_TIMEOUT, this);
+                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                    throw log::error(this, "optimization timed out (for ", goods_num, " consumption goods)");
+                } else {
+                    log::warning(this, "optimization timed out (for ", goods_num, " consumption goods)");
+                }
             } else {
-                log::warning(this, "optimization timed out (for ", goods_num, " inputs)");
+                log::warning(this, "optimization finished with ", optimizer.last_result_description());
             }
-
-        } else {
-            log::warning(this, "optimization finished with ", optimizer.last_result_description());
         }
     } catch (const optimization::failure& ex) {
         if constexpr (options::DEBUGGING) {
-            debug_print_distribution(optimizer_consumption);  // TODO: change to vector of flows?
+            debug_print_distribution();
         }
-        // TODO maxiter limit is ok, the rest fatal
-        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-            throw log::error(this, "optimization failed, ", ex.what(), " (for ", goods_num, " inputs)");
-        } else {
-            log::warning(this, "optimization failed, ", ex.what(), " (for ", goods_num, " inputs)");
-        }
+        throw log::error(this, "optimization failed, ", ex.what(), " (for ", goods_num, " consumption goods)");
     }
 }
 
@@ -471,38 +474,39 @@ void Consumer::debug_print_details() const {
 
 template<typename T1, typename T2>
 static void print_row(T1 a, T2 b) {
-    std::cout << "      " << std::setw(14) << a << " = " << std::setw(14) << b << '\n';
+    std::cout << "      " << std::setw(24) << a << " = " << std::setw(14) << b << '\n';
 }
 
-template<typename T1, typename T2, typename T3>
-static void print_row(T1 a, T2 b, T3 c) {
-    std::cout << "      " << std::setw(14) << a << " = " << std::setw(14) << b << " (" << c << ")\n";
-}
-
-void Consumer::debug_print_distribution(const std::vector<double>& consumption_demands) const {
+void Consumer::debug_print_distribution() {
     if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
         {
-            std::cout << model()->run()->timeinfo() << ", " << name() << ": demand distribution for " << goods_num << " inputs :\n";
-            std::vector<FloatType> grad(goods_num);
-            // max_objective(&consumption_demands[0], &grad[0]);
-            for (std::size_t r = 0; r < goods_num; ++r) {
-                std::cout << "      " << name() << " :\n";
-                print_row("grad", grad[r]);
-                print_row("share factor", share_factors[r]);
-                print_row("substitution coefficient", inter_basket_substitution_coefficient);
-                print_row("consumption request", unscaled_demand(consumption_demands[r], r));
-                print_row("starting value consumption request", desired_consumption[r]);
-                print_row("consumption price", consumption_prices[r]);
-                print_row("current utility", utility / baseline_utility);
-                print_row("current total budget", budget);
-                print_row("current spending for this good", consumption_demands[r] * desired_consumption[r] * consumption_prices[r]);
+            std::vector<double> grad_constraint(goods_num);
+            std::vector<double> grad_objective(goods_num);
 
+            std::cout << model()->run()->timeinfo() << ", " << name() << ": demand distribution for " << goods_num << " inputs :\n";
+            print_row("inequality value", inequality_constraint(&optimizer_consumption[0], &grad_constraint[0]));
+            print_row("objective value", max_objective(&optimizer_consumption[0], &grad_objective[0]));
+            print_row("current utility", utility / baseline_utility);
+            print_row("current total budget", budget);
+            print_row("substitution coefficient", inter_basket_substitution_coefficient);
+            std::cout << '\n';
+
+            for (std::size_t r = 0; r < goods_num; ++r) {
+                std::cout << "    " << input_storages[r]->name() << " :\n";
+                print_row("grad (constraint)", grad_constraint[r]);
+                print_row("grad (objective)", grad_objective[r]);
+                print_row("share factor", share_factors[r]);
+                print_row("consumption quantity", unscaled_demand(optimizer_consumption[r], r));
+                print_row("starting cons. quantity", desired_consumption[r]);
+                print_row("consumption price", consumption_prices[r]);
+                print_row("consumption value", unscaled_demand(optimizer_consumption[r], r) * consumption_prices[r]);
                 std::cout << '\n';
             }
         }
     }
 }
+
 FloatType Consumer::unscaled_demand(FloatType scaling_factor, int scaling_index) const { return scaling_factor * desired_consumption[scaling_index]; }
 
 }  // namespace acclimate

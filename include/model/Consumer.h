@@ -62,10 +62,9 @@ class Consumer final : public EconomicAgent {
     // field to store utility
     FloatType utility;
 
-    std::vector<FloatType> consumption_vector;  // vector to store actual, unscaled consumption
     // variables for (in)equality constraint, pre-allocated to increase efficiency
     FloatType consumption_budget;
-    // variables for utiltiy function , pre-allocated to increase efficiency
+    // variables for utility function , pre-allocated to increase efficiency
     FloatType consumption_utility;
     FloatType basket_consumption_utility;
     autodiff::Value<FloatType> autodiff_consumption_utility = autodiff::Value<FloatType>(0, 0);
@@ -101,7 +100,7 @@ class Consumer final : public EconomicAgent {
     void iterate_investment() override;
 
     void debug_print_details() const override;
-    void debug_print_distribution(const std::vector<FloatType>& demand_requests_D) const;
+    void debug_print_distribution();
 
     // CES utility specific funtions TODO: check if replacing by abstract funtions suitable
     FloatType CES_utility_function(const std::vector<FloatType>& consumption_demands);
@@ -129,20 +128,16 @@ class Consumer final : public EconomicAgent {
     // scaling function
     FloatType unscaled_demand(FloatType scaling_factor, int scaling_index) const;
 
-    // getters and setters
-    double get_utility() const { return utility; }
-    double get_local_optimal_utility() const { return local_optimal_utility; }
-
     template<typename Observer, typename H>
     bool observe(Observer& o) const {
         return EconomicAgent::observe<Observer, H>(o)  //
                && o.set(H::hash("utility"),
                         [this]() {  //
-                            return get_utility();
+                            return utility;
                         })
                && o.set(H::hash("local_optimal_utility"),
                         [this]() {  //
-                            return get_local_optimal_utility();
+                            return local_optimal_utility;
                         })
             //
             ;
