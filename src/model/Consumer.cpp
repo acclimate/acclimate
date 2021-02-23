@@ -157,16 +157,7 @@ FloatType Consumer::CES_utility_function(const std::vector<Flow>& consumption_de
 }
 
 // TODO: more complex budget function might be useful, e.g. opportunity for saving etc.
-FloatType Consumer::equality_constraint(const double* x, double* grad) {
-    consumption_budget = to_float(budget + not_spent_budget);
-    for (std::size_t r = 0; r < goods_num; ++r) {
-        assert(!std::isnan(x[r]));
-        consumption_vector[r] = unscaled_demand(x[r], r);
-        consumption_budget -= consumption_vector[r] * to_float(consumption_prices[r]);
-    }
-    grad = fill_gradient(grad);
-    return consumption_budget * -1;  // since inequality constraint checks for <=0, we need to switch the sign
-}
+FloatType Consumer::equality_constraint(const double* x, double* grad) { return inequality_constraint(x, grad); }
 
 FloatType Consumer::inequality_constraint(const double* x, double* grad) {
     consumption_budget = to_float(budget + not_spent_budget);
@@ -174,8 +165,15 @@ FloatType Consumer::inequality_constraint(const double* x, double* grad) {
         assert(!std::isnan(x[r]));
         consumption_vector[r] = unscaled_demand(x[r], r);
         consumption_budget -= consumption_vector[r] * to_float(consumption_prices[r]);
+        if (grad != nullptr) {
+            grad[r] = (desired_consumption[r] * to_float(consumption_prices[r]));
+            if constexpr (options::OPTIMIZATION_WARNINGS) {
+                if (grad[r] > MAX_GRADIENT) {
+                    log::warning(this, ": large gradient of ", grad[r]);
+                }
+            }
+        }
     }
-    grad = fill_gradient(grad);
     return consumption_budget * -1;  // since inequality constraint checks for <=0, we need to switch the sign
 }
 
@@ -186,11 +184,6 @@ FloatType Consumer::max_objective(const double* x, double* grad) {
     }
     var_optimizer_consumption = consumption_vector;
     autodiffutility = autodiff_nested_CES_utility_function(var_optimizer_consumption);
-    grad = fill_gradient(grad);
-    return autodiffutility.value();
-}
-
-double* Consumer::fill_gradient(double* grad) {
     if (grad != nullptr) {
         std::copy(std::begin(autodiffutility.derivative()), std::end(autodiffutility.derivative()), grad);
         if constexpr (options::OPTIMIZATION_WARNINGS) {
@@ -201,7 +194,7 @@ double* Consumer::fill_gradient(double* grad) {
             }
         }
     }
-    return grad;
+    return autodiffutility.value();
 }
 
 void Consumer::iterate_consumption_and_production() {

@@ -63,9 +63,8 @@ class Consumer final : public EconomicAgent {
     FloatType utility;
 
     std::vector<FloatType> consumption_vector;  // vector to store actual, unscaled consumption
-    // variables for equality constraint, pre-allocated to increase efficiency
+    // variables for (in)equality constraint, pre-allocated to increase efficiency
     FloatType consumption_budget;
-    FloatType available_budget;
     // variables for utiltiy function , pre-allocated to increase efficiency
     FloatType consumption_utility;
     FloatType basket_consumption_utility;
@@ -127,9 +126,8 @@ class Consumer final : public EconomicAgent {
     FloatType inequality_constraint(const double* x, double* grad);
     FloatType equality_constraint(const double* x, double* grad);
     FloatType max_objective(const double* x, double* grad);
-    double* fill_gradient(double* grad);
     // scaling function
-    FloatType unscaled_demand(const FloatType scaling_factor, int scaling_index) const;
+    FloatType unscaled_demand(FloatType scaling_factor, int scaling_index) const;
 
     // getters and setters
     double get_utility() const { return utility; }
