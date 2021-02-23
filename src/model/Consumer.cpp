@@ -50,15 +50,11 @@ Consumer::Consumer(id_t id_p,
     : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::CONSUMER) {
     inter_basket_substitution_coefficient = inter_basket_substitution_coefficient_p;
     inter_basket_substitution_exponent = (inter_basket_substitution_coefficient - 1) / inter_basket_substitution_coefficient;
-    goods_basket = std::move(consumer_baskets_p);
+    goods_basket = consumer_baskets_p;
     baskets_num = goods_basket.size();
-    for (auto basket : goods_basket) {
-        for (auto i_sector : basket) std::cout << i_sector;
-        std::cout << "\n";
-    }
     intra_basket_substitution_coefficient.reserve(baskets_num);
     intra_basket_substitution_exponent = std::vector<FloatType>(baskets_num);
-    intra_basket_substitution_coefficient = std::move(intra_basket_substitution_coefficients_p);
+    intra_basket_substitution_coefficient = intra_basket_substitution_coefficients_p;
 }
 
 void Consumer::initialize() {
@@ -208,7 +204,7 @@ void Consumer::iterate_consumption_and_production() {
     } else {
         // calculate local optimal utility consumption for comparison:
         if constexpr (VERBOSE_CONSUMER) {
-            std::cout << "\n local utilitarian  consumption optimization \n";
+            log::info(this, "local utilitarian  consumption optimization:");
         }
         utilitarian_consumption = utilitarian_consumption_optimization();
         local_optimal_utility = CES_utility_function(utilitarian_consumption) / baseline_utility;
@@ -296,12 +292,10 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
         lower_bounds[r] = optimizer_consumption[r] * 0.1;  // lower bound of exactly 0 is violated by Nlopt - bug?! - thus keeping minimum consumption level
     }
     if constexpr (VERBOSE_CONSUMER) {
-        std::cout << "\n upper bounds \n";
+        log::info(this, "\"upper bounds\"");
         for (std::size_t r = 0; r < goods_num; ++r) {
-            std::cout << upper_bounds[r];
-            std::cout << "\t";
+            log::info(this, "sector:", model()->sectors[r + 1]->name(), "\t upper bound:", upper_bounds[r]);
         }
-        std::cout << "\n";
     }
 
 
@@ -364,20 +358,17 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
 void Consumer::consumption_optimize(optimization::Optimization& optimizer) {
     try {
         if constexpr (VERBOSE_CONSUMER) {
-            std::cout << "\n distribution before pre-optimization \n";
+            log::info(this, "distribution before optimization");
             for (std::size_t r = 0; r < goods_num; ++r) {
-                std::cout << optimizer_consumption[r];
-                std::cout << "\t";
+                log::info(this, "sector:", model()->sectors[r + 1]->name(), "\t target consumption:", optimizer_consumption[r]);
             }
-            std::cout << "\n";
         }
         const auto res = optimizer.optimize(optimizer_consumption);
         if constexpr (VERBOSE_CONSUMER) {
-            std::cout << "\n distribution after pre-optimization \n";
+            log::info(this, "distribution after optimization");
             for (std::size_t r = 0; r < goods_num; ++r) {
-                std::cout << optimizer_consumption[r] << "\t";
+                log::info(this, "sector:", model()->sectors[r + 1]->name(), "\t optimized consumption:", optimizer_consumption[r]);
             }
-            std::cout << "\n";
         }
         if (!res && !optimizer.xtol_reached()) {
             if (optimizer.roundoff_limited()) {
