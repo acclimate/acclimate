@@ -53,6 +53,7 @@ struct Parameters {
         unsigned int optimization_timeout;  // timeout in sec
         bool consumer_utilitarian;
         bool global_optimization;
+        bool budget_inequality_constrained;
     };
 
     struct RegionParameters {};

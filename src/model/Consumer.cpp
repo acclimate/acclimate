@@ -157,6 +157,17 @@ FloatType Consumer::CES_utility_function(const std::vector<Flow>& consumption_de
 }
 
 // TODO: more complex budget function might be useful, e.g. opportunity for saving etc.
+FloatType Consumer::equality_constraint(const double* x, double* grad) {
+    consumption_budget = to_float(budget + not_spent_budget);
+    for (std::size_t r = 0; r < goods_num; ++r) {
+        assert(!std::isnan(x[r]));
+        consumption_vector[r] = unscaled_demand(x[r], r);
+        consumption_budget -= consumption_vector[r] * to_float(consumption_prices[r]);
+    }
+    grad = fill_gradient(grad);
+    return consumption_budget * -1;  // since inequality constraint checks for <=0, we need to switch the sign
+}
+
 FloatType Consumer::inequality_constraint(const double* x, double* grad) {
     consumption_budget = to_float(budget + not_spent_budget);
     for (std::size_t r = 0; r < goods_num; ++r) {
@@ -280,7 +291,7 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
     // utility optimization
     // set parameters
     xtol_abs = std::vector(goods_num, FlowQuantity::precision);
-    xtol_abs_global = std::vector(goods_num, 0.1);
+    xtol_abs_global = std::vector(goods_num, FlowQuantity::precision * 100);
     optimizer_consumption = std::vector<double>(goods_num);  // use normalized variable for optimization to improve?! performance
     upper_bounds = std::vector<FloatType>(goods_num);
     lower_bounds =
@@ -298,15 +309,12 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
         }
     }
 
-
     // define local optimizer
     optimization::Optimization local_optimizer(static_cast<nlopt_algorithm>(model()->parameters().utility_optimization_algorithm),
                                                goods_num);  // TODO keep and only recreate when resize is needed
 
     // set parameters
 
-    local_optimizer.add_inequality_constraint(this, FlowValue::precision);
-    local_optimizer.add_max_objective(this);
     local_optimizer.xtol(xtol_abs);
     local_optimizer.lower_bounds(lower_bounds);
     local_optimizer.upper_bounds(upper_bounds);
@@ -317,7 +325,11 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
         // define  lagrangian optimizer to pass (in)equality constraints to global algorithm which cant use it directly:
         optimization::Optimization lagrangian_optimizer(static_cast<nlopt_algorithm>(model()->parameters().lagrangian_algorithm),
                                                         goods_num);  // TODO keep and only recreate when resize is needed
-        lagrangian_optimizer.add_inequality_constraint(this, FlowValue::precision);
+        if (model()->parameters().budget_inequality_constrained == true) {
+            lagrangian_optimizer.add_inequality_constraint(this, FlowValue::precision);
+        } else {
+            lagrangian_optimizer.add_equality_constraint(this, FlowValue::precision);
+        }
         lagrangian_optimizer.add_max_objective(this);
         lagrangian_optimizer.xtol(xtol_abs_global);
         lagrangian_optimizer.lower_bounds(lower_bounds);
@@ -344,6 +356,12 @@ std::vector<FloatType> Consumer::utilitarian_consumption_optimization() {
 
         consumption_optimize(lagrangian_optimizer);
     } else {
+        if (model()->parameters().budget_inequality_constrained == true) {
+            local_optimizer.add_inequality_constraint(this, FlowValue::precision);
+        } else {
+            local_optimizer.add_equality_constraint(this, FlowValue::precision);
+        }
+        local_optimizer.add_max_objective(this);
         consumption_optimize(local_optimizer);
     }
 
