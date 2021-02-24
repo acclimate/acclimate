@@ -123,19 +123,20 @@ Consumer* ModelInitializer::add_consumer(std::string name, Region* region) {
     }
     const auto consumer_baskets = get_consumer_property(name, region->name(), "consumer_baskets");
     std::vector<FloatType> consumer_basket_substitution_coefficients;
-    std::vector<std::vector<int>> consumer_baskets_vector;
+    std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets_vector;
     for (auto input_basket : consumer_baskets.as_sequence()) {
-        std::vector<int> basket_vector;
+        std::vector<Sector*> sector_vector;
         for (auto i_sector : input_basket["sectors"].to_vector<std::string>()) {
-            basket_vector.push_back(model()->sectors.find(i_sector)->id.index() - 1);  // index shift needed to start at 0
+            sector_vector.push_back(model()->sectors.find(i_sector));
         }
-        consumer_baskets_vector.push_back(basket_vector);
-        consumer_basket_substitution_coefficients.push_back(static_cast<FloatType>(input_basket["substituition_coefficient"].as<FloatType>()));
+        std::pair<std::vector<Sector*>, FloatType> consumer_params =
+            std::pair(sector_vector, static_cast<FloatType>(input_basket["substituition_coefficient"].as<FloatType>()));
+        consumer_baskets_vector.push_back(consumer_params);
     }
 
     auto* consumer = model()->economic_agents.add<Consumer>(
         id_t(std::move(name)), region, get_consumer_property(name, region->name(), "intra_basket_substitution_coefficient").as<FloatType>(),
-        consumer_baskets_vector, consumer_basket_substitution_coefficients);
+        consumer_baskets_vector);
     region->economic_agents.add(consumer);
     return consumer;
 }
