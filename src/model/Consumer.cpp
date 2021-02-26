@@ -29,7 +29,6 @@
 #include "acclimate.h"
 #include "autodiff.h"
 #include "model/Model.h"
-#include "model/PurchasingManager.h"
 #include "model/Region.h"
 #include "model/Storage.h"
 #include "optimization.h"
@@ -72,7 +71,6 @@ void Consumer::initialize() {
     consumption_budget = FlowValue(0.0);
     not_spent_budget = FlowValue(0.0);
     for (auto& input_storage : input_storages) {
-        int r = input_storage_map.find(input_storage->id.name_hash)->second;
         const auto initial_consumption = input_storage->initial_used_flow_U_star();
         previous_consumption.push_back(initial_consumption);
         consumption_budget += initial_consumption.get_value();
