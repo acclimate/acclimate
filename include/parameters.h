@@ -51,7 +51,6 @@ struct Parameters {
         int optimization_maxiter;           // maximal iteration
         int global_optimization_maxiter;    // maximal iteration of global algo for utility
         unsigned int optimization_timeout;  // timeout in sec
-        bool consumer_utilitarian;
         bool global_optimization;
         bool budget_inequality_constrained;
     };

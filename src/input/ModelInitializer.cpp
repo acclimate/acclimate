@@ -133,10 +133,10 @@ Consumer* ModelInitializer::add_consumer(std::string name, Region* region) {
             std::pair(sector_vector, static_cast<FloatType>(input_basket["substituition_coefficient"].as<FloatType>()));
         consumer_baskets_vector.push_back(consumer_params);
     }
-
+    const bool bool_utilitarian = get_consumer_property(name, region->name(), "bool_utilitarian").as<bool>();
     auto* consumer = model()->economic_agents.add<Consumer>(
         id_t(std::move(name)), region, get_consumer_property(name, region->name(), "intra_basket_substitution_coefficient").as<FloatType>(),
-        consumer_baskets_vector);
+        consumer_baskets_vector, bool_utilitarian);
     region->economic_agents.add(consumer);
     return consumer;
 }
@@ -1035,7 +1035,6 @@ void ModelInitializer::pre_initialize() {
     if (parameters["cost_correction"].as<bool>(false)) {
         throw log::error(this, "parameter cost_correction not supported anymore");
     }
-    model()->parameters_writable().consumer_utilitarian = parameters["consumer_utilitarian"].as<bool>();
     model()->parameters_writable().global_optimization = parameters["global_optimization"].as<bool>();
     model()->parameters_writable().budget_inequality_constrained = parameters["budget_inequality_constrained"].as<bool>();
     model()->parameters_writable().utility_optimization_algorithm =

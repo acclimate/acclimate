@@ -21,6 +21,8 @@
 #ifndef ACCLIMATE_CONSUMER_H
 #define ACCLIMATE_CONSUMER_H
 
+#include <map>
+
 #include "Sector.h"
 #include "acclimate.h"
 #include "autodiff.h"
@@ -37,26 +39,28 @@ class Optimization;
 class Consumer final : public EconomicAgent {
   private:
     bool utilitarian;
+    std::map<hash_t, int> input_storage_map;
 
-    size_t goods_num;
-    size_t baskets_num;
+    // parameters of utility function
     std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets;
+
+    FloatType inter_basket_substitution_coefficient;
+    FloatType inter_basket_substitution_exponent;
+
+    std::vector<FloatType> intra_basket_substitution_coefficient;
+    std::vector<FloatType> intra_basket_substitution_exponent;
+
+    std::vector<FloatType> basket_share_factors;
+    std::vector<FloatType> share_factors;
 
     // optimization parameters
     std::vector<double> optimizer_consumption;
-    std::vector<FloatType> xtol_abs;
-    std::vector<FloatType> xtol_abs_global;
-    std::vector<FloatType> upper_bounds;
-    std::vector<FloatType> lower_bounds;
     // variables for (in)equality constraint, pre-allocated to increase efficiency
-    FloatType consumption_budget;
+    FlowValue consumption_budget;
     FlowValue not_spent_budget;  // TODO: introduce real saving possibility, for now just trying to improve numerical stability
 
     // consumption limits considered in optimization
     std::vector<Price> consumption_prices;  // prices to be considered in optimization
-    std::vector<FlowQuantity> scaling_quantity;
-    std::vector<FlowQuantity> starting_value_quantity;
-    std::vector<Flow> desired_consumption;
     std::vector<Flow> previous_consumption;
 
     FloatType baseline_utility;  // baseline utility for scaling
@@ -64,6 +68,8 @@ class Consumer final : public EconomicAgent {
 
     // field to store utility
     FloatType utility;
+    FloatType local_optimal_utility;
+
     // variables for utility function , pre-allocated to increase efficiency
     FloatType consumption_utility;
     FloatType basket_consumption_utility;
@@ -72,28 +78,18 @@ class Consumer final : public EconomicAgent {
     autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, 0);
     autodiff::Value<FloatType> autodiffutility = autodiff::Value<FloatType>(0, 0);
 
-    std::vector<Flow> utilitarian_consumption;
-    FloatType local_optimal_utility;
-
   public:
     using EconomicAgent::input_storages;
     using EconomicAgent::region;
 
-    FlowValue budget;
-    FloatType inter_basket_substitution_coefficient;
-    FloatType inter_basket_substitution_exponent;
-    std::vector<FloatType> basket_share_factors;
-    std::vector<FloatType> share_factors;
 
-    std::vector<std::vector<Sector*>> basket_sectors;
-    std::vector<FloatType> intra_basket_substitution_coefficient;
-    std::vector<FloatType> intra_basket_substitution_exponent;
 
   public:
     Consumer(id_t id_p,
              Region* region_p,
              FloatType inter_basket_substitution_coefficient_p,
-             std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets_p);
+             std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets_p,
+             bool utilitarian_p);
 
     Consumer* as_consumer() override { return this; };
     const Consumer* as_consumer() const override { return this; };
@@ -130,20 +126,22 @@ class Consumer final : public EconomicAgent {
     // CES utility specific funtions TODO: check if replacing by abstract funtions suitable
     FloatType CES_utility_function(const std::vector<FloatType>& consumption_demands);
     FloatType CES_utility_function(const std::vector<Flow>& consumption_demands);
-
     autodiff::Value<FloatType> autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption_demands);
 
     // some helpers for local comparison of old consumer and utilitarian
     std::vector<Flow> utilitarian_consumption_optimization();
     void utilitarian_consumption_execution(std::vector<Flow> desired_consumption);
 
-    // functions for constrained optimization
+    // function for constrained optimization
     void consumption_optimize(optimization::Optimization& optimizer);
 
     // scaling functions
-    FlowQuantity invert_scaling_double_to_quantity(double scaling_factor, int scaling_index) const;
-    double scale_quantity_to_double(FlowQuantity quantity, int scaling_index) const;
-    double scale_double_to_double(double not_scaled_double, int scaling_index) const;
+    double invert_scaling_double_to_quantity(double scaling_factor, FlowQuantity scaling_quantity) const;
+    double scale_quantity_to_double(FlowQuantity quantity, FlowQuantity scaling_quantity) const;
+    double scale_double_to_double(double not_scaled_double, FlowQuantity scaling_quantity) const;
+
+    // helper function to find input storage for sector:
+    std::string input_storage_name(Sector* sector) { return sector->name() + "->" + this->name(); }
 };
 }  // namespace acclimate
 
