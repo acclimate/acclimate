@@ -102,14 +102,19 @@ void Consumer::initialize() {
     basket_share_factors = std::vector<FloatType>(consumer_baskets.size(), 0);
     for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
         intra_basket_substitution_coefficient[basket] = (consumer_baskets[basket].second);
+        intra_basket_substitution_exponent[basket] = (intra_basket_substitution_coefficient[basket] - 1) / intra_basket_substitution_coefficient[basket];
         for (auto& sector : consumer_baskets[basket].first) {
             Storage* current_storage = input_storages.find(input_storage_name(sector));
             basket_share_factors[basket] += to_float(current_storage->initial_used_flow_U_star().get_value()) / to_float(consumption_budget);
         }
-
+        for (auto& sector : consumer_baskets[basket].first) {
+            Storage* current_storage = input_storages.find(input_storage_name(sector));
+            int r = input_storage_int_map.find(current_storage->id.name_hash)->second;
+            share_factors[r] = share_factors[r] / basket_share_factors[basket];                                // normalize share factors of 1 basket to 1
+            share_factors[r] = std::pow(share_factors[r], 1 / intra_basket_substitution_coefficient[basket]);  // already with exponent for utility function
+        }
         basket_share_factors[basket] =
             std::pow(basket_share_factors[basket], 1 / inter_basket_substitution_coefficient);  // already with exponent for utility function
-        intra_basket_substitution_exponent[basket] = (intra_basket_substitution_coefficient[basket] - 1) / intra_basket_substitution_coefficient[basket];
     }
     baseline_utility = CES_utility_function(baseline_consumption);  // baseline utility for scaling
 }
@@ -273,7 +278,7 @@ std::vector<Flow> Consumer::utilitarian_consumption_optimization() {
     std::vector<FloatType> xtol_abs(input_storages.size(), FlowQuantity::precision);
     std::vector<FloatType> xtol_abs_global(input_storages.size(), FlowQuantity::precision * 100);
     std::vector<FloatType> lower_bounds(input_storages.size(),
-                                        0.00001);  // lower bound of exactly 0 is violated by Nlopt - bug?! - thus keeping minimum consumption level
+                                        0.5);  // more than 50% reduction of consumption seems unreasonable for most goods
     std::vector<FloatType> upper_bounds = std::vector<FloatType>(input_storages.size());
 
     // global fields to improve performance of optimization
@@ -303,14 +308,13 @@ std::vector<Flow> Consumer::utilitarian_consumption_optimization() {
             upper_bounds[r] = 0;
         } else {
             upper_bounds[r] = std::min(1.0, to_float(consumption_budget) / (to_float(possible_consumption_quantity) * to_float(consumption_prices[r])))
-                              * (to_float(possible_consumption_quantity) / to_float(baseline_consumption[r].get_quantity()));
+                              * scale_quantity_to_double(possible_consumption_quantity, baseline_consumption[r].get_quantity());
         }
         // scale starting value with scaling_value to use in optimization
         scaled_starting_value[r] = scale_quantity_to_double(starting_value_quantity[r], baseline_consumption[r].get_quantity());
     }
     // utility optimization
     // set parameters
-
     optimizer_consumption = std::vector<double>(input_storages.size());  // use normalized variable for optimization to improve?! performance
     // scale xtol_abs
     for (auto& input_storage : input_storages) {
