@@ -56,7 +56,8 @@ void Consumer::initialize() {
     debug::assertstep(this, IterationStep::INITIALIZATION);
 
     for (std::size_t r = 0; r < input_storages.size(); ++r) {
-        input_storage_map[input_storages[r]->id.name_hash] = r;
+        input_storage_int_map.insert(std::pair<hash_t, int>(input_storages[r]->id.name_hash, r));
+        input_storage_sector_map.insert(std::pair<Sector*, hash_t>(input_storages[r]->sector, r));
     }
 
     autodiffutility = {input_storages.size(), 0.0};
@@ -71,6 +72,9 @@ void Consumer::initialize() {
     consumption_budget = FlowValue(0.0);
     not_spent_budget = FlowValue(0.0);
     for (auto& input_storage : input_storages) {
+        if constexpr (VERBOSE_CONSUMER) {
+            log::info(input_storage->name());
+        }
         const auto initial_consumption = input_storage->initial_used_flow_U_star();
         previous_consumption.push_back(initial_consumption);
         consumption_budget += initial_consumption.get_value();
@@ -81,21 +85,21 @@ void Consumer::initialize() {
     }
     // initialize share factors
     for (auto& input_storage : input_storages) {
-        int r = input_storage_map.find(input_storage->id.name_hash)->second;
+        int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
         share_factors[r] = to_float(input_storage->initial_used_flow_U_star().get_value()) / to_float(consumption_budget);
     }
+    intra_basket_substitution_coefficient = std::vector<FloatType>(consumer_baskets.size(), 0);
+    intra_basket_substitution_exponent = std::vector<FloatType>(consumer_baskets.size(), 0);
     basket_share_factors = std::vector<FloatType>(consumer_baskets.size(), 0);
     for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
-        intra_basket_substitution_coefficient.push_back(consumer_baskets[basket].second);
+        intra_basket_substitution_coefficient[basket] = (consumer_baskets[basket].second);
         for (auto& sector : consumer_baskets[basket].first) {
             Storage* current_storage = input_storages.find(input_storage_name(sector));
             basket_share_factors[basket] += to_float(current_storage->initial_used_flow_U_star().get_value()) / to_float(consumption_budget);
         }
-    }
-    for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
         basket_share_factors[basket] =
             std::pow(basket_share_factors[basket], 1 / inter_basket_substitution_coefficient);  // already with exponent for utility function
-        intra_basket_substitution_exponent.push_back((intra_basket_substitution_coefficient[basket] - 1) / intra_basket_substitution_coefficient[basket]);
+        intra_basket_substitution_exponent[basket] = (intra_basket_substitution_coefficient[basket] - 1) / intra_basket_substitution_coefficient[basket];
     }
     baseline_utility = CES_utility_function(baseline_consumption);  // baseline utility for scaling
 }
@@ -110,7 +114,7 @@ autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const 
         autodiff_basket_consumption_utility = {input_storages.size(), 0.0};
         for (auto& sector : consumer_baskets[basket].first) {
             Storage* current_storage = input_storages.find(input_storage_name(sector));
-            int r = input_storage_map.find(current_storage->id.name_hash)->second;
+            int r = input_storage_int_map.find(current_storage->id.name_hash)->second;
             autodiff_basket_consumption_utility += std::pow(consumption_demands[r], intra_basket_substitution_exponent[basket]) * share_factors[r];
         }
         autodiff_basket_consumption_utility = std::pow(autodiff_basket_consumption_utility, 1 / intra_basket_substitution_exponent[basket]);
@@ -125,7 +129,7 @@ FloatType Consumer::CES_utility_function(const std::vector<FloatType>& consumpti
         basket_consumption_utility = 0.0;
         for (auto& sector : consumer_baskets[basket].first) {
             Storage* current_storage = input_storages.find(input_storage_name(sector));
-            int r = input_storage_map.find(current_storage->id.name_hash)->second;
+            int r = input_storage_int_map.find(current_storage->id.name_hash)->second;
             basket_consumption_utility += std::pow(consumption_demands[r], intra_basket_substitution_exponent[basket]) * share_factors[r];
         }
         basket_consumption_utility = std::pow(basket_consumption_utility, 1 / intra_basket_substitution_exponent[basket]);
@@ -139,7 +143,7 @@ FloatType Consumer::CES_utility_function(const std::vector<Flow>& consumption_de
         basket_consumption_utility = 0.0;
         for (auto& sector : consumer_baskets[basket].first) {
             Storage* current_storage = input_storages.find(input_storage_name(sector));
-            int r = input_storage_map.find(current_storage->id.name_hash)->second;
+            int r = input_storage_int_map.find(current_storage->id.name_hash)->second;
             basket_consumption_utility +=
                 std::pow(to_float(consumption_demands[r].get_quantity()), intra_basket_substitution_exponent[basket]) * share_factors[r];
         }
@@ -155,7 +159,7 @@ FloatType Consumer::equality_constraint(const double* x, double* grad) { return 
 FloatType Consumer::inequality_constraint(const double* x, double* grad) {
     double scaled_budget = (consumption_budget + not_spent_budget) / consumption_budget;
     for (auto& input_storage : input_storages) {
-        int r = input_storage_map.find(input_storage->id.name_hash)->second;
+        int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
         assert(!std::isnan(x[r]));
         scaled_budget -= to_float(invert_scaling_double_to_quantity(x[r], baseline_consumption[r].get_quantity())) * to_float(consumption_prices[r])
                          / to_float(consumption_budget);
@@ -175,7 +179,7 @@ FloatType Consumer::inequality_constraint(const double* x, double* grad) {
 
 FloatType Consumer::max_objective(const double* x, double* grad) {
     for (auto& input_storage : input_storages) {
-        int r = input_storage_map.find(input_storage->id.name_hash)->second;
+        int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
         assert(!std::isnan(x[r]));
         var_optimizer_consumption.value()[r] = invert_scaling_double_to_quantity(x[r], baseline_consumption[r].get_quantity());
     }
@@ -183,12 +187,12 @@ FloatType Consumer::max_objective(const double* x, double* grad) {
     if (grad != nullptr) {
         std::copy(std::begin(autodiffutility.derivative()), std::end(autodiffutility.derivative()), grad);
         for (auto& input_storage : input_storages) {
-            int r = input_storage_map.find(input_storage->id.name_hash)->second;
+            int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
             grad[r] = grad[r] / baseline_utility;
         }
         if constexpr (options::OPTIMIZATION_WARNINGS) {
             for (auto& input_storage : input_storages) {
-                int r = input_storage_map.find(input_storage->id.name_hash)->second;
+                int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
                 assert(!std::isnan(grad[r]));
                 if (grad[r] > MAX_GRADIENT) {
                     log::warning(this, ": large gradient of ", grad[r]);
@@ -267,7 +271,7 @@ std::vector<Flow> Consumer::utilitarian_consumption_optimization() {
     consumption_prices = std::vector<Price>(input_storages.size());
 
     for (auto& input_storage : input_storages) {
-        int r = input_storage_map.find(input_storage->id.name_hash)->second;
+        int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
         FlowQuantity possible_consumption_quantity = (input_storage->get_possible_use_U_hat().get_quantity());
         consumption_prices[r] = input_storage->get_possible_use_U_hat().get_price();
         // TODO: extend by alternative prices of most recent goods, e.g.
@@ -300,7 +304,7 @@ std::vector<Flow> Consumer::utilitarian_consumption_optimization() {
     optimizer_consumption = std::vector<double>(input_storages.size());  // use normalized variable for optimization to improve?! performance
     // scale xtol_abs
     for (auto& input_storage : input_storages) {
-        int r = input_storage_map.find(input_storage->id.name_hash)->second;
+        int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
         xtol_abs[r] = scale_double_to_double(xtol_abs[r], baseline_consumption[r].get_quantity());
         xtol_abs_global[r] = scale_double_to_double(xtol_abs_global[r], baseline_consumption[r].get_quantity());
         optimizer_consumption[r] = std::min(scaled_starting_value[r], upper_bounds[r]);
@@ -308,7 +312,7 @@ std::vector<Flow> Consumer::utilitarian_consumption_optimization() {
     if constexpr (VERBOSE_CONSUMER) {
         log::info(this, "upper bounds");
         for (auto& input_storage : input_storages) {
-            int r = int(input_storage_map.find(input_storage->id.name_hash)->second);
+            int r = int(input_storage_int_map.find(input_storage->id.name_hash)->second);
             log::info(input_storage->name(), "upper bound: ", upper_bounds[r]);
         }
     }
@@ -368,7 +372,7 @@ std::vector<Flow> Consumer::utilitarian_consumption_optimization() {
     std::vector<Flow> consumption;
     consumption.reserve(input_storages.size());
     for (auto& input_storage : input_storages) {
-        int r = input_storage_map.find(input_storage->id.name_hash)->second;
+        int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
         consumption.emplace_back(FlowQuantity(invert_scaling_double_to_quantity(optimizer_consumption[r], baseline_consumption[r].get_quantity())),
                                  consumption_prices[r]);
     }
@@ -380,7 +384,7 @@ void Consumer::consumption_optimize(optimization::Optimization& optimizer) {
         if constexpr (VERBOSE_CONSUMER) {
             log::info(this, " distribution before optimization");
             for (auto& input_storage : input_storages) {
-                int r = input_storage_map.find(input_storage->id.name_hash)->second;
+                int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
                 log::info(input_storage->name(), " target consumption: ", optimizer_consumption[r]);
             }
         }
@@ -388,7 +392,7 @@ void Consumer::consumption_optimize(optimization::Optimization& optimizer) {
         if constexpr (VERBOSE_CONSUMER) {
             log::info(this, " distribution after optimization");
             for (auto& input_storage : input_storages) {
-                int r = input_storage_map.find(input_storage->id.name_hash)->second;
+                int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
                 log::info(input_storage->name(), " optimized consumption: ", optimizer_consumption[r]);
             }
         }
@@ -442,7 +446,7 @@ void Consumer::utilitarian_consumption_execution(std::vector<Flow> consumption_f
     // initialize available budget
     not_spent_budget += consumption_budget;
     for (auto& input_storage : input_storages) {
-        int r = input_storage_map.find(input_storage->id.name_hash)->second;
+        int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
         // withdraw consumption from storage
         input_storage->set_desired_used_flow_U_tilde((consumption_flows[r]));
         input_storage->use_content_S((consumption_flows[r]));
@@ -502,7 +506,7 @@ void Consumer::debug_print_distribution() {
             std::cout << '\n';
 
             for (auto& input_storage : input_storages) {
-                int r = input_storage_map.find(input_storage->id.name_hash)->second;
+                int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
                 std::cout << "    " << input_storage->name() << " :\n";
                 print_row("grad (constraint)", grad_constraint[r]);
                 print_row("grad (objective)", grad_objective[r]);
@@ -524,6 +528,10 @@ double Consumer::invert_scaling_double_to_quantity(double scaled_value, FlowQuan
 double Consumer::scale_quantity_to_double(FlowQuantity quantity, FlowQuantity scaling_quantity) const { return to_float(quantity / scaling_quantity); }
 double Consumer::scale_double_to_double(double not_scaled_double, FlowQuantity scaling_quantity) const {
     return not_scaled_double / to_float(scaling_quantity);
+}
+
+std::string Consumer::input_storage_name(Sector* sector) {
+    return input_storages[input_storage_int_map.find(input_storage_sector_map.find(sector)->second)->second]->name();
 }
 
 }  // namespace acclimate

@@ -39,7 +39,8 @@ class Optimization;
 class Consumer final : public EconomicAgent {
   private:
     bool utilitarian;
-    std::map<hash_t, int> input_storage_map;
+    std::map<hash_t, int> input_storage_int_map;
+    std::map<Sector*, hash_t> input_storage_sector_map;
 
     // parameters of utility function
     std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets;
@@ -141,7 +142,7 @@ class Consumer final : public EconomicAgent {
     double scale_double_to_double(double not_scaled_double, FlowQuantity scaling_quantity) const;
 
     // helper function to find input storage for sector:
-    std::string input_storage_name(Sector* sector) { return sector->name() + "->" + this->name(); }
+    std::string input_storage_name(Sector* sector);
 };
 }  // namespace acclimate
 
