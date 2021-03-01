@@ -68,6 +68,7 @@ void Consumer::initialize() {
     share_factors = std::vector<FloatType>(input_storages.size());
     previous_consumption.reserve(input_storages.size());
     baseline_consumption.reserve(input_storages.size());
+
     // initialize previous consumption as starting values, calculate budget
     consumption_budget = FlowValue(0.0);
     not_spent_budget = FlowValue(0.0);
@@ -77,9 +78,17 @@ void Consumer::initialize() {
         }
         const auto initial_consumption = input_storage->initial_used_flow_U_star();
         previous_consumption.push_back(initial_consumption);
-        consumption_budget += initial_consumption.get_value();
         baseline_consumption.push_back(initial_consumption);
     }
+    for (auto& input_storage : input_storages) {
+        int r = input_storage_int_map.find(input_storage->id.name_hash)->second;
+        const auto initial_consumption = input_storage->initial_used_flow_U_star();
+        consumption_budget += initial_consumption.get_value();
+        previous_consumption[r] = initial_consumption;  // overwrite to get proper ordering with regard to input_storage[r]. workaround since no constructor for
+                                                        // std::vector<Flow> available
+        baseline_consumption[r] = initial_consumption;
+    }
+
     if constexpr (VERBOSE_CONSUMER) {
         log::info("budget: ", consumption_budget);
     }
@@ -97,6 +106,7 @@ void Consumer::initialize() {
             Storage* current_storage = input_storages.find(input_storage_name(sector));
             basket_share_factors[basket] += to_float(current_storage->initial_used_flow_U_star().get_value()) / to_float(consumption_budget);
         }
+
         basket_share_factors[basket] =
             std::pow(basket_share_factors[basket], 1 / inter_basket_substitution_coefficient);  // already with exponent for utility function
         intra_basket_substitution_exponent[basket] = (intra_basket_substitution_coefficient[basket] - 1) / intra_basket_substitution_coefficient[basket];
