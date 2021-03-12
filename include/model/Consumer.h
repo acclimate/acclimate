@@ -44,7 +44,7 @@ class Consumer final : public EconomicAgent {
 
     // parameters of utility function
     std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets;
-
+    std::vector<std::vector<int>> consumer_basket_indizes;
     FloatType inter_basket_substitution_coefficient;
     FloatType inter_basket_substitution_exponent;
 
@@ -125,21 +125,22 @@ class Consumer final : public EconomicAgent {
     void debug_print_distribution();
 
     // CES utility specific funtions TODO: check if replacing by abstract funtions suitable
-    FloatType CES_utility_function(const std::vector<FloatType>& consumption_demands);
-    FloatType CES_utility_function(const std::vector<Flow>& consumption_demands);
-    autodiff::Value<FloatType> autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption_demands);
+    FloatType CES_utility_function(const std::vector<FloatType>& consumption);
+    FloatType CES_utility_function(const std::vector<Flow>& consumption);
+    autodiff::Value<FloatType> autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption);
 
     // some helpers for local comparison of old consumer and utilitarian
     std::vector<Flow> utilitarian_consumption_optimization();
-    void utilitarian_consumption_execution(std::vector<Flow> desired_consumption);
+    void consume_optimisation_result(std::vector<Flow> consumption);
 
     // function for constrained optimization
     void consumption_optimize(optimization::Optimization& optimizer);
 
     // scaling functions
-    double invert_scaling_double_to_quantity(double scaling_factor, FlowQuantity scaling_quantity) const;
-    double scale_quantity_to_double(FlowQuantity quantity, FlowQuantity scaling_quantity) const;
-    double scale_double_to_double(double not_scaled_double, FlowQuantity scaling_quantity) const;
+    static FlowQuantity invert_scaling_double_to_quantity(double scaling_factor, FlowQuantity scaling_quantity);
+    static double invert_scaling_double_to_double(double scaled_value, FlowQuantity scaling_quantity);
+    static double scale_quantity_to_double(FlowQuantity quantity, FlowQuantity scaling_quantity);
+    static double scale_double_to_double(double not_scaled_double, FlowQuantity scaling_quantity);
 
     // helper function to find input storage for sector:
     std::string input_storage_name(Sector* sector);
