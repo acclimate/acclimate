@@ -33,6 +33,7 @@
 #include "model/Firm.h"  // IWYU pragma: keep
 #include "model/PurchasingManager.h"
 #include "model/Region.h"
+#include "growth.h"
 
 namespace acclimate {
 

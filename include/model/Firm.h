@@ -37,7 +37,7 @@ class Sector;
 class Firm : public EconomicAgent {
   private:
     using EconomicAgent::forcing_;
-    using EconomicAgent::growth_rate_;
+//    using EconomicAgent::growth_rate_;
     Flow initial_production_X_star_ = Flow(0.0);
     Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
     Flow initial_total_use_U_star_ = Flow(0.0);
@@ -93,7 +93,7 @@ class Firm : public EconomicAgent {
 //    void initialize_investment();
     using EconomicAgent::id;
     using EconomicAgent::model;
-    using EconomicAgent::growth_rate;
+//    using EconomicAgent::growth_rate;
     // DEBUG
     void print_details() const override;
 };

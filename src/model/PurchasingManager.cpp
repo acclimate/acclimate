@@ -39,6 +39,7 @@
 #include "model/Storage.h"
 #include "optimization.h"
 #include "parameters.h"
+#include "growth.h"
 
 static constexpr auto MAX_GRADIENT = 1e3;
 static constexpr bool IGNORE_ROUNDOFFLIMITED = true;
@@ -52,7 +53,7 @@ void PurchasingManager::iterate_consumption_and_production() { debug::assertstep
 void PurchasingManager::iterate_investment() {
     debug::assertstep(this, IterationStep::INVESTMENT);
     for (auto& bc : business_connections) {
-        bc->initial_flow_Z_star(bc->initial_flow_Z_star() + bc->initial_flow_Z_star() * storage->economic_agent->growth_rate());
+        bc->initial_flow_Z_star(bc->initial_flow_Z_star() + bc->initial_flow_Z_star() * growth_rate);
     }
 }
 
@@ -520,6 +521,16 @@ void PurchasingManager::iterate_purchase() {
                               / (S_shortage_ > 0.0 ? storage->sector->parameters().target_storage_refill_time    // storage level low
                                                   : storage->sector->parameters().target_storage_withdraw_time  // storage level high
                                 );
+#define OUT(a) { std::cout << model()->timestep() << ", " << #a << ": " << a << std::endl; }
+    if (id() == "PRIM->PRIM:SOU") {
+        OUT(S_shortage_);
+        OUT(get_flow_deficit() * model()->delta_t());
+        OUT(storage->initial_content_S_star().get_quantity());
+        OUT(storage->content_S().get_quantity());
+        OUT(desired_purchase_ / 8219.178);
+        OUT(storage->desired_used_flow_U_tilde().get_quantity() / 8219.178);
+        std::cout << std::endl;
+    }
 
     if (round(desired_purchase_) <= 0.0) {
         for (auto& bc : business_connections) {

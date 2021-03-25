@@ -27,6 +27,7 @@
 #include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/Sector.h"
+#include "growth.h"
 
 namespace acclimate {
 
@@ -43,10 +44,16 @@ void Storage::iterate_consumption_and_production() {
 
 void Storage::iterate_investment() {
     debug::assertstep(this, IterationStep::INVESTMENT);
-    if (economic_agent->is_consumer()) {
-        baseline_used_flow_U_star_ += baseline_used_flow_U_star_ * economic_agent->growth_rate();
+    //if (model()->timestep() >= growth_start + 1 && model()->timestep() <= growth_stop + 1 && economic_agent->is_consumer()) {
+    if (model()->timestep() >= growth_start && model()->timestep() <= growth_stop && economic_agent->is_consumer()) {
+        baseline_used_flow_U_star_ += baseline_used_flow_U_star_ * growth_rate;
     }
-//    initial_content_S_star_ += initial_content_S_star_ * economic_agent->growth_rate();
+    if (model()->timestep() < growth_start || model()->timestep() > growth_stop) {
+        return;
+    }
+    //initial_content_S_star_ += initial_content_S_star_ * growth_rate;
+    //content_S_ += initial_content_S_star_ * growth_rate;
+    initial_input_flow_I_star_ += initial_input_flow_I_star_ * growth_rate;
     purchasing_manager->iterate_investment();
 }
 

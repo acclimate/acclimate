@@ -30,7 +30,7 @@ class Region;
 class Consumer : public EconomicAgent {
   private:
     using EconomicAgent::forcing_;
-    using EconomicAgent::growth_rate_;
+//    using EconomicAgent::growth_rate_;
     Parameters::AgentParameters parameters_;
 
   public:
@@ -46,7 +46,7 @@ class Consumer : public EconomicAgent {
     void iterate_investment() override;
     using EconomicAgent::id;
     using EconomicAgent::model;
-    using EconomicAgent::growth_rate;
+//    using EconomicAgent::growth_rate;
     // DEBUG
     void print_details() const override;
     Parameters::AgentParameters& parameters_writable();

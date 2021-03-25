@@ -29,8 +29,10 @@
 #include "model/EconomicAgent.h"
 #include "model/PurchasingManager.h"
 #include "model/SalesManager.h"
+#include "model/Model.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
+#include "growth.h"
 
 namespace acclimate {
 
@@ -127,12 +129,16 @@ void Firm::iterate_investment() {
     }
     investment_ = (1 - dividend_payout_ratio_) * profit_;
 //    growth_rate_ = investment_ / productive_capital_;
-    growth_rate_ = parameters_.initial_growth_rate;
+    //growth_rate_ = parameters_.initial_growth_rate;
     productive_capital_ += investment_;
-    initial_production_X_star_ += initial_production_X_star_ * growth_rate_;
     for (const auto& is : input_storages) {
         is->iterate_investment();
     }
+    if (model()->timestep() < growth_start || model()->timestep() > growth_stop) {
+        return;
+    }
+    initial_production_X_star_ += initial_production_X_star_ * growth_rate;
+    initial_total_use_U_star_ += initial_total_use_U_star_ * growth_rate;
 }
 
 Flow Firm::maximal_production_beta_X_star() const { return round(initial_production_X_star_ * capacity_manager->possible_overcapacity_ratio_beta); }
