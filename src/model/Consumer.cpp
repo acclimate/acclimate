@@ -399,8 +399,12 @@ std::vector<Flow> Consumer::utilitarian_consumption_optimization() {
         global_optimizer.maxtime(model()->parameters().optimization_timeout);
 
         global_optimizer.set_local_algorithm(local_optimizer.get_optimizer());
+
+        // TODO: maybe number of random sampling points should scale with dimension of the problem
+
         nlopt_set_population(global_optimizer.get_optimizer(),
-                             0);  // one might adjust number of random sampling points per iteration (algorithm chooses if left at 0)
+                             model()->parameters().global_optimization_random_points);  // one might adjust number of random sampling points per iteration
+                                                                                        // (algorithm chooses if left at 0)
 
         // start combined global local optimizer optimizer
         lagrangian_optimizer.set_local_algorithm(global_optimizer.get_optimizer());

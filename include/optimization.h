@@ -58,8 +58,14 @@ inline int get_algorithm(const hashed_string& name) {
             return NLOPT_GN_ISRES;
         case hash("direct"):
             return NLOPT_GN_DIRECT;
+        case hash("mlsl"):
+            return NLOPT_G_MLSL;
         case hash("mlsl_low_discrepancy"):
             return NLOPT_G_MLSL_LDS;
+        case hash("stogo"):
+            return NLOPT_GD_STOGO;
+        case hash("stogo_rand"):
+            return NLOPT_GD_STOGO_RAND;
         case hash("augmented_lagrangian"):
             return NLOPT_AUGLAG;
 
