@@ -91,6 +91,7 @@ void NetCDFOutput::start() {
     const auto dim_time = file->add_dimension("time");
     const auto dim_sector = file->add_dimension("sector", model()->sectors.size());
     const auto dim_region = file->add_dimension("region", model()->regions.size());
+    const auto dim_location = file->add_dimension("location", model()->other_locations.size());
     const auto dim_agent = file->add_dimension("agent", model()->economic_agents.size());
     const auto dim_event = file->add_dimension("event");
     const auto dim_event_type = file->add_dimension("event_type", EVENT_NAMES.size());
@@ -110,22 +111,63 @@ void NetCDFOutput::start() {
     var_time->add_attribute("units").set<std::string>(std::string("days since ") + std::to_string(model()->run()->baseyear()) + "-1-1");
 
     include_events = true;
-    auto event_type_var = file->add_variable<std::string>("event_type", {dim_event_type});
-    event_type_var.set_compression(false, compression_level);
-    for (std::size_t i = 0; i < EVENT_NAMES.size(); ++i) {
-        event_type_var.set<const char*, 1>(EVENT_NAMES[i], {i});
+
+    {
+        auto event_type_var = file->add_variable<std::string>("event_type", {dim_event_type});
+        event_type_var.set_compression(false, compression_level);
+        for (std::size_t i = 0; i < EVENT_NAMES.size(); ++i) {
+            event_type_var.set<const char*, 1>(EVENT_NAMES[i], {i});
+        }
     }
 
-    auto sector_var = file->add_variable<std::string>("sector", {dim_sector});
-    sector_var.set_compression(false, compression_level);
-    for (std::size_t i = 0; i < model()->sectors.size(); ++i) {
-        sector_var.set<std::string, 1>(model()->sectors[i]->name(), {i});
+    {
+        auto sector_var = file->add_variable<std::string>("sector", {dim_sector});
+        sector_var.set_compression(false, compression_level);
+        for (std::size_t i = 0; i < model()->sectors.size(); ++i) {
+            sector_var.set<std::string, 1>(model()->sectors[i]->name(), {i});
+        }
     }
 
-    auto region_var = file->add_variable<std::string>("region", {dim_region});
-    region_var.set_compression(false, compression_level);
-    for (std::size_t i = 0; i < model()->regions.size(); ++i) {
-        region_var.set<std::string, 1>(model()->regions[i]->name(), {i});
+    {
+        auto region_var = file->add_variable<std::string>("region", {dim_region});
+        region_var.set_compression(false, compression_level);
+        for (std::size_t i = 0; i < model()->regions.size(); ++i) {
+            region_var.set<std::string, 1>(model()->regions[i]->name(), {i});
+        }
+    }
+
+    {
+        const auto dim_location_type = file->add_dimension("location_type", 3);
+        file->add_variable<std::string>("location_type", {dim_location_type}).set<std::string>({"region", "sea", "port"});
+
+        struct LocationCompound {
+            char name[25];
+            std::uint8_t location_type;
+        };
+        auto location_t = file->add_type_compound<LocationCompound>("location_t");
+        location_t.add_compound_field_array<decltype(LocationCompound::name)>("name", offsetof(LocationCompound, name), {25});
+        location_t.add_compound_field<decltype(LocationCompound::location_type)>("location_type", offsetof(LocationCompound, location_type));
+
+        auto location_var = file->add_variable("location", location_t, {dim_location});
+        location_var.set_compression(false, compression_level);
+        LocationCompound value;
+        value.name[sizeof(value.name) / sizeof(value.name[0]) - 1] = '\0';
+        for (std::size_t i = 0; i < model()->other_locations.size(); ++i) {
+            const auto* location = model()->other_locations[i];
+            std::strncpy(value.name, location->name().c_str(), sizeof(value.name) / sizeof(value.name[0]) - 1);
+            switch (location->type) {
+                case GeoLocation::type_t::REGION:
+                    value.location_type = 0;
+                    break;
+                case GeoLocation::type_t::SEA:
+                    value.location_type = 1;
+                    break;
+                case GeoLocation::type_t::PORT:
+                    value.location_type = 2;
+                    break;
+            }
+            location_var.set<LocationCompound, 1>(value, {i});
+        }
     }
 
     {
@@ -181,6 +223,7 @@ void NetCDFOutput::start() {
     create_group<1>("consumers", {dim_time, dim_agent}, {"consumer_index"}, obs_consumers, vars_consumers);
     create_group<1>("sectors", {dim_time, dim_sector}, {"sector_index"}, obs_sectors, vars_sectors);
     create_group<1>("regions", {dim_time, dim_region}, {"region_index"}, obs_regions, vars_regions);
+    create_group<1>("locations", {dim_time, dim_location}, {"location_index"}, obs_locations, vars_locations);
     create_group<2>("storages", {dim_time, dim_sector, dim_agent}, {"sector_input_index", "agent_index"}, obs_storages, vars_storages);
     create_group<2>("flows", {dim_time, dim_agent, dim_agent}, {"agent_from_index", "agent_to_index"}, obs_flows, vars_flows);
 }
@@ -221,6 +264,7 @@ void NetCDFOutput::iterate() {
     write_variables(obs_consumers, vars_consumers);
     write_variables(obs_sectors, vars_sectors);
     write_variables(obs_regions, vars_regions);
+    write_variables(obs_locations, vars_locations);
     write_variables(obs_storages, vars_storages);
     write_variables(obs_flows, vars_flows);
 

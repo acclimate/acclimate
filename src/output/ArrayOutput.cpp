@@ -38,6 +38,7 @@
 #include "model/SalesManager.h"
 #include "model/Sector.h"
 #include "model/Storage.h"
+#include "model/TransportChainLink.h"
 #include "settingsnode.h"
 
 namespace acclimate {
@@ -308,6 +309,27 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
         resize_data(obs_regions);
     }
 
+    // locations
+    if (const auto& obs_node = settings["locations"]; !obs_node.empty()) {
+        if (const auto& node = obs_node["select_location"]; !node.empty()) {
+            for (const auto& name : node.as_sequence()) {
+                const auto* location = model()->other_locations.find(hash_t(name.as<hashed_string>()));
+                if (location == nullptr) {
+                    throw log::error(this, "Location ", name, " not found");
+                }
+                obs_locations.indices[0].push_back(location->id.index());
+            }
+        }
+        if (obs_locations.indices[0].empty()) {
+            obs_locations.sizes[0] = model()->other_locations.size();
+        } else {
+            obs_locations.sizes[0] = obs_locations.indices[0].size();
+        }
+        CollectVariables collector(obs_node, obs_locations.variables);
+        collector.collect<GeoLocation>();
+        resize_data(obs_locations);
+    }
+
     // storages
     if (const auto& obs_node = settings["storages"]; !obs_node.empty()) {
         if (const auto& node = obs_node["select_sector"]; !node.empty()) {
@@ -529,6 +551,23 @@ void ArrayOutput::iterate() {
         const auto& vec = model()->regions;
         const auto& indices = obs_regions.indices[0];
         const auto offset = only_current_timestep ? 0 : t * obs_regions.sizes[0];
+        if (indices.empty()) {
+            for (std::size_t i = 0; i < vec.size(); ++i) {
+                collector.collect(vec[i], offset + i);
+            }
+        } else {
+            for (std::size_t i = 0; i < indices.size(); ++i) {
+                collector.collect(vec[indices[i]], offset + i);
+            }
+        }
+    }
+
+    // locations
+    if (!obs_locations.variables.empty()) {
+        WriteVariables collector(obs_locations.variables);
+        const auto& vec = model()->other_locations;
+        const auto& indices = obs_locations.indices[0];
+        const auto offset = only_current_timestep ? 0 : t * obs_locations.sizes[0];
         if (indices.empty()) {
             for (std::size_t i = 0; i < vec.size(); ++i) {
                 collector.collect(vec[i], offset + i);

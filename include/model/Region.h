@@ -87,7 +87,7 @@ class Region final : public GeoLocation {
 
     template<typename Observer, typename H>
     bool observe(Observer& o) const {
-        return true  //
+        return GeoLocation::observe<Observer, H>(o)  //
                && o.set(H::hash("import"),
                         [this]() {  //
                             return import_flow_Z();
