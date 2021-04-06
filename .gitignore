@@ -7,3 +7,6 @@ GRTAGS
 GSYMS
 GTAGS
 compile_commands.json
+/core*
+\#*\#
+.\#*
