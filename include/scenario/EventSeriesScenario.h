@@ -45,9 +45,11 @@ class EventSeriesScenario : public ExternalScenario {
 
       private:
         std::vector<EconomicAgent*> agents;  // TODO remove
+        std::vector<GeoLocation*> locations;
         std::vector<Forcing> forcings;
         std::size_t regions_count;
         std::size_t sectors_count;
+        std::size_t sea_routes_count;
 
       private:
         void read_data() override;
