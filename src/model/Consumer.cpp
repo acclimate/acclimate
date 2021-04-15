@@ -82,11 +82,11 @@ void Consumer::initialize() {
         baseline_consumption.push_back(input_storage->initial_used_flow_U_star());
     }
     for (auto& input_storage : input_storages) {
-        int index = input_storage->id.index();
         consumption_budget += input_storage->initial_used_flow_U_star().get_value();
-        previous_consumption[index] = input_storage->initial_used_flow_U_star();  // overwrite to get proper ordering with regard to input_storage[index].
-                                                                                  // workaround since no constructor for std::vector<Flow> available
-        baseline_consumption[index] = input_storage->initial_used_flow_U_star();
+        previous_consumption[input_storage->id.index()] =
+            input_storage->initial_used_flow_U_star();  // overwrite to get proper ordering with regard to input_storage[index].
+                                                        // workaround since no constructor for std::vector<Flow> available
+        baseline_consumption[input_storage->id.index()] = input_storage->initial_used_flow_U_star();
     }
 
     if constexpr (VERBOSE_CONSUMER) {
@@ -109,17 +109,18 @@ void Consumer::initialize() {
         for (auto& sector : consumer_baskets[basket].first) {
             Storage* current_storage = input_storages.find(input_storage_name(sector));
             int index = current_storage->id.index();
-            consumer_basket_indizes[basket].push_back(index);
+            consumer_basket_indizes[basket].push_back(current_storage->id.index());
             if constexpr (VERBOSE_CONSUMER) {
                 log::info(this, "sector:", current_storage->name());
-                log::info(this, "index:", index);
+                log::info(this, "current_storage->id.index():", current_storage->id.index());
             }
-            share_factors[index] = share_factors[index] / basket_share_factors[basket];  // normalize share factors of a basket to 1
+            share_factors[current_storage->id.index()] =
+                share_factors[current_storage->id.index()] / basket_share_factors[basket];  // normalize share factors of a basket to 1
             if constexpr (VERBOSE_CONSUMER) {
-                log::info(this, "share factor:", share_factors[index]);
+                log::info(this, "share factor:", share_factors[current_storage->id.index()]);
             }
-            share_factors[index] =
-                std::pow(share_factors[index], 1 / intra_basket_substitution_coefficient[basket]);  // already with exponent for utility function
+            share_factors[current_storage->id.index()] = std::pow(
+                share_factors[current_storage->id.index()], 1 / intra_basket_substitution_coefficient[basket]);  // already with exponent for utility function
         }
         if constexpr (VERBOSE_CONSUMER) {
             log::info(this, "basket share factor:", basket_share_factors[basket]);
@@ -203,11 +204,10 @@ FloatType Consumer::inequality_constraint(const double* x, double* grad) {
     for (auto& input_storage : input_storages) {
         int index = input_storage->id.index();
         assert(!std::isnan(x[index]));
-        scaled_budget -= invert_scaling_double_to_double(x[index], baseline_consumption[index].get_quantity()) * to_float(consumption_prices[index])
-                         / to_float(consumption_budget);
+        double elastic_price = x[index] * std::pow(to_float(consumption_prices[index]), -1 * input_storage->parameters().consumption_price_elasticity);
+        scaled_budget -= invert_scaling_double_to_double(x[index], baseline_consumption[index].get_quantity()) * elastic_price / to_float(consumption_budget);
         if (grad != nullptr) {
-            grad[index] = invert_scaling_double_to_double(x[index], baseline_consumption[index].get_quantity()) * to_float(consumption_prices[index])
-                          / to_float(consumption_budget);
+            grad[index] = invert_scaling_double_to_double(x[index], baseline_consumption[index].get_quantity()) * elastic_price / to_float(consumption_budget);
             if constexpr (options::OPTIMIZATION_WARNINGS) {
                 assert(!std::isnan(grad[index]));
                 if (grad[index] > MAX_GRADIENT) {
@@ -234,8 +234,7 @@ FloatType Consumer::max_objective(const double* x, double* grad) {
     if (grad != nullptr) {
         std::copy(std::begin(autodiffutility.derivative()), std::end(autodiffutility.derivative()), grad);
         for (auto& input_storage : input_storages) {
-            int index = input_storage->id.index();
-            grad[index] = grad[index] / baseline_utility;
+            grad[input_storage->id.index()] /= baseline_utility;
         }
         if constexpr (options::OPTIMIZATION_WARNINGS) {
             for (auto& input_storage : input_storages) {
@@ -397,15 +396,12 @@ std::vector<Flow> Consumer::utilitarian_consumption_optimization() {
         global_optimizer.xtol(xtol_abs_global);
         global_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
         global_optimizer.maxtime(model()->parameters().optimization_timeout);
-
         global_optimizer.set_local_algorithm(local_optimizer.get_optimizer());
-
-        // TODO: maybe number of random sampling points should scale with dimension of the problem
 
         nlopt_set_population(global_optimizer.get_optimizer(),
                              model()->parameters().global_optimization_random_points);  // one might adjust number of random sampling points per iteration
-                                                                                        // (algorithm chooses if left at 0)
-
+                                                                                        // TODO: maybe number of random sampling points should scale with
+                                                                                        // dimension of the problem
         // start combined global local optimizer optimizer
         lagrangian_optimizer.set_local_algorithm(global_optimizer.get_optimizer());
         consumption_optimize(lagrangian_optimizer);
@@ -420,7 +416,6 @@ std::vector<Flow> Consumer::utilitarian_consumption_optimization() {
         local_optimizer.upper_bounds(upper_bounds);
         consumption_optimize(local_optimizer);
     }
-
     std::vector<Flow> consumption;
     consumption.reserve(input_storages.size());
     for (auto& input_storage : input_storages) {
