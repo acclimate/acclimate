@@ -108,7 +108,6 @@ void Consumer::initialize() {
         }
         for (auto& sector : consumer_baskets[basket].first) {
             Storage* current_storage = input_storages.find(input_storage_name(sector));
-            int index = current_storage->id.index();
             consumer_basket_indizes[basket].push_back(current_storage->id.index());
             if constexpr (VERBOSE_CONSUMER) {
                 log::info(this, "sector:", current_storage->name());
