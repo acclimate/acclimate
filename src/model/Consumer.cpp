@@ -74,10 +74,8 @@ void Consumer::initialize() {
 
     consumption_budget = FlowValue(0.0);
     not_spent_budget = FlowValue(0.0);
+
     for (auto& input_storage : input_storages) {
-        if constexpr (VERBOSE_CONSUMER) {
-            log::info(input_storage->name());
-        }
         previous_consumption.push_back(input_storage->initial_used_flow_U_star());
         baseline_consumption.push_back(input_storage->initial_used_flow_U_star());
     }
