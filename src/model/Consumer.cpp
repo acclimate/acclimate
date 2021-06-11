@@ -58,11 +58,6 @@ Consumer::Consumer(id_t id_p,
 void Consumer::initialize() {
     debug::assertstep(this, IterationStep::INITIALIZATION);
 
-    for (std::size_t r = 0; r < input_storages.size(); ++r) {
-        input_storage_int_map.insert(std::pair<hash_t, int>(input_storages[r]->id.name_hash, r));
-        input_storage_sector_map.insert(std::pair<Sector*, hash_t>(input_storages[r]->sector, input_storages[r]->id.name_hash));
-    }
-
     autodiffutility = {input_storages.size(), 0.0};
     autodiff_basket_consumption_utility = {input_storages.size(), 0.0};
     autodiff_consumption_utility = {input_storages.size(), 0.0};
@@ -101,23 +96,24 @@ void Consumer::initialize() {
         intra_basket_substitution_coefficient[basket] = (consumer_baskets[basket].second);
         intra_basket_substitution_exponent[basket] = (intra_basket_substitution_coefficient[basket] - 1) / intra_basket_substitution_coefficient[basket];
         for (auto& sector : consumer_baskets[basket].first) {
-            Storage* current_storage = input_storages.find(input_storage_name(sector));
-            basket_share_factors[basket] += to_float(current_storage->initial_used_flow_U_star().get_value()) / to_float(consumption_budget);
+            for (auto& i_storage : input_storages)
+                if (i_storage->sector == sector)
+                    basket_share_factors[basket] += to_float(i_storage->initial_used_flow_U_star().get_value()) / to_float(consumption_budget);
         }
         for (auto& sector : consumer_baskets[basket].first) {
-            Storage* current_storage = input_storages.find(input_storage_name(sector));
-            consumer_basket_indizes[basket].push_back(current_storage->id.index());
-            if constexpr (VERBOSE_CONSUMER) {
-                log::info(this, "sector:", current_storage->name());
-                log::info(this, "current_storage->id.index():", current_storage->id.index());
-            }
-            share_factors[current_storage->id.index()] =
-                share_factors[current_storage->id.index()] / basket_share_factors[basket];  // normalize share factors of a basket to 1
-            if constexpr (VERBOSE_CONSUMER) {
-                log::info(this, "share factor:", share_factors[current_storage->id.index()]);
-            }
-            share_factors[current_storage->id.index()] = std::pow(
-                share_factors[current_storage->id.index()], 1 / intra_basket_substitution_coefficient[basket]);  // already with exponent for utility function
+            for (auto& i_storage : input_storages)
+                if (i_storage->sector == sector) {
+                    consumer_basket_indizes[basket].push_back(i_storage->id.index());
+                    share_factors[i_storage->id.index()] =
+                        share_factors[i_storage->id.index()] / basket_share_factors[basket];  // normalize share factors of a basket to 1
+                    if constexpr (VERBOSE_CONSUMER) {
+                        log::info(this, "sector:", i_storage->name());
+                        log::info(this, "current_storage->id.index():", i_storage->id.index());
+                        log::info(this, "share factor:", share_factors[i_storage->id.index()]);
+                    }
+                    share_factors[i_storage->id.index()] = std::pow(
+                        share_factors[i_storage->id.index()], 1 / intra_basket_substitution_coefficient[basket]);  // already with exponent for utility function
+                }
         }
         if constexpr (VERBOSE_CONSUMER) {
             log::info(this, "basket share factor:", basket_share_factors[basket]);
@@ -578,9 +574,5 @@ FlowQuantity Consumer::invert_scaling_double_to_quantity(double scaled_value, Fl
 double Consumer::invert_scaling_double_to_double(double scaled_value, FlowQuantity scaling_quantity) { return scaled_value * to_float(scaling_quantity); }
 double Consumer::scale_quantity_to_double(FlowQuantity quantity, FlowQuantity scaling_quantity) { return to_float(quantity / scaling_quantity); }
 double Consumer::scale_double_to_double(double not_scaled_double, FlowQuantity scaling_quantity) { return not_scaled_double / to_float(scaling_quantity); }
-
-std::string Consumer::input_storage_name(Sector* sector) {
-    return input_storages[input_storage_int_map.find(input_storage_sector_map.find(sector)->second)->second]->name();
-}
 
 }  // namespace acclimate

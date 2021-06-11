@@ -467,7 +467,7 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
     for (std::size_t i = 0; i < size; ++i) {
         auto& p1 = locations[i];
         auto* l1 = p1->entity()->as_location();
-        // connection from location to itself only added for calrity when debugging:
+        // connection from location to itself only added for clarity when debugging:
         paths[i * size + i] =
             TemporaryGeoPath(0, p1, p1, std::make_shared<TemporaryGeoEntity>(new GeoConnection(model(), 0, GeoConnection::type_t::UNSPECIFIED, l1, l1)));
         for (std::size_t j = 0; j < i; ++j) {  // only go along subdiagonal

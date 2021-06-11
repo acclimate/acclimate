@@ -39,8 +39,6 @@ class Optimization;
 class Consumer final : public EconomicAgent {
   private:
     bool utilitarian;
-    std::map<hash_t, int> input_storage_int_map;
-    std::map<Sector*, hash_t> input_storage_sector_map;
 
     // parameters of utility function
     std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets;
