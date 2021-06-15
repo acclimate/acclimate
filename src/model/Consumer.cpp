@@ -138,7 +138,7 @@ autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const 
             autodiff_basket_consumption_utility += std::pow(consumption[index], intra_basket_substitution_exponent[basket]) * share_factors[index];
         }
         autodiff_basket_consumption_utility = std::pow(autodiff_basket_consumption_utility, 1 / intra_basket_substitution_exponent[basket]);
-        autodiff_consumption_utility += std::pow(autodiff_basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket]
+        autodiff_consumption_utility += std::pow(autodiff_basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
     return autodiff_consumption_utility;  // outer exponent not relevant for optimization (at least for sigma >1)
 }
