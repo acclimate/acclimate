@@ -131,9 +131,9 @@ void Consumer::initialize() {
  * @return auto-differentiable value of the utility function
  */
 autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption) {
-    autodiff_consumption_utility = autodiff_consumption_utility.reset();  // reset to 0 without new call
+    autodiff_consumption_utility.reset();  // reset to 0 without new call
     for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
-        autodiff_basket_consumption_utility = autodiff_basket_consumption_utility.reset();  // reset to 0 without new call
+        autodiff_basket_consumption_utility.reset();  // reset to 0 without new call
         for (auto& index : consumer_basket_indizes[basket]) {
             autodiff_basket_consumption_utility += std::pow(consumption[index], intra_basket_substitution_exponent[basket]) * share_factors[index];
         }
