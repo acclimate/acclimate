@@ -531,7 +531,10 @@ void PurchasingManager::iterate_purchase() {
                 X_expected *= bc->get_minimum_passage();
             }
             const FloatType ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
-            const FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
+            FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
+            if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
+                X_max *= bc->get_minimum_passage();
+            }
             if constexpr (options::DEBUGGING) {
                 const auto X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
                 assert(X_max <= X_hat);
