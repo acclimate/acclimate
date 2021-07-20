@@ -332,12 +332,7 @@ FloatType PurchasingManager::calc_n_co(FloatType n_bar_min, FloatType D_r_min, c
 }
 
 inline FloatType PurchasingManager::expected_production(const BusinessConnection* business_connection) {
-    const auto X_expected = to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());
-    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
-        return business_connection->get_minimum_passage() * X_expected;
-    } else {
-        return X_expected;
-    }
+    return to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());
 }
 
 inline FloatType PurchasingManager::expected_additional_production(const BusinessConnection* business_connection) {
@@ -507,17 +502,17 @@ void PurchasingManager::iterate_purchase() {
             // deliverable amount of purchaser X_max(n_max) and consider boundary conditions
             const auto X_expected = expected_production(bc.get());
             const auto additional_X_expected = expected_additional_production(bc.get());
-            auto X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
-            if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
-                X_max *= bc->get_minimum_passage();
-            }
+            const auto X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
             if constexpr (options::DEBUGGING) {
                 const auto X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
                 assert(X_max <= X_hat);
                 (void)X_hat;
             }
             const FloatType lower_limit = 0.0;
-            const FloatType upper_limit = X_max - additional_X_expected;
+            FloatType upper_limit = X_max - additional_X_expected;
+            if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
+                upper_limit = bc->get_minimum_passage() * upper_limit;
+            }
             const auto D_r_max = round(FlowQuantity(upper_limit));
             if (D_r_max > 0.0) {
                 const auto initial_value = std::min(upper_limit, std::max(lower_limit, X_expected - additional_X_expected));
