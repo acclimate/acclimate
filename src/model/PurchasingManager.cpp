@@ -241,17 +241,8 @@ FloatType PurchasingManager::max_objective(const double* x, double* grad) const 
 }
 
 FloatType PurchasingManager::expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const {
-    FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X == X_expected
-    FloatType X_expected =
-        to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X == X_expected
-    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
-        X_expected = business_connection->get_minimum_passage() * X_expected;
-    }
-    FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
-    assert(Z_last <= X);
-    Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
-    FloatType X_new = D_r + ratio_X_expected_to_X * (X - Z_last);
-    assert(X_new >= 0.0);
+    const auto X_expected = expected_production(business_connection);
+    auto X_new = D_r + expected_additional_production(business_connection);
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity())) {
         if constexpr (options::OPTIMIZATION_WARNINGS) {
@@ -285,27 +276,17 @@ FloatType PurchasingManager::expected_average_price_E_n_r(FloatType D_r, const B
 
 FloatType PurchasingManager::n_r(FloatType D_r, const BusinessConnection* business_connection) const {
     assert(D_r >= 0.0);
-    FloatType n_bar = to_float(business_connection->seller->communicated_parameters().offer_price_n_bar);
-    FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
-    FloatType X = 0.0;
-    FloatType X_expected = 0.0;
-    X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());
-    X_expected = to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());
-    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
-        X_expected = business_connection->get_minimum_passage() * X_expected;
-    }
-
-    FloatType E_n_r = expected_average_price_E_n_r(D_r, business_connection);  // expected average price for D_r
-    Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
-
-    FloatType D_r_min =
-        std::max(0.0, business_connection->seller->firm->forced_initial_production_quantity_lambda_X_star_float() - ratio_X_expected_to_X * (X - Z_last));
-    FloatType X_new_min = D_r_min + ratio_X_expected_to_X * (X - Z_last);
+    const auto n_bar = to_float(business_connection->seller->communicated_parameters().offer_price_n_bar);
+    const auto X_expected = expected_production(business_connection);
+    const auto additional_X_expected = expected_additional_production(business_connection);
+    const auto E_n_r = expected_average_price_E_n_r(D_r, business_connection);
+    const auto D_r_min = std::max(0.0, business_connection->seller->firm->forced_initial_production_quantity_lambda_X_star_float() - additional_X_expected);
+    const auto X_new_min = D_r_min + additional_X_expected;
     assert(X_new_min > 0.0);
-    FloatType npe_at_X_expected = (X_expected > 0.0) ? estimate_production_extension_penalty(business_connection, X_expected) / X_expected : 0.0;
-    FloatType npe_at_X_new_min = (X_new_min > 0.0) ? estimate_production_extension_penalty(business_connection, X_new_min) / X_new_min : 0.0;
-    FloatType n_bar_min = n_bar - npe_at_X_expected + npe_at_X_new_min;
-    FloatType n_co = calc_n_co(n_bar_min, D_r_min, business_connection);
+    const auto npe_at_X_expected = (X_expected > 0.0) ? estimate_production_extension_penalty(business_connection, X_expected) / X_expected : 0.0;
+    const auto npe_at_X_new_min = (X_new_min > 0.0) ? estimate_production_extension_penalty(business_connection, X_new_min) / X_new_min : 0.0;
+    const auto n_bar_min = n_bar - npe_at_X_expected + npe_at_X_new_min;
+    const auto n_co = calc_n_co(n_bar_min, D_r_min, business_connection);
     if (n_co <= n_bar_min) {  // in linear regime of E_n(D) curve
         if (D_r < D_r_min) {  // note: D_r_min == 0 cannot occur
             assert(D_r_min > 0.0);
@@ -322,15 +303,7 @@ FloatType PurchasingManager::n_r(FloatType D_r, const BusinessConnection* busine
 }
 
 FloatType PurchasingManager::grad_expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const {
-    FloatType X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());  // note: wo expectation X = X_expected;
-    FloatType X_expected =
-        to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
-    if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
-        X_expected = business_connection->get_minimum_passage() * X_expected;
-    }
-    FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
-    Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
-    FloatType X_new = D_r + ratio_X_expected_to_X * (X - Z_last);
+    auto X_new = D_r + expected_additional_production(business_connection);
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production_X_hat.get_quantity())) {
         if constexpr (options::OPTIMIZATION_WARNINGS) {
@@ -348,41 +321,49 @@ FloatType PurchasingManager::grad_expected_average_price_E_n_r(FloatType D_r, co
 }
 
 FloatType PurchasingManager::calc_n_co(FloatType n_bar_min, FloatType D_r_min, const BusinessConnection* business_connection) const {
-    FloatType n_co =
+    const auto n_co =
         estimate_marginal_production_costs(business_connection, to_float(business_connection->seller->communicated_parameters().production_X.get_quantity()),
                                            business_connection->seller->communicated_parameters().possible_production_X_hat.get_price_float());
     if (model()->parameters().maximal_decrease_reservation_price_limited_by_markup) {
-        FloatType n_crit = n_bar_min - to_float(storage->sector->parameters().initial_markup) * D_r_min;
-        n_co = std::max(n_co, n_crit);
+        const auto n_crit = n_bar_min - to_float(storage->sector->parameters().initial_markup) * D_r_min;
+        return std::max(n_co, n_crit);
     }
     return n_co;
 }
 
-FloatType PurchasingManager::grad_n_r(FloatType D_r, const BusinessConnection* business_connection) const {
-    FloatType n_bar = to_float(business_connection->seller->communicated_parameters().offer_price_n_bar);
-    FloatType X =
-        to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;
-    FloatType X_expected =
-        to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());  // note: wo expectation X = X_expected;;
+inline FloatType PurchasingManager::expected_production(const BusinessConnection* business_connection) {
+    const auto X_expected = to_float(business_connection->seller->communicated_parameters().expected_production_X.get_quantity());
     if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
-        X_expected = business_connection->get_minimum_passage() * X_expected;
+        return business_connection->get_minimum_passage() * X_expected;
+    } else {
+        return X_expected;
     }
-    FloatType Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
-    Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
-    FloatType grad_E_n_r = grad_expected_average_price_E_n_r(D_r,
-                                                             business_connection);  // expected gradient of average price for D_r
-    FloatType E_n_r = expected_average_price_E_n_r(D_r,
-                                                   business_connection);  // expected average price for D_r
-    FloatType D_r_min = std::max(0.0,
-                                 business_connection->seller->firm->forced_initial_production_quantity_lambda_X_star_float()
-                                     - ratio_X_expected_to_X * (X - Z_last));  // note: D_r_star is the demand request for X_new=lambda * X_star
+}
+
+inline FloatType PurchasingManager::expected_additional_production(const BusinessConnection* business_connection) {
+    const auto X = to_float(business_connection->seller->communicated_parameters().production_X.get_quantity());
+    const auto X_expected = expected_production(business_connection);
+    const auto Z_last = to_float(business_connection->last_shipment_Z().get_quantity());
+    const Ratio ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
+    return ratio_X_expected_to_X * (X - Z_last);
+}
+
+FloatType PurchasingManager::grad_n_r(FloatType D_r, const BusinessConnection* business_connection) const {
+    const auto n_bar = to_float(business_connection->seller->communicated_parameters().offer_price_n_bar);
+    const auto X_expected = expected_production(business_connection);
+    const auto additional_X_expected = expected_additional_production(business_connection);
+    const auto grad_E_n_r = grad_expected_average_price_E_n_r(D_r, business_connection);
+    const auto E_n_r = expected_average_price_E_n_r(D_r, business_connection);
+    const auto D_r_min = std::max(0.0,
+                                  business_connection->seller->firm->forced_initial_production_quantity_lambda_X_star_float()
+                                      - additional_X_expected);  // note: D_r_star is the demand request for X_new=lambda * X_star
     assert(D_r_min >= 0.0);
-    FloatType X_new_min = D_r_min + ratio_X_expected_to_X * (X - Z_last);
+    const auto X_new_min = D_r_min + additional_X_expected;
     assert(X_new_min > 0.0);
-    FloatType npe_at_X_expected = (X_expected > 0.0) ? estimate_production_extension_penalty(business_connection, X_expected) / X_expected : 0.0;
-    FloatType npe_at_X_new_min = (X_new_min > 0.0) ? estimate_production_extension_penalty(business_connection, X_new_min) / X_new_min : 0.0;
-    FloatType n_bar_min = n_bar - npe_at_X_expected + npe_at_X_new_min;
-    FloatType n_co = calc_n_co(n_bar_min, D_r_min, business_connection);
+    const auto npe_at_X_expected = (X_expected > 0.0) ? estimate_production_extension_penalty(business_connection, X_expected) / X_expected : 0.0;
+    const auto npe_at_X_new_min = (X_new_min > 0.0) ? estimate_production_extension_penalty(business_connection, X_new_min) / X_new_min : 0.0;
+    const auto n_bar_min = n_bar - npe_at_X_expected + npe_at_X_new_min;
+    const auto n_co = calc_n_co(n_bar_min, D_r_min, business_connection);
     if (n_co <= n_bar_min) {  // in linear regime of E_n(D) curve
         if (D_r < D_r_min && D_r_min > 0.0) {
             return (n_bar_min - n_co) / D_r_min;
@@ -524,14 +505,9 @@ void PurchasingManager::iterate_purchase() {
         } else {  // this supplier can deliver a non-zero amount
             // assumption, we cannot crowd out other purchasers given that our maximum offer price is n_max, calculate analytical approximation for maximal
             // deliverable amount of purchaser X_max(n_max) and consider boundary conditions
-            const FloatType X = to_float(bc->seller->communicated_parameters().production_X.get_quantity());
-            const FloatType Z_last = to_float(bc->last_shipment_Z().get_quantity());
-            FloatType X_expected = to_float(bc->seller->communicated_parameters().expected_production_X.get_quantity());  // wo expectation X_expected = X
-            if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
-                X_expected *= bc->get_minimum_passage();
-            }
-            const FloatType ratio_X_expected_to_X = (X > 0.0) ? X_expected / X : 0.0;
-            FloatType X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
+            const auto X_expected = expected_production(bc.get());
+            const auto additional_X_expected = expected_additional_production(bc.get());
+            auto X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
             if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
                 X_max *= bc->get_minimum_passage();
             }
@@ -541,10 +517,10 @@ void PurchasingManager::iterate_purchase() {
                 (void)X_hat;
             }
             const FloatType lower_limit = 0.0;
-            const FloatType upper_limit = X_max - ratio_X_expected_to_X * (X - Z_last);
+            const FloatType upper_limit = X_max - additional_X_expected;
             const auto D_r_max = round(FlowQuantity(upper_limit));
             if (D_r_max > 0.0) {
-                const FloatType initial_value = std::min(upper_limit, std::max(lower_limit, ratio_X_expected_to_X * Z_last));
+                const auto initial_value = std::min(upper_limit, std::max(lower_limit, X_expected - additional_X_expected));
                 purchasing_connections.push_back(bc.get());
                 lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
                 upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
@@ -630,8 +606,7 @@ void PurchasingManager::iterate_purchase() {
     FloatType use = 0.0;
     // distribute demand requests
     for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
-        FloatType D_r;
-        D_r = unscaled_D_r(demand_requests_D[r], purchasing_connections[r]);
+        const auto D_r = unscaled_D_r(demand_requests_D[r], purchasing_connections[r]);
         Demand demand_request_D = Demand(FlowQuantity(D_r), FlowValue(D_r));
         assert(!std::isnan(n_r(D_r, purchasing_connections[r])));
         demand_request_D.set_price(round(Price(n_r(D_r, purchasing_connections[r]))));
@@ -702,17 +677,17 @@ void PurchasingManager::debug_print_distribution(const std::vector<double>& dema
             FloatType T_penalty = 0.0;
             for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
                 const auto bc = purchasing_connections[r];
-                FloatType D_r = unscaled_D_r(demand_requests_D[r], bc);
-                FloatType lower_bound_D_r = unscaled_D_r(lower_bounds[r], bc);
-                FloatType upper_bound_D_r = unscaled_D_r(upper_bounds[r], bc);
-                FloatType X = to_float(bc->seller->communicated_parameters().production_X.get_quantity());
-                FloatType X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
-                FloatType X_star = to_float(bc->seller->firm->initial_production_X_star().get_quantity());
+                const auto D_r = unscaled_D_r(demand_requests_D[r], bc);
+                const auto lower_bound_D_r = unscaled_D_r(lower_bounds[r], bc);
+                const auto upper_bound_D_r = unscaled_D_r(upper_bounds[r], bc);
+                const auto X = to_float(bc->seller->communicated_parameters().production_X.get_quantity());
+                const auto X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
+                const auto X_star = to_float(bc->seller->firm->initial_production_X_star().get_quantity());
 
                 total_upper_bound += X_hat;
-                FloatType n_bar = to_float(bc->seller->communicated_parameters().offer_price_n_bar);
-                FloatType n_r_l = n_r(D_r, bc);
-                FloatType n_r_tc_l = transport_penalty(D_r, bc);
+                const auto n_bar = to_float(bc->seller->communicated_parameters().offer_price_n_bar);
+                const auto n_r_l = n_r(D_r, bc);
+                const auto n_r_tc_l = transport_penalty(D_r, bc);
                 T_penalty += n_r_tc_l;
                 last_demand_requests[r] = to_float(bc->last_demand_request_D(this).get_quantity());
 
