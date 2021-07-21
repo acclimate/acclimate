@@ -511,11 +511,17 @@ void PurchasingManager::iterate_purchase() {
             const FloatType lower_limit = 0.0;
             FloatType upper_limit = X_max - additional_X_expected;
             if constexpr (options::USE_MIN_PASSAGE_IN_EXPECTATION) {
-                upper_limit = bc->get_minimum_passage() * upper_limit;
+                if (bc->get_minimum_passage() != 1.) {
+                    auto disturbed_initial_flow = bc->get_minimum_passage()*to_float(bc->initial_flow_Z_star().get_quantity());
+                    upper_limit = (upper_limit < disturbed_initial_flow) ? upper_limit : disturbed_initial_flow;
+                }
             }
             const auto D_r_max = round(FlowQuantity(upper_limit));
             if (D_r_max > 0.0) {
-                const auto initial_value = std::min(upper_limit, std::max(lower_limit, X_expected - additional_X_expected));
+                FloatType initial_value = X_expected - additional_X_expected;
+                if (initial_value <= lower_limit || initial_value >= upper_limit) {
+                   initial_value = (upper_limit - lower_limit) / 2;
+                }
                 purchasing_connections.push_back(bc.get());
                 lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
                 upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
