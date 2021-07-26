@@ -143,7 +143,7 @@ Consumer* ModelInitializer::add_consumer(std::string name, Region* region) {
 
 EconomicAgent* ModelInitializer::add_standard_agent(Sector* sector, Region* region) {
     const std::string name = sector->name() + ":" + region->name();
-    if (sector->name() == "FCON") {
+    if ((sector->name() == "FCON") || (sector->name().find("income_quintile") != std::string::npos)) {
         return add_consumer(std::move(name), region);
     } else {
         return add_firm(std::move(name), sector, region);
