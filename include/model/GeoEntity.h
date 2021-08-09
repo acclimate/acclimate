@@ -21,6 +21,7 @@
 #ifndef ACCLIMATE_GEOENTITY_H
 #define ACCLIMATE_GEOENTITY_H
 
+#include <numeric>
 #include <string>
 
 #include "acclimate.h"
@@ -58,6 +59,25 @@ class GeoEntity {
     Model* model() { return model_m; }
     const Model* model() const { return model_m; }
     virtual std::string name() const = 0;
+
+    template<typename Observer, typename H>
+    bool observe(Observer& o) const {
+        return true  //
+               && o.set(H::hash("total_flow"),
+                        [this]() {  //
+                            return std::accumulate(
+                                std::begin(transport_chain_links), std::end(transport_chain_links), Flow(0.0),
+                                [](const Flow& flow, const auto& transport_chain_link) { return flow + transport_chain_link->get_total_flow(); });
+                        })
+               && o.set(H::hash("total_outflow"),
+                        [this]() {  //
+                            return std::accumulate(
+                                std::begin(transport_chain_links), std::end(transport_chain_links), Flow(0.0),
+                                [](const Flow& flow, const auto& transport_chain_link) { return flow + transport_chain_link->last_outflow(); });
+                        })
+            //
+            ;
+    }
 };
 }  // namespace acclimate
 

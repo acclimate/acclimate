@@ -81,6 +81,8 @@ class PurchasingManager final {
     FloatType grad_expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const;
     FloatType partial_D_r_transport_penalty(FloatType D_r, const BusinessConnection* business_connection) const;
     static FlowQuantity calc_analytical_approximation_X_max(const BusinessConnection* bc);
+    static FloatType expected_production(const BusinessConnection* business_connection);
+    static FloatType expected_additional_production(const BusinessConnection* business_connection);
 
     void debug_print_distribution(const std::vector<double>& demand_requests_D) const;
 

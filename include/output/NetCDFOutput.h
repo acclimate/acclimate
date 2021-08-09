@@ -60,6 +60,7 @@ class NetCDFOutput final : public ArrayOutput {
     std::vector<netCDF::Variable> vars_consumers;
     std::vector<netCDF::Variable> vars_sectors;
     std::vector<netCDF::Variable> vars_regions;
+    std::vector<netCDF::Variable> vars_locations;
     std::vector<netCDF::Variable> vars_storages;
     std::vector<netCDF::Variable> vars_flows;
 

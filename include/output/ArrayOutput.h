@@ -75,6 +75,7 @@ class ArrayOutput : public Output {
     Observable<1> obs_consumers;
     Observable<1> obs_sectors;
     Observable<1> obs_regions;
+    Observable<1> obs_locations;
     Observable<2> obs_flows;
     Observable<2> obs_storages;
     std::vector<Event> events;

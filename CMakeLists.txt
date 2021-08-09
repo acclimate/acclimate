@@ -160,13 +160,13 @@ const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options = {
 )
 target_sources(acclimate PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp)
 
-include_nlopt(acclimate ON "v2.6.1")
+include_nlopt(acclimate ON GIT_TAG "v2.7.0")
 
 include(lib/netcdfpp/netcdfpp.cmake)
 include_netcdfpp(acclimate)
 
 include(lib/settingsnode/settingsnode.cmake)
 include_settingsnode(acclimate)
-include_yaml_cpp(acclimate ON "yaml-cpp-0.6.3")
+include_yaml_cpp(acclimate ON GIT_TAG "yaml-cpp-0.6.3")
 
 add_cpp_tools(acclimate STD c++17)

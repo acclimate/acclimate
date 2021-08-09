@@ -40,6 +40,7 @@ class TransportChainLink final {
     Forcing forcing_nu;
     FlowQuantity initial_flow_quantity;
     Flow overflow;
+    Flow outflow = Flow(0.0);
     std::vector<AnnotatedFlow> transport_queue;
     TransportDelay pos;
     std::unique_ptr<TransportChainLink> next_transport_chain_link;
@@ -60,6 +61,7 @@ class TransportChainLink final {
     void push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star);
     void set_forcing_nu(Forcing forcing_nu_p);
     TransportDelay transport_delay() const { return transport_queue.size(); }
+    Flow last_outflow() const { return outflow; }
     Flow get_total_flow() const;
     FloatType get_passage() const;
     Flow get_disequilibrium() const;

@@ -107,6 +107,10 @@ class BusinessConnection final {
                         [this]() {  //
                             return get_total_flow();
                         })
+               && o.set(H::hash("minimum_passage"),
+                        [this]() {  //
+                            return get_minimum_passage();
+                        })
             //
             ;
     }
