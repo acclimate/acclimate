@@ -121,7 +121,7 @@ void Consumer::initialize() {
         basket_share_factors[basket] =
             std::pow(basket_share_factors[basket], 1 / inter_basket_substitution_coefficient);  // already with exponent for utility function
     }
-    baseline_utility = CES_utility_function(baseline_consumption);  // baseline utility for scaling
+    baseline_utility = CES_utility_function(baseline_consumption);  // baseline utility for comparison
 }
 
 // TODO: more sophisticated scaling than normalizing with baseline utility might improve optimization?!
@@ -140,24 +140,8 @@ autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const 
         autodiff_basket_consumption_utility = std::pow(autodiff_basket_consumption_utility, 1 / intra_basket_substitution_exponent[basket]);
         autodiff_consumption_utility += std::pow(autodiff_basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
-    return autodiff_consumption_utility;  // outer exponent not relevant for optimization (at least for sigma >1)
-}
-/**
- * nested CES utility function
- * @param consumption vector of consumed quantity of each good
- * @return double value of the utility function
- */
-FloatType Consumer::CES_utility_function(const std::vector<FloatType>& consumption) {
-    consumption_utility = 0.0;
-    for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
-        basket_consumption_utility = 0.0;
-        for (auto& index : consumer_basket_indizes[basket]) {
-            basket_consumption_utility += std::pow(consumption[index], intra_basket_substitution_exponent[basket]) * share_factors[index];
-        }
-        basket_consumption_utility = std::pow(basket_consumption_utility, 1 / intra_basket_substitution_exponent[basket]);
-        consumption_utility += std::pow(basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
-    }
-    return consumption_utility;  // outer exponent not relevant for optimization (at least for sigma >1)
+    autodiff_consumption_utility = std::pow(autodiff_consumption_utility, 1 / inter_basket_substitution_coefficient);
+    return autodiff_consumption_utility;
 }
 /**
  * nested CES utility function
@@ -175,7 +159,8 @@ FloatType Consumer::CES_utility_function(const std::vector<Flow>& consumption) {
         basket_consumption_utility = std::pow(basket_consumption_utility, 1 / intra_basket_substitution_exponent[basket]);
         consumption_utility += std::pow(basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
-    return consumption_utility;  // outer exponent not relevant for optimization (at least for sigma >1)
+    consumption_utility = std::pow(consumption_utility, 1 / inter_basket_substitution_coefficient);
+    return consumption_utility;
 }
 
 // TODO: more complex budget function might be useful, e.g. opportunity for saving etc.
@@ -197,10 +182,15 @@ FloatType Consumer::inequality_constraint(const double* x, double* grad) {
     for (auto& input_storage : input_storages) {
         int index = input_storage->id.index();
         assert(!std::isnan(x[index]));
-        double elastic_price = x[index] * std::pow(to_float(consumption_prices[index]), -1 * input_storage->parameters().consumption_price_elasticity);
-        scaled_budget -= invert_scaling_double_to_double(x[index], baseline_consumption[index].get_quantity()) * elastic_price / to_float(consumption_budget);
+        double price;
+        if (model()->parameters().elastic_budget) {
+            price = x[index] * std::pow(to_float(consumption_prices[index]), -1 * input_storage->parameters().consumption_price_elasticity);
+        } else {
+            price = x[index] * to_float(consumption_prices[index]);
+        }
+        scaled_budget -= invert_scaling_double_to_double(x[index], baseline_consumption[index].get_quantity()) * price / to_float(consumption_budget);
         if (grad != nullptr) {
-            grad[index] = invert_scaling_double_to_double(x[index], baseline_consumption[index].get_quantity()) * elastic_price / to_float(consumption_budget);
+            grad[index] = invert_scaling_double_to_double(x[index], baseline_consumption[index].get_quantity()) * price / to_float(consumption_budget);
             if constexpr (options::OPTIMIZATION_WARNINGS) {
                 assert(!std::isnan(grad[index]));
                 if (grad[index] > MAX_GRADIENT) {
@@ -226,9 +216,6 @@ FloatType Consumer::max_objective(const double* x, double* grad) {
     autodiffutility = autodiff_nested_CES_utility_function(var_optimizer_consumption);
     if (grad != nullptr) {
         std::copy(std::begin(autodiffutility.derivative()), std::end(autodiffutility.derivative()), grad);
-        for (auto& input_storage : input_storages) {
-            grad[input_storage->id.index()] /= baseline_utility;
-        }
         if constexpr (options::OPTIMIZATION_WARNINGS) {
             for (auto& input_storage : input_storages) {
                 int index = input_storage->id.index();
@@ -239,7 +226,7 @@ FloatType Consumer::max_objective(const double* x, double* grad) {
             }
         }
     }
-    return autodiffutility.value() / baseline_utility;
+    return autodiffutility.value();
 }
 
 void Consumer::iterate_consumption_and_production() {
@@ -249,13 +236,13 @@ void Consumer::iterate_consumption_and_production() {
     if (utilitarian) {
         consumption = utilitarian_consumption_optimization();
         consume_optimisation_result(consumption);
-        local_optimal_utility = CES_utility_function(consumption) / baseline_utility;  // just making sure the field has data, identical to utility in this case
+        local_optimal_utility = CES_utility_function(consumption);  // just making sure the field has data, identical to utility in this case
     } else {
         // calculate local optimal utility consumption for comparison:
         if constexpr (VERBOSE_CONSUMER) {
             log::info(this, "local utilitarian consumption optimization:");
         }
-        local_optimal_utility = CES_utility_function(utilitarian_consumption_optimization()) / baseline_utility;
+        local_optimal_utility = CES_utility_function(utilitarian_consumption_optimization());
         // old consumer to be used for comparison
         previous_consumption.clear();
         previous_consumption.reserve(input_storages.size());
@@ -289,7 +276,7 @@ void Consumer::iterate_consumption_and_production() {
             previous_consumption.emplace_back((used_flow_U.get_quantity()));
         }
     }
-    utility = CES_utility_function(consumption) / baseline_utility;
+    utility = CES_utility_function(consumption);
     log::info(this, "baseline relative utility:", utility);
 }
 
@@ -548,7 +535,7 @@ void Consumer::debug_print_distribution() {
             std::cout << model()->run()->timeinfo() << ", " << name() << ": demand distribution for " << input_storages.size() << " inputs :\n";
             print_row("inequality value", inequality_constraint(&optimizer_consumption[0], &grad_constraint[0]));
             print_row("objective value", max_objective(&optimizer_consumption[0], &grad_objective[0]));
-            print_row("current utility", utility / baseline_utility);
+            print_row("current utility", utility);
             print_row("current total budget", consumption_budget);
             print_row("substitution coefficient", inter_basket_substitution_coefficient);
             std::cout << '\n';

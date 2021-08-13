@@ -54,6 +54,7 @@ struct Parameters {
         bool global_optimization;
         unsigned int global_optimization_random_points;
         bool budget_inequality_constrained;
+        bool elastic_budget;
     };
 
     struct RegionParameters {};
