@@ -141,14 +141,21 @@ autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const 
     }
     for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
         autodiff_basket_consumption_utility.reset();  // reset to 0 without new call
+        FloatType basket_consumption_quantity = 0.0;
+        for (auto& index : consumer_basket_indizes[basket]) {
+            basket_consumption_quantity += consumption[index].value();
+        }
         for (auto& index : consumer_basket_indizes[basket]) {
             auto consumption_quantity = consumption[index];
             if (model()->parameters().relative_consumption_optimization) {
-                consumption_quantity = consumption_quantity / total_consumption;
+                consumption_quantity = consumption_quantity / basket_consumption_quantity;
             }
             autodiff_basket_consumption_utility += std::pow(consumption_quantity, intra_basket_substitution_exponent[basket]) * share_factors[index];
         }
         autodiff_basket_consumption_utility = std::pow(autodiff_basket_consumption_utility, 1 / intra_basket_substitution_exponent[basket]);
+        if (model()->parameters().relative_consumption_optimization) {
+            autodiff_basket_consumption_utility = autodiff_basket_consumption_utility * basket_consumption_quantity / total_consumption;
+        }
         autodiff_consumption_utility += std::pow(autodiff_basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
     autodiff_consumption_utility = std::pow(autodiff_consumption_utility, 1 / inter_basket_substitution_coefficient);
@@ -167,14 +174,21 @@ FloatType Consumer::CES_utility_function(const std::vector<Flow>& consumption) {
     }
     for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
         basket_consumption_utility = 0.0;
+        FloatType basket_consumption_quantity = 0.0;
+        for (auto& index : consumer_basket_indizes[basket]) {
+            basket_consumption_quantity += to_float(consumption[index].get_quantity());
+        }
         for (auto& index : consumer_basket_indizes[basket]) {
             auto consumption_quantity = to_float(consumption[index].get_quantity());
             if (model()->parameters().relative_consumption_optimization) {
-                consumption_quantity = consumption_quantity / to_float(total_consumption.get_quantity());
+                consumption_quantity = consumption_quantity / basket_consumption_quantity;
             }
             basket_consumption_utility += std::pow(consumption_quantity, intra_basket_substitution_exponent[basket]) * share_factors[index];
         }
         basket_consumption_utility = std::pow(basket_consumption_utility, 1 / intra_basket_substitution_exponent[basket]);
+        if (model()->parameters().relative_consumption_optimization) {
+            basket_consumption_utility = basket_consumption_utility * basket_consumption_quantity / to_float(total_consumption.get_quantity());
+        }
         consumption_utility += std::pow(basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
     consumption_utility = std::pow(consumption_utility, 1 / inter_basket_substitution_coefficient);
