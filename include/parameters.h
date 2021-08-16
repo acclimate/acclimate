@@ -55,6 +55,7 @@ struct Parameters {
         unsigned int global_optimization_random_points;
         bool budget_inequality_constrained;
         bool elastic_budget;
+        bool relative_consumption_optimization;
     };
 
     struct RegionParameters {};
