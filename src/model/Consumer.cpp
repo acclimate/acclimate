@@ -61,6 +61,9 @@ void Consumer::initialize() {
     autodiffutility = {input_storages.size(), 0.0};
     autodiff_basket_consumption_utility = {input_storages.size(), 0.0};
     autodiff_consumption_utility = {input_storages.size(), 0.0};
+    total_consumption = {1, 0.0};
+    basket_consumption_quantity = {1, 0.0};
+
     var_optimizer_consumption = autodiff::Variable<FloatType>(0, input_storages.size(), input_storages.size(), 0.0);
 
     share_factors = std::vector<FloatType>(input_storages.size());
@@ -132,18 +135,20 @@ void Consumer::initialize() {
  */
 autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption) {
     autodiff_consumption_utility.reset();  // reset to 0 without new call
-    FloatType total_consumption = 0.0;
+    total_consumption.reset();
     if (model()->parameters().relative_consumption_optimization) {
-        total_consumption = std::accumulate(consumption.value().begin(), consumption.value().end(), 0.0);
+        for (auto& i_consumption : consumption.value()) {
+            total_consumption += i_consumption;
+        }
     }
     if constexpr (VERBOSE_CONSUMER) {
-        log::info("total_consumption:", total_consumption);
+        log::info("total_consumption:", total_consumption.value());
     }
     for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
         autodiff_basket_consumption_utility.reset();  // reset to 0 without new call
-        FloatType basket_consumption_quantity = 0.0;
+        basket_consumption_quantity.reset();
         for (auto& index : consumer_basket_indizes[basket]) {
-            basket_consumption_quantity += consumption[index].value();
+            basket_consumption_quantity += consumption[index];
         }
         for (auto& index : consumer_basket_indizes[basket]) {
             auto consumption_quantity = consumption[index];

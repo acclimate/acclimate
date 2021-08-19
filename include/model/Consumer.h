@@ -76,12 +76,12 @@ class Consumer final : public EconomicAgent {
     autodiff::Value<FloatType> autodiff_basket_consumption_utility = autodiff::Value<FloatType>(0, 0);
     autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, 0);
     autodiff::Value<FloatType> autodiffutility = autodiff::Value<FloatType>(0, 0);
+    autodiff::Value<FloatType> total_consumption = autodiff::Value<FloatType>(0, 0);
+    autodiff::Value<FloatType> basket_consumption_quantity = autodiff::Value<FloatType>(0, 0);
 
   public:
     using EconomicAgent::input_storages;
     using EconomicAgent::region;
-
-
 
   public:
     Consumer(id_t id_p,
