@@ -61,12 +61,11 @@ void Consumer::initialize() {
     autodiffutility = {input_storages.size(), 0.0};
     autodiff_basket_consumption_utility = {input_storages.size(), 0.0};
     autodiff_consumption_utility = {input_storages.size(), 0.0};
-    total_consumption = {1, 0.0};
-    basket_consumption_quantity = {1, 0.0};
 
     var_optimizer_consumption = autodiff::Variable<FloatType>(0, input_storages.size(), input_storages.size(), 0.0);
 
     share_factors = std::vector<FloatType>(input_storages.size());
+
     previous_consumption.reserve(input_storages.size());
     baseline_consumption.reserve(input_storages.size());
 
@@ -76,21 +75,13 @@ void Consumer::initialize() {
     for (auto& input_storage : input_storages) {
         previous_consumption.push_back(input_storage->initial_used_flow_U_star());
         baseline_consumption.push_back(input_storage->initial_used_flow_U_star());
-    }
-    for (auto& input_storage : input_storages) {
         consumption_budget += input_storage->initial_used_flow_U_star().get_value();
-        previous_consumption[input_storage->id.index()] =
-            input_storage->initial_used_flow_U_star();  // overwrite to get proper ordering with regard to input_storage[index].
-                                                        // workaround since no constructor for std::vector<Flow> available
-        baseline_consumption[input_storage->id.index()] = input_storage->initial_used_flow_U_star();
     }
 
     if constexpr (VERBOSE_CONSUMER) {
         log::info("budget: ", consumption_budget);
     }
-    for (auto& input_storage : input_storages) {
-        share_factors[input_storage->id.index()] = to_float(input_storage->initial_used_flow_U_star().get_value()) / to_float(consumption_budget);
-    }
+
     intra_basket_substitution_coefficient = std::vector<FloatType>(consumer_baskets.size(), 0);
     intra_basket_substitution_exponent = std::vector<FloatType>(consumer_baskets.size(), 0);
     basket_share_factors = std::vector<FloatType>(consumer_baskets.size(), 0);
@@ -100,9 +91,57 @@ void Consumer::initialize() {
         intra_basket_substitution_exponent[basket] = (intra_basket_substitution_coefficient[basket] - 1) / intra_basket_substitution_coefficient[basket];
         for (auto& sector : consumer_baskets[basket].first) {
             for (auto& i_storage : input_storages)
-                if (i_storage->sector == sector)
+                if (i_storage->sector == sector) {
                     basket_share_factors[basket] += to_float(i_storage->initial_used_flow_U_star().get_value()) / to_float(consumption_budget);
+                }
         }
+    }
+    // edge case of no consumption in this basket - remove basket from optimization
+    auto original_basket_number = consumer_baskets.size();
+    for (std::size_t basket = 0; basket < original_basket_number; ++basket) {
+        if (basket_share_factors[basket] == 0) {
+            log::info(this, "basket: ", basket, " removed");
+            consumer_baskets.erase(std::remove(consumer_baskets.begin(), consumer_baskets.end(), consumer_baskets[basket]), consumer_baskets.end());
+        }
+    }
+    FlowValue consumption_in_relevant_baskets = FlowValue(0.0);
+    for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
+        for (auto& sector : consumer_baskets[basket].first) {
+            for (auto& i_storage : input_storages)
+                if (i_storage->sector == sector) {
+                    consumption_in_relevant_baskets += i_storage->initial_used_flow_U_star().get_value();
+                }
+        }
+    }
+
+    std::vector<Sector*> all_relvant_sectors;
+    for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
+        for (auto& sector : consumer_baskets[basket].first) {
+            for (auto& i_storage : input_storages)
+                if (i_storage->sector == sector) {
+                    basket_share_factors[basket] = basket_share_factors[basket] * to_float(consumption_budget / consumption_in_relevant_baskets);
+                    all_relvant_sectors.push_back(sector);
+                }
+        }
+    }
+
+    for (auto& input_storage : input_storages) {
+        if (std::count(all_relvant_sectors.begin(), all_relvant_sectors.end(), input_storage->sector)) {
+            share_factors[input_storage->id.index()] = to_float(input_storage->initial_used_flow_U_star().get_value() / consumption_budget)
+                                                       * to_float(consumption_budget / consumption_in_relevant_baskets);
+            previous_consumption[input_storage->id.index()] =
+                input_storage->initial_used_flow_U_star();  // overwrite to get proper ordering with regard to input_storage[index].
+            // workaround since no constructor for std::vector<Flow> available
+            baseline_consumption[input_storage->id.index()] = input_storage->initial_used_flow_U_star();
+        } else {
+            share_factors[input_storage->id.index()] = 0;
+            previous_consumption[input_storage->id.index()] = Flow(0);
+            baseline_consumption[input_storage->id.index()] = Flow(0);
+            log::info(this, "sector: ", input_storage->sector->id, " set to 0");
+        }
+    }
+
+    for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
         for (auto& sector : consumer_baskets[basket].first) {
             for (auto& i_storage : input_storages)
                 if (i_storage->sector == sector) {
@@ -135,31 +174,20 @@ void Consumer::initialize() {
  */
 autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption) {
     autodiff_consumption_utility.reset();  // reset to 0 without new call
-    total_consumption.reset();
-    if (model()->parameters().relative_consumption_optimization) {
-        for (auto& i_consumption : consumption.value()) {
-            total_consumption += i_consumption;
-        }
-    }
-    if constexpr (VERBOSE_CONSUMER) {
-        log::info("total_consumption:", total_consumption.value());
-    }
+
     for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
         autodiff_basket_consumption_utility.reset();  // reset to 0 without new call
-        basket_consumption_quantity.reset();
-        for (auto& index : consumer_basket_indizes[basket]) {
-            basket_consumption_quantity += consumption[index];
-        }
+
         for (auto& index : consumer_basket_indizes[basket]) {
             auto consumption_quantity = consumption[index];
             if (model()->parameters().relative_consumption_optimization) {
-                consumption_quantity = consumption_quantity / basket_consumption_quantity;
+                consumption_quantity *= share_factors[index];
             }
             autodiff_basket_consumption_utility += std::pow(consumption_quantity, intra_basket_substitution_exponent[basket]) * share_factors[index];
         }
         autodiff_basket_consumption_utility = std::pow(autodiff_basket_consumption_utility, 1 / intra_basket_substitution_exponent[basket]);
         if (model()->parameters().relative_consumption_optimization) {
-            autodiff_basket_consumption_utility = autodiff_basket_consumption_utility * basket_consumption_quantity / total_consumption;
+            autodiff_basket_consumption_utility *= basket_share_factors[basket];
         }
         autodiff_consumption_utility += std::pow(autodiff_basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
@@ -173,26 +201,19 @@ autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const 
  */
 FloatType Consumer::CES_utility_function(const std::vector<Flow>& consumption) {
     consumption_utility = 0.0;
-    Flow total_consumption = Flow(0.0);
-    if (model()->parameters().relative_consumption_optimization) {
-        total_consumption = std::accumulate(consumption.begin(), consumption.end(), Flow(0.0));
-    }
+
     for (std::size_t basket = 0; basket < consumer_baskets.size(); ++basket) {
         basket_consumption_utility = 0.0;
-        FloatType basket_consumption_quantity = 0.0;
         for (auto& index : consumer_basket_indizes[basket]) {
-            basket_consumption_quantity += to_float(consumption[index].get_quantity());
-        }
-        for (auto& index : consumer_basket_indizes[basket]) {
-            auto consumption_quantity = to_float(consumption[index].get_quantity());
+            auto consumption_quantity = consumption[index].get_quantity();
             if (model()->parameters().relative_consumption_optimization) {
-                consumption_quantity = consumption_quantity / basket_consumption_quantity;
+                consumption_quantity = consumption_quantity * share_factors[index];
             }
-            basket_consumption_utility += std::pow(consumption_quantity, intra_basket_substitution_exponent[basket]) * share_factors[index];
+            basket_consumption_utility += std::pow(to_float(consumption_quantity), intra_basket_substitution_exponent[basket]) * share_factors[index];
         }
         basket_consumption_utility = std::pow(basket_consumption_utility, 1 / intra_basket_substitution_exponent[basket]);
         if (model()->parameters().relative_consumption_optimization) {
-            basket_consumption_utility = basket_consumption_utility * basket_consumption_quantity / to_float(total_consumption.get_quantity());
+            basket_consumption_utility *= basket_share_factors[basket];
         }
         consumption_utility += std::pow(basket_consumption_utility, inter_basket_substitution_exponent) * basket_share_factors[basket];
     }
@@ -354,7 +375,11 @@ std::vector<Flow> Consumer::utilitarian_consumption_optimization() {
             starting_value_quantity[index]
             * std::pow(consumption_prices[index] / starting_value_flow.get_price(), input_storage->parameters().consumption_price_elasticity);
         // scale starting value with scaling_value to use in optimization
-        scaled_starting_value[index] = scale_quantity_to_double(starting_value_quantity[index], baseline_consumption[index].get_quantity());
+        if (to_float(baseline_consumption[index].get_quantity()) != 0.0) {
+            scaled_starting_value[index] = scale_quantity_to_double(starting_value_quantity[index], baseline_consumption[index].get_quantity());
+        } else {
+            scaled_starting_value[index] = 0.0;
+        }
         // calculate maximum affordable consumption based on budget and possible consumption quantity:
         if (to_float(starting_value_quantity[index]) <= 0.0) {
             lower_bounds[index] = 0.0;
