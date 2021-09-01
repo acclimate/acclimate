@@ -127,7 +127,7 @@ class Consumer final : public EconomicAgent {
     autodiff::Value<FloatType> autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption);
 
     // some helpers for local comparison of old consumer and utilitarian
-    std::vector<Flow> utilitarian_consumption_optimization();
+    std::pair<std::vector<Flow>, FloatType> utilitarian_consumption_optimization();
     void consume_optimisation_result(std::vector<Flow> consumption);
 
     // function for constrained optimization
