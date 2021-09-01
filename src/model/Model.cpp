@@ -44,13 +44,16 @@ Model::~Model() = default;  // needed to use forward declares for std::unique_pt
 void Model::start() {
     timestep_m = 0;
     for (const auto& economic_agent : economic_agents) {
-        std::transform(std::begin(economic_agent->input_storages), std::end(economic_agent->input_storages), std::back_inserter(purchasing_managers),
+        std::transform(std::begin(economic_agent->input_storages), std::end(economic_agent->input_storages), std::back_inserter(parallelized_storages),
                        [](const auto& is) { return std::make_pair(is->purchasing_manager.get(), 0); });
     }
+    std::transform(std::begin(economic_agents), std::end(economic_agents), std::back_inserter(parallelized_agents),
+                   [](const auto& ea) { return std::make_pair(ea.get(), 0); });
     if constexpr (options::PARALLELIZATION) {
         std::random_device rd;
         std::mt19937 g(rd());
-        std::shuffle(std::begin(purchasing_managers), std::end(purchasing_managers), g);
+        std::shuffle(std::begin(parallelized_storages), std::end(parallelized_storages), g);
+        std::shuffle(std::begin(parallelized_agents), std::end(parallelized_agents), g);
     }
 }
 
@@ -67,8 +70,16 @@ void Model::iterate_consumption_and_production() {
     }
 
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < economic_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
-        economic_agents[i]->iterate_consumption_and_production();
+    for (std::size_t i = 0; i < parallelized_agents.size(); ++i) {  // NOLINT(modernize-loop-convert)
+        auto t1 = std::chrono::high_resolution_clock::now();
+        auto& p = parallelized_agents[i];
+        p.first->iterate_consumption_and_production();
+        auto t2 = std::chrono::high_resolution_clock::now();
+        p.second = (t2 - t1).count();
+    }
+    if constexpr (options::PARALLELIZATION) {
+        std::sort(std::begin(parallelized_agents), std::end(parallelized_agents),
+                  [](const std::pair<EconomicAgent*, std::size_t>& a, const std::pair<EconomicAgent*, std::size_t>& b) { return b.second > a.second; });
     }
 }
 
@@ -92,15 +103,15 @@ void Model::iterate_purchase() {
         regions[i]->iterate_purchase();
     }
 #pragma omp parallel for default(shared) schedule(guided)
-    for (std::size_t i = 0; i < purchasing_managers.size(); ++i) {  // NOLINT(modernize-loop-convert)
+    for (std::size_t i = 0; i < parallelized_storages.size(); ++i) {  // NOLINT(modernize-loop-convert)
         auto t1 = std::chrono::high_resolution_clock::now();
-        auto& p = purchasing_managers[i];
+        auto& p = parallelized_storages[i];
         p.first->iterate_purchase();
         auto t2 = std::chrono::high_resolution_clock::now();
         p.second = (t2 - t1).count();
     }
     if constexpr (options::PARALLELIZATION) {
-        std::sort(std::begin(purchasing_managers), std::end(purchasing_managers),
+        std::sort(std::begin(parallelized_storages), std::end(parallelized_storages),
                   [](const std::pair<PurchasingManager*, std::size_t>& a, const std::pair<PurchasingManager*, std::size_t>& b) { return b.second > a.second; });
     }
 }

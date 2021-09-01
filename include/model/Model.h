@@ -48,7 +48,8 @@ class Model final {
     unsigned char current_register_m = 1;
     Parameters::ModelParameters parameters_m;
     bool no_self_supply_m = false;
-    std::vector<std::pair<PurchasingManager*, std::size_t>> purchasing_managers;
+    std::vector<std::pair<PurchasingManager*, std::size_t>> parallelized_storages;
+    std::vector<std::pair<EconomicAgent*, std::size_t>> parallelized_agents;
     non_owning_ptr<ModelRun> run_m;
 
   public:
