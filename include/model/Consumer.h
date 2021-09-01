@@ -50,7 +50,9 @@ class Consumer final : public EconomicAgent {
     std::vector<FloatType> intra_basket_substitution_exponent;
 
     std::vector<FloatType> basket_share_factors;
+    std::vector<FloatType> exponent_basket_share_factors;
     std::vector<FloatType> share_factors;
+    std::vector<FloatType> exponent_share_factors;
 
     // optimization parameters
     std::vector<double> optimizer_consumption;

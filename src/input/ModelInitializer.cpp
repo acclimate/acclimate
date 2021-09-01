@@ -135,7 +135,7 @@ Consumer* ModelInitializer::add_consumer(std::string name, Region* region) {
     }
     const bool bool_utilitarian = get_consumer_property(name, region->name(), "bool_utilitarian").as<bool>();
     auto* consumer = model()->economic_agents.add<Consumer>(
-        id_t(std::move(name)), region, get_consumer_property(name, region->name(), "intra_basket_substitution_coefficient").as<FloatType>(),
+        id_t(std::move(name)), region, get_consumer_property(name, region->name(), "inter_basket_substitution_coefficient").as<FloatType>(),
         consumer_baskets_vector, bool_utilitarian);
     region->economic_agents.add(consumer);
     return consumer;
