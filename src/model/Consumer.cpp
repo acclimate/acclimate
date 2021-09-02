@@ -318,7 +318,7 @@ std::pair<std::vector<Flow>, FloatType> Consumer::utilitarian_consumption_optimi
 
     // optimization parameters
     std::vector<FloatType> xtol_abs(input_storages.size(), FlowQuantity::precision);
-    std::vector<FloatType> xtol_abs_global(input_storages.size(), FlowQuantity::precision * 100);
+    std::vector<FloatType> xtol_abs_global(input_storages.size(), FlowQuantity::precision * 10000);
     std::vector<FloatType> lower_bounds(input_storages.size());
     std::vector<FloatType> upper_bounds = std::vector<FloatType>(input_storages.size());
 
