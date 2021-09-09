@@ -71,8 +71,6 @@ class Consumer final : public EconomicAgent {
     FloatType local_optimal_utility;
 
     // variables for utility function , pre-allocated to increase efficiency
-    FloatType consumption_utility;
-    FloatType basket_consumption_utility;
     autodiff::Value<FloatType> autodiff_consumption_utility = autodiff::Value<FloatType>(0, 0);
     autodiff::Value<FloatType> autodiff_basket_consumption_utility = autodiff::Value<FloatType>(0, 0);
     autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, 0);
@@ -121,9 +119,6 @@ class Consumer final : public EconomicAgent {
     void debug_print_details() const override;
     void debug_print_distribution();
 
-    // CES utility specific funtions TODO: check if replacing by abstract funtions suitable
-    FloatType CES_utility_function(const std::vector<FloatType>& consumption);
-    FloatType CES_utility_function(const std::vector<Flow>& consumption);
     autodiff::Value<FloatType> autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& consumption);
 
     // some helpers for local comparison of old consumer and utilitarian
@@ -139,8 +134,6 @@ class Consumer final : public EconomicAgent {
     static double scale_quantity_to_double(FlowQuantity quantity, FlowQuantity scaling_quantity);
     static double scale_double_to_double(double not_scaled_double, FlowQuantity scaling_quantity);
 
-    // helper function to find input storage for sector:
-    std::string input_storage_name(Sector* sector);
 };
 }  // namespace acclimate
 
