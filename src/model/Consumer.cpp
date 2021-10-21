@@ -382,6 +382,14 @@ std::pair<std::vector<Flow>, FloatType> Consumer::utilitarian_consumption_optimi
     local_optimizer.xtol(xtol_abs);
     local_optimizer.maxeval(model()->parameters().optimization_maxiter);
     local_optimizer.maxtime(model()->parameters().optimization_timeout);
+    if (model()->parameters().budget_inequality_constrained) {
+        local_optimizer.add_inequality_constraint(this, FlowValue::precision);
+    } else {
+        local_optimizer.add_equality_constraint(this, FlowValue::precision);
+    }
+    local_optimizer.add_max_objective(this);
+    local_optimizer.lower_bounds(lower_bounds);
+    local_optimizer.upper_bounds(upper_bounds);
 
     if (model()->parameters().global_optimization) {
         // define  lagrangian optimizer to pass (in)equality constraints to global algorithm which cannot use it directly:
@@ -396,7 +404,7 @@ std::pair<std::vector<Flow>, FloatType> Consumer::utilitarian_consumption_optimi
         lagrangian_optimizer.lower_bounds(lower_bounds);
         lagrangian_optimizer.upper_bounds(upper_bounds);
         lagrangian_optimizer.xtol(xtol_abs_global);
-        lagrangian_optimizer.maxeval(model()->parameters().optimization_maxiter);
+        lagrangian_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
         lagrangian_optimizer.maxtime(model()->parameters().optimization_timeout);
 
         // define global optimizer to use random sampling MLSL algorithm as global search, before local optimization via local_optimizer:
@@ -406,8 +414,10 @@ std::pair<std::vector<Flow>, FloatType> Consumer::utilitarian_consumption_optimi
         global_optimizer.xtol(xtol_abs_global);
         global_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
         global_optimizer.maxtime(model()->parameters().optimization_timeout);
+        global_optimizer.lower_bounds(lower_bounds);
+        global_optimizer.upper_bounds(upper_bounds);
         global_optimizer.set_local_algorithm(local_optimizer.get_optimizer());
-
+        global_optimizer.add_max_objective(this);
         nlopt_set_population(global_optimizer.get_optimizer(),
                              model()->parameters().global_optimization_random_points);  // one might adjust number of random sampling points per iteration
                                                                                         // TODO: maybe number of random sampling points should scale with
@@ -417,14 +427,6 @@ std::pair<std::vector<Flow>, FloatType> Consumer::utilitarian_consumption_optimi
         consumption_optimize(lagrangian_optimizer);
         optimized_utility = lagrangian_optimizer.optimized_value();
     } else {
-        if (model()->parameters().budget_inequality_constrained) {
-            local_optimizer.add_inequality_constraint(this, FlowValue::precision);
-        } else {
-            local_optimizer.add_equality_constraint(this, FlowValue::precision);
-        }
-        local_optimizer.add_max_objective(this);
-        local_optimizer.lower_bounds(lower_bounds);
-        local_optimizer.upper_bounds(upper_bounds);
         consumption_optimize(local_optimizer);
         optimized_utility = local_optimizer.optimized_value();
     }

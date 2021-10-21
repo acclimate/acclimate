@@ -70,7 +70,7 @@ inline int get_algorithm(const hashed_string& name) {
             return NLOPT_AUGLAG;
 
         default:
-            throw log::error("unknown optimization alorithm '", name, "'");
+            throw log::error("unknown optimization algorithm '", name, "'");
     }
 }
 
