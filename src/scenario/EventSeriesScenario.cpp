@@ -27,9 +27,9 @@
 
 #include "acclimate.h"
 #include "model/Firm.h"
+#include "model/GeoLocation.h"
 #include "model/Model.h"
 #include "model/Sector.h"
-#include "model/GeoLocation.h"
 #include "netcdfpp.h"
 #include "settingsnode.h"
 
@@ -69,12 +69,11 @@ void EventSeriesScenario::read_forcings() {
     }
 }
 
-
 void EventSeriesScenario::EventForcing::read_data() {
     if (agents.size() != 0) {
-        variable->read<Forcing, 3>(&forcings[0],{time_index, 0, 0}, {1, sectors_count, regions_count});
+        variable->read<Forcing, 3>(&forcings[0], {time_index, 0, 0}, {1, sectors_count, regions_count});
     } else if (locations.size() != 0) {
-        variable->read<Forcing, 3>(&forcings[0],{time_index, 0}, {1, sea_routes_count});
+        variable->read<Forcing, 3>(&forcings[0], {time_index, 0}, {1, sea_routes_count});
     }
 }
 
@@ -90,19 +89,19 @@ EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, con
         for (const auto& sector_name : sectors) {
             const auto* sector = model->sectors.find(sector_name);
             if (sector == nullptr) {
-                throw log::error(this, "Sector '", sector_name, "' not found");
+                log::warning(this, "Sector '", sector_name, "' not found");
             }
             for (const auto& region_name : regions) {
                 const auto name = sector_name + ":" + region_name;
                 auto* agent = model->economic_agents.find(name);
-                if (agent == nullptr) {
-                    log::warning(this, "Agent ", name, " not found");
+                if (sector != nullptr && agent == nullptr) {
+                    log::warning(this, "Agent '", name, "' not found");
                 }
                 agents.push_back(agent);
-                forcings.push_back(1.0);
+                forcings.push_back(1);
             }
         }
-    } 
+    }
     if (file.variable("sea_route")) {
         const auto sea_routes = file.variable("sea_route").require().get<std::string>();
         sea_routes_count = sea_routes.size();
@@ -111,10 +110,10 @@ EventSeriesScenario::EventForcing::EventForcing(const std::string& filename, con
         for (const auto& sea_route_name : sea_routes) {
             GeoLocation* location = model->other_locations.find(sea_route_name);
             if (location == nullptr) {
-                throw log::error(this, "sea object '", sea_route_name, "' not found");
+                log::warning(this, "Sea object '", sea_route_name, "' not found");
             }
             locations.push_back(location);
-            forcings.push_back(-1.);
+            forcings.push_back(-1);
         }
     }
 }
