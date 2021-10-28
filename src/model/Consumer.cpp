@@ -87,7 +87,7 @@ void Consumer::initialize() {
     basket_share_factors = std::vector<FloatType>(consumer_baskets.size(), 0);
     exponent_basket_share_factors = std::vector<FloatType>(consumer_baskets.size(), 0);
     consumer_basket_indizes = std::vector<std::vector<int>>(consumer_baskets.size());
-    for (int basket = 0; basket < consumer_baskets.size(); ++basket) {
+    for (int basket = 0; basket < int(consumer_baskets.size()); ++basket) {
         intra_basket_substitution_coefficient[basket] = (consumer_baskets[basket].second);
         intra_basket_substitution_exponent[basket] = (intra_basket_substitution_coefficient[basket] - 1) / intra_basket_substitution_coefficient[basket];
         for (auto& sector : consumer_baskets[basket].first) {
