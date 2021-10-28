@@ -556,6 +556,10 @@ void PurchasingManager::iterate_purchase() {
         opt.maxeval(model()->parameters().optimization_maxiter);
         opt.maxtime(model()->parameters().optimization_timeout);
         const auto res = opt.optimize(demand_requests_D);
+        // debug code for optimization error
+        if (this->name() == "WHOT->second_income_quintile:BFA") {
+            debug_print_distribution(demand_requests_D);
+        }
         if (!res && !opt.xtol_reached()) {
             if (opt.roundoff_limited()) {
                 if constexpr (!IGNORE_ROUNDOFFLIMITED) {
