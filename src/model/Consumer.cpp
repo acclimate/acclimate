@@ -107,7 +107,7 @@ void Consumer::initialize() {
         }
     }
     auto consumption_in_relevant_baskets = FlowValue(0.0);
-    for (int basket = 0; basket < consumer_baskets.size(); ++basket) {
+    for (int basket = 0; basket < int(consumer_baskets.size()); ++basket) {
         for (auto& sector : consumer_baskets[basket].first) {
             for (auto& i_storage : input_storages)
                 if (i_storage->sector == sector) {
@@ -117,7 +117,7 @@ void Consumer::initialize() {
     }
 
     std::vector<Sector*> all_relevant_sectors;
-    for (int basket = 0; basket < consumer_baskets.size(); ++basket) {
+    for (int basket = 0; basket < int(consumer_baskets.size()); ++basket) {
         for (auto& sector : consumer_baskets[basket].first) {
             for (auto& i_storage : input_storages)
                 if (i_storage->sector == sector) {
@@ -143,7 +143,7 @@ void Consumer::initialize() {
         }
     }
 
-    for (int basket = 0; basket < consumer_baskets.size(); ++basket) {
+    for (int basket = 0; basket < int(consumer_baskets.size()); ++basket) {
         for (auto& sector : consumer_baskets[basket].first) {
             for (auto& i_storage : input_storages)
                 if (i_storage->sector == sector) {
@@ -169,7 +169,7 @@ void Consumer::initialize() {
  */
 autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& baseline_relative_consumption) {
     autodiff_consumption_utility.reset();  // reset to 0 without new call
-    for (int basket = 0; basket < consumer_baskets.size(); ++basket) {
+    for (int basket = 0; basket < int(consumer_baskets.size()); ++basket) {
         autodiff_basket_consumption_utility.reset();
         for (auto& index : consumer_basket_indizes[basket]) {
             auto consumption_quantity = baseline_relative_consumption[index] * share_factors[index];
