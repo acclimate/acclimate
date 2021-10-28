@@ -563,6 +563,9 @@ void PurchasingManager::iterate_purchase() {
         if (this->name() == "WHOT->second_income_quintile:BFA") {
             debug_print_distribution(demand_requests_D);
         }
+        if (this->name() == "WHOT->fifth_income_quintile:THA") {
+            debug_print_distribution(demand_requests_D);
+        }
         if (!res && !opt.xtol_reached()) {
             if (opt.roundoff_limited()) {
                 if constexpr (!IGNORE_ROUNDOFFLIMITED) {
