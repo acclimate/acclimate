@@ -180,6 +180,25 @@ class Optimization {
 
     nlopt_opt get_optimizer() { return opt; }
 };
+void check_gradient(double* x, std::vector<double> grad, Func&& objective_function) {
+    double tolerance = 0.00001;
+    double difference = 0.001;  // TODO: make parameters
+    int dimension = std::size(grad);
+    std::vector<double> x_values(dimension, x[0]);
+    std::vector<double> shifted_values(dimension, grad[0]);
+    for (int dim = 0; dim < dimension; dim++) {
+        x_values[dim] = x[dim];
+    }
+    shifted_values = x_values;
+    for (int dim = 0; dim < dimension; dim++) {
+        shifted_values[dim] += difference;
+
+        double finite_difference_approximation = (objective_function(shifted_values) - objective_function(x_values)) / difference;
+        if (finite_difference_approximation - grad[dim] > tolerance) {
+            log::warning("gradient not matching finite difference approximation.");
+        }
+    }
+}
 
 }  // namespace acclimate::optimization
 
