@@ -55,6 +55,8 @@ struct Parameters {
         unsigned int global_optimization_random_points;
         bool budget_inequality_constrained;
         bool elastic_budget;
+        std::vector<std::string>
+            debug_purchasing_steps;  // give purchasing steps where details should be printed to output, e.g. "WHOT->third_income_quintile:BFA"
     };
 
     struct RegionParameters {};

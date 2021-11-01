@@ -1047,6 +1047,8 @@ void ModelInitializer::pre_initialize() {
         parameters["global_optimization_maxiter"].as<int>(model()->parameters_writable().global_optimization_maxiter);
     model()->parameters_writable().lagrangian_algorithm =
         optimization::get_algorithm(parameters["lagrangian_optimization_algorithm"].as<hashed_string>("augmented_lagrangian"));
+
+    model()->parameters_writable().debug_purchasing_steps = parameters["debug_purchasing_steps"].to_vector<std::string>();
 }
 
 void ModelInitializer::post_initialize() {
