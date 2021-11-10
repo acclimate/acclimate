@@ -545,7 +545,19 @@ void PurchasingManager::iterate_purchase() {
 
     try {
         // experimental optimization setup: first use global optimizer DIRECT to get a reasonable result, polish the result with previous routine.
+        // add auglag to support contraints with different global algorithms
+        // define  lagrangian optimizer to pass (in)equality constraints to global algorithm which cannot use it directly:
+        optimization::Optimization lagrangian_optimizer(static_cast<nlopt_algorithm>(model()->parameters().lagrangian_algorithm),
+                                                        purchasing_connections.size());  // TODO keep and only recreate when resize is needed
+        lagrangian_optimizer.add_equality_constraint(this, FlowValue::precision);
+        lagrangian_optimizer.add_max_objective(this);
+        lagrangian_optimizer.lower_bounds(lower_bounds);
+        lagrangian_optimizer.upper_bounds(upper_bounds);
+        lagrangian_optimizer.xtol(xtol_abs);
+        lagrangian_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
+        lagrangian_optimizer.maxtime(model()->parameters().optimization_timeout);
 
+        // define global optimizer
         optimization::Optimization pre_opt(static_cast<nlopt_algorithm>(model()->parameters().global_optimization_algorithm),
                                            purchasing_connections.size());  // TODO keep and only recreate when resize is needed
 
@@ -556,7 +568,10 @@ void PurchasingManager::iterate_purchase() {
         pre_opt.upper_bounds(upper_bounds);
         pre_opt.maxeval(model()->parameters().global_optimization_maxiter);
         pre_opt.maxtime(model()->parameters().optimization_timeout);
-        const auto pre_res = pre_opt.optimize(demand_requests_D);
+        // start combined global optimizer
+        lagrangian_optimizer.set_local_algorithm(pre_opt.get_optimizer());
+        const auto pre_res = lagrangian_optimizer.optimize(demand_requests_D);
+        
         if (!pre_res && !pre_opt.xtol_reached()) {
             if (pre_opt.roundoff_limited()) {
                 if constexpr (!IGNORE_ROUNDOFFLIMITED) {
@@ -594,7 +609,8 @@ void PurchasingManager::iterate_purchase() {
                 log::warning(this, "optimization finished with ", pre_opt.last_result_description());
             }
         }
-        optimized_value_ = unscaled_objective(pre_opt.optimized_value());
+
+        optimized_value_ = unscaled_objective(lagrangian_optimizer.optimized_value());
 
         optimization::Optimization opt(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
                                        purchasing_connections.size());  // TODO keep and only recreate when resize is needed
