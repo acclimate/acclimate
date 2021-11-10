@@ -561,10 +561,7 @@ void PurchasingManager::iterate_purchase() {
         optimization::Optimization pre_opt(static_cast<nlopt_algorithm>(model()->parameters().global_optimization_algorithm),
                                            purchasing_connections.size());  // TODO keep and only recreate when resize is needed
 
-        pre_opt.add_max_objective(this);
         pre_opt.xtol(xtol_abs);
-        pre_opt.lower_bounds(lower_bounds);
-        pre_opt.upper_bounds(upper_bounds);
         pre_opt.maxeval(model()->parameters().global_optimization_maxiter);
         pre_opt.maxtime(model()->parameters().optimization_timeout);
         // start combined global optimizer
