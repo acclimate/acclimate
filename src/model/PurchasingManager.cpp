@@ -483,6 +483,9 @@ void PurchasingManager::iterate_purchase() {
     xtol_abs.clear();
     xtol_abs.reserve(business_connections.size());
 
+    pre_xtol_abs.clear();
+    pre_xtol_abs.reserve(business_connections.size());
+
     const auto S_shortage = get_flow_deficit() * model()->delta_t() + storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity();
 
     desired_purchase_ = storage->desired_used_flow_U_tilde().get_quantity()  // desired used flow is either last or expected flow
@@ -525,6 +528,7 @@ void PurchasingManager::iterate_purchase() {
                 lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
                 upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
                 xtol_abs.push_back(scaled_D_r(FlowQuantity::precision, bc.get()));
+                pre_xtol_abs.push_back(scaled_D_r(FlowQuantity::precision, bc.get()) * 100);
                 demand_requests_D.push_back(scaled_D_r(initial_value, bc.get()));
                 maximal_possible_purchase += D_r_max;
             } else {
@@ -553,7 +557,7 @@ void PurchasingManager::iterate_purchase() {
         lagrangian_optimizer.add_max_objective(this);
         lagrangian_optimizer.lower_bounds(lower_bounds);
         lagrangian_optimizer.upper_bounds(upper_bounds);
-        lagrangian_optimizer.xtol(xtol_abs);
+        lagrangian_optimizer.xtol(pre_xtol_abs);
         lagrangian_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
         lagrangian_optimizer.maxtime(model()->parameters().optimization_timeout);
 
@@ -561,7 +565,7 @@ void PurchasingManager::iterate_purchase() {
         optimization::Optimization pre_opt(static_cast<nlopt_algorithm>(model()->parameters().global_optimization_algorithm),
                                            purchasing_connections.size());  // TODO keep and only recreate when resize is needed
 
-        pre_opt.xtol(xtol_abs);
+        pre_opt.xtol(pre_xtol_abs);
         pre_opt.maxeval(model()->parameters().global_optimization_maxiter);
         pre_opt.maxtime(model()->parameters().optimization_timeout);
         // start combined global optimizer

@@ -53,6 +53,7 @@ class PurchasingManager final {
     std::vector<double> upper_bounds;
     std::vector<double> lower_bounds;
     std::vector<double> xtol_abs;
+    std::vector<double> pre_xtol_abs;
 
   public:
     non_owning_ptr<Storage> storage;
