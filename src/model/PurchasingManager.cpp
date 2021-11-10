@@ -561,7 +561,6 @@ void PurchasingManager::iterate_purchase() {
         optimization::Optimization pre_opt(static_cast<nlopt_algorithm>(model()->parameters().global_optimization_algorithm),
                                            purchasing_connections.size());  // TODO keep and only recreate when resize is needed
 
-        pre_opt.add_equality_constraint(this, FlowQuantity::precision);
         pre_opt.add_max_objective(this);
         pre_opt.xtol(xtol_abs);
         pre_opt.lower_bounds(lower_bounds);
@@ -571,7 +570,7 @@ void PurchasingManager::iterate_purchase() {
         // start combined global optimizer
         lagrangian_optimizer.set_local_algorithm(pre_opt.get_optimizer());
         const auto pre_res = lagrangian_optimizer.optimize(demand_requests_D);
-        
+
         if (!pre_res && !pre_opt.xtol_reached()) {
             if (pre_opt.roundoff_limited()) {
                 if constexpr (!IGNORE_ROUNDOFFLIMITED) {
@@ -609,8 +608,6 @@ void PurchasingManager::iterate_purchase() {
                 log::warning(this, "optimization finished with ", pre_opt.last_result_description());
             }
         }
-
-        optimized_value_ = unscaled_objective(lagrangian_optimizer.optimized_value());
 
         optimization::Optimization opt(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
                                        purchasing_connections.size());  // TODO keep and only recreate when resize is needed
