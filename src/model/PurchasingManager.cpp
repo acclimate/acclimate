@@ -544,6 +544,58 @@ void PurchasingManager::iterate_purchase() {
     }
 
     try {
+        // experimental optimization setup: first use global optimizer DIRECT to get a reasonable result, polish the result with previous routine.
+
+        optimization::Optimization pre_opt(static_cast<nlopt_algorithm>(model()->parameters().global_optimization_algorithm),
+                                           purchasing_connections.size());  // TODO keep and only recreate when resize is needed
+
+        pre_opt.add_equality_constraint(this, FlowQuantity::precision);
+        pre_opt.add_max_objective(this);
+        pre_opt.xtol(xtol_abs);
+        pre_opt.lower_bounds(lower_bounds);
+        pre_opt.upper_bounds(upper_bounds);
+        pre_opt.maxeval(model()->parameters().global_optimization_maxiter);
+        pre_opt.maxtime(model()->parameters().optimization_timeout);
+        const auto pre_res = pre_opt.optimize(demand_requests_D);
+        if (!pre_res && !pre_opt.xtol_reached()) {
+            if (pre_opt.roundoff_limited()) {
+                if constexpr (!IGNORE_ROUNDOFFLIMITED) {
+                    if constexpr (options::DEBUGGING) {
+                        debug_print_distribution(demand_requests_D);
+                    }
+                    model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, storage->economic_agent);
+                    if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                        throw log::error(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
+                    } else {
+                        log::warning(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
+                    }
+                }
+            } else if (pre_opt.maxeval_reached()) {
+                if constexpr (options::DEBUGGING) {
+                    debug_print_distribution(demand_requests_D);
+                }
+                model()->run()->event(EventType::OPTIMIZER_MAXITER, storage->sector, storage->economic_agent);
+                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                    throw log::error(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
+                } else {
+                    log::warning(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
+                }
+            } else if (pre_opt.maxtime_reached()) {
+                if constexpr (options::DEBUGGING) {
+                    debug_print_distribution(demand_requests_D);
+                }
+                model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, storage->economic_agent);
+                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                    throw log::error(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
+                } else {
+                    log::warning(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
+                }
+            } else {
+                log::warning(this, "optimization finished with ", pre_opt.last_result_description());
+            }
+        }
+        optimized_value_ = unscaled_objective(pre_opt.optimized_value());
+
         optimization::Optimization opt(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
                                        purchasing_connections.size());  // TODO keep and only recreate when resize is needed
 

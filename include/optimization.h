@@ -180,6 +180,7 @@ class Optimization {
 
     nlopt_opt get_optimizer() { return opt; }
 };
+template<typename Func>
 void check_gradient(double* x, std::vector<double> grad, Func&& objective_function) {
     double tolerance = 0.00001;
     double difference = 0.001;  // TODO: make parameters
