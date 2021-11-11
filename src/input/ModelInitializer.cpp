@@ -1035,18 +1035,39 @@ void ModelInitializer::pre_initialize() {
     if (parameters["cost_correction"].as<bool>(false)) {
         throw log::error(this, "parameter cost_correction not supported anymore");
     }
-    model()->parameters_writable().global_optimization = parameters["global_optimization"].as<bool>();
+    model()->parameters_writable().global_utility_optimization = parameters["global_utility_optimization"].as<bool>();
     model()->parameters_writable().budget_inequality_constrained = parameters["budget_inequality_constrained"].as<bool>();
     model()->parameters_writable().elastic_budget = parameters["elastic_budget"].as<bool>();
-    model()->parameters_writable().global_optimization_random_points = parameters["global_sampling_points"].as<int>();
+    model()->parameters_writable().global_utility_optimization_random_points = parameters["global_sampling_points"].as<int>();
     model()->parameters_writable().utility_optimization_algorithm =
         optimization::get_algorithm(parameters["utility_optimization_algorithm"].as<hashed_string>("slsqp"));
     model()->parameters_writable().global_optimization_algorithm =
-        optimization::get_algorithm(parameters["global_optimization_algorithm"].as<hashed_string>("mlsl_low_discrepancy"));
-    model()->parameters_writable().global_optimization_maxiter =
-        parameters["global_optimization_maxiter"].as<int>(model()->parameters_writable().global_optimization_maxiter);
+        optimization::get_algorithm(parameters["global_optimization_algorithm"].as<hashed_string>("crs"));
     model()->parameters_writable().lagrangian_algorithm =
         optimization::get_algorithm(parameters["lagrangian_optimization_algorithm"].as<hashed_string>("augmented_lagrangian"));
+    model()->parameters_writable().global_utility_optimization_algorithm =
+        optimization::get_algorithm(parameters["global_utility_optimization_algorithm"].as<hashed_string>("mlsl_low_discrepancy"));
+
+    model()->parameters_writable().utility_optimization_maxiter =
+        parameters["utility_optimization_maxiter"].as<int>(model()->parameters_writable().optimization_maxiter);
+    model()->parameters_writable().utility_optimization_timeout =
+        parameters["utility_optimization_timeout"].as<unsigned int>(model()->parameters_writable().optimization_timeout);
+
+    model()->parameters_writable().global_utility_optimization_maxiter =
+        parameters["global_utility_optimization_maxiter"].as<int>(model()->parameters_writable().global_optimization_maxiter);
+    model()->parameters_writable().global_utility_optimization_timeout =
+        parameters["global_utility_optimization_timeout"].as<unsigned int>(model()->parameters_writable().global_optimization_timeout);
+
+    model()->parameters_writable().optimization_precision_adjustment = parameters["optimization_precision_adjustment"].as<float>(1.0);
+    model()->parameters_writable().utility_optimization_precision_adjustment = parameters["utility_optimization_precision_adjustment"].as<float>(1.0);
+    model()->parameters_writable().global_optimization_precision_adjustment = parameters["global_optimization_precision_adjustment"].as<float>(1.0);
+    model()->parameters_writable().global_utility_optimization_precision_adjustment =
+        parameters["global_utility_optimization_precision_adjustment"].as<float>(1.0);
+
+    model()->parameters_writable().global_optimization_maxiter =
+        parameters["global_optimization_maxiter"].as<int>(model()->parameters_writable().optimization_maxiter);
+    model()->parameters_writable().global_optimization_timeout =
+        parameters["global_optimization_timeout"].as<unsigned int>(model()->parameters_writable().optimization_timeout);
 
     model()->parameters_writable().debug_purchasing_steps = parameters["debug_purchasing_steps"].to_vector<std::string>();
 }

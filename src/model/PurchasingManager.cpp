@@ -527,8 +527,8 @@ void PurchasingManager::iterate_purchase() {
                 purchasing_connections.push_back(bc.get());
                 lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
                 upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
-                xtol_abs.push_back(scaled_D_r(FlowQuantity::precision, bc.get()));
-                pre_xtol_abs.push_back(scaled_D_r(FlowQuantity::precision, bc.get()) * 100);
+                xtol_abs.push_back(scaled_D_r(FlowQuantity::precision * model()->parameters().optimization_precision_adjustment, bc.get()));
+                pre_xtol_abs.push_back(scaled_D_r(FlowQuantity::precision * model()->parameters().global_optimization_precision_adjustment, bc.get()));
                 demand_requests_D.push_back(scaled_D_r(initial_value, bc.get()));
                 maximal_possible_purchase += D_r_max;
             } else {
@@ -559,7 +559,7 @@ void PurchasingManager::iterate_purchase() {
         lagrangian_optimizer.upper_bounds(upper_bounds);
         lagrangian_optimizer.xtol(pre_xtol_abs);
         lagrangian_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
-        lagrangian_optimizer.maxtime(model()->parameters().optimization_timeout);
+        lagrangian_optimizer.maxtime(model()->parameters().global_optimization_timeout);
 
         // define global optimizer
         optimization::Optimization pre_opt(static_cast<nlopt_algorithm>(model()->parameters().global_optimization_algorithm),
@@ -567,7 +567,7 @@ void PurchasingManager::iterate_purchase() {
 
         pre_opt.xtol(pre_xtol_abs);
         pre_opt.maxeval(model()->parameters().global_optimization_maxiter);
-        pre_opt.maxtime(model()->parameters().optimization_timeout);
+        pre_opt.maxtime(model()->parameters().global_optimization_timeout);
         // start combined global optimizer
         lagrangian_optimizer.set_local_algorithm(pre_opt.get_optimizer());
         const auto pre_res = lagrangian_optimizer.optimize(demand_requests_D);

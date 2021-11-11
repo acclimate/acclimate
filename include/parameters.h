@@ -44,17 +44,34 @@ struct Parameters {
         bool quadratic_transport_penalty;  // quadratic instead of linear transport penalty
         bool relative_transport_penalty;
         bool respect_markup_in_production_extension;
+
         int optimization_algorithm;
         int utility_optimization_algorithm;
         int global_optimization_algorithm;
         int lagrangian_algorithm;
-        int optimization_maxiter;           // maximal iteration
-        int global_optimization_maxiter;    // maximal iteration of global algo for utility
-        unsigned int optimization_timeout;  // timeout in sec
-        bool global_optimization;
-        unsigned int global_optimization_random_points;
+
+        int optimization_maxiter;          // maximal iteration
+        int global_optimization_maxiter;   // maximal iteration of global algorithms
+        int utility_optimization_maxiter;  // maximal iteration for utility
+
+        unsigned int optimization_timeout;          // timeout in sec
+        unsigned int utility_optimization_timeout;  // timeout in sec
+        unsigned int global_optimization_timeout;   // timeout in sec
+
+        int optimization_precision_adjustment;                 // factor for precision of global algorithms
+        int global_optimization_precision_adjustment;          // factor for precision of global algorithms
+        int utility_optimization_precision_adjustment;         // factor for precision of utility algorithms
+        int global_utility_optimization_precision_adjustment;  // factor for precision of global utility algorithms
+
+        bool global_utility_optimization;
+        int global_utility_optimization_algorithm;
+        int global_utility_optimization_maxiter;           // maximal iteration of global utility algorithms
+        unsigned int global_utility_optimization_timeout;  // timeout in sec
+        unsigned int global_utility_optimization_random_points;
+
         bool budget_inequality_constrained;
         bool elastic_budget;
+
         std::vector<std::string>
             debug_purchasing_steps;  // give purchasing steps where details should be printed to output, e.g. "WHOT->third_income_quintile:BFA"
     };
