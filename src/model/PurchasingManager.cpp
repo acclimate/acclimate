@@ -622,6 +622,12 @@ void PurchasingManager::iterate_purchase() {
         opt.maxeval(model()->parameters().optimization_maxiter);
         opt.maxtime(model()->parameters().optimization_timeout);
         const auto res = opt.optimize(demand_requests_D);
+        // debug code for optimization error
+        if (find(model()->parameters().debug_purchasing_steps.begin(), model()->parameters().debug_purchasing_steps.end(), this->name())
+            != model()->parameters().debug_purchasing_steps.end()) {
+            debug_print_distribution(demand_requests_D);
+        }
+
         if (!res && !opt.xtol_reached()) {
             if (opt.roundoff_limited()) {
                 if constexpr (!IGNORE_ROUNDOFFLIMITED) {
@@ -728,7 +734,7 @@ static void print_row(T1 a, T2 b, T3 c) {
 }
 
 void PurchasingManager::debug_print_distribution(const std::vector<double>& demand_requests_D) const {
-    if constexpr (options::DEBUGGING) {
+    // if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
         {
             std::cout << model()->run()->timeinfo() << ", " << name() << ": demand distribution for " << purchasing_connections.size() << " inputs :\n";
@@ -801,7 +807,7 @@ void PurchasingManager::debug_print_distribution(const std::vector<double>& dema
             print_row("obj", FlowValue(unscaled_objective(obj)), obj);
             std::cout << "\n";
         }
-    }
+        // }
 }
 
 }  // namespace acclimate
