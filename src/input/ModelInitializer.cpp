@@ -58,7 +58,7 @@ namespace acclimate {
 ModelInitializer::ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p) : model_m(model_p), settings(settings_p) {
     const settings::SettingsNode& parameters = settings["model"];
     model()->set_delta_t(parameters["delta_t"].as<Time>());
-    model()->no_self_supply(parameters["no_self_supply"].as<bool>());
+    model()->no_self_supply(parameters["no_self_supply"].as<bool>(true));
 }
 
 settings::SettingsNode ModelInitializer::get_named_property(const settings::SettingsNode& node_settings,
@@ -133,7 +133,7 @@ Consumer* ModelInitializer::add_consumer(std::string name, Region* region) {
             std::pair(sector_vector, static_cast<FloatType>(input_basket["substituition_coefficient"].as<FloatType>()));
         consumer_baskets_vector.push_back(consumer_params);
     }
-    const bool bool_utilitarian = get_consumer_property(name, region->name(), "bool_utilitarian").as<bool>();
+    const bool bool_utilitarian = get_consumer_property(name, region->name(), "bool_utilitarian").as<bool>(true);
     auto* consumer = model()->economic_agents.add<Consumer>(
         id_t(std::move(name)), region, get_consumer_property(name, region->name(), "inter_basket_substitution_coefficient").as<FloatType>(),
         consumer_baskets_vector, bool_utilitarian);
@@ -1018,11 +1018,11 @@ void ModelInitializer::pre_initialize() {
     model()->parameters_writable().transport_penalty_large = parameters["transport_penalty_large"].as<Price>();
     model()->parameters_writable().optimization_maxiter = parameters["optimization_maxiter"].as<int>();
     model()->parameters_writable().optimization_timeout = parameters["optimization_timeout"].as<unsigned int>();
-    model()->parameters_writable().quadratic_transport_penalty = parameters["quadratic_transport_penalty"].as<bool>();
+    model()->parameters_writable().quadratic_transport_penalty = parameters["quadratic_transport_penalty"].as<bool>(true);
     model()->parameters_writable().maximal_decrease_reservation_price_limited_by_markup =
-        parameters["maximal_decrease_reservation_price_limited_by_markup"].as<bool>();
-    model()->parameters_writable().always_extend_expected_demand_curve = parameters["always_extend_expected_demand_curve"].as<bool>();
-    model()->parameters_writable().naive_expectations = parameters["naive_expectations"].as<bool>();
+        parameters["maximal_decrease_reservation_price_limited_by_markup"].as<bool>(false);
+    model()->parameters_writable().always_extend_expected_demand_curve = parameters["always_extend_expected_demand_curve"].as<bool>(false);
+    model()->parameters_writable().naive_expectations = parameters["naive_expectations"].as<bool>(true);
     model()->parameters_writable().deviation_penalty = parameters["deviation_penalty"].as<bool>(false);
     model()->parameters_writable().min_storage = parameters["min_storage"].as<Ratio>(0.0);
     model()->parameters_writable().cheapest_price_range_preserve_seller_price = parameters["cheapest_price_range_preserve_seller_price"].as<bool>(false);
@@ -1030,14 +1030,14 @@ void ModelInitializer::pre_initialize() {
     if (!model()->parameters_writable().cheapest_price_range_generic_size) {
         model()->parameters_writable().cheapest_price_range_width = parameters["cheapest_price_range_width"].as<Price>();
     }
-    model()->parameters_writable().relative_transport_penalty = parameters["relative_transport_penalty"].as<bool>();
+    model()->parameters_writable().relative_transport_penalty = parameters["relative_transport_penalty"].as<bool>(true);
     model()->parameters_writable().optimization_algorithm = optimization::get_algorithm(parameters["optimization_algorithm"].as<hashed_string>("slsqp"));
     if (parameters["cost_correction"].as<bool>(false)) {
         throw log::error(this, "parameter cost_correction not supported anymore");
     }
-    model()->parameters_writable().global_utility_optimization = parameters["global_utility_optimization"].as<bool>();
-    model()->parameters_writable().budget_inequality_constrained = parameters["budget_inequality_constrained"].as<bool>();
-    model()->parameters_writable().elastic_budget = parameters["elastic_budget"].as<bool>();
+    model()->parameters_writable().global_utility_optimization = parameters["global_utility_optimization"].as<bool>(false);
+    model()->parameters_writable().budget_inequality_constrained = parameters["budget_inequality_constrained"].as<bool>(false);
+    model()->parameters_writable().elastic_budget = parameters["elastic_budget"].as<bool>(false);
     model()->parameters_writable().global_utility_optimization_random_points = parameters["global_sampling_points"].as<int>();
     model()->parameters_writable().utility_optimization_algorithm =
         optimization::get_algorithm(parameters["utility_optimization_algorithm"].as<hashed_string>("slsqp"));
