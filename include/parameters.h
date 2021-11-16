@@ -64,6 +64,7 @@ struct Parameters {
         int global_utility_optimization_precision_adjustment;  // factor for precision of global utility algorithms
 
         bool global_utility_optimization;
+        bool local_purchasing_optimization;
         int global_utility_optimization_algorithm;
         int global_utility_optimization_maxiter;           // maximal iteration of global utility algorithms
         unsigned int global_utility_optimization_timeout;  // timeout in sec

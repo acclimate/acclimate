@@ -609,64 +609,68 @@ void PurchasingManager::iterate_purchase() {
                 log::warning(this, "optimization finished with ", pre_opt.last_result_description());
             }
         }
+        optimized_value_ = unscaled_objective(pre_opt.optimized_value());
 
-        optimization::Optimization opt(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
-                                       purchasing_connections.size());  // TODO keep and only recreate when resize is needed
+        // optional local optimization to polish global optimum
 
-        opt.add_equality_constraint(this, FlowQuantity::precision);
-        opt.add_max_objective(this);
+        if (model()->parameters().local_purchasing_optimization) {
+            optimization::Optimization opt(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
+                                           purchasing_connections.size());  // TODO keep and only recreate when resize is needed
 
-        opt.xtol(xtol_abs);
-        opt.lower_bounds(lower_bounds);
-        opt.upper_bounds(upper_bounds);
-        opt.maxeval(model()->parameters().optimization_maxiter);
-        opt.maxtime(model()->parameters().optimization_timeout);
-        const auto res = opt.optimize(demand_requests_D);
-        // debug code for optimization error
-        if (find(model()->parameters().debug_purchasing_steps.begin(), model()->parameters().debug_purchasing_steps.end(), this->name())
-            != model()->parameters().debug_purchasing_steps.end()) {
-            debug_print_distribution(demand_requests_D);
-        }
+            opt.add_equality_constraint(this, FlowQuantity::precision);
+            opt.add_max_objective(this);
 
-        if (!res && !opt.xtol_reached()) {
-            if (opt.roundoff_limited()) {
-                if constexpr (!IGNORE_ROUNDOFFLIMITED) {
+            opt.xtol(xtol_abs);
+            opt.lower_bounds(lower_bounds);
+            opt.upper_bounds(upper_bounds);
+            opt.maxeval(model()->parameters().optimization_maxiter);
+            opt.maxtime(model()->parameters().optimization_timeout);
+            const auto res = opt.optimize(demand_requests_D);
+            // debug code for optimization error
+            if (find(model()->parameters().debug_purchasing_steps.begin(), model()->parameters().debug_purchasing_steps.end(), this->name())
+                != model()->parameters().debug_purchasing_steps.end()) {
+                debug_print_distribution(demand_requests_D);
+            }
+
+            if (!res && !opt.xtol_reached()) {
+                if (opt.roundoff_limited()) {
+                    if constexpr (!IGNORE_ROUNDOFFLIMITED) {
+                        if constexpr (options::DEBUGGING) {
+                            debug_print_distribution(demand_requests_D);
+                        }
+                        model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, storage->economic_agent);
+                        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                            throw log::error(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
+                        } else {
+                            log::warning(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
+                        }
+                    }
+                } else if (opt.maxeval_reached()) {
                     if constexpr (options::DEBUGGING) {
                         debug_print_distribution(demand_requests_D);
                     }
-                    model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, storage->economic_agent);
+                    model()->run()->event(EventType::OPTIMIZER_MAXITER, storage->sector, storage->economic_agent);
                     if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                        throw log::error(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
+                        throw log::error(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
                     } else {
-                        log::warning(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
+                        log::warning(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
                     }
-                }
-            } else if (opt.maxeval_reached()) {
-                if constexpr (options::DEBUGGING) {
-                    debug_print_distribution(demand_requests_D);
-                }
-                model()->run()->event(EventType::OPTIMIZER_MAXITER, storage->sector, storage->economic_agent);
-                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                    throw log::error(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
+                } else if (opt.maxtime_reached()) {
+                    if constexpr (options::DEBUGGING) {
+                        debug_print_distribution(demand_requests_D);
+                    }
+                    model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, storage->economic_agent);
+                    if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                        throw log::error(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
+                    } else {
+                        log::warning(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
+                    }
                 } else {
-                    log::warning(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
+                    log::warning(this, "optimization finished with ", opt.last_result_description());
                 }
-            } else if (opt.maxtime_reached()) {
-                if constexpr (options::DEBUGGING) {
-                    debug_print_distribution(demand_requests_D);
-                }
-                model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, storage->economic_agent);
-                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                    throw log::error(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
-                } else {
-                    log::warning(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
-                }
-            } else {
-                log::warning(this, "optimization finished with ", opt.last_result_description());
             }
+            optimized_value_ = unscaled_objective(opt.optimized_value());
         }
-        optimized_value_ = unscaled_objective(opt.optimized_value());
-
     } catch (const optimization::failure& ex) {
         if constexpr (options::DEBUGGING) {
             debug_print_distribution(demand_requests_D);

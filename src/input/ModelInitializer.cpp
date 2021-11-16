@@ -1035,6 +1035,7 @@ void ModelInitializer::pre_initialize() {
     if (parameters["cost_correction"].as<bool>(false)) {
         throw log::error(this, "parameter cost_correction not supported anymore");
     }
+    model()->parameters_writable().local_purchasing_optimization = parameters["local_purchasing_optimization"].as<bool>(true);
     model()->parameters_writable().global_utility_optimization = parameters["global_utility_optimization"].as<bool>(false);
     model()->parameters_writable().budget_inequality_constrained = parameters["budget_inequality_constrained"].as<bool>(false);
     model()->parameters_writable().elastic_budget = parameters["elastic_budget"].as<bool>(false);
