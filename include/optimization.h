@@ -157,6 +157,8 @@ class Optimization {
     bool maxeval_reached() const { return last_result == NLOPT_MAXEVAL_REACHED; }
     bool maxtime_reached() const { return last_result == NLOPT_MAXTIME_REACHED; }
 
+    void reset_last_result() { last_result = NLOPT_SUCCESS; }
+
     const char* last_result_description() const { return get_result_description(last_result, opt); }
 
     bool optimize(std::vector<double>& x) {  // returns true for "generic success" and false otherwise (for "real" errors, an exception is thrown)

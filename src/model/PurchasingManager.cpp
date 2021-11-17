@@ -511,7 +511,11 @@ void PurchasingManager::optimization_exception_handling(bool res, optimization::
                 log::warning(this, "optimization reached maximum iterations for ", optimization_restart_count, " time (for ", purchasing_connections.size(),
                              " inputs)");
             }
-            run_optimizer(opt);
+            if (optimization_restart_count < 10) {
+                opt.reset_last_result();
+                log::warning(opt.maxeval_reached());
+                run_optimizer(opt);
+            }
         } else if (opt.maxtime_reached()) {
             if constexpr (options::DEBUGGING) {
                 debug_print_distribution(demand_requests_D);
