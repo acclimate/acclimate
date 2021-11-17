@@ -462,6 +462,72 @@ void PurchasingManager::subtract_initial_demand_D_star(const Demand& demand_D_p)
     expected_costs_ -= demand_D_p.get_value();
 }
 
+FloatType PurchasingManager::run_optimizer(optimization::Optimization& opt) {
+    // debug code for optimization error
+    if (find(model()->parameters().debug_purchasing_steps.begin(), model()->parameters().debug_purchasing_steps.end(), this->name())
+        != model()->parameters().debug_purchasing_steps.end()) {
+        debug_print_distribution(demand_requests_D);
+    }
+    try {
+        const auto res = opt.optimize(demand_requests_D);
+        optimization_exception_handling(res, opt);
+    } catch (const optimization::failure& ex) {
+        if constexpr (options::DEBUGGING) {
+            debug_print_distribution(demand_requests_D);
+        }
+        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+    }
+    return unscaled_objective(opt.optimized_value());
+}
+
+void PurchasingManager::optimization_exception_handling(bool res, optimization::Optimization& opt) {
+    if (!res && !opt.xtol_reached()) {
+        if (opt.roundoff_limited()) {
+            if constexpr (!IGNORE_ROUNDOFFLIMITED) {
+                if constexpr (options::DEBUGGING) {
+                    debug_print_distribution(demand_requests_D);
+                }
+                model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, storage->economic_agent);
+                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                    throw log::error(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
+                } else {
+                    log::warning(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
+                }
+            }
+        } else if (opt.maxeval_reached()) {
+            if constexpr (options::DEBUGGING) {
+                debug_print_distribution(demand_requests_D);
+            }
+            model()->run()->event(EventType::OPTIMIZER_MAXITER, storage->sector, storage->economic_agent);
+            // trying to circumvent optimization problem by restarting optimization
+            if (model()->parameters().optimization_restart_baseline) {
+                // demand_requests_D = initialize_demand_request();
+            }
+            run_optimizer(opt);
+            optimization_restart_count += 1;
+            if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                log::warning(this, "optimization reached maximum iterations for ", optimization_restart_count, " time (for ", purchasing_connections.size(),
+                             " inputs)");
+            } else {
+                log::warning(this, "optimization reached maximum iterations for ", optimization_restart_count, " time (for ", purchasing_connections.size(),
+                             " inputs)");
+            }
+        } else if (opt.maxtime_reached()) {
+            if constexpr (options::DEBUGGING) {
+                debug_print_distribution(demand_requests_D);
+            }
+            model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, storage->economic_agent);
+            if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                throw log::error(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
+            } else {
+                log::warning(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
+            }
+        } else {
+            log::warning(this, "optimization finished with ", opt.last_result_description());
+        }
+    }
+}
+
 void PurchasingManager::iterate_purchase() {
     debug::assertstep(this, IterationStep::PURCHASE);
     assert(!business_connections.empty());
@@ -547,10 +613,11 @@ void PurchasingManager::iterate_purchase() {
         desired_purchase_ = maximal_possible_purchase;
     }
 
-    try {
-        // experimental optimization setup: first use global optimizer DIRECT to get a reasonable result, polish the result with previous routine.
-        // add auglag to support contraints with different global algorithms
-        // define  lagrangian optimizer to pass (in)equality constraints to global algorithm which cannot use it directly:
+    // experimental optimization setup: first use global optimizer DIRECT to get a reasonable result, polish the result with previous routine.
+    // add auglag to support contraints with different global algorithms
+    // define  lagrangian optimizer to pass (in)equality constraints to global algorithm which cannot use it directly:
+
+    if (model()->parameters().global_purchasing_optimization) {
         optimization::Optimization lagrangian_optimizer(static_cast<nlopt_algorithm>(model()->parameters().lagrangian_algorithm),
                                                         purchasing_connections.size());  // TODO keep and only recreate when resize is needed
         lagrangian_optimizer.add_equality_constraint(this, FlowValue::precision);
@@ -560,7 +627,6 @@ void PurchasingManager::iterate_purchase() {
         lagrangian_optimizer.xtol(pre_xtol_abs);
         lagrangian_optimizer.maxeval(model()->parameters().global_optimization_maxiter);
         lagrangian_optimizer.maxtime(model()->parameters().global_optimization_timeout);
-
         // define global optimizer
         optimization::Optimization pre_opt(static_cast<nlopt_algorithm>(model()->parameters().global_optimization_algorithm),
                                            purchasing_connections.size());  // TODO keep and only recreate when resize is needed
@@ -570,112 +636,23 @@ void PurchasingManager::iterate_purchase() {
         pre_opt.maxtime(model()->parameters().global_optimization_timeout);
         // start combined global optimizer
         lagrangian_optimizer.set_local_algorithm(pre_opt.get_optimizer());
-        const auto pre_res = lagrangian_optimizer.optimize(demand_requests_D);
+        optimization_restart_count = 0;
+        optimized_value_ = run_optimizer(lagrangian_optimizer);
+    }
+    // optional local optimization to polish global optimum
 
-        if (!pre_res && !pre_opt.xtol_reached()) {
-            if (pre_opt.roundoff_limited()) {
-                if constexpr (!IGNORE_ROUNDOFFLIMITED) {
-                    if constexpr (options::DEBUGGING) {
-                        debug_print_distribution(demand_requests_D);
-                    }
-                    model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, storage->economic_agent);
-                    if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                        throw log::error(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
-                    } else {
-                        log::warning(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
-                    }
-                }
-            } else if (pre_opt.maxeval_reached()) {
-                if constexpr (options::DEBUGGING) {
-                    debug_print_distribution(demand_requests_D);
-                }
-                model()->run()->event(EventType::OPTIMIZER_MAXITER, storage->sector, storage->economic_agent);
-                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                    throw log::error(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
-                } else {
-                    log::warning(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
-                }
-            } else if (pre_opt.maxtime_reached()) {
-                if constexpr (options::DEBUGGING) {
-                    debug_print_distribution(demand_requests_D);
-                }
-                model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, storage->economic_agent);
-                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                    throw log::error(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
-                } else {
-                    log::warning(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
-                }
-            } else {
-                log::warning(this, "optimization finished with ", pre_opt.last_result_description());
-            }
-        }
-        optimized_value_ = unscaled_objective(pre_opt.optimized_value());
-
-        // optional local optimization to polish global optimum
-
-        if (model()->parameters().local_purchasing_optimization) {
-            optimization::Optimization opt(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
-                                           purchasing_connections.size());  // TODO keep and only recreate when resize is needed
-
-            opt.add_equality_constraint(this, FlowQuantity::precision);
-            opt.add_max_objective(this);
-
-            opt.xtol(xtol_abs);
-            opt.lower_bounds(lower_bounds);
-            opt.upper_bounds(upper_bounds);
-            opt.maxeval(model()->parameters().optimization_maxiter);
-            opt.maxtime(model()->parameters().optimization_timeout);
-            const auto res = opt.optimize(demand_requests_D);
-            // debug code for optimization error
-            if (find(model()->parameters().debug_purchasing_steps.begin(), model()->parameters().debug_purchasing_steps.end(), this->name())
-                != model()->parameters().debug_purchasing_steps.end()) {
-                debug_print_distribution(demand_requests_D);
-            }
-
-            if (!res && !opt.xtol_reached()) {
-                if (opt.roundoff_limited()) {
-                    if constexpr (!IGNORE_ROUNDOFFLIMITED) {
-                        if constexpr (options::DEBUGGING) {
-                            debug_print_distribution(demand_requests_D);
-                        }
-                        model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, storage->economic_agent);
-                        if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                            throw log::error(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
-                        } else {
-                            log::warning(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
-                        }
-                    }
-                } else if (opt.maxeval_reached()) {
-                    if constexpr (options::DEBUGGING) {
-                        debug_print_distribution(demand_requests_D);
-                    }
-                    model()->run()->event(EventType::OPTIMIZER_MAXITER, storage->sector, storage->economic_agent);
-                    if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                        throw log::error(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
-                    } else {
-                        log::warning(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
-                    }
-                } else if (opt.maxtime_reached()) {
-                    if constexpr (options::DEBUGGING) {
-                        debug_print_distribution(demand_requests_D);
-                    }
-                    model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, storage->economic_agent);
-                    if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                        throw log::error(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
-                    } else {
-                        log::warning(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
-                    }
-                } else {
-                    log::warning(this, "optimization finished with ", opt.last_result_description());
-                }
-            }
-            optimized_value_ = unscaled_objective(opt.optimized_value());
-        }
-    } catch (const optimization::failure& ex) {
-        if constexpr (options::DEBUGGING) {
-            debug_print_distribution(demand_requests_D);
-        }
-        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+    if (model()->parameters().local_purchasing_optimization) {
+        optimization::Optimization local_optimizer(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
+                                                   purchasing_connections.size());  // TODO keep and only recreate when resize is needed
+        local_optimizer.add_equality_constraint(this, FlowQuantity::precision);
+        local_optimizer.add_max_objective(this);
+        local_optimizer.xtol(xtol_abs);
+        local_optimizer.lower_bounds(lower_bounds);
+        local_optimizer.upper_bounds(upper_bounds);
+        local_optimizer.maxeval(model()->parameters().optimization_maxiter);
+        local_optimizer.maxtime(model()->parameters().optimization_timeout);
+        optimization_restart_count = 0;
+        optimized_value_ = run_optimizer(local_optimizer);
     }
 
     FloatType costs = 0.0;
@@ -740,78 +717,78 @@ static void print_row(T1 a, T2 b, T3 c) {
 void PurchasingManager::debug_print_distribution(const std::vector<double>& demand_requests_D) const {
     // if constexpr (options::DEBUGGING) {
 #pragma omp critical(output)
-        {
-            std::cout << model()->run()->timeinfo() << ", " << name() << ": demand distribution for " << purchasing_connections.size() << " inputs :\n";
-            FloatType purchasing_quantity = 0.0;
-            FloatType purchasing_value = 0.0;
-            FloatType initial_sum = 0.0;
-            std::vector<FloatType> last_demand_requests(purchasing_connections.size());
-            std::vector<FloatType> grad(purchasing_connections.size());
+    {
+        std::cout << model()->run()->timeinfo() << ", " << name() << ": demand distribution for " << purchasing_connections.size() << " inputs :\n";
+        FloatType purchasing_quantity = 0.0;
+        FloatType purchasing_value = 0.0;
+        FloatType initial_sum = 0.0;
+        std::vector<FloatType> last_demand_requests(purchasing_connections.size());
+        std::vector<FloatType> grad(purchasing_connections.size());
 
-            const auto obj = max_objective(&demand_requests_D[0], &grad[0]);
-            FloatType total_upper_bound = 0.0;
-            FloatType T_penalty = 0.0;
-            for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
-                const auto bc = purchasing_connections[r];
-                const auto D_r = unscaled_D_r(demand_requests_D[r], bc);
-                const auto lower_bound_D_r = unscaled_D_r(lower_bounds[r], bc);
-                const auto upper_bound_D_r = unscaled_D_r(upper_bounds[r], bc);
-                const auto X = to_float(bc->seller->communicated_parameters().production_X.get_quantity());
-                const auto X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
-                const auto X_star = to_float(bc->seller->firm->initial_production_X_star().get_quantity());
+        const auto obj = max_objective(&demand_requests_D[0], &grad[0]);
+        FloatType total_upper_bound = 0.0;
+        FloatType T_penalty = 0.0;
+        for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
+            const auto bc = purchasing_connections[r];
+            const auto D_r = unscaled_D_r(demand_requests_D[r], bc);
+            const auto lower_bound_D_r = unscaled_D_r(lower_bounds[r], bc);
+            const auto upper_bound_D_r = unscaled_D_r(upper_bounds[r], bc);
+            const auto X = to_float(bc->seller->communicated_parameters().production_X.get_quantity());
+            const auto X_hat = to_float(bc->seller->communicated_parameters().possible_production_X_hat.get_quantity());
+            const auto X_star = to_float(bc->seller->firm->initial_production_X_star().get_quantity());
 
-                total_upper_bound += X_hat;
-                const auto n_bar = to_float(bc->seller->communicated_parameters().offer_price_n_bar);
-                const auto n_r_l = n_r(D_r, bc);
-                const auto n_r_tc_l = transport_penalty(D_r, bc);
-                T_penalty += n_r_tc_l;
-                last_demand_requests[r] = to_float(bc->last_demand_request_D(this).get_quantity());
+            total_upper_bound += X_hat;
+            const auto n_bar = to_float(bc->seller->communicated_parameters().offer_price_n_bar);
+            const auto n_r_l = n_r(D_r, bc);
+            const auto n_r_tc_l = transport_penalty(D_r, bc);
+            T_penalty += n_r_tc_l;
+            last_demand_requests[r] = to_float(bc->last_demand_request_D(this).get_quantity());
 
-                if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
-                    std::cout << "      " << bc->name() << " :\n";
-                    print_row("X", FlowQuantity(X));
-                    print_row("X_star", FlowQuantity(X_star));
-                    print_row("X_hat", FlowQuantity(X_hat));
-                    print_row("n_bar", FlowQuantity(n_bar));
-                    print_row("n_r(D_r)", FlowQuantity(n_r_l));
-                    print_row("penalty_t", FlowQuantity(n_r_tc_l), scaled_objective(n_r_tc_l));
-                    print_row("Z_last", bc->last_shipment_Z().get_quantity(), scaled_D_r(to_float(bc->last_shipment_Z().get_quantity()), bc));
-                    print_row("D_star", bc->initial_flow_Z_star().get_quantity());
-                    print_row("out_share", bc->initial_flow_Z_star() / bc->seller->firm->initial_production_X_star());
-                    print_row("grad", grad[r]);
-                    print_row("D_lower", FlowQuantity(lower_bound_D_r), scaled_D_r(lower_bound_D_r, bc));
-                    print_row("D_r", FlowQuantity(D_r), scaled_D_r(D_r, bc));
-                    print_row("D_upper", FlowQuantity(upper_bound_D_r), scaled_D_r(upper_bound_D_r, bc));
-                    std::cout << '\n';
-                }
-                purchasing_quantity += D_r;
-                purchasing_value += n_r_l * D_r;
-                initial_sum += to_float(bc->initial_flow_Z_star().get_quantity());
+            if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
+                std::cout << "      " << bc->name() << " :\n";
+                print_row("X", FlowQuantity(X));
+                print_row("X_star", FlowQuantity(X_star));
+                print_row("X_hat", FlowQuantity(X_hat));
+                print_row("n_bar", FlowQuantity(n_bar));
+                print_row("n_r(D_r)", FlowQuantity(n_r_l));
+                print_row("penalty_t", FlowQuantity(n_r_tc_l), scaled_objective(n_r_tc_l));
+                print_row("Z_last", bc->last_shipment_Z().get_quantity(), scaled_D_r(to_float(bc->last_shipment_Z().get_quantity()), bc));
+                print_row("D_star", bc->initial_flow_Z_star().get_quantity());
+                print_row("out_share", bc->initial_flow_Z_star() / bc->seller->firm->initial_production_X_star());
+                print_row("grad", grad[r]);
+                print_row("D_lower", FlowQuantity(lower_bound_D_r), scaled_D_r(lower_bound_D_r, bc));
+                print_row("D_r", FlowQuantity(D_r), scaled_D_r(D_r, bc));
+                print_row("D_upper", FlowQuantity(upper_bound_D_r), scaled_D_r(upper_bound_D_r, bc));
+                std::cout << '\n';
             }
-            const auto use = purchasing_quantity;
-            const auto transport_flow_deficit = get_flow_deficit();
-            FloatType S_shortage = to_float(transport_flow_deficit)
-                                   + to_float((storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity()) / model()->delta_t());
-            FloatType n_r_bar = (purchasing_quantity > 0.0) ? purchasing_value / purchasing_quantity : 0.0;
-            std::cout << "      Storage :\n";
-            print_row("av. n_r", Price(n_r_bar));
-            print_row("S", storage->content_S().get_quantity());
-            print_row("S_star", storage->initial_content_S_star().get_quantity());
-            print_row("S_shortage", Quantity(S_shortage));
-            print_row("T_def", transport_flow_deficit, scaled_use(to_float(transport_flow_deficit)));
-            print_row("T_penalty", FlowValue(T_penalty), scaled_objective(T_penalty));
-            std::cout << "\n";
-
-            std::cout << "      Sums :\n";
-            print_row("X_hat", FlowQuantity(total_upper_bound));
-            print_row("D_orig", demand_D_.get_quantity());
-            print_row("purchase", FlowQuantity(purchasing_quantity), scaled_use(use));
-            print_row("D_star", FlowQuantity(initial_sum));
-            print_row("U_i", FlowQuantity(use), scaled_use(use));
-            print_row("obj", FlowValue(unscaled_objective(obj)), obj);
-            std::cout << "\n";
+            purchasing_quantity += D_r;
+            purchasing_value += n_r_l * D_r;
+            initial_sum += to_float(bc->initial_flow_Z_star().get_quantity());
         }
-        // }
+        const auto use = purchasing_quantity;
+        const auto transport_flow_deficit = get_flow_deficit();
+        FloatType S_shortage = to_float(transport_flow_deficit)
+                               + to_float((storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity()) / model()->delta_t());
+        FloatType n_r_bar = (purchasing_quantity > 0.0) ? purchasing_value / purchasing_quantity : 0.0;
+        std::cout << "      Storage :\n";
+        print_row("av. n_r", Price(n_r_bar));
+        print_row("S", storage->content_S().get_quantity());
+        print_row("S_star", storage->initial_content_S_star().get_quantity());
+        print_row("S_shortage", Quantity(S_shortage));
+        print_row("T_def", transport_flow_deficit, scaled_use(to_float(transport_flow_deficit)));
+        print_row("T_penalty", FlowValue(T_penalty), scaled_objective(T_penalty));
+        std::cout << "\n";
+
+        std::cout << "      Sums :\n";
+        print_row("X_hat", FlowQuantity(total_upper_bound));
+        print_row("D_orig", demand_D_.get_quantity());
+        print_row("purchase", FlowQuantity(purchasing_quantity), scaled_use(use));
+        print_row("D_star", FlowQuantity(initial_sum));
+        print_row("U_i", FlowQuantity(use), scaled_use(use));
+        print_row("obj", FlowValue(unscaled_objective(obj)), obj);
+        std::cout << "\n";
+    }
+    // }
 }
 
 }  // namespace acclimate

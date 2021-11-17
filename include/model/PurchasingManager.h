@@ -60,6 +60,8 @@ class PurchasingManager final {
     std::vector<std::shared_ptr<BusinessConnection>> business_connections;
 
   private:
+    FloatType run_optimizer(optimization::Optimization& opt);
+    void optimization_exception_handling(bool res, optimization::Optimization& opt);
     FloatType equality_constraint(const double* x, double* grad) const;
     FloatType max_objective(const double* x, double* grad) const;
     FloatType scaled_D_r(FloatType D_r, const BusinessConnection* bc) const;
@@ -112,6 +114,8 @@ class PurchasingManager final {
     const Model* model() const;
     Model* model();
     std::string name() const;
+
+    int optimization_restart_count;  // TODO: remove after debug
 };
 }  // namespace acclimate
 
