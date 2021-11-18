@@ -483,6 +483,22 @@ FloatType PurchasingManager::run_optimizer(optimization::Optimization& opt) {
             log::warning(this, "optimization reached maximum iterations BUG for ", optimization_restart_count, " time (for ", purchasing_connections.size(),
                          " inputs)");
             if (optimization_restart_count < 10) {
+                // optional restart at baseline demand levels (setting non-available suppliers to 0)
+                if (model()->parameters().optimization_restart_baseline) {
+                    demand_requests_D.clear();
+                    demand_requests_D.reserve(business_connections.size());
+                    int index_bc = 0;
+                    for (auto& bc : business_connections) {
+                        if (bc->seller->communicated_parameters().possible_production_X_hat.get_quantity() <= 0.0) {
+                            bc->send_demand_request_D(Demand(0.0));
+                        } else {  // this supplier can deliver a non-zero amount
+                            // try setting the demand request as in baseline case (if not exceeding upper bound)
+                            demand_requests_D.push_back(
+                                std::min(scaled_D_r(to_float(bc->initial_flow_Z_star().get_quantity()), bc.get()), upper_bounds[index_bc]));
+                        }
+                        index_bc += 1;
+                    }
+                }
                 opt.reset_last_result();
                 run_optimizer(opt);
             }
