@@ -475,7 +475,20 @@ FloatType PurchasingManager::run_optimizer(optimization::Optimization& opt) {
         if constexpr (options::DEBUGGING) {
             debug_print_distribution(demand_requests_D);
         }
-        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+        // intercepting bug-like exception when optimization reaches max iterations
+        std::string exception = ex.what();
+        if (exception == ("bug: more than iter SQP iterations")) {
+            log::warning(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+            optimization_restart_count += 1;
+            log::warning(this, "optimization reached maximum iterations BUG for ", optimization_restart_count, " time (for ", purchasing_connections.size(),
+                         " inputs)");
+            if (optimization_restart_count < 10) {
+                opt.reset_last_result();
+                run_optimizer(opt);
+            }
+        } else {
+            throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+        }
     }
     return unscaled_objective(opt.optimized_value());
 }
@@ -513,7 +526,6 @@ void PurchasingManager::optimization_exception_handling(bool res, optimization::
             }
             if (optimization_restart_count < 10) {
                 opt.reset_last_result();
-                log::warning(opt.maxeval_reached());
                 run_optimizer(opt);
             }
         } else if (opt.maxtime_reached()) {
