@@ -621,7 +621,13 @@ void PurchasingManager::iterate_purchase() {
             const FloatType upper_limit = X_max - additional_X_expected;
             const auto D_r_max = round(FlowQuantity(upper_limit));
             if (D_r_max > 0.0) {
-                const auto initial_value = std::min(upper_limit, std::max(lower_limit, X_expected - additional_X_expected));
+                auto initial_value_unbound = X_expected - additional_X_expected;
+                if (model()->parameters().start_purchasing_at_baseline) {
+                    // experimental starting value based on baseline state
+                    initial_value_unbound = scaled_D_r(to_float(bc->initial_flow_Z_star().get_quantity()), bc.get());
+                }
+                const auto initial_value = std::min(upper_limit, std::max(lower_limit, initial_value_unbound));
+
                 purchasing_connections.push_back(bc.get());
                 lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
                 upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));

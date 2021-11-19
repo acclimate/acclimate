@@ -67,6 +67,7 @@ struct Parameters {
         bool global_purchasing_optimization;
 
         bool optimization_restart_baseline;
+        bool start_purchasing_at_baseline;
 
         bool global_utility_optimization;
         int global_utility_optimization_algorithm;
