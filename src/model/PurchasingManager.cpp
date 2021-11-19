@@ -624,7 +624,7 @@ void PurchasingManager::iterate_purchase() {
                 auto initial_value_unbound = X_expected - additional_X_expected;
                 if (model()->parameters().start_purchasing_at_baseline) {
                     // experimental starting value based on baseline state
-                    initial_value_unbound = scaled_D_r(to_float(bc->initial_flow_Z_star().get_quantity()), bc.get());
+                    initial_value_unbound = to_float(bc->initial_flow_Z_star().get_quantity()), bc.get();
                 }
                 const auto initial_value = std::min(upper_limit, std::max(lower_limit, initial_value_unbound));
 
