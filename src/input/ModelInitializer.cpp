@@ -1039,6 +1039,7 @@ void ModelInitializer::pre_initialize() {
     model()->parameters_writable().local_purchasing_optimization = parameters["local_purchasing_optimization"].as<bool>(true);
     model()->parameters_writable().optimization_restart_baseline = parameters["optimization_restart_baseline"].as<bool>(false);
     model()->parameters_writable().start_purchasing_at_baseline = parameters["start_purchasing_at_baseline"].as<bool>(false);
+    model()->parameters_writable().purchasing_halfway_baseline = parameters["purchasing_halfway_baseline"].as<bool>(false);
 
     model()->parameters_writable().global_utility_optimization = parameters["global_utility_optimization"].as<bool>(false);
     model()->parameters_writable().budget_inequality_constrained = parameters["budget_inequality_constrained"].as<bool>(false);
