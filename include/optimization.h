@@ -58,6 +58,12 @@ inline int get_algorithm(const hashed_string& name) {
             return NLOPT_GN_ISRES;
         case hash("direct"):
             return NLOPT_GN_DIRECT;
+        case hash("direct_local"):
+            return NLOPT_GN_DIRECT_L;
+        case hash("crs"):
+            return NLOPT_GN_CRS2_LM;
+        case hash("esch"):
+            return NLOPT_GN_ESCH;
         case hash("mlsl"):
             return NLOPT_G_MLSL;
         case hash("mlsl_low_discrepancy"):
@@ -151,6 +157,8 @@ class Optimization {
     bool maxeval_reached() const { return last_result == NLOPT_MAXEVAL_REACHED; }
     bool maxtime_reached() const { return last_result == NLOPT_MAXTIME_REACHED; }
 
+    void reset_last_result() { last_result = NLOPT_SUCCESS; }
+
     const char* last_result_description() const { return get_result_description(last_result, opt); }
 
     bool optimize(std::vector<double>& x) {  // returns true for "generic success" and false otherwise (for "real" errors, an exception is thrown)
@@ -180,6 +188,26 @@ class Optimization {
 
     nlopt_opt get_optimizer() { return opt; }
 };
+template<typename Func>
+void check_gradient(double* x, std::vector<double> grad, Func&& objective_function) {
+    double tolerance = 0.00001;
+    double difference = 0.001;  // TODO: make parameters
+    int dimension = std::size(grad);
+    std::vector<double> x_values(dimension, x[0]);
+    std::vector<double> shifted_values(dimension, grad[0]);
+    for (int dim = 0; dim < dimension; dim++) {
+        x_values[dim] = x[dim];
+    }
+    shifted_values = x_values;
+    for (int dim = 0; dim < dimension; dim++) {
+        shifted_values[dim] += difference;
+
+        double finite_difference_approximation = (objective_function(shifted_values) - objective_function(x_values)) / difference;
+        if (finite_difference_approximation - grad[dim] > tolerance) {
+            log::warning("gradient not matching finite difference approximation.");
+        }
+    }
+}
 
 }  // namespace acclimate::optimization
 
