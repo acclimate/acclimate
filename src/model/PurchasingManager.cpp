@@ -466,6 +466,8 @@ void PurchasingManager::iterate_purchase() {
     debug::assertstep(this, IterationStep::PURCHASE);
     assert(!business_connections.empty());
 
+    FloatType last_optimized_value = optimized_value_;
+
     demand_D_ = Demand(0.0);
     expected_costs_ = FlowValue(0.0);
     optimized_value_ = 0.0;
@@ -599,7 +601,9 @@ void PurchasingManager::iterate_purchase() {
         if constexpr (options::DEBUGGING) {
             debug_print_distribution(demand_requests_D);
         }
-        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+//        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+        log::warning(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs). Using last value.");
+        optimized_value_ = last_optimized_value;
     }
 
     FloatType costs = 0.0;
