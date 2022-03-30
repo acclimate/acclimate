@@ -486,7 +486,7 @@ void PurchasingManager::iterate_purchase() {
 
     bool optimizer_success = false;
     int optimizer_attempts = 0;
-    while (!optimizer_success && (optimizer_attempts <= model()->parameters_writable().optimization_retries)) {
+    while (!optimizer_success && (optimizer_attempts <= model()->parameters().optimization_retries)) {
         demand_D_ = Demand(0.0);
         expected_costs_ = FlowValue(0.0);
         optimized_value_ = 0.0;
@@ -528,7 +528,7 @@ void PurchasingManager::iterate_purchase() {
                 if (D_r_max > 0.0) {
                     auto initial_value = std::min(upper_limit, std::max(lower_limit, X_expected - additional_X_expected));
                     if (optimizer_attempts > 0) {
-                        initial_value = lower_limit + (upper_limit - lower_limit) * ((optimizer_attempts - 1) / model()->parameters_writable().optimization_retries);
+                        initial_value = lower_limit + (upper_limit - lower_limit) * ((optimizer_attempts - 1) / model()->parameters().optimization_retries);
                     }
                     purchasing_connections.push_back(bc.get());
                     lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
