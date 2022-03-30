@@ -222,7 +222,10 @@ FloatType PurchasingManager::max_objective(const double* x, double* grad) const 
     FloatType purchase = 0.0;
     for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
         const auto D_r = unscaled_D_r(x[r], purchasing_connections[r]);
-        assert(!std::isnan(D_r));
+//        assert(!std::isnan(D_r));
+        if (std::isnan(D_r)) {
+            log::warning(this, purchasing_connections[r]->name(), ": D_r is nan");
+        }
         costs += n_r(D_r, purchasing_connections[r]) * D_r + transport_penalty(D_r, purchasing_connections[r]);
         purchase += D_r;
         if (grad != nullptr) {
@@ -479,7 +482,7 @@ void PurchasingManager::iterate_purchase() {
         return;
     }
 
-    FloatType last_optimized_value = optimized_value_;
+    const FloatType last_optimized_value = optimized_value_;
 
     bool optimizer_success = false;
     int optimizer_attempts = 0;
@@ -523,11 +526,9 @@ void PurchasingManager::iterate_purchase() {
                 const FloatType upper_limit = X_max - additional_X_expected;
                 const auto D_r_max = round(FlowQuantity(upper_limit));
                 if (D_r_max > 0.0) {
-                    if (optimizer_attempts == 0) {
-                        const auto initial_value = std::min(upper_limit, std::max(lower_limit, X_expected - additional_X_expected));
-                    }
-                    else {
-                        const auto initial_value = lower_limit + (upper_limit - lower_limit) * (optimizer_attempts / model()->parameters_writable().optimization_retries);
+                    auto initial_value = std::min(upper_limit, std::max(lower_limit, X_expected - additional_X_expected));
+                    if (optimizer_attempts > 0) {
+                        initial_value = lower_limit + (upper_limit - lower_limit) * ((optimizer_attempts - 1) / model()->parameters_writable().optimization_retries);
                     }
                     purchasing_connections.push_back(bc.get());
                     lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
