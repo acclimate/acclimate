@@ -486,7 +486,7 @@ void PurchasingManager::iterate_purchase() {
 
     bool optimizer_success = false;
     int optimizer_attempts = 0;
-    while (!optimizer_success & (optimizer_attempts <= model()->parameters_writable().optimization_retries)) {
+    while (!optimizer_success && (optimizer_attempts <= model()->parameters_writable().optimization_retries)) {
         demand_D_ = Demand(0.0);
         expected_costs_ = FlowValue(0.0);
         optimized_value_ = 0.0;
@@ -610,8 +610,8 @@ void PurchasingManager::iterate_purchase() {
             }
             //        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
             log::warning(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs). Retry #", optimizer_attempts + 1);
+            optimizer_attempts++;
         }
-        optimizer_attempts++;
     }
 
     if (!optimizer_success) {
