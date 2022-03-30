@@ -46,6 +46,7 @@ struct Parameters {
         bool respect_markup_in_production_extension;
         int optimization_algorithm;
         int optimization_maxiter;           // maximal iteration
+        int optimization_retries;           // maximal number of optimization retries upon error
         unsigned int optimization_timeout;  // timeout in sec
     };
 
