@@ -222,10 +222,7 @@ FloatType PurchasingManager::max_objective(const double* x, double* grad) const 
     FloatType purchase = 0.0;
     for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
         const auto D_r = unscaled_D_r(x[r], purchasing_connections[r]);
-//        assert(!std::isnan(D_r));
-        if (std::isnan(D_r)) {
-            log::warning(this, purchasing_connections[r]->name(), ": D_r is nan");
-        }
+        assert(!std::isnan(D_r));
         costs += n_r(D_r, purchasing_connections[r]) * D_r + transport_penalty(D_r, purchasing_connections[r]);
         purchase += D_r;
         if (grad != nullptr) {
@@ -482,7 +479,7 @@ void PurchasingManager::iterate_purchase() {
         return;
     }
 
-    const FloatType last_optimized_value = optimized_value_;
+    std::vector<FloatType> last_demand_requests_D;
 
     bool optimizer_success = false;
     int optimizer_attempts = 0;
@@ -492,6 +489,9 @@ void PurchasingManager::iterate_purchase() {
         optimized_value_ = 0.0;
         purchase_ = Demand(0.0);
         total_transport_penalty_ = FlowValue(0.0);
+
+        last_demand_requests_D.clear();
+        last_demand_requests_D.reserve(business_connections.size());
 
         demand_requests_D.clear();
         demand_requests_D.reserve(business_connections.size());
@@ -511,6 +511,7 @@ void PurchasingManager::iterate_purchase() {
             } else {  // this supplier can deliver a non-zero amount
                 // assumption, we cannot crowd out other purchasers given that our maximum offer price is n_max, calculate analytical approximation for maximal
                 // deliverable amount of purchaser X_max(n_max) and consider boundary conditions
+
                 const auto X_expected = expected_production(bc.get());
                 const auto additional_X_expected = expected_additional_production(bc.get());
                 auto X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
@@ -536,6 +537,9 @@ void PurchasingManager::iterate_purchase() {
                     xtol_abs.push_back(scaled_D_r(FlowQuantity::precision, bc.get()));
                     demand_requests_D.push_back(scaled_D_r(initial_value, bc.get()));
                     maximal_possible_purchase += D_r_max;
+
+                    // get last demand request in case optimization fails
+                    last_demand_requests_D.push_back(scaled_D_r(to_float(bc->last_demand_request_D(this).get_quantity()), bc.get()));
                 } else {
                     bc->send_demand_request_D(Demand(0.0));
                 }
@@ -602,7 +606,6 @@ void PurchasingManager::iterate_purchase() {
                     log::warning(this, "optimization finished with ", opt.last_result_description());
                 }
             }
-            optimized_value_ = unscaled_objective(opt.optimized_value());
             optimizer_success = true;
         } catch (const optimization::failure& ex) {
             if constexpr (options::DEBUGGING) {
@@ -610,13 +613,17 @@ void PurchasingManager::iterate_purchase() {
             }
             //        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
             log::warning(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs). Retry #", optimizer_attempts + 1);
-            optimizer_attempts++;
         }
+        optimizer_attempts++;
     }
 
     if (!optimizer_success) {
-        log::warning(this, "optimization failed, (for ", purchasing_connections.size(), " inputs). Using last value.");
-        optimized_value_ = last_optimized_value;
+        demand_requests_D.clear();
+        demand_requests_D.reserve(business_connections.size());
+        for (auto& ld : last_demand_requests_D) {
+            demand_requests_D.push_back(ld);
+        }
+        log::warning(this, "optimization failed, (for ", last_demand_requests_D.size(), " inputs). Using previous demand requests instead.");
     }
 
     FloatType costs = 0.0;
