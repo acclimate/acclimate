@@ -529,7 +529,10 @@ void PurchasingManager::iterate_purchase() {
                 if (D_r_max > 0.0) {
                     auto initial_value = std::min(upper_limit, std::max(lower_limit, X_expected - additional_X_expected));
                     if (optimizer_attempts > 0) {
-                        initial_value = lower_limit + (upper_limit - lower_limit) * ((optimizer_attempts - 1) / model()->parameters().optimization_retries);
+                        initial_value = lower_limit + (upper_limit - lower_limit) / 2
+                                        + (optimizer_attempts % 2 == 0 ? 1 : -1) * (optimizer_attempts - (optimizer_attempts % 2))
+                                              / (model()->parameters().optimization_retries - (model()->parameters().optimization_retries % 2))
+                                              * (upper_limit - lower_limit) / 2;
                     }
                     purchasing_connections.push_back(bc.get());
                     lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
@@ -572,9 +575,9 @@ void PurchasingManager::iterate_purchase() {
             if (!res && !opt.xtol_reached()) {
                 if (opt.roundoff_limited()) {
                     if constexpr (!IGNORE_ROUNDOFFLIMITED) {
-                        if constexpr (options::DEBUGGING) {
-                            debug_print_distribution(demand_requests_D);
-                        }
+//                        if constexpr (options::DEBUGGING) {
+//                            debug_print_distribution(demand_requests_D);
+//                        }
                         model()->run()->event(EventType::OPTIMIZER_ROUNDOFF_LIMITED, storage->sector, storage->economic_agent);
                         if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                             throw log::error(this, "optimization is roundoff limited (for ", purchasing_connections.size(), " inputs)");
@@ -583,9 +586,9 @@ void PurchasingManager::iterate_purchase() {
                         }
                     }
                 } else if (opt.maxeval_reached()) {
-                    if constexpr (options::DEBUGGING) {
-                        debug_print_distribution(demand_requests_D);
-                    }
+//                    if constexpr (options::DEBUGGING) {
+//                        debug_print_distribution(demand_requests_D);
+//                    }
                     model()->run()->event(EventType::OPTIMIZER_MAXITER, storage->sector, storage->economic_agent);
                     if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                         throw log::error(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
@@ -593,9 +596,9 @@ void PurchasingManager::iterate_purchase() {
                         log::warning(this, "optimization reached maximum iterations (for ", purchasing_connections.size(), " inputs)");
                     }
                 } else if (opt.maxtime_reached()) {
-                    if constexpr (options::DEBUGGING) {
-                        debug_print_distribution(demand_requests_D);
-                    }
+//                    if constexpr (options::DEBUGGING) {
+//                        debug_print_distribution(demand_requests_D);
+//                    }
                     model()->run()->event(EventType::OPTIMIZER_TIMEOUT, storage->sector, storage->economic_agent);
                     if constexpr (options::OPTIMIZATION_PROBLEMS_FATAL) {
                         throw log::error(this, "optimization timed out (for ", purchasing_connections.size(), " inputs)");
@@ -608,11 +611,13 @@ void PurchasingManager::iterate_purchase() {
             }
             optimizer_success = true;
         } catch (const optimization::failure& ex) {
-            if constexpr (options::DEBUGGING) {
-                debug_print_distribution(demand_requests_D);
-            }
+//            if constexpr (options::DEBUGGING) {
+//                debug_print_distribution(demand_requests_D);
+//            }
             //        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
-            log::warning(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs). Retry #", optimizer_attempts + 1);
+            if (optimizer_attempts < model()->parameters().optimization_retries) {
+                log::warning(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs). Retry #", optimizer_attempts + 1);
+            }
         }
         optimizer_attempts++;
     }
