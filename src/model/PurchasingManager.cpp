@@ -538,11 +538,16 @@ void PurchasingManager::iterate_purchase() {
                     lower_bounds.push_back(scaled_D_r(lower_limit, bc.get()));
                     upper_bounds.push_back(scaled_D_r(upper_limit, bc.get()));
                     xtol_abs.push_back(scaled_D_r(FlowQuantity::precision, bc.get()));
+                    if (std::isnan(scaled_D_r(initial_value, bc.get()))) {
+                        log::warning(this, "got nan for initial value ", initial_value);
+                        std::cout << "          Business connection: " << bc->name() << "\n";
+                    }
+                    assert(!std::isnan(scaled_D_r(initial_value, bc.get())));
                     demand_requests_D.push_back(scaled_D_r(initial_value, bc.get()));
                     maximal_possible_purchase += D_r_max;
 
                     // get last demand request in case optimization fails
-                    last_demand_requests_D.push_back(scaled_D_r(to_float(bc->last_demand_request_D(this).get_quantity()), bc.get()));
+                    last_demand_requests_D.push_back(scaled_D_r(std::min(upper_limit, to_float(bc->last_demand_request_D(this).get_quantity())), bc.get()));
                 } else {
                     bc->send_demand_request_D(Demand(0.0));
                 }
