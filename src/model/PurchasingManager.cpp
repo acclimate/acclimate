@@ -222,6 +222,10 @@ FloatType PurchasingManager::max_objective(const double* x, double* grad) const 
     FloatType purchase = 0.0;
     for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
         const auto D_r = unscaled_D_r(x[r], purchasing_connections[r]);
+        if (std::isnan(D_r)) {
+            log::warning(this, "D_r is nan for r=", r);
+            std::cout << "          purchasing connection: " << purchasing_connections[r]->name() << "\n";
+        }
         assert(!std::isnan(D_r));
         costs += n_r(D_r, purchasing_connections[r]) * D_r + transport_penalty(D_r, purchasing_connections[r]);
         purchase += D_r;
