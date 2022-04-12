@@ -223,8 +223,7 @@ FloatType PurchasingManager::max_objective(const double* x, double* grad) const 
     for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
         const auto D_r = unscaled_D_r(x[r], purchasing_connections[r]);
         if (std::isnan(D_r)) {
-            log::warning(this, "D_r is nan for r=", r);
-            std::cout << "          purchasing connection: " << purchasing_connections[r]->name() << "\n";
+            throw acclimate::exception("D_r is nan for purchasing connection");
         }
         assert(!std::isnan(D_r));
         costs += n_r(D_r, purchasing_connections[r]) * D_r + transport_penalty(D_r, purchasing_connections[r]);
@@ -624,6 +623,10 @@ void PurchasingManager::iterate_purchase() {
 //                debug_print_distribution(demand_requests_D);
 //            }
             //        throw log::error(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs)");
+            if (optimizer_attempts < model()->parameters().optimization_retries) {
+                log::warning(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs). Retry #", optimizer_attempts + 1);
+            }
+        } catch (const acclimate::exception& ex) {
             if (optimizer_attempts < model()->parameters().optimization_retries) {
                 log::warning(this, "optimization failed, ", ex.what(), " (for ", purchasing_connections.size(), " inputs). Retry #", optimizer_attempts + 1);
             }
