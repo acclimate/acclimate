@@ -92,7 +92,7 @@ settings::SettingsNode ModelInitializer::get_firm_property(const std::string& na
     const settings::SettingsNode& sectors_node = settings["sectors"];
     sectors_node.require();
     if (sectors_node.has(property_name) || sectors_node["ALL"].has(property_name))
-        get_named_property(sectors_node, name, property_name);
+        return get_named_property(sectors_node, name, property_name);
 
     return firm_settings["ALL"][property_name];
 }
@@ -141,7 +141,7 @@ settings::SettingsNode ModelInitializer::get_consumer_property(const std::string
     const settings::SettingsNode& sectors_node = settings["sectors"];
     sectors_node.require();
     if (sectors_node.has(property_name) || sectors_node["ALL"].has(property_name))
-        get_named_property(sectors_node, name, property_name);
+        return get_named_property(sectors_node, name, property_name);
 
     return consumer_settings["ALL"][property_name];
 }
