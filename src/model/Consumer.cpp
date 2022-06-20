@@ -27,15 +27,23 @@
 
 #include "ModelRun.h"
 #include "acclimate.h"
+#include "autodiff.h"
 #include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/Region.h"
 #include "model/Storage.h"
+#include "optimization.h"
 #include "parameters.h"
 
-namespace acclimate {
+static constexpr auto MAX_GRADIENT = 1e3;  // TODO: any need to modify?
+static constexpr bool IGNORE_ROUNDOFFLIMITED = false;
+static constexpr bool VERBOSE_CONSUMER = true;
 
-Consumer::Consumer(id_t id_p, Region* region_p) : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::CONSUMER) {}
+namespace acclimate {
+// TODO: in the long run abstract consumer with different implementations would be nice
+
+Consumer::Consumer(id_t id_p, Region* region_p, const Ratio& upper_storage_limit_omega_p, const Time& initial_storage_fill_factor_psi_p)
+    : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::CONSUMER, upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p) {}
 
 void Consumer::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
@@ -89,5 +97,4 @@ void Consumer::debug_print_details() const {
         }
     }
 }
-
 }  // namespace acclimate
