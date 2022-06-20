@@ -91,7 +91,7 @@ settings::SettingsNode ModelInitializer::get_firm_property(const std::string& na
     // backward compatibility for settings where parameters are given by sector node, to be removed when depreciated
     const settings::SettingsNode& sectors_node = settings["sectors"];
     sectors_node.require();
-    if (sectors_node.has(property_name))
+    if (sectors_node.has(property_name) || sectors_node["ALL"].has(property_name))
         get_named_property(sectors_node, name, property_name);
 
     return firm_settings["ALL"][property_name];
@@ -140,7 +140,7 @@ settings::SettingsNode ModelInitializer::get_consumer_property(const std::string
     // backward compatibility for settings where parameters are given by sector node, to be removed when depreciated
     const settings::SettingsNode& sectors_node = settings["sectors"];
     sectors_node.require();
-    if (sectors_node.has(property_name))
+    if (sectors_node.has(property_name) || sectors_node["ALL"].has(property_name))
         get_named_property(sectors_node, name, property_name);
 
     return consumer_settings["ALL"][property_name];
