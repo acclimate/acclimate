@@ -52,13 +52,19 @@ class EconomicAgent {
     const EconomicAgent::type_t type;
     const id_t id;
 
+    Time initial_storage_fill_factor_psi;
+    Ratio upper_storage_limit_omega;
+    Time target_storage_refill_time;
+    Time target_storage_withdraw_time;
+    Price initial_markup;
+
   protected:
-    EconomicAgent(id_t id_p, Region* region_p, EconomicAgent::type_t type_p);
+    EconomicAgent(id_t id_p, Region* region_p, EconomicAgent::type_t type_p, Ratio upper_storage_limit_omega_p, Time initial_storage_fill_factor_psi_p);
 
   public:
     virtual ~EconomicAgent();
     const Parameters::AgentParameters& parameters() const { return parameters_; }
-    Parameters::AgentParameters const& parameters_writable() const;
+    Parameters::AgentParameters agent_parameters_writable() const;
     const Forcing& forcing() const { return forcing_m; }
     void set_forcing(const Forcing& forcing_p);
     bool is_firm() const { return type == EconomicAgent::type_t::FIRM; }

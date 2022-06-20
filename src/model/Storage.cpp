@@ -81,7 +81,7 @@ void Storage::calc_content_S() {
     }
     assert(content_S_.get_quantity() >= 0.0);
 
-    Stock maxStock = initial_content_S_star_ * forcing_mu_ * sector->upper_storage_limit_omega;
+    Stock maxStock = initial_content_S_star_ * forcing_mu_ * economic_agent->upper_storage_limit_omega;
     if (maxStock.get_quantity() < content_S_.get_quantity()) {
         model()->run()->event(EventType::STORAGE_OVERRUN, sector, economic_agent, to_float(content_S_.get_quantity() - maxStock.get_quantity()));
         const Price tmp = content_S_.get_price();
@@ -120,8 +120,8 @@ void Storage::add_initial_flow_Z_star(const Flow& flow_Z_star) {
     input_flow_I_[1] += flow_Z_star;
     input_flow_I_[2] += flow_Z_star;
     initial_input_flow_I_star_ += flow_Z_star;  // == initial_used_flow_U_star
-    initial_content_S_star_ = round(initial_content_S_star_ + flow_Z_star * sector->initial_storage_fill_factor_psi);
-    content_S_ = round(content_S_ + flow_Z_star * sector->initial_storage_fill_factor_psi);
+    initial_content_S_star_ = round(initial_content_S_star_ + flow_Z_star * economic_agent->initial_storage_fill_factor_psi);
+    content_S_ = round(content_S_ + flow_Z_star * economic_agent->initial_storage_fill_factor_psi);
     purchasing_manager->add_initial_demand_D_star(flow_Z_star);
     if (economic_agent->type == EconomicAgent::type_t::FIRM) {
         economic_agent->as_firm()->add_initial_total_use_U_star(flow_Z_star);
@@ -137,8 +137,8 @@ bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
         input_flow_I_[1] -= flow_Z_star;
         input_flow_I_[2] -= flow_Z_star;
         initial_input_flow_I_star_ -= flow_Z_star;  // = initial_used_flow_U_star
-        initial_content_S_star_ = round(initial_content_S_star_ - flow_Z_star * sector->initial_storage_fill_factor_psi);
-        content_S_ = round(content_S_ - flow_Z_star * sector->initial_storage_fill_factor_psi);
+        initial_content_S_star_ = round(initial_content_S_star_ - flow_Z_star * economic_agent->initial_storage_fill_factor_psi);
+        content_S_ = round(content_S_ - flow_Z_star * economic_agent->initial_storage_fill_factor_psi);
         purchasing_manager->subtract_initial_demand_D_star(flow_Z_star);
         return false;
     }

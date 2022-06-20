@@ -150,7 +150,7 @@ void SalesManager::distribute() {
         assert(!isnan(supply_distribution_scenario.price_cheapest_buyer_accepted_in_optimization));
         Price cheapest_price_range_half_width(0.0);
         if (model()->parameters().cheapest_price_range_generic_size) {
-            cheapest_price_range_half_width = firm->sector->parameters().price_increase_production_extension / 2
+            cheapest_price_range_half_width = firm->parameters().price_increase_production_extension / 2
                                               * (firm->capacity_manager->possible_overcapacity_ratio_beta - 1)
                                               * (firm->capacity_manager->possible_overcapacity_ratio_beta - 1)
                                               / firm->capacity_manager->possible_overcapacity_ratio_beta;  // = maximal penalty per unit
@@ -335,7 +335,7 @@ std::tuple<Flow, Price> SalesManager::calc_supply_distribution_scenario(const Fl
             const Price offer_price_n_bar = round(std::max(
                 production_X.get_price()
                     * (1
-                       + firm->sector->parameters().supply_elasticity
+                       + firm->parameters().supply_elasticity
                              * ((production_X - (firm->forced_initial_production_lambda_X_star())) / (firm->forced_initial_production_lambda_X_star()))),
                 minimal_offer_price));
             supply_distribution_scenario.price_cheapest_buyer_accepted_in_optimization =
@@ -627,7 +627,7 @@ Price SalesManager::get_initial_unit_variable_production_costs() const {
     return std::max(Price(0.0), Price(1.0) - (initial_unit_commodity_costs + get_initial_markup()));
 }
 
-Price SalesManager::get_initial_markup() const { return std::min(Price(1.0) - initial_unit_commodity_costs, firm->sector->parameters().initial_markup); }
+Price SalesManager::get_initial_markup() const { return std::min(Price(1.0) - initial_unit_commodity_costs, firm->initial_markup); }
 
 void SalesManager::initialize() {
     debug::assertstep(this, IterationStep::INITIALIZATION);
@@ -664,7 +664,7 @@ FlowValue SalesManager::calc_production_extension_penalty_P(const FlowQuantity& 
         log::info(this, firm->forced_maximal_production_quantity_lambda_beta_X_star());
     }
     assert(production_quantity_X <= firm->forced_maximal_production_quantity_lambda_beta_X_star());
-    return firm->sector->parameters().price_increase_production_extension / (2 * firm->forced_initial_production_quantity_lambda_X_star())
+    return firm->parameters().price_increase_production_extension / (2 * firm->forced_initial_production_quantity_lambda_X_star())
            * (production_quantity_X - firm->forced_initial_production_quantity_lambda_X_star())
            * (production_quantity_X - firm->forced_initial_production_quantity_lambda_X_star());
 
@@ -677,7 +677,7 @@ Price SalesManager::calc_marginal_production_extension_penalty(const FlowQuantit
         return Price(0.0);
     }
     // in production extension
-    return firm->sector->parameters().price_increase_production_extension / firm->forced_initial_production_quantity_lambda_X_star()
+    return firm->parameters().price_increase_production_extension / firm->forced_initial_production_quantity_lambda_X_star()
            * (production_quantity_X - firm->forced_initial_production_quantity_lambda_X_star());
     // maximal: price_increase_production_extension * (possible_overcapacity_ratio - 1)
 }
@@ -696,9 +696,8 @@ FlowQuantity SalesManager::analytic_solution_in_production_extension(const Price
                                                                      const Price& price_demand_request_not_served_completely) const {
     debug::assertstepor(this, IterationStep::CONSUMPTION_AND_PRODUCTION, IterationStep::EXPECTATION);
     assert(price_demand_request_not_served_completely >= unit_production_costs_n_c);
-    return round(
-        firm->forced_initial_production_quantity_lambda_X_star()
-        * (1.0 + (price_demand_request_not_served_completely - unit_production_costs_n_c) / firm->sector->parameters().price_increase_production_extension));
+    return round(firm->forced_initial_production_quantity_lambda_X_star()
+                 * (1.0 + (price_demand_request_not_served_completely - unit_production_costs_n_c) / firm->parameters().price_increase_production_extension));
 }
 
 FlowValue SalesManager::calc_additional_revenue_expectation(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const {
@@ -706,13 +705,13 @@ FlowValue SalesManager::calc_additional_revenue_expectation(const FlowQuantity& 
     // note: communicated_parameters_.production_X <= sum_demand_requests_D (up to rounding issues)
     assert(round(production_quantity_X_p) >= sum_demand_requests_D_.get_quantity());
     assert(round(production_quantity_X_p) <= round(communicated_parameters_.possible_production_X_hat.get_quantity()));
-    assert(firm->sector->parameters().supply_elasticity < 1.0);
+    assert(firm->parameters().supply_elasticity < 1.0);
 
     // fixed supply elasticity
     return n_min_p
-           * (production_quantity_X_p * pow(sum_demand_requests_D_.get_quantity() / production_quantity_X_p, firm->sector->parameters().supply_elasticity)
+           * (production_quantity_X_p * pow(sum_demand_requests_D_.get_quantity() / production_quantity_X_p, firm->parameters().supply_elasticity)
               - sum_demand_requests_D_.get_quantity())
-           / (1.0 - firm->sector->parameters().supply_elasticity);
+           / (1.0 - firm->parameters().supply_elasticity);
 }
 
 Price SalesManager::calc_marginal_revenue_curve(const FlowQuantity& production_quantity_X_p, const Price& n_min_p) const {
@@ -720,9 +719,9 @@ Price SalesManager::calc_marginal_revenue_curve(const FlowQuantity& production_q
     // note: communicated_parameters_.production_X == sum_demand_requests_D (up to rounding issues)
     assert(round(production_quantity_X_p) >= sum_demand_requests_D_.get_quantity());
     assert(round(production_quantity_X_p) <= communicated_parameters_.possible_production_X_hat.get_quantity());
-    assert(firm->sector->parameters().supply_elasticity < 1.0);
+    assert(firm->parameters().supply_elasticity < 1.0);
 
-    return n_min_p * pow(sum_demand_requests_D_.get_quantity() / production_quantity_X_p, firm->sector->parameters().supply_elasticity);
+    return n_min_p * pow(sum_demand_requests_D_.get_quantity() / production_quantity_X_p, firm->parameters().supply_elasticity);
 }
 
 Price SalesManager::goal_fkt_marginal_costs_minus_marginal_revenue(const FlowQuantity& production_quantity_X_p,

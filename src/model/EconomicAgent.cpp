@@ -28,14 +28,20 @@
 
 namespace acclimate {
 
-EconomicAgent::EconomicAgent(id_t id_p, Region* region_p, EconomicAgent::type_t type_p) : id(std::move(id_p)), region(region_p), type(type_p) {}
+EconomicAgent::EconomicAgent(
+    id_t id_p, Region* region_p, EconomicAgent::type_t type_p, Ratio upper_storage_limit_omega_p, Time initial_storage_fill_factor_psi_p)
+    : id(std::move(id_p)),
+      region(region_p),
+      type(type_p),
+      upper_storage_limit_omega(upper_storage_limit_omega_p),
+      initial_storage_fill_factor_psi(initial_storage_fill_factor_psi_p) {}
 
 EconomicAgent::~EconomicAgent() = default;  // needed to use forward declares for std::unique_ptr
 
 Model* EconomicAgent::model() { return region->model(); }
 const Model* EconomicAgent::model() const { return region->model(); }
 
-Parameters::AgentParameters const& EconomicAgent::parameters_writable() const {
+Parameters::AgentParameters EconomicAgent::agent_parameters_writable() const {
     debug::assertstep(this, IterationStep::INITIALIZATION);
     return parameters_;
 }
