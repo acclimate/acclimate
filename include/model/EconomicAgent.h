@@ -60,7 +60,7 @@ class EconomicAgent {
 
   public:
     virtual ~EconomicAgent();
-    const Parameters::AgentParameters& parameters() const { return parameters_; }
+    const Parameters::AgentParameters& agent_parameters() const { return parameters_; }
     Parameters::AgentParameters agent_parameters_writable() const;
     const Forcing& forcing() const { return forcing_m; }
     void set_forcing(const Forcing& forcing_p);

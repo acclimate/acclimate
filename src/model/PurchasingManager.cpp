@@ -325,7 +325,7 @@ FloatType PurchasingManager::calc_n_co(FloatType n_bar_min, FloatType D_r_min, c
         estimate_marginal_production_costs(business_connection, to_float(business_connection->seller->communicated_parameters().production_X.get_quantity()),
                                            business_connection->seller->communicated_parameters().possible_production_X_hat.get_price_float());
     if (model()->parameters().maximal_decrease_reservation_price_limited_by_markup) {
-        const auto n_crit = n_bar_min - to_float(storage->economic_agent->agent_parameters_writable().initial_markup) * D_r_min;
+        const auto n_crit = n_bar_min - to_float(storage->economic_agent->agent_parameters().initial_markup) * D_r_min;
         return std::max(n_co, n_crit);
     }
     return n_co;
@@ -388,9 +388,9 @@ FloatType PurchasingManager::transport_penalty(FloatType D_r, const BusinessConn
     if (model()->parameters().quadratic_transport_penalty) {
         FloatType marg_penalty = 0.0;
         if (D_r < target) {
-            marg_penalty = -to_float(storage->economic_agent->agent_parameters_writable().initial_markup);
+            marg_penalty = -to_float(storage->economic_agent->agent_parameters().initial_markup);
         } else if (D_r > target) {
-            marg_penalty = to_float(storage->economic_agent->agent_parameters_writable().initial_markup);
+            marg_penalty = to_float(storage->economic_agent->agent_parameters().initial_markup);
         } else {
             marg_penalty = 0.0;
         }
@@ -418,9 +418,9 @@ FloatType PurchasingManager::partial_D_r_transport_penalty(FloatType D_r, const 
     if (model()->parameters().quadratic_transport_penalty) {
         FloatType marg_penalty = 0.0;
         if (D_r < target) {
-            marg_penalty = -to_float(storage->economic_agent->agent_parameters_writable().initial_markup);
+            marg_penalty = -to_float(storage->economic_agent->agent_parameters().initial_markup);
         } else if (D_r > target) {
-            marg_penalty = to_float(storage->economic_agent->agent_parameters_writable().initial_markup);
+            marg_penalty = to_float(storage->economic_agent->agent_parameters().initial_markup);
         } else {
             marg_penalty = 0.0;
         }
@@ -487,8 +487,8 @@ void PurchasingManager::iterate_purchase() {
 
     desired_purchase_ = storage->desired_used_flow_U_tilde().get_quantity()  // desired used flow is either last or expected flow
                         + S_shortage
-                              / (S_shortage > 0.0 ? storage->economic_agent->agent_parameters_writable().target_storage_refill_time    // storage level low
-                                                  : storage->economic_agent->agent_parameters_writable().target_storage_withdraw_time  // storage level high
+                              / (S_shortage > 0.0 ? storage->economic_agent->agent_parameters().target_storage_refill_time    // storage level low
+                                                  : storage->economic_agent->agent_parameters().target_storage_withdraw_time  // storage level high
                               );
 
     if (round(desired_purchase_) <= 0.0) {

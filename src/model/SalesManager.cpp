@@ -627,7 +627,7 @@ Price SalesManager::get_initial_unit_variable_production_costs() const {
     return std::max(Price(0.0), Price(1.0) - (initial_unit_commodity_costs + get_initial_markup()));
 }
 
-Price SalesManager::get_initial_markup() const { return std::min(Price(1.0) - initial_unit_commodity_costs, firm->agent_parameters_writable().initial_markup); }
+Price SalesManager::get_initial_markup() const { return std::min(Price(1.0) - initial_unit_commodity_costs, firm->agent_parameters().initial_markup); }
 
 void SalesManager::initialize() {
     debug::assertstep(this, IterationStep::INITIALIZATION);
