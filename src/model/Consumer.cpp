@@ -45,6 +45,10 @@ namespace acclimate {
 Consumer::Consumer(id_t id_p, Region* region_p, const Ratio& upper_storage_limit_omega_p, const Time& initial_storage_fill_factor_psi_p)
     : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::CONSUMER, upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p) {}
 
+void Consumer::initialize() {
+    // nothing to do here
+}
+
 void Consumer::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     for (const auto& is : input_storages) {

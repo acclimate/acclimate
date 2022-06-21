@@ -70,6 +70,7 @@ class EconomicAgent {
     virtual const Firm* as_firm() const { throw log::error(this, "Not a firm"); }
     virtual Consumer* as_consumer() { throw log::error(this, "Not a consumer"); }
     virtual const Consumer* as_consumer() const { throw log::error(this, "Not a consumer"); }
+    virtual void initialize() = 0;
     virtual void iterate_consumption_and_production() = 0;
     virtual void iterate_expectation() = 0;
     virtual void iterate_purchase() = 0;

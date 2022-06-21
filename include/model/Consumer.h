@@ -38,6 +38,9 @@ class Consumer final : public EconomicAgent {
 
     Consumer* as_consumer() override { return this; };
     const Consumer* as_consumer() const override { return this; };
+
+  private:
+    void initialize() override;
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;

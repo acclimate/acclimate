@@ -58,6 +58,7 @@ class Firm final : public EconomicAgent {
          const Ratio& possible_overcapacity_ratio_beta_p,
          const Ratio& upper_storage_limit_omega_p,
          const Time& initial_storage_fill_factor_psi_p);
+    void initialize() override;
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;
