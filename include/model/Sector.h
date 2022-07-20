@@ -42,24 +42,20 @@ class Sector final {
     Flow total_production_X_m = Flow(0.0);
     openmp::Lock total_production_X_lock;
     Flow last_total_production_X_m = Flow(0.0);
-    Parameters::SectorParameters parameters_m;
+
     non_owning_ptr<Model> model_m;
 
   public:
     const id_t id;
-    const Ratio upper_storage_limit_omega;
-    const Time initial_storage_fill_factor_psi;
     const transport_type_t transport_type;
     non_owning_vector<Firm> firms;
 
   public:
-    Sector(Model* model_p, id_t id_p, Ratio upper_storage_limit_omega_p, Time initial_storage_fill_factor_psi_p, transport_type_t transport_type_p);
+    Sector(Model* model_p, id_t id_p, transport_type_t transport_type_p);
     static transport_type_t map_transport_type(const hashed_string& transport_type);
     static const char* unmap_transport_type(transport_type_t transport_type);
     const Demand& total_demand_D() const;
     const Demand& total_production_X() const;
-    const Parameters::SectorParameters& parameters() const { return parameters_m; }
-    Parameters::SectorParameters& parameters_writable();
     void add_demand_request_D(const Demand& demand_request_D);
     void add_production_X(const Flow& production_X);
     void add_initial_production_X(const Flow& production_X);

@@ -58,7 +58,7 @@ namespace acclimate {
 ModelInitializer::ModelInitializer(Model* model_p, const settings::SettingsNode& settings_p) : model_m(model_p), settings(settings_p) {
     const settings::SettingsNode& parameters = settings["model"];
     model()->set_delta_t(parameters["delta_t"].as<Time>());
-    model()->no_self_supply(parameters["no_self_supply"].as<bool>());
+    model()->no_self_supply(parameters["no_self_supply"].as<bool>(true));
 }
 
 settings::SettingsNode ModelInitializer::get_named_property(const settings::SettingsNode& node_settings,
@@ -88,6 +88,12 @@ settings::SettingsNode ModelInitializer::get_firm_property(const std::string& na
     if (firm_settings.has(region_name) && firm_settings[region_name].has(property_name)) {
         return firm_settings[region_name][property_name];
     }
+    // backward compatibility for settings where parameters are given by sector node, to be removed when depreciated
+    const settings::SettingsNode& sectors_node = settings["sectors"];
+    sectors_node.require();
+    if (sectors_node.has(property_name) || sectors_node["ALL"].has(property_name))
+        return get_named_property(sectors_node, name, property_name);
+
     return firm_settings["ALL"][property_name];
 }
 
@@ -96,18 +102,65 @@ Firm* ModelInitializer::add_firm(std::string name, Sector* sector, Region* regio
         throw log::error(this, "Ambiguous agent name", name);
     }
     auto* firm = model()->economic_agents.add<Firm>(
-        id_t(std::move(name)), sector, region,
-        static_cast<Ratio>(get_firm_property(name, sector->name(), region->name(), "possible_overcapacity_ratio").as<FloatType>()));
+        id_t(std::move(name)), sector, region, get_firm_property(name, sector->name(), region->name(), "possible_overcapacity_ratio").as<Ratio>(),
+        get_firm_property(name, sector->name(), region->name(), "upper_storage_limit").as<Ratio>(),
+        get_firm_property(name, sector->name(), region->name(), "initial_storage_fill_factor").as<FloatType>() * model()->delta_t());
+
+    // assign parameters on firm level, to enable differentiation
+    firm->parameters_writable().supply_elasticity = get_firm_property(name, sector->name(), region->name(), "supply_elasticity").as<Ratio>();
+    firm->parameters_writable().price_increase_production_extension =
+        get_firm_property(name, sector->name(), region->name(), "price_increase_production_extension").as<Price>();
+    firm->parameters_writable().estimated_price_increase_production_extension =
+        get_firm_property(name, sector->name(), region->name(), "estimated_price_increase_production_extension")
+            .as<Price>(to_float(firm->parameters_writable().price_increase_production_extension));
+
+    firm->agent_parameters_writable().target_storage_refill_time =
+        get_firm_property(name, sector->name(), region->name(), "target_storage_refill_time").as<FloatType>() * model()->delta_t();
+    firm->agent_parameters_writable().target_storage_withdraw_time =
+        get_firm_property(name, sector->name(), region->name(), "target_storage_withdraw_time").as<FloatType>() * model()->delta_t();
+    firm->agent_parameters_writable().initial_markup = get_firm_property(name, sector->name(), region->name(), "initial_markup").as<Price>();
+
     sector->firms.add(firm);
     region->economic_agents.add(firm);
     return firm;
+}
+
+settings::SettingsNode ModelInitializer::get_consumer_property(const std::string& name,
+                                                               const std::string& region_name,
+                                                               const std::string& property_name) const {
+    const settings::SettingsNode& consumer_settings = settings["consumers"];
+
+    if (consumer_settings.has(name) && consumer_settings[name].has(property_name)) {
+        return consumer_settings[name][property_name];
+    }
+    if (consumer_settings.has(region_name) && consumer_settings[region_name].has(property_name)) {
+        return consumer_settings[region_name][property_name];
+    }
+
+    // backward compatibility for settings where parameters are given by sector node, to be removed when depreciated
+    const settings::SettingsNode& sectors_node = settings["sectors"];
+    sectors_node.require();
+    if (sectors_node.has(property_name) || sectors_node["ALL"].has(property_name))
+        return get_named_property(sectors_node, name, property_name);
+
+    return consumer_settings["ALL"][property_name];
 }
 
 Consumer* ModelInitializer::add_consumer(std::string name, Region* region) {
     if (model()->economic_agents.find(name) != nullptr) {
         throw log::error(this, "Ambiguous agent name", name);
     }
-    auto* consumer = model()->economic_agents.add<Consumer>(id_t(std::move(name)), region);
+
+    auto* consumer =
+        model()->economic_agents.add<Consumer>(id_t(std::move(name)), region, get_consumer_property(name, region->name(), "upper_storage_limit").as<Ratio>(),
+                                               get_consumer_property(name, region->name(), "initial_storage_fill_factor").as<FloatType>() * model()->delta_t());
+
+    consumer->agent_parameters_writable().target_storage_refill_time =
+        get_consumer_property(name, region->name(), "target_storage_refill_time").as<FloatType>() * model()->delta_t();
+    consumer->agent_parameters_writable().target_storage_withdraw_time =
+        get_consumer_property(name, region->name(), "target_storage_withdraw_time").as<FloatType>() * model()->delta_t();
+    consumer->agent_parameters_writable().initial_markup = get_consumer_property(name, region->name(), "initial_markup").as<Price>();
+
     region->economic_agents.add(consumer);
     return consumer;
 }
@@ -134,20 +187,7 @@ Sector* ModelInitializer::add_sector(const std::string& name) {
     if (sector == nullptr) {
         const settings::SettingsNode& sectors_node = settings["sectors"];
         sectors_node.require();
-        sector = model()->sectors.add(model(), id_t(name), get_named_property(sectors_node, name, "upper_storage_limit").as<Ratio>(),
-                                      get_named_property(sectors_node, name, "initial_storage_fill_factor").as<FloatType>() * model()->delta_t(),
-                                      Sector::map_transport_type(get_named_property(sectors_node, name, "transport").as<hashed_string>()));
-        sector->parameters_writable().supply_elasticity = get_named_property(sectors_node, name, "supply_elasticity").as<Ratio>();
-        sector->parameters_writable().price_increase_production_extension =
-            get_named_property(sectors_node, name, "price_increase_production_extension").as<Price>();
-        sector->parameters_writable().estimated_price_increase_production_extension =
-            get_named_property(sectors_node, name, "estimated_price_increase_production_extension")
-                .as<Price>(to_float(sector->parameters_writable().price_increase_production_extension));
-        sector->parameters_writable().initial_markup = get_named_property(sectors_node, name, "initial_markup").as<Price>();
-        sector->parameters_writable().target_storage_refill_time =
-            get_named_property(sectors_node, name, "target_storage_refill_time").as<FloatType>() * model()->delta_t();
-        sector->parameters_writable().target_storage_withdraw_time =
-            get_named_property(sectors_node, name, "target_storage_withdraw_time").as<FloatType>() * model()->delta_t();
+        sector = model()->sectors.add(model(), id_t(name), Sector::map_transport_type(get_named_property(sectors_node, name, "transport").as<hashed_string>()));
     }
     if (sector->id.name != name) {
         throw log::error(this, "Ambiguous sector name", name);
@@ -438,7 +478,7 @@ void ModelInitializer::read_transport_network_netcdf(const std::string& filename
     for (std::size_t i = 0; i < size; ++i) {
         auto& p1 = locations[i];
         auto* l1 = p1->entity()->as_location();
-        // connection from location to itself only added for calrity when debugging:
+        // connection from location to itself only added for clarity when debugging:
         paths[i * size + i] =
             TemporaryGeoPath(0, p1, p1, std::make_shared<TemporaryGeoEntity>(new GeoConnection(model(), 0, GeoConnection::type_t::UNSPECIFIED, l1, l1)));
         for (std::size_t j = 0; j < i; ++j) {  // only go along subdiagonal
@@ -1010,11 +1050,8 @@ void ModelInitializer::pre_initialize() {
 }
 
 void ModelInitializer::post_initialize() {
-    // initialize price dependent members of each capacity manager, which can only be calculated after the whole network has been initialized
-    for (auto& sector : model()->sectors) {
-        for (auto& firm : sector->firms) {
-            firm->sales_manager->initialize();
-        }
+    for (auto& agent : model()->economic_agents) {
+        agent->initialize();
     }
 }
 

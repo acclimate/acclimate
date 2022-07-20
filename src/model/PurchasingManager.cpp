@@ -152,7 +152,7 @@ FloatType PurchasingManager::estimate_production_extension_penalty(const Busines
         return 0.0;
     }
     // in production extension
-    return std::max(0.0, to_float(bc->seller->firm->sector->parameters().estimated_price_increase_production_extension)
+    return std::max(0.0, to_float(bc->seller->firm->parameters().estimated_price_increase_production_extension)
                              / (2 * bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float())
                              * (production_quantity_X - bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float())
                              * (production_quantity_X - bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float()));
@@ -176,7 +176,7 @@ FloatType PurchasingManager::estimate_marginal_production_extension_penalty(cons
         return 0.0;
     }
     // in production extension
-    return to_float(bc->seller->firm->sector->parameters().estimated_price_increase_production_extension)
+    return to_float(bc->seller->firm->parameters().estimated_price_increase_production_extension)
            / bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float()
            * (production_quantity_X - bc->seller->firm->forced_initial_production_quantity_lambda_X_star_float());
 }
@@ -328,7 +328,7 @@ FloatType PurchasingManager::calc_n_co(FloatType n_bar_min, FloatType D_r_min, c
         estimate_marginal_production_costs(business_connection, to_float(business_connection->seller->communicated_parameters().production_X.get_quantity()),
                                            business_connection->seller->communicated_parameters().possible_production_X_hat.get_price_float());
     if (model()->parameters().maximal_decrease_reservation_price_limited_by_markup) {
-        const auto n_crit = n_bar_min - to_float(storage->sector->parameters().initial_markup) * D_r_min;
+        const auto n_crit = n_bar_min - to_float(storage->economic_agent->agent_parameters().initial_markup) * D_r_min;
         return std::max(n_co, n_crit);
     }
     return n_co;
@@ -391,9 +391,9 @@ FloatType PurchasingManager::transport_penalty(FloatType D_r, const BusinessConn
     if (model()->parameters().quadratic_transport_penalty) {
         FloatType marg_penalty = 0.0;
         if (D_r < target) {
-            marg_penalty = -to_float(storage->sector->parameters().initial_markup);
+            marg_penalty = -to_float(storage->economic_agent->agent_parameters().initial_markup);
         } else if (D_r > target) {
-            marg_penalty = to_float(storage->sector->parameters().initial_markup);
+            marg_penalty = to_float(storage->economic_agent->agent_parameters().initial_markup);
         } else {
             marg_penalty = 0.0;
         }
@@ -421,9 +421,9 @@ FloatType PurchasingManager::partial_D_r_transport_penalty(FloatType D_r, const 
     if (model()->parameters().quadratic_transport_penalty) {
         FloatType marg_penalty = 0.0;
         if (D_r < target) {
-            marg_penalty = -to_float(storage->sector->parameters().initial_markup);
+            marg_penalty = -to_float(storage->economic_agent->agent_parameters().initial_markup);
         } else if (D_r > target) {
-            marg_penalty = to_float(storage->sector->parameters().initial_markup);
+            marg_penalty = to_float(storage->economic_agent->agent_parameters().initial_markup);
         } else {
             marg_penalty = 0.0;
         }
@@ -472,8 +472,8 @@ void PurchasingManager::iterate_purchase() {
     const auto S_shortage = get_flow_deficit() * model()->delta_t() + storage->initial_content_S_star().get_quantity() - storage->content_S().get_quantity();
     desired_purchase_ = storage->desired_used_flow_U_tilde().get_quantity()  // desired used flow is either last or expected flow
                         + S_shortage
-                              / (S_shortage > 0.0 ? storage->sector->parameters().target_storage_refill_time    // storage level low
-                                                  : storage->sector->parameters().target_storage_withdraw_time  // storage level high
+                              / (S_shortage > 0.0 ? storage->economic_agent->agent_parameters().target_storage_refill_time    // storage level low
+                                                  : storage->economic_agent->agent_parameters().target_storage_withdraw_time  // storage level high
                               );
     if (round(desired_purchase_) <= 0.0) {
         for (auto& bc : business_connections) {

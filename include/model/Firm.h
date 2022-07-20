@@ -41,6 +41,8 @@ class Firm final : public EconomicAgent {
     Flow initial_total_use_U_star_ = Flow(0.0);
     std::shared_ptr<BusinessConnection> self_supply_connection_;
 
+    Parameters::FirmParameters parameters_m;
+
   public:
     non_owning_ptr<Sector> sector;
     const std::unique_ptr<CapacityManager> capacity_manager;
@@ -50,7 +52,13 @@ class Firm final : public EconomicAgent {
     void produce_X();
 
   public:
-    Firm(id_t id_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
+    Firm(id_t id_p,
+         Sector* sector_p,
+         Region* region_p,
+         const Ratio& possible_overcapacity_ratio_beta_p,
+         const Ratio& upper_storage_limit_omega_p,
+         const Time& initial_storage_fill_factor_psi_p);
+    void initialize() override;
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;
@@ -71,6 +79,9 @@ class Firm final : public EconomicAgent {
     FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_m); }
     FlowQuantity forced_maximal_production_quantity_lambda_beta_X_star() const;
     const Flow& initial_total_use_U_star() const { return initial_total_use_U_star_; }
+
+    const Parameters::FirmParameters& parameters() const { return parameters_m; }
+    Parameters::FirmParameters& parameters_writable();
 
     void debug_print_details() const override;
 

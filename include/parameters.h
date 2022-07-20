@@ -28,7 +28,6 @@ namespace acclimate {
 // TODO get rid of Parameters struct
 
 struct Parameters {
-    struct AgentParameters {};
 
     struct ModelParameters {
         Price cheapest_price_range_width = Price(0.0);
@@ -52,13 +51,16 @@ struct Parameters {
 
     struct RegionParameters {};
 
-    struct SectorParameters {
-        Price estimated_price_increase_production_extension = Price(0.0);
-        Price initial_markup = Price(0.0);
-        Price price_increase_production_extension = Price(0.0);
-        Ratio supply_elasticity = Ratio(0.0);
+    struct AgentParameters {
         Time target_storage_refill_time = Time(0.0);
         Time target_storage_withdraw_time = Time(0.0);
+        Price initial_markup = Price(0.0);
+    };
+
+    struct FirmParameters {
+        Price estimated_price_increase_production_extension = Price(0.0);
+        Price price_increase_production_extension = Price(0.0);
+        Ratio supply_elasticity = Ratio(0.0);
     };
 
     struct StorageParameters {

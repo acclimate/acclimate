@@ -33,11 +33,18 @@
 
 namespace acclimate {
 
-Firm::Firm(id_t id_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p)
-    : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::FIRM),
+Firm::Firm(id_t id_p,
+           Sector* sector_p,
+           Region* region_p,
+           const Ratio& possible_overcapacity_ratio_beta_p,
+           const Ratio& upper_storage_limit_omega_p,
+           const Time& initial_storage_fill_factor_psi_p)
+    : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::FIRM, upper_storage_limit_omega_p, initial_storage_fill_factor_psi_p),
       sector(sector_p),
       capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta_p)),
       sales_manager(new SalesManager(this)) {}
+
+void Firm::initialize() { sales_manager->initialize(); }
 
 void Firm::produce_X() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
@@ -143,6 +150,11 @@ void Firm::debug_print_details() const {
         }
         sales_manager->debug_print_details();
     }
+}
+
+Parameters::FirmParameters& Firm::parameters_writable() {
+    debug::assertstep(this, IterationStep::INITIALIZATION);
+    return parameters_m;
 }
 
 }  // namespace acclimate
