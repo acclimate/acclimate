@@ -88,13 +88,13 @@ settings::SettingsNode ModelInitializer::get_firm_property(const std::string& na
     if (firm_settings.has(region_name) && firm_settings[region_name].has(property_name)) {
         return firm_settings[region_name][property_name];
     }
+    if (firm_settings.has("ALL") && firm_settings["ALL"].has(property_name)) {
+        return firm_settings["ALL"][property_name];
+    }
     // backward compatibility for settings where parameters are given by sector node, to be removed when depreciated
     const settings::SettingsNode& sectors_node = settings["sectors"];
     sectors_node.require();
-    if (sectors_node.has(property_name) || sectors_node["ALL"].has(property_name))
-        return get_named_property(sectors_node, name, property_name);
-
-    return firm_settings["ALL"][property_name];
+    return get_named_property(sectors_node, sector_name, property_name);
 }
 
 Firm* ModelInitializer::add_firm(std::string name, Sector* sector, Region* region) {
@@ -136,14 +136,13 @@ settings::SettingsNode ModelInitializer::get_consumer_property(const std::string
     if (consumer_settings.has(region_name) && consumer_settings[region_name].has(property_name)) {
         return consumer_settings[region_name][property_name];
     }
-
-    // backward compatibility for settings where parameters are given by sector node, to be removed when depreciated
+    if (consumer_settings.has("ALL") && consumer_settings["ALL"].has(property_name)) {
+        return consumer_settings["ALL"][property_name];
+    }
+    // backward compatibility for settings where parameters are given by sector node, to be removed when deprecated
     const settings::SettingsNode& sectors_node = settings["sectors"];
     sectors_node.require();
-    if (sectors_node.has(property_name) || sectors_node["ALL"].has(property_name))
-        return get_named_property(sectors_node, name, property_name);
-
-    return consumer_settings["ALL"][property_name];
+    return get_named_property(sectors_node, "FCON", property_name);
 }
 
 Consumer* ModelInitializer::add_consumer(std::string name, Region* region) {

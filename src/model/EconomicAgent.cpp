@@ -41,7 +41,7 @@ EconomicAgent::~EconomicAgent() = default;  // needed to use forward declares fo
 Model* EconomicAgent::model() { return region->model(); }
 const Model* EconomicAgent::model() const { return region->model(); }
 
-Parameters::AgentParameters EconomicAgent::agent_parameters_writable() const {
+Parameters::AgentParameters& EconomicAgent::agent_parameters_writable() {
     debug::assertstep(this, IterationStep::INITIALIZATION);
     return parameters_;
 }

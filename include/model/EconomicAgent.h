@@ -61,7 +61,7 @@ class EconomicAgent {
   public:
     virtual ~EconomicAgent();
     const Parameters::AgentParameters& agent_parameters() const { return parameters_; }
-    Parameters::AgentParameters agent_parameters_writable() const;
+    Parameters::AgentParameters& agent_parameters_writable();
     const Forcing& forcing() const { return forcing_m; }
     void set_forcing(const Forcing& forcing_p);
     bool is_firm() const { return type == EconomicAgent::type_t::FIRM; }
