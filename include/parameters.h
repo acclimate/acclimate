@@ -70,6 +70,8 @@ struct Parameters {
         bool start_purchasing_at_baseline;
         bool purchasing_halfway_baseline;
 
+        bool elastic_consumption_starting_values;  // switch if starting values for optimizer should be adjusted with price elasticities
+
         bool global_utility_optimization;
         int global_utility_optimization_algorithm;
         int global_utility_optimization_maxiter;           // maximal iteration of global utility algorithms
