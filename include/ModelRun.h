@@ -90,7 +90,7 @@ class ModelRun {
     std::string settings_string_m;
     Time start_time_m = Time(0.0);
     Time stop_time_m = Time(0.0);
-    int baseyear_m;
+    std::string basedate_m;
 
   private:
     void step(const IterationStep& step_p) { step_m = step_p; }
@@ -119,7 +119,7 @@ class ModelRun {
 
     std::size_t total_timestep_count() const;
     std::string calendar() const;
-    int baseyear() const { return baseyear_m; }
+    std::string basedate() const { return basedate_m; }
 
     const char* name() const { return "RUN"; }
     const Model* model() const { return model_m.get(); }
