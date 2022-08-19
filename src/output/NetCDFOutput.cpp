@@ -108,7 +108,7 @@ void NetCDFOutput::start() {
     var_time = std::make_unique<netCDF::Variable>(file->add_variable<int>("time", {dim_time}));
     var_time->set_compression(false, compression_level);
     var_time->add_attribute("calendar").set<std::string>(model()->run()->calendar());
-    var_time->add_attribute("units").set<std::string>(std::string("days since ") + std::to_string(model()->run()->baseyear()) + "-1-1");
+    var_time->add_attribute("units").set<std::string>(std::string("days since ") + model()->run()->basedate());
 
     include_events = true;
 
