@@ -93,6 +93,8 @@ void NetCDFOutput::start() {
     const auto dim_region = file->add_dimension("region", model()->regions.size());
     const auto dim_location = file->add_dimension("location", model()->other_locations.size());
     const auto dim_agent = file->add_dimension("agent", model()->economic_agents.size());
+    const auto dim_agent_from = file->add_dimension("agent_from", model()->economic_agents.size());
+    const auto dim_agent_to = file->add_dimension("agent_to", model()->economic_agents.size());
     const auto dim_event = file->add_dimension("event");
     const auto dim_event_type = file->add_dimension("event_type", EVENT_NAMES.size());
 
@@ -225,7 +227,7 @@ void NetCDFOutput::start() {
     create_group<1>("regions", {dim_time, dim_region}, {"region_index"}, obs_regions, vars_regions);
     create_group<1>("locations", {dim_time, dim_location}, {"location_index"}, obs_locations, vars_locations);
     create_group<2>("storages", {dim_time, dim_sector, dim_agent}, {"sector_input_index", "agent_index"}, obs_storages, vars_storages);
-    create_group<2>("flows", {dim_time, dim_agent, dim_agent}, {"agent_from_index", "agent_to_index"}, obs_flows, vars_flows);
+    create_group<2>("flows", {dim_time, dim_agent_from, dim_agent_to}, {"agent_from_index", "agent_to_index"}, obs_flows, vars_flows);
 }
 
 void NetCDFOutput::end() {
