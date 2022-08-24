@@ -340,11 +340,9 @@ std::pair<std::vector<Flow>, FloatType> Consumer::utilitarian_consumption_optimi
         starting_value_quantity[index] = std::min(starting_value_flow.get_quantity(), possible_consumption_quantity);
         // adjust if price changes make previous consumption to expensive - scaling with elasticity
         // TODO: one could try a more sophisticated use of price elasticity
-        if (model()->parameters().elastic_consumption_starting_values) {
-            starting_value_quantity[index] =
-                starting_value_quantity[index]
-                * std::pow(consumption_prices[index] / starting_value_flow.get_price(), input_storage->parameters().consumption_price_elasticity);
-        }
+        // starting_value_quantity[index] =
+        // starting_value_quantity[index]
+        //* std::pow(consumption_prices[index] / starting_value_flow.get_price(), input_storage->parameters().consumption_price_elasticity);
         // scale starting value with scaling_value to use in optimization
         if (to_float(baseline_consumption[index].get_quantity()) != 0.0) {
             scaled_starting_value[index] = scale_quantity_to_double(starting_value_quantity[index], baseline_consumption[index].get_quantity());
