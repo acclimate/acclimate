@@ -1044,7 +1044,7 @@ void ModelInitializer::pre_initialize() {
     model()->parameters_writable().global_utility_optimization = parameters["global_utility_optimization"].as<bool>(false);
     model()->parameters_writable().budget_inequality_constrained = parameters["budget_inequality_constrained"].as<bool>(false);
     model()->parameters_writable().elastic_budget = parameters["elastic_budget"].as<bool>(false);
-    model()->parameters_writable().global_utility_optimization_random_points = parameters["global_sampling_points"].as<int>();
+    model()->parameters_writable().global_utility_optimization_random_points = parameters["global_sampling_points"].as<int>(64);
     model()->parameters_writable().utility_optimization_algorithm =
         optimization::get_algorithm(parameters["utility_optimization_algorithm"].as<hashed_string>("slsqp"));
     model()->parameters_writable().global_optimization_algorithm =
