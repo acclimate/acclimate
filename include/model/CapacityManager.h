@@ -41,7 +41,7 @@ class CapacityManager final {
 
   private:
     void calc_possible_and_desired_production();
-    Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const;
+    Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate, bool financial_sector) const;
 
   public:
     CapacityManager(Firm* firm_p, Ratio possible_overcapacity_ratio_beta_p);
