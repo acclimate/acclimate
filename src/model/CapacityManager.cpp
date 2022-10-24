@@ -70,7 +70,7 @@ void CapacityManager::debug_print_inputs() const {
 }
 
 Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
-    Sector sector = firm->sector;
+    Sector* sector = firm->sector;
     bool financial_sector = (sector->name()=="FINC");
     debug::assertstepor(this, IterationStep::CONSUMPTION_AND_PRODUCTION, IterationStep::EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
