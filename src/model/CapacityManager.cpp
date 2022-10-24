@@ -73,7 +73,8 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
     debug::assertstepor(this, IterationStep::CONSUMPTION_AND_PRODUCTION, IterationStep::EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     auto unit_commodity_costs = Price(0.0);
-
+    auto sum_possible_use_U_hat = Flow(0.0);
+    auto sum_U_star = Flow(0.0);
     for (auto& input_storage : firm->input_storages) {
         Flow possible_use_U_hat(0.0);
         if (estimate) {
@@ -88,8 +89,8 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
             unit_commodity_costs += possible_use_U_hat.get_price() * input_storage->get_technology_coefficient_a();
         }
         if (financial_sector) {
-            Flow sum_possible_use_U_hat +=  possible_use_U_hat;
-            Flow sum_U_star += input_storage->initial_used_flow_U_star()
+            sum_possible_use_U_hat +=  possible_use_U_hat;
+            sum_U_star += input_storage->initial_used_flow_U_star()
         }
         else
         {
@@ -100,7 +101,7 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
         }
     }
     if (financial_sector){
-        tmp = Ratio sum_possible_use_U_hat / sum_U_star;
+        Ratio tmp = sum_possible_use_U_hat / sum_U_star;
         if (tmp < possible_production_capacity_p_hat) {
             possible_production_capacity_p_hat = tmp;
             }
@@ -117,13 +118,13 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
 Flow CapacityManager::get_possible_production_X_hat() const {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     bool consider_transport_in_production_costs = false;
-    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false, financial_sector);
+    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false, firm ->financial_sector);
 }
 
 Flow CapacityManager::estimate_possible_production_X_hat() const {
     debug::assertstep(this, IterationStep::EXPECTATION);
     bool consider_transport_in_production_costs = true;
-    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true,  financial_sector);
+    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true,  firm -> financial_sector);
 }
 
 Flow CapacityManager::calc_production_X() {
