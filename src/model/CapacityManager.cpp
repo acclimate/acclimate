@@ -69,7 +69,8 @@ void CapacityManager::debug_print_inputs() const {
     }
 }
 
-Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate, bool financial_sector) const {
+Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
+    bool financial_sector = (sector_p->name()=="FINC");
     debug::assertstepor(this, IterationStep::CONSUMPTION_AND_PRODUCTION, IterationStep::EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     auto unit_commodity_costs = Price(0.0);
@@ -118,13 +119,13 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
 Flow CapacityManager::get_possible_production_X_hat() const {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     bool consider_transport_in_production_costs = false;
-    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false, firm ->financial_sector);
+    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false);
 }
 
 Flow CapacityManager::estimate_possible_production_X_hat() const {
     debug::assertstep(this, IterationStep::EXPECTATION);
     bool consider_transport_in_production_costs = true;
-    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true,  firm -> financial_sector);
+    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true);
 }
 
 Flow CapacityManager::calc_production_X() {

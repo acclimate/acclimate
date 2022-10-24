@@ -45,7 +45,6 @@ class Firm final : public EconomicAgent {
     non_owning_ptr<Sector> sector;
     const std::unique_ptr<CapacityManager> capacity_manager;
     const std::unique_ptr<SalesManager> sales_manager;
-    bool financial_sector;
 
   private:
     void produce_X();

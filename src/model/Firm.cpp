@@ -37,9 +37,7 @@ Firm::Firm(id_t id_p, Sector* sector_p, Region* region_p, const Ratio& possible_
     : EconomicAgent(std::move(id_p), region_p, EconomicAgent::type_t::FIRM),
       sector(sector_p),
       capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta_p)),
-      sales_manager(new SalesManager(this))
-     {financial_sector = (sector_p->name()=="FINC");
-    }
+      sales_manager(new SalesManager(this)){}
 
 void Firm::produce_X() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
