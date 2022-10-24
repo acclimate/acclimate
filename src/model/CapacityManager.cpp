@@ -69,7 +69,7 @@ void CapacityManager::debug_print_inputs() const {
     }
 }
 
-Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
+Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate, bool financial_sector) const {
     debug::assertstepor(this, IterationStep::CONSUMPTION_AND_PRODUCTION, IterationStep::EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     auto unit_commodity_costs = Price(0.0);
@@ -87,10 +87,23 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
         } else {
             unit_commodity_costs += possible_use_U_hat.get_price() * input_storage->get_technology_coefficient_a();
         }
+        if (financial_sector) {
+            Flow sum_possible_use_U_hat +=  possible_use_U_hat;
+            Flow sum_U_star += input_storage->initial_used_flow_U_star()
+        }
+        else
+        {
         Ratio tmp = possible_use_U_hat / input_storage->initial_used_flow_U_star();
+            if (tmp < possible_production_capacity_p_hat) {
+            possible_production_capacity_p_hat = tmp;
+            }
+        }
+    }
+    if (financial_sector){
+        tmp = Ratio sum_possible_use_U_hat / sum_U_star;
         if (tmp < possible_production_capacity_p_hat) {
             possible_production_capacity_p_hat = tmp;
-        }
+            }
     }
     assert(possible_production_capacity_p_hat >= 0.0);
     Flow result = round(firm->initial_production_X_star() * possible_production_capacity_p_hat);
