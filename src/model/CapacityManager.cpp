@@ -117,13 +117,13 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
 Flow CapacityManager::get_possible_production_X_hat() const {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     bool consider_transport_in_production_costs = false;
-    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false);
+    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, false, financial_sector);
 }
 
 Flow CapacityManager::estimate_possible_production_X_hat() const {
     debug::assertstep(this, IterationStep::EXPECTATION);
     bool consider_transport_in_production_costs = true;
-    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true);
+    return get_possible_production_X_hat_intern(consider_transport_in_production_costs, true,  financial_sector);
 }
 
 Flow CapacityManager::calc_production_X() {
