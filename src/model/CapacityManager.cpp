@@ -90,7 +90,7 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
         }
         if (financial_sector) {
             sum_possible_use_U_hat +=  possible_use_U_hat;
-            sum_U_star += input_storage->initial_used_flow_U_star()
+            sum_U_star += input_storage->initial_used_flow_U_star();
         }
         else
         {
