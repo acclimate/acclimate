@@ -70,8 +70,6 @@ void CapacityManager::debug_print_inputs() const {
 }
 
 Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const {
-    Sector* sector = firm->sector;
-    bool financial_sector = (sector->name()=="FINC");
     debug::assertstepor(this, IterationStep::CONSUMPTION_AND_PRODUCTION, IterationStep::EXPECTATION);
     Ratio possible_production_capacity_p_hat = firm->forcing() * possible_overcapacity_ratio_beta;
     auto unit_commodity_costs = Price(0.0);
@@ -90,7 +88,7 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
         } else {
             unit_commodity_costs += possible_use_U_hat.get_price() * input_storage->get_technology_coefficient_a();
         }
-        if (financial_sector) {
+        if (firm -> financial_sector) {
             sum_possible_use_U_hat +=  possible_use_U_hat;
             sum_U_star += input_storage->initial_used_flow_U_star();
         }
@@ -102,7 +100,7 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
             }
         }
     }
-    if (financial_sector){
+    if (firm -> financial_sector){
         Ratio tmp = sum_possible_use_U_hat / sum_U_star;
         if (tmp < possible_production_capacity_p_hat) {
             possible_production_capacity_p_hat = tmp;
