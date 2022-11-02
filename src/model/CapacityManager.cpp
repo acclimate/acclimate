@@ -75,7 +75,8 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
     auto unit_commodity_costs = Price(0.0);
     auto sum_possible_use_U_hat = Flow(0.0);
     auto sum_U_star = Flow(0.0);
-    auto sum_unit_commodity_costs = Price(0.0);
+    auto total_value_of_inputs = Value(0.0);
+    auto sum_technology_coefficient_a = Ratio(0.0);
     for (auto& input_storage : firm->input_storages) {
         Flow possible_use_U_hat(0.0);
         if (estimate) {
@@ -92,8 +93,8 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
         if (firm -> financial_sector) {
             sum_possible_use_U_hat +=  possible_use_U_hat;
             sum_U_star += input_storage->initial_used_flow_U_star();
-            sum_unit_commodity_costs += possible_use_U_hat.get_price();
-
+            total_value_of_inputs += possible_use_U_hat.get_value();
+            sum_technology_coefficient_a  += input_storage->get_technology_coefficient_a();
         }
         else
         {
@@ -105,7 +106,8 @@ Flow CapacityManager::get_possible_production_X_hat_intern(bool consider_transpo
     }
     if (firm -> financial_sector){
         Ratio tmp = sum_possible_use_U_hat / sum_U_star;
-        unit_commodity_costs = sum_unit_commodity_costs;
+        average_input_price = total_value_of_inputs / sum_possible_use_U_hat;
+        unit_commodity_costs = average_input_price * sum_technology_coefficient_a;
         if (tmp < possible_production_capacity_p_hat) {
             possible_production_capacity_p_hat = tmp;
             }
