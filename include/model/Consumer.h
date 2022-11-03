@@ -30,9 +30,17 @@ class Region;
 
 class Consumer final : public EconomicAgent {
   public:
+    using EconomicAgent::input_storages;
+    using EconomicAgent::region;
+
+  public:
+    Consumer(id_t id_p, Region* region_p, const Ratio& upper_storage_limit_omega_p, const Time& initial_storage_fill_factor_psi_p);
+
     Consumer* as_consumer() override { return this; };
     const Consumer* as_consumer() const override { return this; };
-    Consumer(id_t id_p, Region* region_p);
+
+  private:
+    void initialize() override;
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;

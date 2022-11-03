@@ -26,12 +26,7 @@
 
 namespace acclimate {
 
-Sector::Sector(Model* model_p, id_t id_p, Ratio upper_storage_limit_omega_p, Time initial_storage_fill_factor_psi_p, transport_type_t transport_type_p)
-    : id(std::move(id_p)),
-      model_m(model_p),
-      upper_storage_limit_omega(upper_storage_limit_omega_p),
-      initial_storage_fill_factor_psi(std::move(initial_storage_fill_factor_psi_p)),
-      transport_type(transport_type_p) {}
+Sector::Sector(Model* model_p, id_t id_p, transport_type_t transport_type_p) : id(std::move(id_p)), model_m(model_p), transport_type(transport_type_p) {}
 
 void Sector::add_demand_request_D(const Demand& demand_request_D) {
     debug::assertstep(this, IterationStep::PURCHASE);
@@ -98,9 +93,5 @@ const Demand& Sector::total_production_X() const {
     return total_production_X_m;
 }
 
-Parameters::SectorParameters& Sector::parameters_writable() {
-    debug::assertstep(this, IterationStep::INITIALIZATION);
-    return parameters_m;
-}
 
 }  // namespace acclimate

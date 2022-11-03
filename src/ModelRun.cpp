@@ -99,7 +99,11 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
     const settings::SettingsNode& scenario_node = settings["scenario"];
     start_time_m = scenario_node["start"].as<Time>();
     stop_time_m = scenario_node["stop"].as<Time>();
-    baseyear_m = scenario_node["baseyear"].as<int>(2000);
+    if (scenario_node.has("baseyear") && !scenario_node.has("basedate")) {
+        basedate_m = scenario_node["baseyear"].as<std::string>() + "-1-1";
+    } else {
+        basedate_m = scenario_node["basedate"].as<std::string>("2000-1-1");
+    }
 
     auto model = new Model(this);
     {

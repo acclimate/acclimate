@@ -52,13 +52,16 @@ class EconomicAgent {
     const EconomicAgent::type_t type;
     const id_t id;
 
+    const Time initial_storage_fill_factor_psi;
+    Ratio upper_storage_limit_omega;
+
   protected:
-    EconomicAgent(id_t id_p, Region* region_p, EconomicAgent::type_t type_p);
+    EconomicAgent(id_t id_p, Region* region_p, EconomicAgent::type_t type_p, Ratio upper_storage_limit_omega_p, Time initial_storage_fill_factor_psi_p);
 
   public:
     virtual ~EconomicAgent();
-    const Parameters::AgentParameters& parameters() const { return parameters_; }
-    Parameters::AgentParameters const& parameters_writable() const;
+    const Parameters::AgentParameters& agent_parameters() const { return parameters_; }
+    Parameters::AgentParameters& agent_parameters_writable();
     const Forcing& forcing() const { return forcing_m; }
     void set_forcing(const Forcing& forcing_p);
     bool is_firm() const { return type == EconomicAgent::type_t::FIRM; }
@@ -67,6 +70,7 @@ class EconomicAgent {
     virtual const Firm* as_firm() const { throw log::error(this, "Not a firm"); }
     virtual Consumer* as_consumer() { throw log::error(this, "Not a consumer"); }
     virtual const Consumer* as_consumer() const { throw log::error(this, "Not a consumer"); }
+    virtual void initialize() = 0;
     virtual void iterate_consumption_and_production() = 0;
     virtual void iterate_expectation() = 0;
     virtual void iterate_purchase() = 0;

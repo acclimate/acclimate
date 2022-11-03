@@ -174,8 +174,8 @@ void Scenario::iterate() {
 }
 
 std::string Scenario::time_units_str() const {
-    if (scenario_node.has("baseyear")) {
-        return std::string("days since ") + std::to_string(scenario_node["baseyear"].as<unsigned int>()) + "-1-1";
+    if (scenario_node.has("basedate")) {
+        return std::string("days since ") + scenario_node["basedate"].as<std::string>("2000-1-1");
     }
     return "days since 0-1-1";
 }
