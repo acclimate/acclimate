@@ -71,10 +71,11 @@ class Consumer final : public EconomicAgent {
     FloatType local_optimal_utility;
 
     // variables for utility function , pre-allocated to increase efficiency
-    autodiff::Value<FloatType> autodiff_consumption_utility = autodiff::Value<FloatType>(0, 0);
-    autodiff::Value<FloatType> autodiff_basket_consumption_utility = autodiff::Value<FloatType>(0, 0);
-    autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, 0);
-    autodiff::Value<FloatType> autodiffutility = autodiff::Value<FloatType>(0, 0);
+    autodiff::Value<FloatType> autodiff_consumption_utility = autodiff::Value<FloatType>(0, 0.0);
+    autodiff::Value<FloatType> autodiff_basket_consumption_utility = autodiff::Value<FloatType>(0, 0.0);
+    autodiff::Value<FloatType> autodiffutility = autodiff::Value<FloatType>(0, 0.0);
+
+    autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, 0.0);
 
   public:
     using EconomicAgent::input_storages;

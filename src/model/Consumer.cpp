@@ -62,7 +62,7 @@ void Consumer::initialize() {
     autodiff_basket_consumption_utility = {input_storages.size(), 0.0};
     autodiff_consumption_utility = {input_storages.size(), 0.0};
 
-    var_optimizer_consumption = autodiff::Variable<FloatType>(0, input_storages.size(), input_storages.size(), 0.0);
+    var_optimizer_consumption = autodiff::Variable<FloatType>(input_storages.size(), 0.0);
 
     share_factors = std::vector<FloatType>(input_storages.size());
     exponent_share_factors = std::vector<FloatType>(input_storages.size());
@@ -168,9 +168,9 @@ void Consumer::initialize() {
  * @return auto-differentiable value of the utility function
  */
 autodiff::Value<FloatType> Consumer::autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& baseline_relative_consumption) {
-    autodiff_consumption_utility.reset();  // reset to 0 without new call
+    autodiff_consumption_utility = {input_storages.size(), 0.0};  // reset to 0 without new call
     for (int basket = 0; basket < int(consumer_baskets.size()); ++basket) {
-        autodiff_basket_consumption_utility.reset();
+        autodiff_basket_consumption_utility = {input_storages.size(), 0.0};
         for (auto& index : consumer_basket_indizes[basket]) {
             auto consumption_quantity = baseline_relative_consumption[index] * share_factors[index];
             autodiff_basket_consumption_utility += std::pow(consumption_quantity, intra_basket_substitution_exponent[basket]) * exponent_share_factors[index];
