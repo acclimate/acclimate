@@ -105,18 +105,18 @@ void NetCDFOutput::start() {
     event_t.add_compound_field<decltype(ArrayOutput::Event::index2)>("index2", offsetof(ArrayOutput::Event, index2));
     event_t.add_compound_field<decltype(ArrayOutput::Event::value)>("value", offsetof(ArrayOutput::Event, value));
     var_events = std::make_unique<netCDF::Variable>(file->add_variable("events", event_t, {dim_event}));
-    var_events->set_compression(false, compression_level);
+    // var_events->set_compression(false, compression_level); //removing compression from events
 
     var_time = std::make_unique<netCDF::Variable>(file->add_variable<int>("time", {dim_time}));
     var_time->set_compression(false, compression_level);
     var_time->add_attribute("calendar").set<std::string>(model()->run()->calendar());
     var_time->add_attribute("units").set<std::string>(std::string("days since ") + model()->run()->basedate());
 
-    include_events = true;
+    include_events = false;
 
     {
         auto event_type_var = file->add_variable<std::string>("event_type", {dim_event_type});
-        event_type_var.set_compression(false, compression_level);
+        // event_type_var.set_compression(false, compression_level);
         for (std::size_t i = 0; i < EVENT_NAMES.size(); ++i) {
             event_type_var.set<const char*, 1>(EVENT_NAMES[i], {i});
         }
@@ -124,7 +124,7 @@ void NetCDFOutput::start() {
 
     {
         auto sector_var = file->add_variable<std::string>("sector", {dim_sector});
-        sector_var.set_compression(false, compression_level);
+        // sector_var.set_compression(false, compression_level);
         for (std::size_t i = 0; i < model()->sectors.size(); ++i) {
             sector_var.set<std::string, 1>(model()->sectors[i]->name(), {i});
         }
@@ -132,7 +132,7 @@ void NetCDFOutput::start() {
 
     {
         auto region_var = file->add_variable<std::string>("region", {dim_region});
-        region_var.set_compression(false, compression_level);
+        // region_var.set_compression(false, compression_level);
         for (std::size_t i = 0; i < model()->regions.size(); ++i) {
             region_var.set<std::string, 1>(model()->regions[i]->name(), {i});
         }
@@ -151,7 +151,7 @@ void NetCDFOutput::start() {
         location_t.add_compound_field<decltype(LocationCompound::location_type)>("location_type", offsetof(LocationCompound, location_type));
 
         auto location_var = file->add_variable("location", location_t, {dim_location});
-        location_var.set_compression(false, compression_level);
+        // location_var.set_compression(false, compression_level);
         LocationCompound value;
         value.name[sizeof(value.name) / sizeof(value.name[0]) - 1] = '\0';
         for (std::size_t i = 0; i < model()->other_locations.size(); ++i) {
@@ -189,7 +189,7 @@ void NetCDFOutput::start() {
         agent_t.add_compound_field<decltype(AgentCompound::region)>("region", offsetof(AgentCompound, region));
 
         auto agent_var = file->add_variable("agent", agent_t, {dim_agent});
-        agent_var.set_compression(false, compression_level);
+        // agent_var.set_compression(false, compression_level);
         AgentCompound value;
         value.name[sizeof(value.name) / sizeof(value.name[0]) - 1] = '\0';
         for (std::size_t i = 0; i < model()->economic_agents.size(); ++i) {
