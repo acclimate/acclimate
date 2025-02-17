@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_STORAGE_H
 #define ACCLIMATE_STORAGE_H
@@ -28,7 +12,6 @@
 #include "acclimate.h"
 #include "model/PurchasingManager.h"
 #include "openmp.h"
-#include "parameters.h"
 
 namespace acclimate {
 
@@ -37,16 +20,26 @@ class Model;
 class Sector;
 
 class Storage final {
+  public:
+    struct Parameters {
+        Ratio consumption_price_elasticity = Ratio(0.0);
+
+        template<typename Func>
+        void initialize(Func&& f) {
+            consumption_price_elasticity = f("consumption_price_elasticity").template as<Ratio>();
+        }
+    };
+
   private:
-    Flow input_flow_I_[3] = {Flow(0.0), Flow(0.0), Flow(0.0)};
-    Forcing forcing_mu_ = Forcing(1.0);
-    Stock content_S_ = Stock(0.0);
-    Stock initial_content_S_star_ = Stock(0.0);
-    Flow initial_input_flow_I_star_ = Flow(0.0);  // == initial_used_flow_U_star_
-    Flow used_flow_U_ = Flow(0.0);
-    Flow desired_used_flow_U_tilde_ = Flow(0.0);
-    openmp::Lock input_flow_I_lock;
-    Parameters::StorageParameters parameters_;
+    Flow input_flow_[3] = {Flow(0.0), Flow(0.0), Flow(0.0)}; /** I */
+    Forcing forcing_ = Forcing(1.0);                         /** \mu */
+    Stock content_ = Stock(0.0);                             /** S */
+    Stock baseline_content_ = Stock(0.0);                    /** S^* */
+    Flow baseline_input_flow_ = Flow(0.0);                   /** I^* = U^* */
+    Flow used_flow_ = Flow(0.0);                             /** U */
+    Flow desired_used_flow_ = Flow(0.0);                     /** \tilde{U} */
+    openmp::Lock input_flow_lock_;
+    Parameters parameters_;
 
   public:
     non_owning_ptr<Sector> sector;
@@ -55,37 +48,42 @@ class Storage final {
     const id_t id;
 
   private:
-    void calc_content_S();
+    void calc_content();
 
   public:
-    Storage(Sector* sector_p, EconomicAgent* economic_agent_p);
+    Storage(Sector* sector_, EconomicAgent* economic_agent_);
     ~Storage();
-    const Stock& content_S() const;
-    const Flow& used_flow_U(const EconomicAgent* caller = nullptr) const;
-    const Flow& desired_used_flow_U_tilde(const EconomicAgent* caller = nullptr) const;
-    const Stock& initial_content_S_star() const { return initial_content_S_star_; }
-    const Flow& initial_input_flow_I_star() const { return initial_input_flow_I_star_; }
-    const Flow& initial_used_flow_U_star() const { return initial_input_flow_I_star_; }  // == initial_used_flow_U_star
-    const Parameters::StorageParameters& parameters() const { return parameters_; }
-    Parameters::StorageParameters& parameters_writable();
-    void set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p);
-    void use_content_S(const Flow& used_flow_U_current);
-    Flow last_possible_use_U_hat() const;
-    Flow estimate_possible_use_U_hat() const;
-    Flow get_possible_use_U_hat() const;
-    void push_flow_Z(const Flow& flow_Z);
-    const Flow& current_input_flow_I() const;
-    const Flow& last_input_flow_I() const;
-    const Flow& next_input_flow_I() const;
-    Ratio get_technology_coefficient_a() const;
-    Ratio get_input_share_u() const;
-    void add_initial_flow_Z_star(const Flow& flow_Z_star);
-    bool subtract_initial_flow_Z_star(const Flow& flow_Z_star);
+    const Stock& content() const;
+    const Flow& used_flow(const EconomicAgent* caller = nullptr) const;
+    const Flow& desired_used_flow(const EconomicAgent* caller = nullptr) const;
+    const Stock& baseline_content() const { return baseline_content_; }
+    const Flow& baseline_input_flow() const { return baseline_input_flow_; }
+    const Flow& baseline_used_flow() const { return baseline_input_flow_; }  // baseline_used_flow == baseline_input_flow_
+    const Parameters& parameters() const { return parameters_; }
+    void set_desired_used_flow(const Flow& desired_used_flow_p);
+    void use_content(const Flow& flow);
+    Flow last_possible_use() const;
+    Flow estimate_possible_use() const;
+    Flow get_possible_use() const;
+    void push_flow(const Flow& flow);
+    const Flow& current_input_flow() const;
+    const Flow& last_input_flow() const;
+    const Flow& next_input_flow() const;
+    Ratio get_technology_coefficient() const;
+    Ratio get_input_share() const;
+    void add_baseline_flow(const Flow& flow);
+    bool subtract_baseline_flow(const Flow& flow);
     void iterate_consumption_and_production();
 
     Model* model();
     const Model* model() const;
     const std::string& name() const { return id.name; }
+
+    template<typename Func>
+    void initialize_parameters(Func&& f) {
+        debug::assertstep(this, IterationStep::INITIALIZATION);
+        parameters_.initialize(std::move(f));
+    }
 
     template<typename Observer, typename H>
     bool observe(Observer& o) const {
@@ -96,15 +94,15 @@ class Storage final {
                         })
                && o.set(H::hash("content"),
                         [this]() {  //
-                            return content_S();
+                            return content();
                         })
                && o.set(H::hash("demand"),
                         [this]() {  //
-                            return purchasing_manager->demand_D();
+                            return purchasing_manager->demand();
                         })
                && o.set(H::hash("desired_used_flow"),
                         [this]() {  //
-                            return desired_used_flow_U_tilde();
+                            return desired_used_flow();
                         })
                && o.set(H::hash("expected_costs"),
                         [this]() {  //
@@ -112,7 +110,7 @@ class Storage final {
                         })
                && o.set(H::hash("input_flow"),
                         [this]() {  //
-                            return last_input_flow_I();
+                            return last_input_flow();
                         })
                && o.set(H::hash("optimized_value"),
                         [this]() {  //
@@ -120,7 +118,7 @@ class Storage final {
                         })
                && o.set(H::hash("possible_use"),
                         [this]() {  //
-                            return last_possible_use_U_hat();
+                            return last_possible_use();
                         })
                && o.set(H::hash("purchase"),
                         [this]() {  //
@@ -140,11 +138,11 @@ class Storage final {
                         })
                && o.set(H::hash("use"),
                         [this]() {  //
-                            return purchasing_manager->demand_D();
+                            return purchasing_manager->demand();
                         })
                && o.set(H::hash("used_flow"),
                         [this]() {  //
-                            return used_flow_U();
+                            return used_flow();
                         })
             //
             ;

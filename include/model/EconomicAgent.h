@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_ECONOMICAGENT_H
 #define ACCLIMATE_ECONOMICAGENT_H
@@ -26,7 +10,6 @@
 #include <string>
 
 #include "acclimate.h"
-#include "parameters.h"
 
 namespace acclimate {
 
@@ -40,11 +23,8 @@ class EconomicAgent {
   public:
     enum class type_t { CONSUMER, FIRM };
 
-  private:
-    Parameters::AgentParameters parameters_;
-
   protected:
-    Forcing forcing_m = Forcing(1.0);
+    Forcing forcing_ = Forcing(1.0);
 
   public:
     owning_vector<Storage> input_storages;
@@ -53,13 +33,11 @@ class EconomicAgent {
     const id_t id;
 
   protected:
-    EconomicAgent(id_t id_p, Region* region_p, EconomicAgent::type_t type_p);
+    EconomicAgent(id_t id_, Region* region_, EconomicAgent::type_t type_);
 
   public:
     virtual ~EconomicAgent();
-    const Parameters::AgentParameters& parameters() const { return parameters_; }
-    Parameters::AgentParameters const& parameters_writable() const;
-    const Forcing& forcing() const { return forcing_m; }
+    const Forcing& forcing() const { return forcing_; }
     void set_forcing(const Forcing& forcing_p);
     bool is_firm() const { return type == EconomicAgent::type_t::FIRM; }
     bool is_consumer() const { return type == EconomicAgent::type_t::CONSUMER; }
@@ -90,22 +68,22 @@ class EconomicAgent {
                && o.set(H::hash("consumption"),
                         [this]() {  //
                             return std::accumulate(std::begin(input_storages), std::end(input_storages), Demand(0.0),
-                                                   [](const Demand& d, const auto& is) { return d + is->used_flow_U(); });
+                                                   [](const Demand& d, const auto& is) { return d + is->used_flow(); });
                         })
                && o.set(H::hash("demand"),
                         [this]() {  //
                             return std::accumulate(std::begin(input_storages), std::end(input_storages), Demand(0.0),
-                                                   [](const Demand& d, const auto& is) { return d + is->purchasing_manager->demand_D(); });
+                                                   [](const Demand& d, const auto& is) { return d + is->purchasing_manager->demand(); });
                         })
                && o.set(H::hash("input_flow"),
                         [this]() {  //
                             return std::accumulate(std::begin(input_storages), std::end(input_storages), Demand(0.0),
-                                                   [](const Demand& d, const auto& is) { return d + is->last_input_flow_I(); });
+                                                   [](const Demand& d, const auto& is) { return d + is->last_input_flow(); });
                         })
                && o.set(H::hash("storage"),
                         [this]() {  //
                             return std::accumulate(std::begin(input_storages), std::end(input_storages), Stock(0.0),
-                                                   [](const Stock& s, const auto& is) { return s + is->content_S(); });
+                                                   [](const Stock& s, const auto& is) { return s + is->content(); });
                         })
             //
             ;

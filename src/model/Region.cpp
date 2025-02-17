@@ -1,28 +1,8 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "model/Region.h"
-
-#include <iterator>
-#include <type_traits>
-#include <utility>
 
 #include "acclimate.h"
 #include "model/Government.h"
@@ -30,98 +10,93 @@
 
 namespace acclimate {
 
-Region::Region(Model* model_p, id_t id_p) : GeoLocation(model_p, std::move(id_p), 0, GeoLocation::type_t::REGION) {}
+Region::Region(Model* model, id_t id) : GeoLocation(model, std::move(id), 0, GeoLocation::type_t::REGION) {}
 
 Region::~Region() = default;
 
-void Region::add_export_Z(const Flow& export_flow_Z_p) {
+void Region::add_export(const Flow& flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    export_flow_Z_lock.call([&]() { export_flow_Z_[model()->current_register()] += export_flow_Z_p; });
+    export_flow_lock_.call([&]() { export_flow_[model()->current_register()] += flow; });
 }
 
-void Region::add_import_Z(const Flow& import_flow_Z_p) {
+void Region::add_import(const Flow& flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    import_flow_Z_lock.call([&]() { import_flow_Z_[model()->current_register()] += import_flow_Z_p; });
+    import_flow_lock_.call([&]() { import_flow_[model()->current_register()] += flow; });
 }
 
-void Region::add_consumption_flow_Y(const Flow& consumption_flow_Y_p) {
+void Region::add_consumption(const Flow& flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    consumption_flow_Y_lock.call([&]() { consumption_flow_Y_[model()->current_register()] += consumption_flow_Y_p; });
+    consumption_flow_Y_lock_.call([&]() { consumption_flow_Y_[model()->current_register()] += flow; });
 }
 
-Flow Region::get_gdp() const {
-    return consumption_flow_Y_[model()->current_register()] + export_flow_Z_[model()->current_register()] - import_flow_Z_[model()->current_register()];
+auto Region::get_gdp() const -> Flow {
+    return consumption_flow_Y_[model()->current_register()] + export_flow_[model()->current_register()] - import_flow_[model()->current_register()];
 }
 
 void Region::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    export_flow_Z_[model()->other_register()] = Flow(0.0);
-    import_flow_Z_[model()->other_register()] = Flow(0.0);
+    export_flow_[model()->other_register()] = Flow(0.0);
+    import_flow_[model()->other_register()] = Flow(0.0);
     consumption_flow_Y_[model()->other_register()] = Flow(0.0);
-    if (government_m) {
-        government_m->iterate_consumption_and_production();
+    if (government_) {
+        government_->iterate_consumption_and_production();
     }
 }
 
 void Region::iterate_expectation() {
     debug::assertstep(this, IterationStep::EXPECTATION);
-    if (government_m) {
-        government_m->iterate_expectation();
+    if (government_) {
+        government_->iterate_expectation();
     }
 }
 
 void Region::iterate_purchase() {
     debug::assertstep(this, IterationStep::PURCHASE);
-    if (government_m) {
-        government_m->iterate_purchase();
+    if (government_) {
+        government_->iterate_purchase();
     }
 }
 
 void Region::iterate_investment() {
     debug::assertstep(this, IterationStep::INVESTMENT);
-    if (government_m) {
-        government_m->iterate_investment();
+    if (government_) {
+        government_->iterate_investment();
     }
 }
 
-GeoRoute& Region::find_path_to(Region* region, Sector::transport_type_t transport_type) {
-    const auto& it = routes.find(std::make_pair(region->id.index(), transport_type));
-    if (it == std::end(routes)) {
+auto Region::find_path_to(Region* region, Sector::transport_type_t transport_type) -> GeoRoute& {
+    const auto& it = routes_.find(std::make_pair(region->id.index(), transport_type));
+    if (it == std::end(routes_)) {
         throw log::error(this, "No transport data from ", name(), " to ", region->name(), " via ", Sector::unmap_transport_type(transport_type));
     }
     return it->second;
 }
 
-const Flow& Region::consumption_C() const {
+auto Region::consumption() const -> const Flow& {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     return consumption_flow_Y_[model()->current_register()];
 }
 
-const Flow& Region::import_flow_Z() const {
+auto Region::import_flow() const -> const Flow& {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    return import_flow_Z_[model()->current_register()];
+    return import_flow_[model()->current_register()];
 }
 
-const Flow& Region::export_flow_Z() const {
+auto Region::export_flow() const -> const Flow& {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    return export_flow_Z_[model()->current_register()];
+    return export_flow_[model()->current_register()];
 }
 
 void Region::set_government(Government* government_p) {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    if (government_m) {
+    if (government_) {
         throw log::error(this, "Government already set");
     }
-    government_m.reset(government_p);
+    government_.reset(government_p);
 }
 
-Government* Region::government() { return government_m.get(); }
+auto Region::government() -> Government* { return government_.get(); }
 
-const Government* Region::government() const { return government_m.get(); }
-
-const Parameters::RegionParameters& Region::parameters_writable() const {
-    debug::assertstep(this, IterationStep::INITIALIZATION);
-    return parameters_m;
-}
+auto Region::government() const -> const Government* { return government_.get(); }
 
 }  // namespace acclimate

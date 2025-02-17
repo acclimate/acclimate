@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_FIRM_H
 #define ACCLIMATE_FIRM_H
@@ -36,9 +20,9 @@ class Sector;
 
 class Firm final : public EconomicAgent {
   private:
-    Flow initial_production_X_star_ = Flow(0.0);
-    Flow production_X_ = Flow(0.0);  // quantity of production and its selling value
-    Flow initial_total_use_U_star_ = Flow(0.0);
+    Flow baseline_production_ = Flow(0.0); /** X^* */
+    Flow baseline_use_ = Flow(0.0);        /** U^* */
+    Flow production_ = Flow(0.0);          /** X */
     std::shared_ptr<BusinessConnection> self_supply_connection_;
 
   public:
@@ -47,57 +31,61 @@ class Firm final : public EconomicAgent {
     const std::unique_ptr<SalesManager> sales_manager;
 
   private:
-    void produce_X();
+    void produce();
 
   public:
-    Firm(id_t id_p, Sector* sector_p, Region* region_p, const Ratio& possible_overcapacity_ratio_beta_p);
+    Firm(id_t id, Sector* sector_, Region* region, const Ratio& possible_overcapacity_ratio_beta);
     void initialize() override;
     void iterate_consumption_and_production() override;
     void iterate_expectation() override;
     void iterate_purchase() override;
     void iterate_investment() override;
-    void add_initial_production_X_star(const Flow& initial_production_flow_X_star);
-    void subtract_initial_production_X_star(const Flow& initial_production_flow_X_star);
-    void add_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
-    void subtract_initial_total_use_U_star(const Flow& initial_use_flow_U_star);
+    void add_baseline_production(const Flow& flow);
+    void subtract_baseline_production(const Flow& flow);
+    void add_baseline_use(const Flow& flow);
+    void subtract_baseline_use(const Flow& flow);
     Firm* as_firm() override { return this; }
     const Firm* as_firm() const override { return this; }
     const BusinessConnection* self_supply_connection() const;
     void self_supply_connection(std::shared_ptr<BusinessConnection> self_supply_connection_p);
-    const Flow& production_X() const;
-    const Flow& initial_production_X_star() const { return initial_production_X_star_; }
-    Flow forced_initial_production_lambda_X_star() const { return round(initial_production_X_star_ * forcing_m); }
-    Flow maximal_production_beta_X_star() const;
-    FlowQuantity forced_initial_production_quantity_lambda_X_star() const { return round(initial_production_X_star_.get_quantity() * forcing_m); }
-    FloatType forced_initial_production_quantity_lambda_X_star_float() const { return to_float(initial_production_X_star_.get_quantity() * forcing_m); }
-    FlowQuantity forced_maximal_production_quantity_lambda_beta_X_star() const;
-    const Flow& initial_total_use_U_star() const { return initial_total_use_U_star_; }
+    const Flow& production() const;
+    const Flow& baseline_production() const { return baseline_production_; }
+    Flow forced_baseline_production() const { return round(baseline_production_ * forcing_); }
+    Flow maximal_production() const; /** \beta * X^* */
+    FlowQuantity forced_baseline_production_quantity() const { return round(baseline_production_.get_quantity() * forcing_); }
+    FloatType forced_baseline_production_quantity_float() const { return to_float(baseline_production_.get_quantity() * forcing_); }
+    FlowQuantity forced_maximal_production_quantity() const;
+    const Flow& baseline_use() const { return baseline_use_; }
 
     void debug_print_details() const override;
 
     template<typename Observer, typename H>
     bool observe(Observer& o) const {
         return EconomicAgent::observe<Observer, H>(o)  //
+               && o.set(H::hash("baseline_production"),
+                        [this]() {  //
+                            return baseline_production();
+                        })
                && o.set(H::hash("communicated_possible_production"),
                         [this]() {  //
-                            return sales_manager->communicated_parameters().possible_production_X_hat;
+                            return sales_manager->communicated_parameters().possible_production;
                         })
                && o.set(H::hash("desired_production_capacity"),
                         [this]() {  //
-                            return capacity_manager->get_desired_production_capacity_p_tilde();
+                            return capacity_manager->get_desired_production_capacity();
                         })
                && o.set(H::hash("direct_loss"),
                         [this]() {  //
-                            return Flow::possibly_negative(round(initial_production_X_star_.get_quantity() * Forcing(1.0 - forcing_m)),
-                                                           production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0));
+                            return Flow::possibly_negative(round(baseline_production_.get_quantity() * Forcing(1.0 - forcing_)),
+                                                           production_.get_quantity() > 0.0 ? production_.get_price() : Price(0.0));
                         })
                && o.set(H::hash("expected_offer_price"),
                         [this]() {  //
-                            return sales_manager->communicated_parameters().offer_price_n_bar;
+                            return sales_manager->communicated_parameters().offer_price;
                         })
                && o.set(H::hash("expected_production"),
                         [this]() {  //
-                            return sales_manager->communicated_parameters().expected_production_X;
+                            return sales_manager->communicated_parameters().expected_production;
                         })
                && o.set(H::hash("forcing"),
                         [this]() {  //
@@ -105,23 +93,23 @@ class Firm final : public EconomicAgent {
                         })
                && o.set(H::hash("incoming_demand"),
                         [this]() {  //
-                            return sales_manager->sum_demand_requests_D();
+                            return sales_manager->sum_demand_requests();
                         })
                && o.set(H::hash("offer_price"),
                         [this]() {  //
-                            return sales_manager->communicated_parameters().production_X.get_price();
+                            return sales_manager->communicated_parameters().production.get_price();
                         })
                && o.set(H::hash("production"),
                         [this]() {  //
-                            return production_X();
+                            return production();
                         })
                && o.set(H::hash("production_capacity"),
                         [this]() {  //
-                            return capacity_manager->get_production_capacity_p();
+                            return capacity_manager->get_production_capacity();
                         })
                && o.set(H::hash("possible_production_capacity"),
                         [this]() {  //
-                            return capacity_manager->get_possible_production_capacity_p_hat();
+                            return capacity_manager->get_possible_production_capacity();
                         })
                && o.set(H::hash("tax"),
                         [this]() {  //
@@ -129,24 +117,24 @@ class Firm final : public EconomicAgent {
                         })
                && o.set(H::hash("total_loss"),
                         [this]() {  //
-                            return Flow::possibly_negative(round(initial_production_X_star_.get_quantity() - production_X_.get_quantity()),
-                                                           production_X_.get_quantity() > 0.0 ? production_X_.get_price() : Price(0.0));
+                            return Flow::possibly_negative(round(baseline_production_.get_quantity() - production_.get_quantity()),
+                                                           production_.get_quantity() > 0.0 ? production_.get_price() : Price(0.0));
                         })
                && o.set(H::hash("total_production_costs"),
                         [this]() {  //
-                            return sales_manager->total_production_costs_C();
+                            return sales_manager->total_production_costs();
                         })
                && o.set(H::hash("total_revenue"),
                         [this]() {  //
-                            return sales_manager->total_revenue_R();
+                            return sales_manager->total_revenue();
                         })
                && o.set(H::hash("total_value_loss"),
                         [this]() {  //
-                            return (initial_production_X_star_ - production_X_).get_value();
+                            return (baseline_production_ - production_).get_value();
                         })
                && o.set(H::hash("unit_production_costs"),
                         [this]() {  //
-                            return sales_manager->communicated_parameters().possible_production_X_hat.get_price();
+                            return sales_manager->communicated_parameters().possible_production.get_price();
                         })
             //
             ;

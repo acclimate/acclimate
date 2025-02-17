@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_EXTERNALSCENARIO_H
 #define ACCLIMATE_EXTERNALSCENARIO_H
@@ -38,23 +22,23 @@ class Model;
 
 class ExternalScenario : public Scenario {
   protected:
-    std::string forcing_file;
-    std::string expression;
-    std::string variable_name;
-    bool remove_afterwards = false;
-    bool done = false;
-    unsigned int file_index_from = 0;
-    unsigned int file_index_to = 0;
-    unsigned int file_index = 0;
+    std::string forcing_file_;
+    std::string expression_;
+    std::string variable_name_;
+    bool remove_afterwards_ = false;
+    bool done_ = false;
+    unsigned int file_index_from_ = 0;
+    unsigned int file_index_to_ = 0;
+    unsigned int file_index_ = 0;
     std::string calendar_str_;
     std::string time_units_str_;
-    Time next_time = Time(0.0);
-    Time time_offset = Time(0.0);
-    int time_step_width = 1;
-    std::unique_ptr<ExternalForcing> forcing;
+    Time next_time_ = Time(0.0);
+    Time time_offset_ = Time(0.0);
+    int time_step_width_ = 1;
+    std::unique_ptr<ExternalForcing> forcing_;
 
   protected:
-    ExternalScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    ExternalScenario(const settings::SettingsNode& settings, settings::SettingsNode scenario_node, Model* model);
     bool next_forcing_file();
     std::string fill_template(const std::string& in) const;
     unsigned int get_ref_year(const std::string& filename, const std::string& time_str);

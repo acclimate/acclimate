@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_H
 #define ACCLIMATE_H
@@ -105,7 +89,7 @@ inline acclimate::exception error(Arg&& arg, Args&&... args) {
 
 template<typename Arg, typename... Args>
 inline void warning(Arg&& arg, Args&&... args) {
-    if constexpr (options::DEBUGGING) {
+    if constexpr (Options::DEBUGGING) {
         if constexpr (std::is_pointer<Arg>::value && detail::has_model_and_name<typename std::remove_pointer<Arg>::type>::value) {
             detail::output(timeinfo(*arg->model()), ", ", arg->name(), " Warning: ", std::forward<Args>(args)...);
         } else {
@@ -116,7 +100,7 @@ inline void warning(Arg&& arg, Args&&... args) {
 
 template<typename Arg, typename... Args>
 inline void info(Arg&& arg, Args&&... args) {
-    if constexpr (options::DEBUGGING) {
+    if constexpr (Options::DEBUGGING) {
         if constexpr (std::is_pointer<Arg>::value && detail::has_model_and_name<typename std::remove_pointer<Arg>::type>::value) {
             detail::output(timeinfo(*arg->model()), ", ", arg->name(), ": ", std::forward<Args>(args)...);
         } else {
@@ -140,7 +124,7 @@ namespace debug {
 
 template<class Caller>
 inline void assertstep(const Caller* c, IterationStep s) {
-    if constexpr (options::DEBUGGING) {
+    if constexpr (Options::DEBUGGING) {
         if (current_step(*c->model()) != s) {
             throw log::error(c, "should be in ", ITERATION_STEP_NAMES[static_cast<int>(s)], " step");
         }
@@ -152,7 +136,7 @@ inline void assertstep(const Caller* c, IterationStep s) {
 
 template<class Caller>
 inline void assertstepnot(const Caller* c, IterationStep s) {
-    if constexpr (options::DEBUGGING) {
+    if constexpr (Options::DEBUGGING) {
         if (current_step(*c->model()) == s) {
             throw log::error(c, "should NOT be in ", ITERATION_STEP_NAMES[static_cast<int>(s)], " step");
         }
@@ -164,7 +148,7 @@ inline void assertstepnot(const Caller* c, IterationStep s) {
 
 template<class Caller>
 inline void assertstepor(const Caller* c, IterationStep s1, IterationStep s2) {
-    if constexpr (options::DEBUGGING) {
+    if constexpr (Options::DEBUGGING) {
         if (current_step(*c->model()) != s1 && current_step(*c->model()) != s2) {
             throw log::error(c, "should be in ", ITERATION_STEP_NAMES[static_cast<int>(s1)], " or ", ITERATION_STEP_NAMES[static_cast<int>(s2)], " step");
         }

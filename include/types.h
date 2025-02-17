@@ -1,28 +1,13 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_TYPES_H
 #define ACCLIMATE_TYPES_H
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -48,7 +33,8 @@ namespace acclimate {
     }
 #else
 #define typeassert(expr) \
-    {}
+    {                    \
+    }
 #endif
 
 using hash_t = std::uint64_t;
@@ -60,71 +46,74 @@ class hashed_string final {
     using base_type = std::string;  // enable settingsnode to read hash_string
 
   private:
-    const std::string str_m;
-    const hash_t hash_m;
+    const std::string str_;
+    const hash_t hash_;
 
   public:
-    explicit hashed_string(std::string str_p) : str_m(std::move(str_p)), hash_m(hash(str_m.c_str())) {}
-    operator hash_t() const { return hash_m; }             // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-    operator const std::string&() const { return str_m; }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-    friend std::ostream& operator<<(std::ostream& lhs, const hashed_string& rhs) { return lhs << rhs.str_m; }
+    explicit hashed_string(std::string str) : str_(std::move(str)), hash_(hash(str_.c_str())) {}
+    operator hash_t() const { return hash_; }             // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    operator const std::string&() const { return str_; }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    friend std::ostream& operator<<(std::ostream& lhs, const hashed_string& rhs) { return lhs << rhs.str_; }
 };
 
 template<typename T>
 class non_owning_ptr final {
   private:
-    T* p;
+    T* p_;
 
   public:
-    non_owning_ptr(T* p_p) noexcept : p(p_p) {}
+    non_owning_ptr(T* p) noexcept : p_(p) {}
+    non_owning_ptr(const non_owning_ptr&) = default;
+    non_owning_ptr(non_owning_ptr&&) = default;
     const non_owning_ptr& operator=(const non_owning_ptr&) = delete;
+    non_owning_ptr& operator=(non_owning_ptr&&) = default;
 
-    operator T*() { return p; }              // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-    operator const T*() const { return p; }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    operator T*() { return p_; }              // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    operator const T*() const { return p_; }  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 
-    T* operator->() { return p; }
-    const T* operator->() const { return p; }
+    T* operator->() { return p_; }
+    const T* operator->() const { return p_; }
 
-    bool valid() const { return p != nullptr; }
-    void invalidate() { p = nullptr; }
+    bool valid() const { return p_ != nullptr; }
+    void invalidate() { p_ = nullptr; }
 };
 
 template<typename T>
 class non_owning_vector final {
   private:
-    std::vector<T*> v;
+    std::vector<T*> v_;
 
   public:
     using iterator = typename std::vector<T*>::iterator;
     using const_iterator = typename std::vector<T*>::const_iterator;
 
-    iterator begin() noexcept { return v.begin(); }
-    const_iterator begin() const noexcept { return v.begin(); }
-    const_iterator cbegin() const noexcept { return v.begin(); }
+    iterator begin() noexcept { return v_.begin(); }
+    const_iterator begin() const noexcept { return v_.begin(); }
+    const_iterator cbegin() const noexcept { return v_.begin(); }
 
-    iterator end() noexcept { return v.end(); }
-    const_iterator end() const noexcept { return v.end(); }
-    const_iterator cend() const noexcept { return v.end(); }
+    iterator end() noexcept { return v_.end(); }
+    const_iterator end() const noexcept { return v_.end(); }
+    const_iterator cend() const noexcept { return v_.end(); }
 
     T* add(T* item) {
-        v.emplace_back(item);
+        v_.emplace_back(item);
         return item;
     }
 
-    bool empty() const { return v.empty(); }
+    bool empty() const { return v_.empty(); }
 
     template<typename Function>
     T* find_if(Function&& f) {
-        auto it = std::find_if(std::begin(v), std::end(v), f);
-        if (it == std::end(v)) {
+        auto it = std::find_if(std::begin(v_), std::end(v_), f);
+        if (it == std::end(v_)) {
             return nullptr;
         }
         return *it;
     }
     template<typename Function>
     const T* find_if(Function&& f) const {
-        auto it = std::find_if(std::begin(v), std::end(v), f);
-        if (it == std::end(v)) {
+        auto it = std::find_if(std::begin(v_), std::end(v_), f);
+        if (it == std::end(v_)) {
             return nullptr;
         }
         return *it;
@@ -140,34 +129,34 @@ class non_owning_vector final {
     T* find(const std::string& name) { return find(hash(name.c_str())); }
     const T* find(const std::string& name) const { return find(hash(name.c_str())); }
 
-    T* operator[](std::size_t i) { return v[i]; }
-    const T* operator[](std::size_t i) const { return v[i]; }
+    T* operator[](std::size_t i) { return v_[i]; }
+    const T* operator[](std::size_t i) const { return v_[i]; }
 
     bool remove(T* item) {
-        const auto& it = std::find_if(std::begin(v), std::end(v), [item](T* i) { return i == item; });
-        if (it == std::end(v)) {
+        const auto& it = std::find_if(std::begin(v_), std::end(v_), [item](T* i) { return i == item; });
+        if (it == std::end(v_)) {
             return false;
         }
-        v.erase(it);
+        v_.erase(it);
         return true;
     }
 
-    void reserve(std::size_t size_m) { v.reserve(size_m); }
+    void reserve(std::size_t size_m) { v_.reserve(size_m); }
 
-    void shrink_to_fit() { v.shrink_to_fit(); }
+    void shrink_to_fit() { v_.shrink_to_fit(); }
 
-    std::size_t size() const { return v.size(); }
+    std::size_t size() const { return v_.size(); }
 };
 
 template<typename T>
 class owning_vector final {
   private:
-    std::vector<std::unique_ptr<T>> v;
+    std::vector<std::unique_ptr<T>> v_;
 
     void remove_and_update(std::size_t index, std::size_t update_end) {
-        v.erase(std::begin(v) + index);
+        v_.erase(std::begin(v_) + index);
         for (auto i = index; i < update_end - 1; ++i) {  // -1 because element has been removed before
-            v[i]->id.override_index(i);
+            v_[i]->id.override_index(i);
         }
     }
 
@@ -175,36 +164,36 @@ class owning_vector final {
     using iterator = typename std::vector<std::unique_ptr<T>>::iterator;
     using const_iterator = typename std::vector<std::unique_ptr<T>>::const_iterator;
 
-    iterator begin() noexcept { return v.begin(); }
-    const_iterator begin() const noexcept { return v.begin(); }
-    const_iterator cbegin() const noexcept { return v.begin(); }
+    iterator begin() noexcept { return v_.begin(); }
+    const_iterator begin() const noexcept { return v_.begin(); }
+    const_iterator cbegin() const noexcept { return v_.begin(); }
 
-    iterator end() noexcept { return v.end(); }
-    const_iterator end() const noexcept { return v.end(); }
-    const_iterator cend() const noexcept { return v.end(); }
+    iterator end() noexcept { return v_.end(); }
+    const_iterator end() const noexcept { return v_.end(); }
+    const_iterator cend() const noexcept { return v_.end(); }
 
     template<typename U = T, typename... Args>
     U* add(Args... args) {
         U* item = new U(std::forward<Args>(args)...);
-        item->id.override_index(v.size());
-        v.emplace_back(item);
+        item->id.override_index(v_.size());
+        v_.emplace_back(item);
         return item;
     }
 
-    bool empty() const { return v.empty(); }
+    bool empty() const { return v_.empty(); }
 
     template<typename Function>
     T* find_if(Function&& f) {
-        auto it = std::find_if(std::begin(v), std::end(v), f);
-        if (it == std::end(v)) {
+        auto it = std::find_if(std::begin(v_), std::end(v_), f);
+        if (it == std::end(v_)) {
             return nullptr;
         }
         return it->get();
     }
     template<typename Function>
     const T* find_if(Function&& f) const {
-        auto it = std::find_if(std::begin(v), std::end(v), f);
-        if (it == std::end(v)) {
+        auto it = std::find_if(std::begin(v_), std::end(v_), f);
+        if (it == std::end(v_)) {
             return nullptr;
         }
         return it->get();
@@ -220,10 +209,10 @@ class owning_vector final {
     T* find(const std::string& name) { return find(hash(name.c_str())); }
     const T* find(const std::string& name) const { return find(hash(name.c_str())); }
 
-    T* operator[](std::size_t i) { return v[i].get(); }
-    const T* operator[](std::size_t i) const { return v[i].get(); }
+    T* operator[](std::size_t i) { return v_[i].get(); }
+    const T* operator[](std::size_t i) const { return v_[i].get(); }
 
-    void remove(T* item) { remove_and_update(item->id.index(), v.size()); }
+    void remove(T* item) { remove_and_update(item->id.index(), v_.size()); }
 
     // `items` needs to be sorted by index!
     void remove(const std::vector<T*> items) {
@@ -235,15 +224,15 @@ class owning_vector final {
             }
             last_p1 = index + 1;
             remove_and_update(index - i,  // -i because so many elements have been remove already up to here
-                              (i + 1 < items.size()) ? items[i + 1]->id.index() - i : v.size());
+                              (i + 1 < items.size()) ? items[i + 1]->id.index() - i : v_.size());
         }
     }
 
-    void reserve(std::size_t size_m) { v.reserve(size_m); }
+    void reserve(std::size_t size_m) { v_.reserve(size_m); }
 
-    void shrink_to_fit() { v.shrink_to_fit(); }
+    void shrink_to_fit() { v_.shrink_to_fit(); }
 
-    std::size_t size() const { return v.size(); }
+    std::size_t size() const { return v_.size(); }
 };
 
 class id_t {
@@ -251,19 +240,19 @@ class id_t {
     friend class owning_vector;
 
   private:
-    mutable std::size_t index_m = 0;
-    void override_index(std::size_t index_p) const { index_m = index_p; }
+    mutable std::size_t index_ = 0;
+    void override_index(std::size_t index) const { index_ = index; }
 
   public:
     const std::string name;
     const hash_t name_hash;
 
-    explicit id_t(std::string name_p) : name(std::move(name_p)), name_hash(hash(name.c_str())) {}
+    explicit id_t(std::string name_) : name(std::move(name_)), name_hash(hash(name.c_str())) {}
 
-    std::size_t index() const { return index_m; }
+    std::size_t index() const { return index_; }
 
-    constexpr bool operator==(const id_t& rhs) const { return index_m == rhs.index_m && name_hash == rhs.name_hash; }
-    constexpr bool operator!=(const id_t& rhs) const { return index_m != rhs.index_m || name_hash != rhs.name_hash; }
+    constexpr bool operator==(const id_t& rhs) const { return index_ == rhs.index_ && name_hash == rhs.name_hash; }
+    constexpr bool operator!=(const id_t& rhs) const { return index_ != rhs.index_ || name_hash != rhs.name_hash; }
     friend std::ostream& operator<<(std::ostream& lhs, const id_t& rhs) { return lhs << rhs.name; }
 };
 
@@ -278,7 +267,7 @@ using Ratio = FloatType;
 using Forcing = Ratio;
 
 inline FloatType fround(FloatType x) {
-    if constexpr (options::BANKERS_ROUNDING) {
+    if constexpr (Options::BANKERS_ROUNDING) {
         return std::rint(x);
     } else {
         return std::round(x);
@@ -286,14 +275,14 @@ inline FloatType fround(FloatType x) {
 }
 
 inline IntType iround(FloatType x) {
-    if constexpr (options::BANKERS_ROUNDING) {
+    if constexpr (Options::BANKERS_ROUNDING) {
         return std::lrint(x);
     } else {
         return std::round(x);
     }
 }
 
-constexpr FloatType to_float(FloatType v) { return v; }
+constexpr FloatType to_float(FloatType v_) { return v_; }
 
 template<bool rounded>
 struct InternalType {};
@@ -307,13 +296,14 @@ struct InternalType<false> {
     using type = FloatType;
 };
 
-template<int precision_digits_p, bool rounded_p>
+constexpr FloatType precision_from_digits(const unsigned char precision_digits_) {
+    return precision_digits_ == 0 ? 1 : 0.1 * precision_from_digits(precision_digits_ - 1);
+}
+
+template<int precision_digits_, bool rounded_>
 class Type {
   protected:
-    static constexpr FloatType precision_from_digits(const unsigned char precision_digits_p_) {
-        return precision_digits_p_ == 0 ? 1 : 0.1 * precision_from_digits(precision_digits_p_ - 1);
-    }
-    static constexpr typename InternalType<rounded_p>::type maybe_round(FloatType f) {
+    static constexpr typename InternalType<rounded_>::type maybe_round(FloatType f) {
         if constexpr (rounded) {
             return iround(f / precision);
         } else {
@@ -323,14 +313,14 @@ class Type {
 
   public:
     using base_type = FloatType;  // used for SettingsNode when reading from config
-    static constexpr bool rounded = rounded_p;
-    static constexpr int precision_digits = precision_digits_p;
-    static constexpr FloatType precision = precision_from_digits(precision_digits_p);
+    static constexpr bool rounded = rounded_;
+    static constexpr int precision_digits = precision_digits_;
+    static constexpr FloatType precision = precision_from_digits(precision_digits_);
 
     constexpr Type() : t(0) {}
 
   protected:
-    typename InternalType<rounded_p>::type t;
+    typename InternalType<rounded_>::type t;
 
   protected:
     constexpr FloatType get_float() const {
@@ -344,7 +334,7 @@ class Type {
   public:
     constexpr explicit Type(FloatType f) : t(maybe_round(f)) {}
     friend constexpr std::ostream& operator<<(std::ostream& lhs, const Type& rhs) {
-        return lhs << std::setprecision(precision_digits_p) << std::fixed << to_float(rhs);
+        return lhs << std::setprecision(precision_digits_) << std::fixed << to_float(rhs);
     }
     friend constexpr FloatType to_float(const Type& other) { return other.get_float(); }
 };
@@ -395,7 +385,7 @@ class Type {
     friend constexpr bool same_sgn(const T& lhs, const T& rhs) { return (lhs.t >= 0) == (rhs.t >= 0); }                            \
     friend constexpr bool isnan(const T& other) { return std::isnan(other.t); }                                                    \
     friend inline T round(const T& other) {                                                                                        \
-        if constexpr (options::BASED_ON_INT && rounded) {                                                                          \
+        if constexpr (Options::BASED_ON_INT && rounded) {                                                                          \
             return other;                                                                                                          \
         } else {                                                                                                                   \
             return T(fround(other.t / precision) * precision);                                                                     \
@@ -407,10 +397,10 @@ class Type {
         return res;                                                                                                                \
     }
 
-template<int precision_digits_p>
-using NonRoundedType = Type<precision_digits_p, false>;
-template<int precision_digits_p>
-using RoundedType = Type<precision_digits_p, options::BASED_ON_INT>;
+template<int precision_digits_>
+using NonRoundedType = Type<precision_digits_, false>;
+template<int precision_digits_>
+using RoundedType = Type<precision_digits_, Options::BASED_ON_INT>;
 
 class Time : public RoundedType<0> {
   public:
@@ -499,12 +489,12 @@ class PricedQuantity {
         typeassert(value >= 0.0);
     }
     constexpr PricedQuantity(Q quantity_p)  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-        : PricedQuantity(std::move(quantity_p), quantity_p * Price(1.0)) {}
+        : PricedQuantity(quantity_p, quantity_p * Price(1.0)) {}
     constexpr explicit PricedQuantity(FloatType quantity_p) : PricedQuantity(Q(quantity_p)) {}
-    constexpr explicit PricedQuantity(Q quantity_p, const Price& price_p) : PricedQuantity(std::move(quantity_p), quantity_p * price_p) {}
+    constexpr explicit PricedQuantity(Q quantity_p, const Price& price_p) : PricedQuantity(quantity_p, quantity_p * price_p) {}
     static constexpr PricedQuantity possibly_negative(Q quantity_p, V value_p) { return PricedQuantity(std::move(quantity_p), std::move(value_p), true); }
     static constexpr PricedQuantity possibly_negative(Q quantity_p, const Price& price_p) {
-        return PricedQuantity::possibly_negative(std::move(quantity_p), quantity_p * price_p);
+        return PricedQuantity::possibly_negative(quantity_p, quantity_p * price_p);
     }
     PricedQuantity(const PricedQuantity& other) : quantity(other.quantity), value(other.value) {
         if (quantity <= 0.0) {
@@ -610,15 +600,15 @@ class PricedQuantity {
     friend constexpr std::ostream& operator<<(std::ostream& os, const PricedQuantity& op) { return os << op.quantity << " [@" << op.get_price() << "]"; }
 
     friend inline PricedQuantity round(const PricedQuantity& flow) {
-        if constexpr (options::BASED_ON_INT) {
+        if constexpr (Options::BASED_ON_INT) {
             return std::move(flow);
         } else {
             if (round(flow.get_quantity()) <= 0.0) {
                 return PricedQuantity(0.0);
             } else {
-                Price p = round(flow.get_price());
+                Price p_ = round(flow.get_price());
                 Q rounded_quantity = round(flow.get_quantity());
-                const auto rounded_flow = PricedQuantity(rounded_quantity, rounded_quantity * p);
+                const auto rounded_flow = PricedQuantity(rounded_quantity, rounded_quantity * p_);
                 if ((rounded_flow.get_quantity() > 0.0 && rounded_flow.get_value() <= 0.0)
                     || (rounded_flow.get_quantity() <= 0.0 && rounded_flow.get_value() > 0.0)) {
                     return PricedQuantity(0.0);
@@ -650,15 +640,15 @@ constexpr Flow operator/(const Stock& stock, const Time& time) {
     return Flow::possibly_negative(stock.get_quantity() / time, stock.get_value() / time);
 }
 
-template<typename Current, typename Initial>
+template<typename Current, typename Baseline>
 class AnnotatedType {
   public:
     Current current;
-    Initial initial;
+    Baseline baseline;
 
-    constexpr AnnotatedType(Current current_p, Initial initial_p) : current(current_p), initial(initial_p) {}
+    constexpr AnnotatedType(Current current_p, Baseline baseline_p) : current(current_p), baseline(baseline_p) {}
 
-    constexpr explicit AnnotatedType(Initial initial_p) : current(initial_p), initial(initial_p) {}
+    constexpr explicit AnnotatedType(Baseline baseline_p) : current(baseline_p), baseline(baseline_p) {}
 };
 
 using AnnotatedFlow = AnnotatedType<Flow, FlowQuantity>;

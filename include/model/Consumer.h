@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_CONSUMER_H
 #define ACCLIMATE_CONSUMER_H
@@ -38,55 +22,55 @@ class Optimization;
 
 class Consumer final : public EconomicAgent {
   private:
-    bool utilitarian;
+    bool utilitarian_;
 
     // parameters of utility function
-    std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets;
-    std::vector<std::vector<int>> consumer_basket_indizes;
-    FloatType inter_basket_substitution_coefficient;
-    FloatType inter_basket_substitution_exponent;
+    std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets_;
+    std::vector<std::vector<int>> consumer_basket_indizes_;
+    FloatType inter_basket_substitution_coefficient_;
+    FloatType inter_basket_substitution_exponent_;
 
-    std::vector<FloatType> intra_basket_substitution_coefficient;
-    std::vector<FloatType> intra_basket_substitution_exponent;
+    std::vector<FloatType> intra_basket_substitution_coefficient_;
+    std::vector<FloatType> intra_basket_substitution_exponent_;
 
-    std::vector<FloatType> basket_share_factors;
-    std::vector<FloatType> exponent_basket_share_factors;
-    std::vector<FloatType> share_factors;
-    std::vector<FloatType> exponent_share_factors;
+    std::vector<FloatType> basket_share_factors_;
+    std::vector<FloatType> exponent_basket_share_factors_;
+    std::vector<FloatType> share_factors_;
+    std::vector<FloatType> exponent_share_factors_;
 
     // optimization parameters
-    std::vector<double> optimizer_consumption;
+    std::vector<double> optimizer_consumption_;
     // variables for (in)equality constraint, pre-allocated to increase efficiency
-    FlowValue consumption_budget;
-    FlowValue not_spent_budget;  // TODO: introduce real saving possibility, for now just trying to improve numerical stability
+    FlowValue consumption_budget_;
+    FlowValue not_spent_budget_;  // TODO: introduce real saving possibility, for now just trying to improve numerical stability
 
     // consumption limits considered in optimization
-    std::vector<Price> consumption_prices;  // prices to be considered in optimization
-    std::vector<Flow> previous_consumption;
+    std::vector<Price> consumption_prices_;  // prices to be considered in optimization
+    std::vector<Flow> previous_consumption_;
 
-    FloatType baseline_utility;  // baseline utility for scaling
-    std::vector<Flow> baseline_consumption;
+    FloatType baseline_utility_ = 0;  // baseline utility for scaling
+    std::vector<Flow> baseline_consumption_;
     // field to store utility
-    FloatType utility;
-    FloatType local_optimal_utility;
+    FloatType utility_ = 0;
+    FloatType local_optimal_utility_ = 0;
 
     // variables for utility function , pre-allocated to increase efficiency
-    autodiff::Value<FloatType> autodiff_consumption_utility = autodiff::Value<FloatType>(0, 0.0);
-    autodiff::Value<FloatType> autodiff_basket_consumption_utility = autodiff::Value<FloatType>(0, 0.0);
-    autodiff::Value<FloatType> autodiffutility = autodiff::Value<FloatType>(0, 0.0);
+    autodiff::Value<FloatType> autodiff_consumption_utility_ = autodiff::Value<FloatType>(0, 0.0);
+    autodiff::Value<FloatType> autodiff_basket_consumption_utility_ = autodiff::Value<FloatType>(0, 0.0);
+    autodiff::Value<FloatType> autodiffutility_ = autodiff::Value<FloatType>(0, 0.0);
 
-    autodiff::Variable<FloatType> var_optimizer_consumption = autodiff::Variable<FloatType>(0, 0.0);
+    autodiff::Variable<FloatType> var_optimizer_consumption_ = autodiff::Variable<FloatType>(0, 0.0);
 
   public:
     using EconomicAgent::input_storages;
     using EconomicAgent::region;
 
   public:
-    Consumer(id_t id_p,
-             Region* region_p,
-             FloatType inter_basket_substitution_coefficient_p,
-             std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets_p,
-             bool utilitarian_p);
+    Consumer(id_t id,
+             Region* region,
+             FloatType inter_basket_substitution_coefficient,
+             std::vector<std::pair<std::vector<Sector*>, FloatType>> consumer_baskets,
+             bool utilitarian);
 
     Consumer* as_consumer() override { return this; };
     const Consumer* as_consumer() const override { return this; };
@@ -100,11 +84,11 @@ class Consumer final : public EconomicAgent {
         return EconomicAgent::observe<Observer, H>(o)  //
                && o.set(H::hash("utility"),
                         [this]() {  //
-                            return utility;
+                            return utility_;
                         })
                && o.set(H::hash("local_optimal_utility"),
                         [this]() {  //
-                            return local_optimal_utility;
+                            return local_optimal_utility_;
                         })
             //
             ;
@@ -134,7 +118,6 @@ class Consumer final : public EconomicAgent {
     static double invert_scaling_double_to_double(double scaled_value, FlowQuantity scaling_quantity);
     static double scale_quantity_to_double(FlowQuantity quantity, FlowQuantity scaling_quantity);
     static double scale_double_to_double(double not_scaled_double, FlowQuantity scaling_quantity);
-
 };
 }  // namespace acclimate
 

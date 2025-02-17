@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_CAPACITYMANAGER_H
 #define ACCLIMATE_CAPACITYMANAGER_H
@@ -32,8 +16,8 @@ class Model;
 
 class CapacityManager final {
   private:
-    Flow desired_production_X_tilde_ = Flow(0.0);
-    Flow possible_production_X_hat_ = Flow(0.0);
+    Flow desired_production_ = Flow(0.0);  /** \tilde{X} */
+    Flow possible_production_ = Flow(0.0); /** \hat{X} */
 
   public:
     non_owning_ptr<Firm> firm;
@@ -41,19 +25,19 @@ class CapacityManager final {
 
   private:
     void calc_possible_and_desired_production();
-    Flow get_possible_production_X_hat_intern(bool consider_transport_in_production_costs, bool estimate) const;
+    Flow get_possible_production_intern(bool consider_transport_in_production_costs, bool estimate) const;
 
   public:
-    CapacityManager(Firm* firm_p, Ratio possible_overcapacity_ratio_beta_p);
+    CapacityManager(Firm* firm_, Ratio possible_overcapacity_ratio_beta_);
     ~CapacityManager() = default;
-    const Flow& desired_production_X_tilde() const { return desired_production_X_tilde_; }
-    const Flow& possible_production_X_hat() const { return possible_production_X_hat_; }
-    Ratio get_production_capacity_p() const;
-    Ratio get_desired_production_capacity_p_tilde() const;
-    Ratio get_possible_production_capacity_p_hat() const;
-    Flow get_possible_production_X_hat() const;
-    Flow estimate_possible_production_X_hat() const;
-    Flow calc_production_X();
+    const Flow& desired_production() const { return desired_production_; }
+    const Flow& possible_production() const { return possible_production_; }
+    Ratio get_production_capacity() const;          /** p */
+    Ratio get_desired_production_capacity() const;  /** \tilde{p} */
+    Ratio get_possible_production_capacity() const; /** \hat{p} */
+    Flow get_possible_production() const;
+    Flow estimate_possible_production() const; /** \hat{X} */
+    Flow calc_production();                    /** X */
 
     void debug_print_inputs() const;
 

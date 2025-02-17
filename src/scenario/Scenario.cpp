@@ -1,28 +1,8 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "scenario/Scenario.h"
-
-#include <cstdlib>
-#include <memory>
-#include <utility>
 
 #include "acclimate.h"
 #include "model/CapacityManager.h"
@@ -37,8 +17,8 @@
 
 namespace acclimate {
 
-Scenario::Scenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p)
-    : model_m(model_p), scenario_node(std::move(scenario_node_p)), settings(settings_p) {
+Scenario::Scenario(const settings::SettingsNode& settings, settings::SettingsNode scenario_node, Model* model)
+    : model_(model), scenario_node_(std::move(scenario_node)), settings_(settings) {
     srand(0);  // NOLINT(cert-msc32-c,cert-msc51-cpp)
 }
 
@@ -49,7 +29,7 @@ void Scenario::set_firm_property(Firm* firm, const settings::SettingsNode& node,
         if (name == "remaining_capacity") {
             firm->set_forcing(reset ? 1.0 : it.as<Forcing>() / firm->capacity_manager->possible_overcapacity_ratio_beta);
         } else if (name == "forcing") {
-            firm->set_forcing(reset ? Forcing(1.0) : it.as<Forcing>());
+            firm->set_forcing(reset ? static_cast<Forcing>(1.0) : it.as<Forcing>());
         }
     }
 }
@@ -59,7 +39,7 @@ void Scenario::set_consumer_property(Consumer* consumer, const settings::Setting
         const std::string& name = it_map.first;
         const settings::SettingsNode& it = it_map.second;
         if (name == "remaining_consumption_rate") {
-            consumer->set_forcing(reset ? Forcing(1.0) : it.as<Forcing>());
+            consumer->set_forcing(reset ? static_cast<Forcing>(1.0) : it.as<Forcing>());
         }
     }
 }
@@ -159,7 +139,7 @@ void Scenario::apply_target(const settings::SettingsNode& node, bool reset) {
 }
 
 void Scenario::iterate() {
-    for (const auto& event : scenario_node["events"].as_sequence()) {
+    for (const auto& event : scenario_node_["events"].as_sequence()) {
         const std::string& type = event["type"].as<std::string>();
         if (type == "shock") {
             const Time from = event["from"].as<Time>();
@@ -173,9 +153,9 @@ void Scenario::iterate() {
     }
 }
 
-std::string Scenario::time_units_str() const {
-    if (scenario_node.has("basedate")) {
-        return std::string("days since ") + scenario_node["basedate"].as<std::string>("2000-1-1");
+auto Scenario::time_units_str() const -> std::string {
+    if (scenario_node_.has("basedate")) {
+        return std::string("days since ") + scenario_node_["basedate"].as<std::string>("2000-1-1");
     }
     return "days since 0-1-1";
 }

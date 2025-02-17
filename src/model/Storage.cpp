@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "model/Storage.h"
 
@@ -30,150 +14,147 @@
 
 namespace acclimate {
 
-Storage::Storage(Sector* sector_p, EconomicAgent* economic_agent_p)
-    : sector(sector_p), economic_agent(economic_agent_p), purchasing_manager(new PurchasingManager(this)), id(sector->name() + "->" + economic_agent->name()) {}
+Storage::Storage(Sector* sector_, EconomicAgent* economic_agent_)
+    : sector(sector_), economic_agent(economic_agent_), purchasing_manager(new PurchasingManager(this)), id(sector->name() + "->" + economic_agent->name()) {}
 
 Storage::~Storage() = default;  // needed to use forward declares for std::unique_ptr
 
 void Storage::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    calc_content_S();
-    input_flow_I_[2] = input_flow_I_[model()->other_register()];
-    input_flow_I_[model()->other_register()] = Flow(0.0);
+    calc_content();
+    input_flow_[2] = input_flow_[model()->other_register()];
+    input_flow_[model()->other_register()] = Flow(0.0);
     purchasing_manager->iterate_consumption_and_production();
 }
 
-Flow Storage::last_possible_use_U_hat() const {
+auto Storage::last_possible_use() const -> Flow {
     debug::assertstep(this, IterationStep::OUTPUT);
-    return content_S_ / model()->delta_t() + last_input_flow_I();
+    return content_ / model()->delta_t() + last_input_flow();
 }
 
-Flow Storage::estimate_possible_use_U_hat() const {
+auto Storage::estimate_possible_use() const -> Flow {
     debug::assertstep(this, IterationStep::EXPECTATION);
-    return content_S_ / model()->delta_t() + next_input_flow_I();
+    return content_ / model()->delta_t() + next_input_flow();
 }
 
-Flow Storage::get_possible_use_U_hat() const {
+auto Storage::get_possible_use() const -> Flow {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    return content_S_ / model()->delta_t() + current_input_flow_I();
+    return content_ / model()->delta_t() + current_input_flow();
 }
 
-const Flow& Storage::current_input_flow_I() const { return input_flow_I_[model()->other_register()]; }
+auto Storage::current_input_flow() const -> const Flow& { return input_flow_[model()->other_register()]; }
 
-const Flow& Storage::last_input_flow_I() const {
+auto Storage::last_input_flow() const -> const Flow& {
     debug::assertstepor(this, IterationStep::OUTPUT, IterationStep::PURCHASE);
-    return input_flow_I_[2];
+    return input_flow_[2];
 }
 
-Ratio Storage::get_technology_coefficient_a() const { return initial_input_flow_I_star_ / economic_agent->as_firm()->initial_production_X_star(); }
+auto Storage::get_technology_coefficient() const -> Ratio { return baseline_input_flow_ / economic_agent->as_firm()->baseline_production(); }
 
-Ratio Storage::get_input_share_u() const { return initial_input_flow_I_star_ / economic_agent->as_firm()->initial_total_use_U_star(); }
+auto Storage::get_input_share() const -> Ratio { return baseline_input_flow_ / economic_agent->as_firm()->baseline_use(); }
 
-void Storage::calc_content_S() {
+void Storage::calc_content() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    assert(used_flow_U_.get_quantity() * model()->delta_t() <= content_S_.get_quantity() + current_input_flow_I().get_quantity() * model()->delta_t());
-    auto former_content = content_S_;
-    content_S_ = round(content_S_ + (current_input_flow_I() - used_flow_U_) * model()->delta_t());
-    if (content_S_.get_quantity() <= model()->parameters().min_storage * initial_content_S_star_.get_quantity()) {
+    assert(used_flow_.get_quantity() * model()->delta_t() <= content_.get_quantity() + current_input_flow().get_quantity() * model()->delta_t());
+    auto former_content = content_;
+    content_ = round(content_ + (current_input_flow() - used_flow_) * model()->delta_t());
+    if (content_.get_quantity() <= model()->parameters().min_storage * baseline_content_.get_quantity()) {
         model()->run()->event(EventType::STORAGE_UNDERRUN, sector, economic_agent);
-        Quantity quantity = model()->parameters().min_storage * initial_content_S_star_.get_quantity();
-        content_S_ = Stock(quantity, quantity * former_content.get_price());
+        Quantity const quantity = model()->parameters().min_storage * baseline_content_.get_quantity();
+        content_ = Stock(quantity, quantity * former_content.get_price());
     }
-    assert(content_S_.get_quantity() >= 0.0);
+    assert(content_.get_quantity() >= 0.0);
 
-    Stock maxStock = initial_content_S_star_ * forcing_mu_ * sector->upper_storage_limit_omega;
-    if (maxStock.get_quantity() < content_S_.get_quantity()) {
-        model()->run()->event(EventType::STORAGE_OVERRUN, sector, economic_agent, to_float(content_S_.get_quantity() - maxStock.get_quantity()));
-        const Price tmp = content_S_.get_price();
-        content_S_ = maxStock;
-        content_S_.set_price(tmp);
+    Stock const maximum_content = baseline_content_ * forcing_ * sector->upper_storage_limit;
+    if (maximum_content.get_quantity() < content_.get_quantity()) {
+        model()->run()->event(EventType::STORAGE_OVERRUN, sector, economic_agent, to_float(content_.get_quantity() - maximum_content.get_quantity()));
+        const Price tmp = content_.get_price();
+        content_ = maximum_content;
+        content_.set_price(tmp);
     }
 }
 
-void Storage::use_content_S(const Flow& used_flow_U_current) {
+void Storage::use_content(const Flow& flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    used_flow_U_ = used_flow_U_current;
+    used_flow_ = flow;
 }
 
-void Storage::set_desired_used_flow_U_tilde(const Flow& desired_used_flow_U_tilde_p) {
+void Storage::set_desired_used_flow(const Flow& flow) {
     if (economic_agent->is_consumer()) {
         debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     }
     if (economic_agent->is_firm()) {
         debug::assertstep(this, IterationStep::EXPECTATION);
     }
-    desired_used_flow_U_tilde_ = desired_used_flow_U_tilde_p;
+    desired_used_flow_ = flow;
 }
 
-void Storage::push_flow_Z(const Flow& flow_Z) {
+void Storage::push_flow(const Flow& flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    input_flow_I_lock.call([&]() { input_flow_I_[model()->current_register()] += flow_Z; });
+    input_flow_lock_.call([&]() { input_flow_[model()->current_register()] += flow; });
 }
 
-const Flow& Storage::next_input_flow_I() const {
+auto Storage::next_input_flow() const -> const Flow& {
     debug::assertstep(this, IterationStep::EXPECTATION);
-    return input_flow_I_[model()->current_register()];
+    return input_flow_[model()->current_register()];
 }
 
-void Storage::add_initial_flow_Z_star(const Flow& flow_Z_star) {
+void Storage::add_baseline_flow(const Flow& flow) {
     debug::assertstep(this, IterationStep::INITIALIZATION);
-    input_flow_I_[1] += flow_Z_star;
-    input_flow_I_[2] += flow_Z_star;
-    initial_input_flow_I_star_ += flow_Z_star;  // == initial_used_flow_U_star
-    initial_content_S_star_ = round(initial_content_S_star_ + flow_Z_star * sector->initial_storage_fill_factor_psi);
-    content_S_ = round(content_S_ + flow_Z_star * sector->initial_storage_fill_factor_psi);
-    purchasing_manager->add_initial_demand_D_star(flow_Z_star);
+    input_flow_[1] += flow;
+    input_flow_[2] += flow;
+    baseline_input_flow_ += flow;  // == initial_used_flow_U_star
+    baseline_content_ = round(baseline_content_ + flow * sector->baseline_storage_fill_factor);
+    content_ = round(content_ + flow * sector->baseline_storage_fill_factor);
+    purchasing_manager->add_baseline_demand(flow);
     if (economic_agent->type == EconomicAgent::type_t::FIRM) {
-        economic_agent->as_firm()->add_initial_total_use_U_star(flow_Z_star);
+        economic_agent->as_firm()->add_baseline_use(flow);
     }
 }
 
-bool Storage::subtract_initial_flow_Z_star(const Flow& flow_Z_star) {
+auto Storage::subtract_baseline_flow(const Flow& flow) -> bool {
     debug::assertstep(this, IterationStep::INITIALIZATION);
     if (economic_agent->type == EconomicAgent::type_t::FIRM) {
-        economic_agent->as_firm()->subtract_initial_total_use_U_star(flow_Z_star);
+        economic_agent->as_firm()->subtract_baseline_use(flow);
     }
-    if (initial_input_flow_I_star_.get_quantity() - flow_Z_star.get_quantity() >= FlowQuantity::precision) {
-        input_flow_I_[1] -= flow_Z_star;
-        input_flow_I_[2] -= flow_Z_star;
-        initial_input_flow_I_star_ -= flow_Z_star;  // = initial_used_flow_U_star
-        initial_content_S_star_ = round(initial_content_S_star_ - flow_Z_star * sector->initial_storage_fill_factor_psi);
-        content_S_ = round(content_S_ - flow_Z_star * sector->initial_storage_fill_factor_psi);
-        purchasing_manager->subtract_initial_demand_D_star(flow_Z_star);
+    if (baseline_input_flow_.get_quantity() - flow.get_quantity() >= FlowQuantity::precision) {
+        input_flow_[1] -= flow;
+        input_flow_[2] -= flow;
+        baseline_input_flow_ -= flow;  // = initial_used_flow_U_star
+        baseline_content_ = round(baseline_content_ - flow * sector->baseline_storage_fill_factor);
+        content_ = round(content_ - flow * sector->baseline_storage_fill_factor);
+        purchasing_manager->subtract_baseline_demand(flow);
         return false;
     }
     economic_agent->input_storages.remove(this);
     return true;
 }
 
-Model* Storage::model() { return sector->model(); }
-const Model* Storage::model() const { return sector->model(); }
+auto Storage::model() -> Model* { return sector->model(); }
+auto Storage::model() const -> const Model* { return sector->model(); }
 
-const Stock& Storage::content_S() const {
+auto Storage::content() const -> const Stock& {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    return content_S_;
+    return content_;
 }
 
-const Flow& Storage::used_flow_U(const EconomicAgent* caller) const {
-    if constexpr (options::DEBUGGING) {
+auto Storage::used_flow(const EconomicAgent* caller) const -> const Flow& {
+    if constexpr (Options::DEBUGGING) {
         if (caller != economic_agent) {
             debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
         }
     }
-    return used_flow_U_;
+    return used_flow_;
 }
 
-const Flow& Storage::desired_used_flow_U_tilde(const EconomicAgent* caller) const {
-    if (caller != economic_agent) {
-        debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-        debug::assertstepnot(this, IterationStep::EXPECTATION);
+auto Storage::desired_used_flow(const EconomicAgent* caller) const -> const Flow& {
+    if constexpr (Options::DEBUGGING) {
+        if (caller != economic_agent) {
+            debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+            debug::assertstepnot(this, IterationStep::EXPECTATION);
+        }
     }
-    return desired_used_flow_U_tilde_;
-}
-
-Parameters::StorageParameters& Storage::parameters_writable() {
-    debug::assertstep(this, IterationStep::INITIALIZATION);
-    return parameters_;
+    return desired_used_flow_;
 }
 
 }  // namespace acclimate

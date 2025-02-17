@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef OPTIMIZATION_H
 #define OPTIMIZATION_H
@@ -122,71 +106,71 @@ class failure : public std::runtime_error {
 
 class Optimization {
   private:
-    nlopt_opt opt;
-    nlopt_result last_result = NLOPT_SUCCESS;
-    double optimized_value_m;
-    unsigned int dim_m;
+    nlopt_opt opt_;
+    nlopt_result last_result_ = NLOPT_SUCCESS;
+    double optimized_value_;
+    unsigned int dim_;
 
     void check(nlopt_result result) {
         if (result < NLOPT_SUCCESS && result != NLOPT_ROUNDOFF_LIMITED) {
-            throw failure(get_result_description(result, opt));
+            throw failure(get_result_description(result, opt_));
         }
     }
 
   public:
-    Optimization(nlopt_algorithm algorithm, unsigned int dim_p) : opt(nlopt_create(algorithm, dim_p)), dim_m(dim_p) {}
-    ~Optimization() { nlopt_destroy(opt); }
+    Optimization(nlopt_algorithm algorithm, unsigned int dim) : opt_(nlopt_create(algorithm, dim)), dim_(dim) {}
+    ~Optimization() { nlopt_destroy(opt_); }
 
-    // double& xtol(std::size_t i) { return opt->xtol_abs[i]; }
-    // double& lower_bounds(std::size_t i) { return opt->lb[i]; }
-    // double& upper_bounds(std::size_t i) { return opt->ub[i]; }
-    void xtol(const std::vector<double>& v) { check(nlopt_set_xtol_abs(opt, &v[0])); }
-    void lower_bounds(const std::vector<double>& v) { check(nlopt_set_lower_bounds(opt, &v[0])); }
-    void upper_bounds(const std::vector<double>& v) { check(nlopt_set_upper_bounds(opt, &v[0])); }
-    void maxeval(int v) { check(nlopt_set_maxeval(opt, v)); }
-    void maxtime(double v) { check(nlopt_set_maxtime(opt, v)); }  // timeout given in sec
+    // double& xtol(std::size_t i) { return opt_->xtol_abs[i]; }
+    // double& lower_bounds(std::size_t i) { return opt_->lb[i]; }
+    // double& upper_bounds(std::size_t i) { return opt_->ub[i]; }
+    void xtol(const std::vector<double>& v) { check(nlopt_set_xtol_abs(opt_, &v[0])); }
+    void lower_bounds(const std::vector<double>& v) { check(nlopt_set_lower_bounds(opt_, &v[0])); }
+    void upper_bounds(const std::vector<double>& v) { check(nlopt_set_upper_bounds(opt_, &v[0])); }
+    void maxeval(int v) { check(nlopt_set_maxeval(opt_, v)); }
+    void maxtime(double v) { check(nlopt_set_maxtime(opt_, v)); }  // timeout given in sec
 
-    void set_local_algorithm(nlopt_opt local_algorithm) { nlopt_set_local_optimizer(opt, local_algorithm); }
+    void set_local_algorithm(nlopt_opt local_algorithm) { nlopt_set_local_optimizer(opt_, local_algorithm); }
 
-    unsigned int dim() const { return dim_m; }
-    double optimized_value() const { return optimized_value_m; }
-    bool roundoff_limited() const { return last_result == NLOPT_ROUNDOFF_LIMITED; }
-    bool stopval_reached() const { return last_result == NLOPT_STOPVAL_REACHED; }
-    bool ftol_reached() const { return last_result == NLOPT_FTOL_REACHED; }
-    bool xtol_reached() const { return last_result == NLOPT_XTOL_REACHED; }
-    bool maxeval_reached() const { return last_result == NLOPT_MAXEVAL_REACHED; }
-    bool maxtime_reached() const { return last_result == NLOPT_MAXTIME_REACHED; }
+    unsigned int dim() const { return dim_; }
+    double optimized_value() const { return optimized_value_; }
+    bool roundoff_limited() const { return last_result_ == NLOPT_ROUNDOFF_LIMITED; }
+    bool stopval_reached() const { return last_result_ == NLOPT_STOPVAL_REACHED; }
+    bool ftol_reached() const { return last_result_ == NLOPT_FTOL_REACHED; }
+    bool xtol_reached() const { return last_result_ == NLOPT_XTOL_REACHED; }
+    bool maxeval_reached() const { return last_result_ == NLOPT_MAXEVAL_REACHED; }
+    bool maxtime_reached() const { return last_result_ == NLOPT_MAXTIME_REACHED; }
 
-    void reset_last_result() { last_result = NLOPT_SUCCESS; }
+    void reset_last_result() { last_result_ = NLOPT_SUCCESS; }
 
-    const char* last_result_description() const { return get_result_description(last_result, opt); }
+    const char* last_result_description() const { return get_result_description(last_result_, opt_); }
 
     bool optimize(std::vector<double>& x) {  // returns true for "generic success" and false otherwise (for "real" errors, an exception is thrown)
-        last_result = nlopt_optimize(opt, &x[0], &optimized_value_m);
-        check(last_result);
-        return last_result == NLOPT_SUCCESS;
+        last_result_ = nlopt_optimize(opt_, &x[0], &optimized_value_);
+        check(last_result_);
+        return last_result_ == NLOPT_SUCCESS;
     }
 
     template<class Handler>
     void add_equality_constraint(Handler* handler, double precision = 0) {
         check(nlopt_add_equality_constraint(
-            opt, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->equality_constraint(x, grad); }, handler,
-            precision));
+            opt_, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->equality_constraint(x, grad); },
+            handler, precision));
     }
     template<class Handler>
     void add_inequality_constraint(Handler* handler, double precision = 0) {
         check(nlopt_add_inequality_constraint(
-            opt, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->inequality_constraint(x, grad); },
+            opt_, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->inequality_constraint(x, grad); },
             handler, precision));
     }
 
     template<class Handler>
     void add_max_objective(Handler* handler) {
         check(nlopt_set_max_objective(
-            opt, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->max_objective(x, grad); }, handler));
+            opt_, [](unsigned /* n */, const double* x, double* grad, void* data) { return static_cast<Handler*>(data)->max_objective(x, grad); }, handler));
     }
 
-    nlopt_opt get_optimizer() { return opt; }
+    nlopt_opt get_optimizer() { return opt_; }
 };
 }  // namespace acclimate::optimization
 

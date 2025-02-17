@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_EVENTSERIESSCENARIO_H
 #define ACCLIMATE_EVENTSERIESSCENARIO_H
@@ -44,12 +28,12 @@ class EventSeriesScenario : public ExternalScenario {
         friend class EventSeriesScenario;
 
       private:
-        std::vector<EconomicAgent*> agents;  // TODO remove
-        std::vector<GeoLocation*> locations;
-        std::vector<Forcing> forcings;
-        std::size_t regions_count;
-        std::size_t sectors_count;
-        std::size_t sea_routes_count;
+        std::vector<EconomicAgent*> agents_;  // TODO remove
+        std::vector<GeoLocation*> locations_;
+        std::vector<Forcing> forcings_;
+        std::size_t regions_count_;
+        std::size_t sectors_count_;
+        std::size_t sea_routes_count_;
 
       private:
         void read_data() override;
@@ -63,7 +47,7 @@ class EventSeriesScenario : public ExternalScenario {
     void read_forcings() override;
 
   public:
-    EventSeriesScenario(const settings::SettingsNode& settings_p, settings::SettingsNode scenario_node_p, Model* model_p);
+    EventSeriesScenario(const settings::SettingsNode& settings, settings::SettingsNode scenario_node, Model* model);
 };
 }  // namespace acclimate
 

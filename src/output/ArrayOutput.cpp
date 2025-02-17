@@ -1,31 +1,10 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "output/ArrayOutput.h"
 
-#include <algorithm>
-#include <iterator>
-#include <limits>
-#include <memory>
 #include <set>
-#include <type_traits>
 
 #include "ModelRun.h"
 #include "model/BusinessConnection.h"
@@ -46,53 +25,59 @@ namespace acclimate {
 class CollectVariables {
   public:
     struct H {
-        static constexpr const char* hash(const char* s) { return s; }
+        static constexpr auto hash(const char* s) -> const char* { return s; }
     };
 
   private:
-    bool want_all;
-    std::set<std::string> wanted_variables;
-    std::vector<ArrayOutput::Variable>& variables;
+    bool want_all_;
+    std::set<std::string> wanted_variables_;
+    std::vector<ArrayOutput::Variable>& variables_;
 
-  private:
-    void add_variable(std::string name, bool flow_or_stock) {
+    void add_variable(const std::string& name, bool flow_or_stock) {
         const auto name_hash = hash(name.c_str());
         if (flow_or_stock) {
-            variables.emplace_back(name + "_quantity", name_hash);
-            variables.emplace_back(name + "_value", name_hash);
+            variables_.emplace_back(name + "_quantity", name_hash);
+            variables_.emplace_back(name + "_value", name_hash);
         } else {
-            variables.emplace_back(name, name_hash);
+            variables_.emplace_back(name, name_hash);
         }
     }
 
-    bool collect_variable(const char* name, bool flow_or_stock) {
-        if (want_all) {
+    auto collect_variable(const char* name, bool flow_or_stock) -> bool {
+        if (want_all_) {
             add_variable(name, flow_or_stock);
             return true;
         }
-        const auto num_removed = wanted_variables.erase(name);
+        const auto num_removed = wanted_variables_.erase(name);
         if (num_removed > 0) {
             add_variable(name, flow_or_stock);
         }
-        return !wanted_variables.empty();
+        return !wanted_variables_.empty();
     }
 
   public:
-    CollectVariables(const settings::SettingsNode& obs_node, std::vector<ArrayOutput::Variable>& variables_p) : variables(variables_p) {
+    CollectVariables(const settings::SettingsNode& obs_node, std::vector<ArrayOutput::Variable>& variables_p) : variables_(variables_p) {
         if (obs_node.has("output")) {
             const auto vec = obs_node["output"].to_vector<std::string>();
-            std::copy(std::begin(vec), std::end(vec), std::inserter(wanted_variables, std::end(wanted_variables)));
-            want_all = false;
+            std::copy(std::begin(vec), std::end(vec), std::inserter(wanted_variables_, std::end(wanted_variables_)));
+            want_all_ = false;
         } else {
-            want_all = true;
+            want_all_ = true;
         }
     }
 
     template<typename T>
     void collect() {
-        static_cast<T*>(nullptr)->template observe<CollectVariables, CollectVariables::H>(*this);
-        if (!wanted_variables.empty()) {
-            for (const auto& name : wanted_variables) {
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnonnull"
+#endif
+        static_cast<T*>(nullptr)->template observe<CollectVariables, CollectVariables::H>(*this);  // NOLINT(clang-analyzer-core.CallAndMessage)
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+        if (!wanted_variables_.empty()) {
+            for (const auto& name : wanted_variables_) {
                 throw log::error("Unknown observable variable '", name, "'");
             }
         }
@@ -114,31 +99,31 @@ class CollectVariables {
 class WriteVariables {
   public:
     struct H {
-        static constexpr hash_t hash(const char* s) { return acclimate::hash(s); }
+        static constexpr auto hash(const char* s) -> hash_t { return acclimate::hash(s); }
     };
 
   private:
-    std::size_t index;
-    std::vector<ArrayOutput::Variable>::iterator var;
-    std::vector<ArrayOutput::Variable>& variables;
+    std::size_t index_{};
+    std::vector<ArrayOutput::Variable>::iterator var_;
+    std::vector<ArrayOutput::Variable>& variables_;
 
   public:
-    WriteVariables(std::vector<ArrayOutput::Variable>& variables_p) : variables(variables_p) {}
+    explicit WriteVariables(std::vector<ArrayOutput::Variable>& variables_p) : variables_(variables_p) {}
 
     template<typename T>
-    void collect(const T* v, std::size_t index_p) {
-        index = index_p;
-        var = std::begin(variables);
+    void collect(const T* v, std::size_t index) {
+        index_ = index;
+        var_ = std::begin(variables_);
         v->template observe<WriteVariables, WriteVariables::H>(*this);
     }
 
     template<typename Function>
     auto set(hash_t name_hash, Function&& f) ->
         typename std::enable_if<!std::is_same<decltype(f()), Flow>::value && !std::is_same<decltype(f()), Stock>::value, bool>::type {
-        if (var->name_hash == name_hash) {
-            var->data[index] = to_float(f());
-            ++var;
-            return var != std::end(variables);
+        if (var_->name_hash == name_hash) {
+            var_->data[index_] = to_float(f());
+            ++var_;
+            return var_ != std::end(variables_);
         }
         return true;
     }
@@ -146,13 +131,13 @@ class WriteVariables {
     template<typename Function>
     auto set(hash_t name_hash, Function&& f) ->
         typename std::enable_if<std::is_same<decltype(f()), Flow>::value || std::is_same<decltype(f()), Stock>::value, bool>::type {
-        if (var->name_hash == name_hash) {
+        if (var_->name_hash == name_hash) {
             const auto& v = f();
-            var->data[index] = to_float(v.get_quantity());
-            ++var;
-            var->data[index] = to_float(v.get_value());
-            ++var;
-            return var != std::end(variables);
+            var_->data[index_] = to_float(v.get_quantity());
+            ++var_;
+            var_->data[index_] = to_float(v.get_value());
+            ++var_;
+            return var_ != std::end(variables_);
         }
         return true;
     }
@@ -160,26 +145,26 @@ class WriteVariables {
 
 template<std::size_t dim>
 void ArrayOutput::resize_data(Observable<dim>& obs) {
-    auto size = only_current_timestep ? 1 : model()->run()->total_timestep_count();
+    auto size = only_current_timestep_ ? 1 : model()->run()->total_timestep_count();
     if constexpr (dim > 0) {
         for (std::size_t i = 0; i < dim; ++i) {
             size *= obs.sizes[i];
         }
     }
-    for (auto& var : obs.variables) {
-        var.data.resize(size, std::numeric_limits<output_float_t>::quiet_NaN());
+    for (auto& var_ : obs.variables) {
+        var_.data.resize(size, std::numeric_limits<output_float_t>::quiet_NaN());
     }
 }
 
 ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings, bool only_current_timestep_p)
-    : Output(model_p), only_current_timestep(only_current_timestep_p) {
-    include_events = settings["events"].as<bool>(false);
+    : Output(model_p), only_current_timestep_(only_current_timestep_p) {
+    include_events_ = settings["events_"].as<bool>(false);
 
     // model
     if (const auto& obs_node = settings["model"]; !obs_node.empty()) {
-        CollectVariables collector(obs_node, obs_model.variables);
+        CollectVariables collector(obs_node, obs_model_.variables);
         collector.collect<Model>();
-        resize_data(obs_model);
+        resize_data(obs_model_);
     }
 
     // firms
@@ -193,7 +178,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 if (!agent->is_firm()) {
                     throw log::error(this, "Agent ", name, " is not a firm");
                 }
-                obs_firms.indices[0].push_back(agent->id.index());
+                obs_firms_.indices[0].push_back(agent->id.index());
             }
         }
         if (const auto& node = obs_node["select_sector"]; !node.empty()) {
@@ -203,7 +188,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                     throw log::error(this, "Sector ", name, " not found");
                 }
                 for (const auto* firm : sector->firms) {
-                    obs_firms.indices[0].push_back(firm->id.index());
+                    obs_firms_.indices[0].push_back(firm->id.index());
                 }
             }
         }
@@ -215,19 +200,19 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 }
                 for (const auto* ea : region->economic_agents) {
                     if (ea->is_firm()) {
-                        obs_firms.indices[0].push_back(ea->id.index());
+                        obs_firms_.indices[0].push_back(ea->id.index());
                     }
                 }
             }
         }
-        if (obs_firms.indices[0].empty()) {
-            obs_firms.sizes[0] = model()->economic_agents.size();
+        if (obs_firms_.indices[0].empty()) {
+            obs_firms_.sizes[0] = model()->economic_agents.size();
         } else {
-            obs_firms.sizes[0] = obs_firms.indices[0].size();
+            obs_firms_.sizes[0] = obs_firms_.indices[0].size();
         }
-        CollectVariables collector(obs_node, obs_firms.variables);
+        CollectVariables collector(obs_node, obs_firms_.variables);
         collector.collect<Firm>();
-        resize_data(obs_firms);
+        resize_data(obs_firms_);
     }
 
     // consumers
@@ -241,7 +226,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 if (!agent->is_consumer()) {
                     throw log::error(this, "Agent ", name, " is not a consumer");
                 }
-                obs_consumers.indices[0].push_back(agent->id.index());
+                obs_consumers_.indices[0].push_back(agent->id.index());
             }
         }
         if (const auto& node = obs_node["select_region"]; !node.empty()) {
@@ -252,19 +237,19 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 }
                 for (const auto* ea : region->economic_agents) {
                     if (ea->is_consumer()) {
-                        obs_consumers.indices[0].push_back(ea->id.index());
+                        obs_consumers_.indices[0].push_back(ea->id.index());
                     }
                 }
             }
         }
-        if (obs_consumers.indices[0].empty()) {
-            obs_consumers.sizes[0] = model()->economic_agents.size();
+        if (obs_consumers_.indices[0].empty()) {
+            obs_consumers_.sizes[0] = model()->economic_agents.size();
         } else {
-            obs_consumers.sizes[0] = obs_consumers.indices[0].size();
+            obs_consumers_.sizes[0] = obs_consumers_.indices[0].size();
         }
-        CollectVariables collector(obs_node, obs_consumers.variables);
+        CollectVariables collector(obs_node, obs_consumers_.variables);
         collector.collect<Consumer>();
-        resize_data(obs_consumers);
+        resize_data(obs_consumers_);
     }
 
     // sectors
@@ -275,17 +260,17 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 if (sector == nullptr) {
                     throw log::error(this, "Sector ", name, " not found");
                 }
-                obs_sectors.indices[0].push_back(sector->id.index());
+                obs_sectors_.indices[0].push_back(sector->id.index());
             }
         }
-        if (obs_sectors.indices[0].empty()) {
-            obs_sectors.sizes[0] = model()->sectors.size();
+        if (obs_sectors_.indices[0].empty()) {
+            obs_sectors_.sizes[0] = model()->sectors.size();
         } else {
-            obs_sectors.sizes[0] = obs_sectors.indices[0].size();
+            obs_sectors_.sizes[0] = obs_sectors_.indices[0].size();
         }
-        CollectVariables collector(obs_node, obs_sectors.variables);
+        CollectVariables collector(obs_node, obs_sectors_.variables);
         collector.collect<Sector>();
-        resize_data(obs_sectors);
+        resize_data(obs_sectors_);
     }
 
     // regions
@@ -296,17 +281,17 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 if (region == nullptr) {
                     throw log::error(this, "Region ", name, " not found");
                 }
-                obs_regions.indices[0].push_back(region->id.index());
+                obs_regions_.indices[0].push_back(region->id.index());
             }
         }
-        if (obs_regions.indices[0].empty()) {
-            obs_regions.sizes[0] = model()->regions.size();
+        if (obs_regions_.indices[0].empty()) {
+            obs_regions_.sizes[0] = model()->regions.size();
         } else {
-            obs_regions.sizes[0] = obs_regions.indices[0].size();
+            obs_regions_.sizes[0] = obs_regions_.indices[0].size();
         }
-        CollectVariables collector(obs_node, obs_regions.variables);
+        CollectVariables collector(obs_node, obs_regions_.variables);
         collector.collect<Region>();
-        resize_data(obs_regions);
+        resize_data(obs_regions_);
     }
 
     // locations
@@ -317,17 +302,17 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 if (location == nullptr) {
                     throw log::error(this, "Location ", name, " not found");
                 }
-                obs_locations.indices[0].push_back(location->id.index());
+                obs_locations_.indices[0].push_back(location->id.index());
             }
         }
-        if (obs_locations.indices[0].empty()) {
-            obs_locations.sizes[0] = model()->other_locations.size();
+        if (obs_locations_.indices[0].empty()) {
+            obs_locations_.sizes[0] = model()->other_locations.size();
         } else {
-            obs_locations.sizes[0] = obs_locations.indices[0].size();
+            obs_locations_.sizes[0] = obs_locations_.indices[0].size();
         }
-        CollectVariables collector(obs_node, obs_locations.variables);
+        CollectVariables collector(obs_node, obs_locations_.variables);
         collector.collect<GeoLocation>();
-        resize_data(obs_locations);
+        resize_data(obs_locations_);
     }
 
     // storages
@@ -338,7 +323,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 if (sector == nullptr) {
                     throw log::error(this, "Sector ", name, " not found");
                 }
-                obs_storages.indices[0].push_back(sector->id.index());
+                obs_storages_.indices[0].push_back(sector->id.index());
             }
         }
         if (const auto& node = obs_node["select_agent"]; !node.empty()) {
@@ -347,7 +332,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 if (agent == nullptr) {
                     throw log::error(this, "Agent ", name, " not found");
                 }
-                obs_storages.indices[1].push_back(agent->id.index());
+                obs_storages_.indices[1].push_back(agent->id.index());
             }
         }
         if (const auto& node = obs_node["select_agent_sector"]; !node.empty()) {
@@ -357,7 +342,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                     throw log::error(this, "Sector ", name, " not found");
                 }
                 for (const auto* firm : sector->firms) {
-                    obs_storages.indices[1].push_back(firm->id.index());
+                    obs_storages_.indices[1].push_back(firm->id.index());
                 }
             }
         }
@@ -368,24 +353,24 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                     throw log::error(this, "Region ", name, " not found");
                 }
                 for (const auto* ea : region->economic_agents) {
-                    obs_storages.indices[1].push_back(ea->id.index());
+                    obs_storages_.indices[1].push_back(ea->id.index());
                 }
             }
         }
-        if (obs_storages.indices[0].empty()) {
-            obs_storages.sizes[0] = model()->sectors.size();
+        if (obs_storages_.indices[0].empty()) {
+            obs_storages_.sizes[0] = model()->sectors.size();
         } else {
-            obs_storages.sizes[0] = obs_storages.indices[0].size();
+            obs_storages_.sizes[0] = obs_storages_.indices[0].size();
             throw log::error(this, "Selection on storage sector not supported yet");
         }
-        if (obs_storages.indices[1].empty()) {
-            obs_storages.sizes[1] = model()->economic_agents.size();
+        if (obs_storages_.indices[1].empty()) {
+            obs_storages_.sizes[1] = model()->economic_agents.size();
         } else {
-            obs_storages.sizes[1] = obs_storages.indices[1].size();
+            obs_storages_.sizes[1] = obs_storages_.indices[1].size();
         }
-        CollectVariables collector(obs_node, obs_storages.variables);
+        CollectVariables collector(obs_node, obs_storages_.variables);
         collector.collect<Storage>();
-        resize_data(obs_storages);
+        resize_data(obs_storages_);
     }
 
     // flows
@@ -399,7 +384,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 if (!agent->is_firm()) {
                     throw log::error(this, "Agent ", name, " is not a firm");
                 }
-                obs_flows.indices[0].push_back(agent->id.index());
+                obs_flows_.indices[0].push_back(agent->id.index());
             }
         }
         if (const auto& node = obs_node["select_sector_from"]; !node.empty()) {
@@ -409,7 +394,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                     throw log::error(this, "Sector ", name, " not found");
                 }
                 for (const auto* firm : sector->firms) {
-                    obs_flows.indices[0].push_back(firm->id.index());
+                    obs_flows_.indices[0].push_back(firm->id.index());
                 }
             }
         }
@@ -421,7 +406,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 }
                 for (const auto* ea : region->economic_agents) {
                     if (ea->is_firm()) {
-                        obs_flows.indices[0].push_back(ea->id.index());
+                        obs_flows_.indices[0].push_back(ea->id.index());
                     }
                 }
             }
@@ -432,7 +417,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                 if (agent == nullptr) {
                     throw log::error(this, "Agent ", name, " not found");
                 }
-                obs_flows.indices[1].push_back(agent->id.index());
+                obs_flows_.indices[1].push_back(agent->id.index());
             }
         }
         if (const auto& node = obs_node["select_sector_to"]; !node.empty()) {
@@ -442,7 +427,7 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                     throw log::error(this, "Sector ", name, " not found");
                 }
                 for (const auto* firm : sector->firms) {
-                    obs_flows.indices[1].push_back(firm->id.index());
+                    obs_flows_.indices[1].push_back(firm->id.index());
                 }
             }
         }
@@ -453,26 +438,26 @@ ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings,
                     throw log::error(this, "Region ", name, " not found");
                 }
                 for (const auto* ea : region->economic_agents) {
-                    obs_flows.indices[1].push_back(ea->id.index());
+                    obs_flows_.indices[1].push_back(ea->id.index());
                 }
             }
         }
-        if (obs_flows.indices[0].empty()) {
-            obs_flows.sizes[0] = model()->economic_agents.size();
+        if (obs_flows_.indices[0].empty()) {
+            obs_flows_.sizes[0] = model()->economic_agents.size();
         } else {
-            obs_flows.sizes[0] = obs_flows.indices[0].size();
+            obs_flows_.sizes[0] = obs_flows_.indices[0].size();
         }
-        if (obs_flows.indices[1].empty()) {
-            obs_flows.sizes[1] = model()->economic_agents.size();
+        if (obs_flows_.indices[1].empty()) {
+            obs_flows_.sizes[1] = model()->economic_agents.size();
         } else {
-            obs_flows.sizes[1] = obs_flows.indices[1].size();
+            obs_flows_.sizes[1] = obs_flows_.indices[1].size();
         }
-        if (!obs_flows.indices[0].empty() && !obs_flows.indices[1].empty()) {
+        if (!obs_flows_.indices[0].empty() && !obs_flows_.indices[1].empty()) {
             throw log::error(this, "Selection on both source agent and target agent not supported yet");
         }
-        CollectVariables collector(obs_node, obs_flows.variables);
+        CollectVariables collector(obs_node, obs_flows_.variables);
         collector.collect<BusinessConnection>();
-        resize_data(obs_flows);
+        resize_data(obs_flows_);
     }
 }
 
@@ -480,18 +465,18 @@ void ArrayOutput::iterate() {
     const auto t = model()->timestep();
 
     // model
-    if (!obs_model.variables.empty()) {
-        WriteVariables collector(obs_model.variables);
-        const auto offset = only_current_timestep ? 0 : t;
+    if (!obs_model_.variables.empty()) {
+        WriteVariables collector(obs_model_.variables);
+        const auto offset = only_current_timestep_ ? 0 : t;
         collector.collect(model(), offset);
     }
 
     // firms
-    if (!obs_firms.variables.empty()) {
-        WriteVariables collector(obs_firms.variables);
+    if (!obs_firms_.variables.empty()) {
+        WriteVariables collector(obs_firms_.variables);
         const auto& vec = model()->economic_agents;
-        const auto& indices = obs_firms.indices[0];
-        const auto offset = only_current_timestep ? 0 : t * obs_firms.sizes[0];
+        const auto& indices = obs_firms_.indices[0];
+        const auto offset = only_current_timestep_ ? 0 : t * obs_firms_.sizes[0];
         if (indices.empty()) {
             for (std::size_t i = 0; i < vec.size(); ++i) {
                 if (vec[i]->is_firm()) {
@@ -508,11 +493,11 @@ void ArrayOutput::iterate() {
     }
 
     // consumers
-    if (!obs_consumers.variables.empty()) {
-        WriteVariables collector(obs_consumers.variables);
+    if (!obs_consumers_.variables.empty()) {
+        WriteVariables collector(obs_consumers_.variables);
         const auto& vec = model()->economic_agents;
-        const auto& indices = obs_consumers.indices[0];
-        const auto offset = only_current_timestep ? 0 : t * obs_consumers.sizes[0];
+        const auto& indices = obs_consumers_.indices[0];
+        const auto offset = only_current_timestep_ ? 0 : t * obs_consumers_.sizes[0];
         if (indices.empty()) {
             for (std::size_t i = 0; i < vec.size(); ++i) {
                 if (vec[i]->is_consumer()) {
@@ -529,11 +514,11 @@ void ArrayOutput::iterate() {
     }
 
     // sectors
-    if (!obs_sectors.variables.empty()) {
-        WriteVariables collector(obs_sectors.variables);
+    if (!obs_sectors_.variables.empty()) {
+        WriteVariables collector(obs_sectors_.variables);
         const auto& vec = model()->sectors;
-        const auto& indices = obs_sectors.indices[0];
-        const auto offset = only_current_timestep ? 0 : t * obs_sectors.sizes[0];
+        const auto& indices = obs_sectors_.indices[0];
+        const auto offset = only_current_timestep_ ? 0 : t * obs_sectors_.sizes[0];
         if (indices.empty()) {
             for (std::size_t i = 0; i < vec.size(); ++i) {
                 collector.collect(vec[i], offset + i);
@@ -546,11 +531,11 @@ void ArrayOutput::iterate() {
     }
 
     // regions
-    if (!obs_regions.variables.empty()) {
-        WriteVariables collector(obs_regions.variables);
+    if (!obs_regions_.variables.empty()) {
+        WriteVariables collector(obs_regions_.variables);
         const auto& vec = model()->regions;
-        const auto& indices = obs_regions.indices[0];
-        const auto offset = only_current_timestep ? 0 : t * obs_regions.sizes[0];
+        const auto& indices = obs_regions_.indices[0];
+        const auto offset = only_current_timestep_ ? 0 : t * obs_regions_.sizes[0];
         if (indices.empty()) {
             for (std::size_t i = 0; i < vec.size(); ++i) {
                 collector.collect(vec[i], offset + i);
@@ -563,11 +548,11 @@ void ArrayOutput::iterate() {
     }
 
     // locations
-    if (!obs_locations.variables.empty()) {
-        WriteVariables collector(obs_locations.variables);
+    if (!obs_locations_.variables.empty()) {
+        WriteVariables collector(obs_locations_.variables);
         const auto& vec = model()->other_locations;
-        const auto& indices = obs_locations.indices[0];
-        const auto offset = only_current_timestep ? 0 : t * obs_locations.sizes[0];
+        const auto& indices = obs_locations_.indices[0];
+        const auto offset = only_current_timestep_ ? 0 : t * obs_locations_.sizes[0];
         if (indices.empty()) {
             for (std::size_t i = 0; i < vec.size(); ++i) {
                 collector.collect(vec[i], offset + i);
@@ -580,40 +565,40 @@ void ArrayOutput::iterate() {
     }
 
     // storages
-    if (!obs_storages.variables.empty()) {
-        WriteVariables collector(obs_storages.variables);
+    if (!obs_storages_.variables.empty()) {
+        WriteVariables collector(obs_storages_.variables);
         const auto& vec = model()->economic_agents;
-        const auto& indices = obs_storages.indices[1];  // selection on storage sector not supported yet
-        const auto offset = only_current_timestep ? 0 : t * obs_storages.sizes[1] * obs_storages.sizes[0];
+        const auto& indices = obs_storages_.indices[1];  // selection on storage sector not supported yet
+        const auto offset = only_current_timestep_ ? 0 : t * obs_storages_.sizes[1] * obs_storages_.sizes[0];
         if (indices.empty()) {
             for (std::size_t i = 0; i < vec.size(); ++i) {
                 const auto* agent = vec[i];
                 for (const auto& storage : agent->input_storages) {
-                    collector.collect(storage.get(), offset + storage->sector->id.index() * obs_storages.sizes[1] + i);
+                    collector.collect(storage.get(), offset + storage->sector->id.index() * obs_storages_.sizes[1] + i);
                 }
             }
         } else {
             for (std::size_t i = 0; i < indices.size(); ++i) {
                 const auto* agent = vec[indices[i]];
                 for (const auto& storage : agent->input_storages) {
-                    collector.collect(storage.get(), offset + storage->sector->id.index() * obs_storages.sizes[1] + i);
+                    collector.collect(storage.get(), offset + storage->sector->id.index() * obs_storages_.sizes[1] + i);
                 }
             }
         }
     }
 
     // flows
-    if (!obs_flows.variables.empty()) {
-        WriteVariables collector(obs_flows.variables);
+    if (!obs_flows_.variables.empty()) {
+        WriteVariables collector(obs_flows_.variables);
         const auto& vec = model()->economic_agents;
-        const auto offset = only_current_timestep ? 0 : t * obs_flows.sizes[1] * obs_flows.sizes[0];
-        if (obs_flows.indices[0].empty()) {
-            const auto& indices = obs_flows.indices[1];
+        const auto offset = only_current_timestep_ ? 0 : t * obs_flows_.sizes[1] * obs_flows_.sizes[0];
+        if (obs_flows_.indices[0].empty()) {
+            const auto& indices = obs_flows_.indices[1];
             if (indices.empty()) {
                 for (std::size_t i = 0; i < vec.size(); ++i) {
                     const auto* agent = vec[i];
                     if (agent->is_firm()) {
-                        const auto n = offset + i * obs_flows.sizes[1];
+                        const auto n = offset + i * obs_flows_.sizes[1];
                         for (const auto& bc : agent->as_firm()->sales_manager->business_connections) {
                             collector.collect(bc.get(), n + bc->buyer->storage->economic_agent->id.index());
                         }
@@ -624,18 +609,18 @@ void ArrayOutput::iterate() {
                     const auto* agent = vec[indices[i]];
                     for (const auto& is : agent->input_storages) {
                         for (const auto& bc : is->purchasing_manager->business_connections) {
-                            collector.collect(bc.get(), offset + bc->seller->firm->id.index() * obs_flows.sizes[1] + i);
+                            collector.collect(bc.get(), offset + bc->seller->firm->id.index() * obs_flows_.sizes[1] + i);
                         }
                     }
                 }
             }
         } else {
-            assert(obs_flows.indices[1].empty());  // selection on flow sector not supported yet
-            const auto& indices = obs_flows.indices[0];
+            assert(obs_flows_.indices[1].empty());  // selection on flow sector not supported yet
+            const auto& indices = obs_flows_.indices[0];
             for (std::size_t i = 0; i < indices.size(); ++i) {
                 const auto* agent = vec[indices[i]];
                 if (agent->is_firm()) {
-                    const auto n = offset + i * obs_flows.sizes[1];
+                    const auto n = offset + i * obs_flows_.sizes[1];
                     for (const auto& bc : agent->as_firm()->sales_manager->business_connections) {
                         collector.collect(bc.get(), n + bc->buyer->storage->economic_agent->id.index());
                     }
@@ -646,37 +631,37 @@ void ArrayOutput::iterate() {
 }
 
 void ArrayOutput::event(EventType type, const Sector* sector, const EconomicAgent* economic_agent, FloatType value) {
-    if (include_events) {
+    if (include_events_) {
         Event ev;
         ev.time = model()->timestep();
         ev.type = static_cast<unsigned char>(type);
         ev.index1 = sector->id.index();
         ev.index2 = economic_agent->id.index();
         ev.value = value;
-        event_lock.call([&]() { events.emplace_back(ev); });
+        event_lock_.call([&]() { events_.emplace_back(ev); });
     }
 }
 
 void ArrayOutput::event(EventType type, const EconomicAgent* economic_agent, FloatType value) {
-    if (include_events) {
+    if (include_events_) {
         Event ev;
         ev.time = model()->timestep();
         ev.type = static_cast<unsigned char>(type);
         ev.index1 = economic_agent->id.index();
         ev.value = value;
-        event_lock.call([&]() { events.emplace_back(ev); });
+        event_lock_.call([&]() { events_.emplace_back(ev); });
     }
 }
 
 void ArrayOutput::event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) {
-    if (include_events) {
+    if (include_events_) {
         Event ev;
         ev.time = model()->timestep();
         ev.type = static_cast<unsigned char>(type);
         ev.index1 = economic_agent_from->id.index();
         ev.index2 = economic_agent_to->id.index();
         ev.value = value;
-        event_lock.call([&]() { events.emplace_back(ev); });
+        event_lock_.call([&]() { events_.emplace_back(ev); });
     }
 }
 

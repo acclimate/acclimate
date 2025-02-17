@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "model/GeoConnection.h"
 
@@ -27,19 +11,21 @@ namespace acclimate {
 
 class Model;
 
-GeoConnection::GeoConnection(Model* model_m, TransportDelay delay, GeoConnection::type_t type_p, GeoLocation* location1_p, GeoLocation* location2_p)
-    : GeoEntity(model_m, delay, GeoEntity::type_t::CONNECTION), type(type_p), location1(location1_p), location2(location2_p) {}
+GeoConnection::GeoConnection(Model* model, TransportDelay delay, GeoConnection::type_t type, GeoLocation* location1, GeoLocation* location2)
+    : GeoEntity(model, delay, GeoEntity::type_t::CONNECTION), type(type), location1_(location1), location2_(location2) {}
 
 void GeoConnection::invalidate_location(const GeoLocation* location) {
-    if (location1 == location) {
-        location1.invalidate();
-    } else if (location2 == location) {
-        location2.invalidate();
+    if (location1_ == location) {
+        location1_.invalidate();
+    } else if (location2_ == location) {
+        location2_.invalidate();
     } else {
         throw log::error(this, "Location not part of this connection or already invalidated");
     }
 }
 
-std::string GeoConnection::name() const { return (location1 ? location1->name() : "INVALID") + "-" + (location2 ? location2->name() : "INVALID"); }
+auto GeoConnection::name() const -> std::string {
+    return (location1_ != nullptr ? location1_->name() : "INVALID") + "-" + (location2_ != nullptr ? location2_->name() : "INVALID");
+}
 
 }  // namespace acclimate

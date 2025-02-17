@@ -1,20 +1,6 @@
-# Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-#                         Christian Otto <christian.otto@pik-potsdam.de>
+# SPDX-FileCopyrightText: Acclimate authors
 #
-# This file is part of Acclimate.
-#
-# Acclimate is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of
-# the License, or (at your option) any later version.
-#
-# Acclimate is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: AGPL-3.0-or-later
 
 cmake_minimum_required(VERSION 3.8)
 
@@ -36,14 +22,14 @@ else()
   add_executable(acclimate ${ACCLIMATE_SOURCES} src/main.cpp)
 endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_compile_options(acclimate PUBLIC -fno-math-errno -fno-rtti)
   add_custom_command(
-          TARGET acclimate
-          POST_BUILD
-          COMMAND ${CMAKE_STRIP} acclimate
+    TARGET acclimate
+    POST_BUILD
+    COMMAND ${CMAKE_STRIP} acclimate
   )
-endif ()
+endif()
 
 target_include_directories(acclimate PRIVATE include lib/cpp-library)
 # icc 19 does not yet fully support c++17, but we only need features it does support
@@ -57,7 +43,7 @@ set_build_type_specifics(acclimate)
 add_git_version(acclimate WITH_DIFF)
 
 option(ACCLIMATE_PARALLELIZATION "" ON)
-if (ACCLIMATE_PARALLELIZATION)
+if(ACCLIMATE_PARALLELIZATION)
   find_package(OpenMP REQUIRED)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -77,7 +63,7 @@ function(acclimate_include_option NAME DESC STATE)
       PARENT_SCOPE
   )
   set(ACCLIMATE_OPTIONS_FILE
-      "${ACCLIMATE_OPTIONS_FILE}static constexpr bool ${NAME} = ${VALUE};\n"
+      "${ACCLIMATE_OPTIONS_FILE}    static constexpr bool ${NAME} = ${VALUE};\n"
       PARENT_SCOPE
   )
 endfunction()
@@ -116,27 +102,29 @@ file(
 #define ACCLIMATE_OPTIONS_H
 #include <array>
 
-namespace acclimate::options {
+namespace acclimate {
 
+struct Options {
 #ifdef DEBUG
-constexpr bool DEBUGGING = true;
+    static constexpr bool DEBUGGING = true;
 #else
-constexpr bool DEBUGGING = false;
+    static constexpr bool DEBUGGING = false;
 #endif
 #ifdef _OPENMP
-constexpr bool PARALLELIZATION = true;
+    static constexpr bool PARALLELIZATION = true;
 #else
-constexpr bool PARALLELIZATION = false;
+    static constexpr bool PARALLELIZATION = false;
 #endif
 
 ${ACCLIMATE_OPTIONS_FILE}
-struct Option {
-    const char* name;
-    bool value;
+    struct Option {
+        const char* name;
+        bool value;
+    };
+    static const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options;
 };
-extern const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options;
 
-}  // namespace acclimate::options
+}  // namespace acclimate
 
 #endif
 "
@@ -149,24 +137,24 @@ file(
   "\
 #include \"options.h\"
 
-namespace acclimate::options {
+namespace acclimate {
 
-const std::array<Option, ${ACCLIMATE_OPTIONS_LENGTH}> options = {
+const std::array<Options::Option, ${ACCLIMATE_OPTIONS_LENGTH}> Options::options = {
     ${ACCLIMATE_OPTIONS}
 };
 
-}  // namespace acclimate::options
+}  // namespace acclimate
 "
 )
 target_sources(acclimate PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp)
 
-include_nlopt(acclimate ON GIT_TAG "v2.7.0")
+include_nlopt(acclimate ON GIT_TAG "v2.8.0")
 
 include(lib/netcdfpp/netcdfpp.cmake)
 include_netcdfpp(acclimate)
 
 include(lib/settingsnode/settingsnode.cmake)
 include_settingsnode(acclimate)
-include_yaml_cpp(acclimate ON GIT_TAG "yaml-cpp-0.6.3")
+include_yaml_cpp(acclimate ON GIT_TAG "0.8.0")
 
 add_cpp_tools(acclimate STD c++17)

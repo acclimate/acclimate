@@ -1,33 +1,11 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "ModelRun.h"
 
-#include <algorithm>
 #include <cfenv>
-#include <chrono>
-#include <cmath>
 #include <csignal>
-#include <ctime>
-#include <iosfwd>
-#include <string>
 
 #include "acclimate.h"
 #include "checkpointing.h"
@@ -47,9 +25,9 @@
 namespace acclimate {
 
 static void handle_fpe_error(int /* signal */) {
-    if constexpr (options::FLOATING_POINT_EXCEPTIONS) {
-        unsigned int exceptions = fetestexcept(FE_ALL_EXCEPT);  // NOLINT(hicpp-signed-bitwise)
-        feclearexcept(FE_ALL_EXCEPT);                           // NOLINT(hicpp-signed-bitwise)
+    if constexpr (Options::FLOATING_POINT_EXCEPTIONS) {
+        unsigned int const exceptions = fetestexcept(FE_ALL_EXCEPT);  // NOLINT(hicpp-signed-bitwise)
+        feclearexcept(FE_ALL_EXCEPT);                                 // NOLINT(hicpp-signed-bitwise)
         if (exceptions == 0) {
             return;
         }
@@ -68,7 +46,7 @@ static void handle_fpe_error(int /* signal */) {
         if ((exceptions & FE_UNDERFLOW) != 0) {  // NOLINT(hicpp-signed-bitwise)
             log::warning("FE_UNDERFLOW");
         }
-        if constexpr (options::FATAL_FLOATING_POINT_EXCEPTIONS) {
+        if constexpr (Options::FATAL_FLOATING_POINT_EXCEPTIONS) {
             throw log::error("Floating point exception");
         }
     }
@@ -77,55 +55,57 @@ static void handle_fpe_error(int /* signal */) {
 ModelRun::ModelRun(const settings::SettingsNode& settings) {
     step(IterationStep::INITIALIZATION);
 
-    if constexpr (options::BANKERS_ROUNDING) {
+    if constexpr (Options::BANKERS_ROUNDING) {
         fesetround(FE_TONEAREST);
     }
 
-    if constexpr (options::FLOATING_POINT_EXCEPTIONS) {
+    if constexpr (Options::FLOATING_POINT_EXCEPTIONS) {
         signal(SIGFPE, handle_fpe_error);
         feenableexcept(FE_OVERFLOW | FE_INVALID | FE_DIVBYZERO);  // NOLINT(hicpp-signed-bitwise)
+    } else {
+        (void)handle_fpe_error;
     }
 
-    if constexpr (options::CHECKPOINTING) {
+    if constexpr (Options::CHECKPOINTING) {
         checkpoint::initialize();
     }
 
     {
         std::ostringstream ss;
         ss << settings;
-        settings_string_m = ss.str();
+        settings_string_ = ss.str();
     }
 
     const settings::SettingsNode& scenario_node = settings["scenario"];
-    start_time_m = scenario_node["start"].as<Time>();
-    stop_time_m = scenario_node["stop"].as<Time>();
+    start_time_ = scenario_node["start"].as<Time>();
+    stop_time_ = scenario_node["stop"].as<Time>();
     if (scenario_node.has("baseyear") && !scenario_node.has("basedate")) {
-        basedate_m = scenario_node["baseyear"].as<std::string>() + "-1-1";
+        basedate_ = scenario_node["baseyear"].as<std::string>() + "-1-1";
     } else {
-        basedate_m = scenario_node["basedate"].as<std::string>("2000-1-1");
+        basedate_ = scenario_node["basedate"].as<std::string>("2000-1-1");
     }
 
-    auto model = new Model(this);
+    auto* model = new Model(this);
     {
         ModelInitializer model_initializer(model, settings);
         model_initializer.initialize();
-        if constexpr (options::DEBUGGING) {
+        if constexpr (Options::DEBUGGING) {
             model_initializer.debug_print_network_characteristics();
         }
-        model_m.reset(model);
+        model_.reset(model);
     }
 
     {
         const auto& type = scenario_node["type"].as<hashed_string>();
         switch (type) {
             case hash("events"):  // TODO separate
-                scenario = std::make_unique<Scenario>(settings, scenario_node, model_m.get());
+                scenario_ = std::make_unique<Scenario>(settings, scenario_node, model_.get());
                 break;
             case hash("event_series"):
-                scenario = std::make_unique<EventSeriesScenario>(settings, scenario_node, model_m.get());
+                scenario_ = std::make_unique<EventSeriesScenario>(settings, scenario_node, model_.get());
                 break;
             default:
-                throw log::error("Unknown scenario type '", type, "'");
+                throw log::error("Unknown scenario_ type '", type, "'");
         }
     }
 
@@ -146,69 +126,71 @@ ModelRun::ModelRun(const settings::SettingsNode& settings) {
             default:
                 throw log::error("Unknown output format '", type, "'");
         }
-        outputs_m.emplace_back(output);
+        outputs_.emplace_back(output);
     }
 }
 
 void ModelRun::run() {
-    if (has_run) {
+    if (has_run_) {
         throw log::error(this, "Model has already run");
     }
-    has_run = true;
+    has_run_ = true;
 
     log::info(this, "Starting model run on max. ", thread_count(), " threads");
 
     step(IterationStep::INITIALIZATION);
 
-    scenario->start();
-    model_m->time_m = start_time_m;
-    model_m->start();
-    for (const auto& output : outputs_m) {
+    scenario_->start();
+    model_->time_ = start_time_;
+    model_->start();
+    for (const auto& output : outputs_) {
         output->start();
     }
-    time_m = 0;
+    time_ = 0;
 
     step(IterationStep::SCENARIO);
     auto t0 = std::chrono::high_resolution_clock::now();
 
     while (!done()) {
-        scenario->iterate();
+        scenario_->iterate();
         log::info(this, "Iteration started");
 
-        model_m->switch_registers();
+        model_->switch_registers();
 
         step(IterationStep::CONSUMPTION_AND_PRODUCTION);
-        model_m->iterate_consumption_and_production();
+        model_->iterate_consumption_and_production();
 
         step(IterationStep::EXPECTATION);
-        model_m->iterate_expectation();
+        model_->iterate_expectation();
 
         step(IterationStep::PURCHASE);
-        model_m->iterate_purchase();
+        model_->iterate_purchase();
 
-        step(IterationStep::INVESTMENT);
-        model_m->iterate_investment();
+        if (model_->parameters().with_investment_dynamics) {
+            step(IterationStep::INVESTMENT);
+            model_->iterate_investment();
+        }
 
         auto t1 = std::chrono::high_resolution_clock::now();
-        duration_m = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+        duration_ = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
         t0 = t1;
 
         step(IterationStep::OUTPUT);
-        log::info(this, "Iteration took ", duration_m, " ms");
-        for (const auto& output : outputs_m) {
+        log::info(this, "Iteration took ", duration_, " ms");
+        for (const auto& output : outputs_) {
             output->iterate();
         }
 
-        if constexpr (options::DEBUGGING) {
+        if constexpr (Options::DEBUGGING) {
             auto t2 = std::chrono::high_resolution_clock::now();
             log::info(this, "Output took ", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t0).count(), " ms");
             t0 = t2;
         }
 
-        if constexpr (options::CHECKPOINTING) {
+        if constexpr (Options::CHECKPOINTING) {
             if (checkpoint::is_scheduled) {
                 log::info(this, "Writing checkpoint");
-                for (const auto& output : outputs_m) {
+                for (const auto& output : outputs_) {
                     output->checkpoint_stop();
                 }
 
@@ -216,52 +198,52 @@ void ModelRun::run() {
 
                 log::info(this, "Resuming from checkpoint");
                 t0 = std::chrono::high_resolution_clock::now();
-                for (const auto& output : outputs_m) {
+                for (const auto& output : outputs_) {
                     output->checkpoint_resume();
                 }
             }
         }
 
         step(IterationStep::SCENARIO);
-        model_m->tick();
-        ++time_m;
+        model_->tick();
+        ++time_;
     }
 }
 
 ModelRun::~ModelRun() {
-    if (!options::CHECKPOINTING || !checkpoint::is_scheduled) {
-        scenario->end();
-        for (auto& output : outputs_m) {
+    if (!Options::CHECKPOINTING || !checkpoint::is_scheduled) {
+        scenario_->end();
+        for (auto& output : outputs_) {
             output->end();
         }
     }
-    outputs_m.clear();
-    model_m.reset();
+    outputs_.clear();
+    model_.reset();
 }
 
-bool ModelRun::done() const { return model_m->time() > stop_time_m; }
+auto ModelRun::done() const -> bool { return model_->time() > stop_time_; }
 
-std::string ModelRun::calendar() const { return scenario->calendar_str(); }
+auto ModelRun::calendar() const -> std::string { return scenario_->calendar_str(); }
 
-std::size_t ModelRun::total_timestep_count() const { return (stop_time_m - start_time_m) / model_m->delta_t() + 1; }
+auto ModelRun::total_timestep_count() const -> std::size_t { return (stop_time_ - start_time_) / model_->delta_t() + 1; }
 
-std::string ModelRun::now() const {
+auto ModelRun::now() -> std::string {
     std::string res = "0000-00-00 00:00:00";
     auto t = std::time(nullptr);
-    std::strftime(&res[0], res.size() + 1, "%F %T", std::localtime(&t));
+    std::strftime(res.data(), res.size() + 1, "%F %T", std::localtime(&t));
     return res;
 }
 
 void ModelRun::event(EventType type, const Sector* sector, const EconomicAgent* economic_agent, FloatType value) {
     log::info(this, EVENT_NAMES[static_cast<int>(type)], " ", sector->id, "->", economic_agent->id, std::isnan(value) ? "" : " = " + std::to_string(value));
-    for (const auto& output : outputs_m) {
+    for (const auto& output : outputs_) {
         output->event(type, sector, economic_agent, value);
     }
 }
 
 void ModelRun::event(EventType type, const EconomicAgent* economic_agent, FloatType value) {
     log::info(this, EVENT_NAMES[static_cast<int>(type)], " ", economic_agent->id, std::isnan(value) ? "" : " = " + std::to_string(value));
-    for (const auto& output : outputs_m) {
+    for (const auto& output : outputs_) {
         output->event(type, economic_agent, value);
     }
 }
@@ -269,22 +251,22 @@ void ModelRun::event(EventType type, const EconomicAgent* economic_agent, FloatT
 void ModelRun::event(EventType type, const EconomicAgent* economic_agent_from, const EconomicAgent* economic_agent_to, FloatType value) {
     log::info(this, EVENT_NAMES[static_cast<int>(type)], " ", economic_agent_from->id, "->", economic_agent_to->id,
               std::isnan(value) ? "" : " = " + std::to_string(value));
-    for (const auto& output : outputs_m) {
+    for (const auto& output : outputs_) {
         output->event(type, economic_agent_from, economic_agent_to, value);
     }
 }
 
-unsigned int ModelRun::thread_count() const { return openmp::get_thread_count(); }
+auto ModelRun::thread_count() -> unsigned int { return openmp::get_thread_count(); }
 
-std::string ModelRun::timeinfo() const {
-    if constexpr (options::DEBUGGING) {
+auto ModelRun::timeinfo() const -> std::string {
+    if constexpr (Options::DEBUGGING) {
         std::string res;
-        if (step_m != IterationStep::INITIALIZATION) {
-            res = std::to_string(time_m) + " ";
+        if (step_ != IterationStep::INITIALIZATION) {
+            res = std::to_string(time_) + " ";
         } else {
             res = "  ";
         }
-        switch (step_m) {
+        switch (step_) {
             case IterationStep::INITIALIZATION:
                 res += "INI";
                 break;

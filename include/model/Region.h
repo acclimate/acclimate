@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_REGION_H
 #define ACCLIMATE_REGION_H
@@ -31,7 +15,6 @@
 #include "model/GeoRoute.h"  // IWYU pragma: keep
 #include "model/Sector.h"
 #include "openmp.h"
-#include "parameters.h"
 
 namespace acclimate {
 
@@ -48,34 +31,31 @@ class Region final : public GeoLocation {
     };
 
   private:
-    Flow export_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
-    openmp::Lock export_flow_Z_lock;
-    Flow import_flow_Z_[2] = {Flow(0.0), Flow(0.0)};
-    openmp::Lock import_flow_Z_lock;
+    Flow export_flow_[2] = {Flow(0.0), Flow(0.0)};
+    openmp::Lock export_flow_lock_;
+    Flow import_flow_[2] = {Flow(0.0), Flow(0.0)};
+    openmp::Lock import_flow_lock_;
     Flow consumption_flow_Y_[2] = {Flow(0.0), Flow(0.0)};
-    openmp::Lock consumption_flow_Y_lock;
-    std::unordered_map<std::pair<IndexType, Sector::transport_type_t>, GeoRoute, route_hash> routes;  // TODO improve
-    std::unique_ptr<Government> government_m;
-    Parameters::RegionParameters parameters_m;
-    openmp::Lock economic_agents_lock;
+    openmp::Lock consumption_flow_Y_lock_;
+    std::unordered_map<std::pair<IndexType, Sector::transport_type_t>, GeoRoute, route_hash> routes_;  // TODO improve
+    std::unique_ptr<Government> government_;
+    openmp::Lock economic_agents_lock_;
 
   public:
     non_owning_vector<EconomicAgent> economic_agents;
 
   public:
-    Region(Model* model_p, id_t id_p);
+    Region(Model* model, id_t id);
     ~Region() override;
-    const Flow& consumption_C() const;
-    const Flow& import_flow_Z() const;
-    const Flow& export_flow_Z() const;
+    const Flow& consumption() const;
+    const Flow& import_flow() const;
+    const Flow& export_flow() const;
     void set_government(Government* government_p);
     Government* government();
     const Government* government() const;
-    const Parameters::RegionParameters& parameters() const { return parameters_m; }
-    const Parameters::RegionParameters& parameters_writable() const;
-    void add_export_Z(const Flow& export_flow_Z_p);
-    void add_import_Z(const Flow& import_flow_Z_p);
-    void add_consumption_flow_Y(const Flow& consumption_flow_Y_p);
+    void add_export(const Flow& flow);
+    void add_import(const Flow& flow);
+    void add_consumption(const Flow& flow);
     Flow get_gdp() const;
     void iterate_consumption_and_production();
     void iterate_expectation();
@@ -90,15 +70,15 @@ class Region final : public GeoLocation {
         return GeoLocation::observe<Observer, H>(o)  //
                && o.set(H::hash("import"),
                         [this]() {  //
-                            return import_flow_Z();
+                            return import_flow();
                         })
                && o.set(H::hash("export"),
                         [this]() {  //
-                            return export_flow_Z();
+                            return export_flow();
                         })
                && o.set(H::hash("consumption"),
                         [this]() {  //
-                            return consumption_C();
+                            return consumption();
                         })
                && o.set(H::hash("gdp"),
                         [this]() {  //

@@ -1,29 +1,8 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include <array>
 #include <fstream>
-#include <iostream>
-#include <memory>
-#include <stdexcept>
-#include <string>
 
 #include "ModelRun.h"
 #include "acclimate.h"
@@ -33,29 +12,34 @@
 #include "version.h"
 
 namespace acclimate {
-extern const char* info;
+
+struct Info {
+    static const char* const text;
+};
+
 }  // namespace acclimate
 
 static void print_usage(const char* program_name) {
     std::cerr << "Acclimate model\n"
                  "Version: "
-              << acclimate::version
+              << acclimate::Version::version
               << "\n\n"
-                 "Authors: Sven Willner <sven.willner@pik-potsdam.de>\n"
-                 "         Christian Otto <christian.otto@pik-potsdam.de>\n"
+                 "Original authors: Sven Willner <sven.willner@pik-potsdam.de>\n"
+                 "                  Christian Otto <christian.otto@pik-potsdam.de>\n"
+                 "Also see AUTHORS file\n"
                  "\n"
                  "Usage:   "
               << program_name
               << " (<option> | <settingsfile>)\n"
                  "Options:\n"
-              << (acclimate::has_diff ? "  -d, --diff     Print git diff output from compilation\n" : "")
+              << (acclimate::Version::has_diff ? "  -d, --diff     Print git diff output from compilation\n" : "")
               << "  -h, --help     Print this help text\n"
                  "  -i, --info     Print further information\n"
                  "  -v, --version  Print version"
               << std::endl;
 }
 
-int main(int argc, char* argv[]) {
+auto main(int argc, char* argv[]) -> int {
     if (argc != 2) {
         print_usage(argv[0]);
         return 1;
@@ -63,10 +47,10 @@ int main(int argc, char* argv[]) {
     const std::string arg = argv[1];
     if (arg.length() > 1 && arg[0] == '-') {
         if (arg == "--version" || arg == "-v") {
-            std::cout << acclimate::version << std::endl;
+            std::cout << acclimate::Version::version << std::endl;
         } else if (arg == "--info" || arg == "-i") {
-            std::cout << "Version:                " << acclimate::version << "\n\n"
-                      << acclimate::info
+            std::cout << "Version:                " << acclimate::Version::version << "\n\n"
+                      << acclimate::Info::text
                       << "\n"
                          "Precision Time:         "
                       << acclimate::Time::precision_digits
@@ -82,7 +66,7 @@ int main(int argc, char* argv[]) {
                       << "\n"
                          "Options:                ";
             bool first = true;
-            for (const auto& option : acclimate::options::options) {
+            for (const auto& option : acclimate::Options::options) {
                 if (first) {
                     first = false;
                 } else {
@@ -91,8 +75,8 @@ int main(int argc, char* argv[]) {
                 std::cout << option.name << " = " << (option.value ? "true" : "false") << "\n";
             }
             std::cout << std::flush;
-        } else if (acclimate::has_diff && (arg == "--diff" || arg == "-d")) {
-            std::cout << acclimate::git_diff << std::flush;
+        } else if (acclimate::Version::has_diff && (arg == "--diff" || arg == "-d")) {
+            std::cout << acclimate::Version::git_diff << std::flush;
         } else if (arg == "--help" || arg == "-h") {
             print_usage(argv[0]);
         } else {

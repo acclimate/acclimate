@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_NETCDFOUTPUT_H
 #define ACCLIMATE_NETCDFOUTPUT_H
@@ -46,23 +30,23 @@ class Model;
 
 class NetCDFOutput final : public ArrayOutput {
   private:
-    static constexpr auto compression_level = 7;
-    TimeStep flush_freq = 1;
-    unsigned int event_cnt = 0;
-    std::string filename;
+    static constexpr auto compression_level_ = 7;
+    TimeStep flush_freq_ = 1;
+    unsigned int event_cnt_ = 0;
+    std::string filename_;
 
-    std::unique_ptr<netCDF::File> file;
-    std::unique_ptr<netCDF::Variable> var_events;
-    std::unique_ptr<netCDF::Variable> var_time;
+    std::unique_ptr<netCDF::File> file_;
+    std::unique_ptr<netCDF::Variable> var_events_;
+    std::unique_ptr<netCDF::Variable> var_time_;
 
-    std::vector<netCDF::Variable> vars_model;
-    std::vector<netCDF::Variable> vars_firms;
-    std::vector<netCDF::Variable> vars_consumers;
-    std::vector<netCDF::Variable> vars_sectors;
-    std::vector<netCDF::Variable> vars_regions;
-    std::vector<netCDF::Variable> vars_locations;
-    std::vector<netCDF::Variable> vars_storages;
-    std::vector<netCDF::Variable> vars_flows;
+    std::vector<netCDF::Variable> vars_model_;
+    std::vector<netCDF::Variable> vars_firms_;
+    std::vector<netCDF::Variable> vars_consumers_;
+    std::vector<netCDF::Variable> vars_sectors_;
+    std::vector<netCDF::Variable> vars_regions_;
+    std::vector<netCDF::Variable> vars_locations_;
+    std::vector<netCDF::Variable> vars_storages_;
+    std::vector<netCDF::Variable> vars_flows_;
 
   private:
     template<std::size_t dim>
@@ -76,7 +60,7 @@ class NetCDFOutput final : public ArrayOutput {
                       std::vector<netCDF::Variable>& nc_variables);
 
   public:
-    NetCDFOutput(Model* model_p, const settings::SettingsNode& settings);
+    NetCDFOutput(Model* model, const settings::SettingsNode& settings);
     void checkpoint_resume() override;
     void checkpoint_stop() override;
     void end() override;

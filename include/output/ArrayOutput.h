@@ -1,22 +1,6 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #ifndef ACCLIMATE_ARRAYOUTPUT_H
 #define ACCLIMATE_ARRAYOUTPUT_H
@@ -51,7 +35,7 @@ class ArrayOutput : public Output {
         hash_t name_hash;  // does not include _quantity/_value prefix
         std::vector<output_float_t> data;
 
-        Variable(std::string name_p, hash_t name_hash_p) : name(std::move(name_p)), name_hash(name_hash_p) {}
+        Variable(std::string name_, hash_t name_hash_) : name(std::move(name_)), name_hash(name_hash_) {}
     };
 
     template<std::size_t dim>
@@ -70,24 +54,24 @@ class ArrayOutput : public Output {
     };
 
   protected:
-    Observable<0> obs_model;
-    Observable<1> obs_firms;
-    Observable<1> obs_consumers;
-    Observable<1> obs_sectors;
-    Observable<1> obs_regions;
-    Observable<1> obs_locations;
-    Observable<2> obs_flows;
-    Observable<2> obs_storages;
-    std::vector<Event> events;
-    bool include_events;
-    bool only_current_timestep;
-    openmp::Lock event_lock;
+    Observable<0> obs_model_;
+    Observable<1> obs_firms_;
+    Observable<1> obs_consumers_;
+    Observable<1> obs_sectors_;
+    Observable<1> obs_regions_;
+    Observable<1> obs_locations_;
+    Observable<2> obs_flows_;
+    Observable<2> obs_storages_;
+    std::vector<Event> events_;
+    bool include_events_;
+    bool only_current_timestep_;
+    openmp::Lock event_lock_;
 
     template<std::size_t dim>
     void resize_data(Observable<dim>& obs);
 
   public:
-    ArrayOutput(Model* model_p, const settings::SettingsNode& settings, bool only_current_timestep_p);
+    ArrayOutput(Model* model, const settings::SettingsNode& settings, bool only_current_timestep);
     virtual ~ArrayOutput() override = default;
     void event(EventType type, const Sector* sector, const EconomicAgent* economic_agent, FloatType value) override;
     void event(EventType type, const EconomicAgent* economic_agent, FloatType value) override;

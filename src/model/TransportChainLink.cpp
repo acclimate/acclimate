@@ -1,31 +1,8 @@
-/*
-  Copyright (C) 2014-2020 Sven Willner <sven.willner@pik-potsdam.de>
-                          Christian Otto <christian.otto@pik-potsdam.de>
-
-  This file is part of Acclimate.
-
-  Acclimate is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
-
-  Acclimate is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with Acclimate.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// SPDX-FileCopyrightText: Acclimate authors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "model/TransportChainLink.h"
-
-#include <algorithm>
-#include <cmath>
-#include <iterator>
-#include <memory>
-#include <numeric>
-#include <utility>
 
 #include "acclimate.h"
 #include "model/BusinessConnection.h"
@@ -38,101 +15,101 @@
 namespace acclimate {
 
 TransportChainLink::TransportChainLink(BusinessConnection* business_connection_p,
-                                       const TransportDelay& transport_delay_tau,
-                                       const Flow& initial_flow_Z_star,
+                                       const TransportDelay& transport_delay,
+                                       const Flow& baseline_flow,
                                        GeoEntity* geo_entity_p)
-    : initial_transport_delay_tau(transport_delay_tau),
+    : baseline_transport_delay(transport_delay),
       business_connection(business_connection_p),
-      geo_entity(geo_entity_p),
-      overflow(0.0),
-      initial_flow_quantity(initial_flow_Z_star.get_quantity()),
-      transport_queue(transport_delay_tau, AnnotatedFlow(initial_flow_Z_star, initial_flow_quantity)),
-      pos(0),
-      forcing_nu(-1) {
-    if (geo_entity.valid()) {
-        geo_entity->transport_chain_links.add(this);
+      geo_entity_(geo_entity_p),
+      overflow_(0.0),
+      baseline_flow_quantity_(baseline_flow.get_quantity()),
+      transport_queue_(transport_delay, AnnotatedFlow(baseline_flow, baseline_flow_quantity_)),
+      pos_(0),
+      forcing_(-1) {
+    if (geo_entity_.valid()) {
+        geo_entity_->transport_chain_links.add(this);
     }
 }
 
 TransportChainLink::~TransportChainLink() {
-    if (geo_entity.valid()) {
-        geo_entity->transport_chain_links.remove(this);
+    if (geo_entity_.valid()) {
+        geo_entity_->transport_chain_links.remove(this);
     }
 }
 
-FloatType TransportChainLink::get_passage() const { return forcing_nu; }
+auto TransportChainLink::get_passage() const -> FloatType { return forcing_; }
 
-void TransportChainLink::push_flow_Z(const Flow& flow_Z, const FlowQuantity& initial_flow_Z_star) {
+void TransportChainLink::push_flow(const Flow& flow, const FlowQuantity& baseline_flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    outflow = Flow(0.0);
-    if (!transport_queue.empty()) {
-        auto front_flow_Z = transport_queue[pos];
-        transport_queue[pos] = AnnotatedFlow(flow_Z, initial_flow_Z_star);
-        pos = (pos + 1) % transport_queue.size();
+    outflow_ = Flow(0.0);
+    if (!transport_queue_.empty()) {
+        auto front_flow = transport_queue_[pos_];
+        transport_queue_[pos_] = AnnotatedFlow(flow, baseline_flow);
+        pos_ = (pos_ + 1) % transport_queue_.size();
 
-        if (forcing_nu < 0) {
-            outflow = overflow + front_flow_Z.current;
+        if (forcing_ < 0) {
+            outflow_ = overflow_ + front_flow.current;
         } else {
-            outflow = std::min(overflow + front_flow_Z.current, Flow(forcing_nu * front_flow_Z.initial, front_flow_Z.current.get_price()));
+            outflow_ = std::min(overflow_ + front_flow.current, Flow(forcing_ * front_flow.baseline, front_flow.current.get_price()));
         }
-        overflow = overflow + front_flow_Z.current - outflow;
-        if (next_transport_chain_link) {
-            next_transport_chain_link->push_flow_Z(outflow, initial_flow_Z_star);
+        overflow_ = overflow_ + front_flow.current - outflow_;
+        if (next_transport_chain_link_) {
+            next_transport_chain_link_->push_flow(outflow_, front_flow.baseline);
         } else {
-            business_connection->deliver_flow_Z(outflow);
+            business_connection->deliver_flow(outflow_);
         }
     } else {
-        if (forcing_nu < 0) {
-            outflow = overflow + flow_Z;
+        if (forcing_ < 0) {
+            outflow_ = overflow_ + flow;
         } else {
-            outflow = std::min(overflow + flow_Z, Flow(forcing_nu * initial_flow_Z_star, flow_Z.get_price()));
+            outflow_ = std::min(overflow_ + flow, Flow(forcing_ * baseline_flow, flow.get_price()));
         }
-        overflow = overflow + flow_Z - outflow;
-        if (next_transport_chain_link) {
-            next_transport_chain_link->push_flow_Z(outflow, initial_flow_Z_star);
+        overflow_ = overflow_ + flow - outflow_;
+        if (next_transport_chain_link_) {
+            next_transport_chain_link_->push_flow(outflow_, baseline_flow);
         } else {
-            business_connection->deliver_flow_Z(outflow);
+            business_connection->deliver_flow(outflow_);
         }
     }
 }
 
-void TransportChainLink::set_forcing_nu(Forcing forcing_nu_p) {
+void TransportChainLink::set_forcing(Forcing forcing) {
     debug::assertstep(this, IterationStep::SCENARIO);
-    forcing_nu = forcing_nu_p;
+    forcing_ = forcing;
 }
 
-Flow TransportChainLink::get_total_flow() const {
+auto TransportChainLink::get_total_flow() const -> Flow {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    return overflow
-           + std::accumulate(std::begin(transport_queue), std::end(transport_queue), Flow(0.0), [](const Flow& f, const auto& q) { return f + q.current; });
+    return overflow_
+           + std::accumulate(std::begin(transport_queue_), std::end(transport_queue_), Flow(0.0), [](const Flow& f, const auto& q) { return f + q.current; });
 }
 
-Flow TransportChainLink::get_disequilibrium() const {
+auto TransportChainLink::get_disequilibrium() const -> Flow {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     Flow res = Flow(0.0);
-    for (const auto& f : transport_queue) {
-        res.add_possibly_negative(absdiff(f.current, f.initial));
+    for (const auto& f : transport_queue_) {
+        res.add_possibly_negative(absdiff(f.current, f.baseline));
     }
     return res;
 }
 
-FloatType TransportChainLink::get_stddeviation() const {
+auto TransportChainLink::get_stddeviation() const -> FloatType {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    return std::accumulate(std::begin(transport_queue), std::end(transport_queue), 0.0, [](FloatType v, const auto& q) {
-        return v + to_float((absdiff(q.current, q.initial)).get_quantity()) * to_float((absdiff(q.current, q.initial)).get_quantity());
+    return std::accumulate(std::begin(transport_queue_), std::end(transport_queue_), 0.0, [](FloatType v, const auto& q) {
+        return v + to_float((absdiff(q.current, q.baseline)).get_quantity()) * to_float((absdiff(q.current, q.baseline)).get_quantity());
     });
 }
 
-FlowQuantity TransportChainLink::get_flow_deficit() const {
+auto TransportChainLink::get_flow_deficit() const -> FlowQuantity {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    return round(std::accumulate(std::begin(transport_queue), std::end(transport_queue), FlowQuantity(0.0),
-                                 [](FlowQuantity v, const auto& q) { return std::move(v) + round(q.initial - q.current.get_quantity()); })
-                 - overflow.get_quantity());
+    return round(std::accumulate(std::begin(transport_queue_), std::end(transport_queue_), FlowQuantity(0.0),
+                                 [](FlowQuantity v, const auto& q) { return std::move(v) + round(q.baseline - q.current.get_quantity()); })
+                 - overflow_.get_quantity());
 }
 
-const Model* TransportChainLink::model() const { return business_connection->model(); }
+auto TransportChainLink::model() const -> const Model* { return business_connection->model(); }
 
-std::string TransportChainLink::name() const {
+auto TransportChainLink::name() const -> std::string {
     return (business_connection->seller.valid() ? business_connection->seller->name() : "INVALID") + "-" + std::to_string(business_connection->get_id(this))
            + "->" + (business_connection->buyer.valid() ? business_connection->buyer->storage->economic_agent->name() : "INVALID");
 }

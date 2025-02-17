@@ -1,3 +1,9 @@
+<!--
+  SPDX-FileCopyrightText: Acclimate authors
+
+  SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.853346-blue.svg)](http://dx.doi.org/10.5281/zenodo.853346)
 ![Build](https://github.com/acclimate/acclimate/workflows/Build/badge.svg)
 
