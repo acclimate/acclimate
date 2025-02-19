@@ -21,10 +21,10 @@ Firm::Firm(id_t id, Sector* sector_, Region* region, const Ratio& possible_overc
       sales_manager(new SalesManager(this)) {}
 
 void Firm::initialize() {
-    sales_manager->initialize();
     for (const auto& is : input_storages) {
-        is->initialize();
+        is->initialize();  // must be done before initializing sales_manager!
     }
+    sales_manager->initialize();
 }
 
 void Firm::produce() {

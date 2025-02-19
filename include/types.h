@@ -647,11 +647,11 @@ class AnnotatedType {
     typename T::QuantityType baseline;
     using Type = T;
 
-    constexpr AnnotatedType(T current_, typename T::QuantityType baseline_) : current(current_), baseline(baseline_) {}
+    constexpr AnnotatedType(T current_, typename T::QuantityType baseline_) : current(std::move(current_)), baseline(std::move(baseline_)) {}
 
-    constexpr explicit AnnotatedType(typename T::QuantityType baseline_) : current(baseline_), baseline(baseline_) {}
+    constexpr explicit AnnotatedType(typename T::QuantityType baseline_) : baseline(std::move(baseline_)), current(baseline) {}
 
-    constexpr explicit AnnotatedType(T current_) : current(current_), baseline(current_.get_quantity()) {}
+    constexpr explicit AnnotatedType(T current_) : current(std::move(current_)), baseline(current.get_quantity()) {}
 
     typename T::QuantityType get_deficit() const { return baseline - current.get_quantity(); }
 };
