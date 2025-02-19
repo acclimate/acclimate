@@ -22,8 +22,7 @@ TransportChainLink::TransportChainLink(BusinessConnection* business_connection_p
       business_connection(business_connection_p),
       geo_entity_(geo_entity_p),
       overflow_(0.0),
-      baseline_flow_quantity_(baseline_flow.get_quantity()),
-      transport_queue_(transport_delay, AnnotatedFlow(baseline_flow, baseline_flow_quantity_)),
+      transport_queue_(transport_delay, AnnotatedFlow(baseline_flow)),
       pos_(0),
       forcing_(-1) {
     if (geo_entity_.valid()) {
@@ -39,12 +38,12 @@ TransportChainLink::~TransportChainLink() {
 
 auto TransportChainLink::get_passage() const -> FloatType { return forcing_; }
 
-void TransportChainLink::push_flow(const AnnotatedFlow& flow) {
+void TransportChainLink::push_flow(AnnotatedFlow flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     outflow_ = Flow(0.0);
     if (!transport_queue_.empty()) {
         auto front_flow = transport_queue_[pos_];
-        transport_queue_[pos_] = flow;
+        transport_queue_[pos_] = std::move(flow);
         pos_ = (pos_ + 1) % transport_queue_.size();
 
         if (forcing_ < 0) {

@@ -22,7 +22,7 @@ namespace acclimate {
 BusinessConnection::BusinessConnection(PurchasingManager* buyer_, SalesManager* seller_, const Flow& baseline_flow)
     : buyer(buyer_),
       baseline_flow_(baseline_flow),
-      last_delivery_(baseline_flow, baseline_flow.get_quantity()),
+      last_delivery_(baseline_flow),
       last_demand_request_(baseline_flow),
       seller(seller_),
       last_shipment_(baseline_flow),
@@ -85,13 +85,13 @@ auto BusinessConnection::get_transport_delay() const -> TransportDelay {
     return res;
 }
 
-void BusinessConnection::deliver_flow(const AnnotatedFlow& flow) {
+void BusinessConnection::deliver_flow(AnnotatedFlow flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     buyer->storage->push_flow(flow);
-    last_delivery_ = flow;
     if (!get_domestic()) {
         buyer->storage->economic_agent->region->add_import(flow.current);
     }
+    last_delivery_ = std::move(flow);
 }
 
 auto BusinessConnection::get_id(const TransportChainLink* transport_chain_link) const -> std::size_t {

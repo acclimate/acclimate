@@ -640,21 +640,24 @@ constexpr Flow operator/(const Stock& stock, const Time& time) {
     return Flow::possibly_negative(stock.get_quantity() / time, stock.get_value() / time);
 }
 
-template<typename Current, typename Baseline>
+template<typename T>
 class AnnotatedType {
   public:
-    Current current;
-    Baseline baseline;
+    T current;
+    typename T::QuantityType baseline;
+    using Type = T;
 
-    constexpr AnnotatedType(Current current_p, Baseline baseline_p) : current(current_p), baseline(baseline_p) {}
+    constexpr AnnotatedType(T current_, typename T::QuantityType baseline_) : current(current_), baseline(baseline_) {}
 
-    constexpr explicit AnnotatedType(Baseline baseline_p) : current(baseline_p), baseline(baseline_p) {}
+    constexpr explicit AnnotatedType(typename T::QuantityType baseline_) : current(baseline_), baseline(baseline_) {}
 
-    typename Current::QuantityType get_deficit() const { return current.get_quantity() - baseline; }
+    constexpr explicit AnnotatedType(T current_) : current(current_), baseline(current_.get_quantity()) {}
+
+    typename T::QuantityType get_deficit() const { return baseline - current.get_quantity(); }
 };
 
-using AnnotatedFlow = AnnotatedType<Flow, FlowQuantity>;
-using AnnotatedStock = AnnotatedType<Stock, Quantity>;
+using AnnotatedFlow = AnnotatedType<Flow>;
+using AnnotatedStock = AnnotatedType<Stock>;
 
 #undef typeassert
 

@@ -50,7 +50,7 @@ class BusinessConnection final {
     FloatType get_minimum_passage() const;
     TransportDelay get_transport_delay() const;
     void push_flow(const Flow& flow);
-    void deliver_flow(const AnnotatedFlow& flow);
+    void deliver_flow(AnnotatedFlow flow);
     void send_demand_request(const Demand& demand_request);
     bool get_domestic() const;
     void iterate_investment();

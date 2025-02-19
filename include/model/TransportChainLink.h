@@ -22,7 +22,6 @@ class TransportChainLink final {
 
   private:
     Forcing forcing_; /** \nu */
-    FlowQuantity baseline_flow_quantity_;
     Flow overflow_;
     Flow outflow_ = Flow(0.0);
     std::vector<AnnotatedFlow> transport_queue_;
@@ -42,7 +41,7 @@ class TransportChainLink final {
 
   public:
     ~TransportChainLink();
-    void push_flow(const AnnotatedFlow& flow);
+    void push_flow(AnnotatedFlow flow);
     void set_forcing(Forcing forcing);
     TransportDelay transport_delay() const { return transport_queue_.size(); }
     Flow last_outflow() const { return outflow_; }
