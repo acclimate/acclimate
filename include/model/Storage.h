@@ -76,7 +76,7 @@ class Storage final {
     void add_baseline_flow(const Flow& flow);
     bool subtract_baseline_flow(const Flow& flow);
     void iterate_consumption_and_production();
-    void calculate_and_set_technological_coefficient();
+    void initialize();
 
     Model* model();
     const Model* model() const;

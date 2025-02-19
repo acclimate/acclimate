@@ -158,7 +158,7 @@ auto Storage::desired_used_flow(const EconomicAgent* caller) const -> const Flow
     return desired_used_flow_;
 }
 
-void Storage::calculate_and_set_technological_coefficient() {
+void Storage::initialize() {
     if (economic_agent->is_firm()) {
         technology_coefficient_ = baseline_input_flow_ / economic_agent->as_firm()->baseline_production();
     }

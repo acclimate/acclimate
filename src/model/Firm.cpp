@@ -20,7 +20,12 @@ Firm::Firm(id_t id, Sector* sector_, Region* region, const Ratio& possible_overc
       capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta)),
       sales_manager(new SalesManager(this)) {}
 
-void Firm::initialize() { sales_manager->initialize(); }
+void Firm::initialize() {
+    sales_manager->initialize();
+    for (const auto& is : input_storages) {
+        is->initialize();
+    }
+}
 
 void Firm::produce() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
