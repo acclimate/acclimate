@@ -21,10 +21,10 @@ class TransportChainLink;
 
 class BusinessConnection final {
   private:
-    Demand last_demand_request_; /** D */
-    Flow baseline_flow_;         /** Z^* */
-    Flow last_delivery_;         /** Z */
-    Flow last_shipment_;         /** Z */
+    Demand last_demand_request_;  /** D */
+    Flow baseline_flow_;          /** Z^* */
+    AnnotatedFlow last_delivery_; /** Z */
+    Flow last_shipment_;          /** Z */
     Time time_;
     openmp::Lock seller_business_connections_lock_;
     std::unique_ptr<TransportChainLink> first_transport_link_;
@@ -50,7 +50,7 @@ class BusinessConnection final {
     FloatType get_minimum_passage() const;
     TransportDelay get_transport_delay() const;
     void push_flow(const Flow& flow);
-    void deliver_flow(const Flow& flow);
+    void deliver_flow(const AnnotatedFlow& flow);
     void send_demand_request(const Demand& demand_request);
     bool get_domestic() const;
     void iterate_investment();

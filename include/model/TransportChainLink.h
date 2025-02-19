@@ -42,7 +42,7 @@ class TransportChainLink final {
 
   public:
     ~TransportChainLink();
-    void push_flow(const Flow& flow, const FlowQuantity& baseline_flow);
+    void push_flow(const AnnotatedFlow& flow);
     void set_forcing(Forcing forcing);
     TransportDelay transport_delay() const { return transport_queue_.size(); }
     Flow last_outflow() const { return outflow_; }

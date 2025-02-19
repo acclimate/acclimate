@@ -33,7 +33,7 @@ void Firm::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     produce();
     for (const auto& is : input_storages) {
-        Flow used_flow = round(production_ * is->get_technology_coefficient());
+        Flow used_flow = round(production_ * is->technology_coefficient());
         if (production_.get_quantity() > 0.0) {
             used_flow.set_price(is->get_possible_use().get_price());
         }
@@ -49,7 +49,7 @@ void Firm::iterate_expectation() {
     for (const auto& is : input_storages) {
         const FlowQuantity& desired_production =
             std::max(sales_manager->communicated_parameters().expected_production.get_quantity(), sales_manager->sum_demand_requests().get_quantity());
-        is->set_desired_used_flow(round(desired_production * is->get_technology_coefficient()));
+        is->set_desired_used_flow(round(desired_production * is->technology_coefficient()));
     }
 }
 

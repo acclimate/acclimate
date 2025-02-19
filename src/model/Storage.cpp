@@ -49,8 +49,6 @@ auto Storage::last_input_flow() const -> const Flow& {
     return input_flow_[2];
 }
 
-auto Storage::get_technology_coefficient() const -> Ratio { return baseline_input_flow_ / economic_agent->as_firm()->baseline_production(); }
-
 auto Storage::get_input_share() const -> Ratio { return baseline_input_flow_ / economic_agent->as_firm()->baseline_use(); }
 
 void Storage::calc_content() {
@@ -89,9 +87,10 @@ void Storage::set_desired_used_flow(const Flow& flow) {
     desired_used_flow_ = flow;
 }
 
-void Storage::push_flow(const Flow& flow) {
+void Storage::push_flow(const AnnotatedFlow& flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    input_flow_lock_.call([&]() { input_flow_[model()->current_register()] += flow; });
+    input_flow_lock_.call([&]() { input_flow_[model()->current_register()] += flow.current; });
+    last_delivery_baseline_ = flow.baseline;
 }
 
 auto Storage::next_input_flow() const -> const Flow& {
@@ -103,7 +102,8 @@ void Storage::add_baseline_flow(const Flow& flow) {
     debug::assertstep(this, IterationStep::INITIALIZATION);
     input_flow_[1] += flow;
     input_flow_[2] += flow;
-    baseline_input_flow_ += flow;  // == initial_used_flow_U_star
+    baseline_input_flow_ += flow;
+    last_delivery_baseline_ += flow.get_quantity();
     baseline_content_ = round(baseline_content_ + flow * sector->baseline_storage_fill_factor);
     content_ = round(content_ + flow * sector->baseline_storage_fill_factor);
     purchasing_manager->add_baseline_demand(flow);
@@ -120,7 +120,8 @@ auto Storage::subtract_baseline_flow(const Flow& flow) -> bool {
     if (baseline_input_flow_.get_quantity() - flow.get_quantity() >= FlowQuantity::precision) {
         input_flow_[1] -= flow;
         input_flow_[2] -= flow;
-        baseline_input_flow_ -= flow;  // = initial_used_flow_U_star
+        baseline_input_flow_ -= flow;
+        last_delivery_baseline_ -= flow.get_quantity();
         baseline_content_ = round(baseline_content_ - flow * sector->baseline_storage_fill_factor);
         content_ = round(content_ - flow * sector->baseline_storage_fill_factor);
         purchasing_manager->subtract_baseline_demand(flow);
@@ -155,6 +156,12 @@ auto Storage::desired_used_flow(const EconomicAgent* caller) const -> const Flow
         }
     }
     return desired_used_flow_;
+}
+
+void Storage::calculate_and_set_technological_coefficient() {
+    if (economic_agent->is_firm()) {
+        technology_coefficient_ = baseline_input_flow_ / economic_agent->as_firm()->baseline_production();
+    }
 }
 
 }  // namespace acclimate

@@ -38,7 +38,7 @@ class EconomicAgent {
   public:
     virtual ~EconomicAgent();
     const Forcing& forcing() const { return forcing_; }
-    void set_forcing(const Forcing& forcing_p);
+    void set_forcing(const Forcing& forcing);
     bool is_firm() const { return type == EconomicAgent::type_t::FIRM; }
     bool is_consumer() const { return type == EconomicAgent::type_t::CONSUMER; }
     virtual Firm* as_firm() { throw log::error(this, "Not a firm"); }

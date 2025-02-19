@@ -608,7 +608,7 @@ void SalesManager::initialize() {
     debug::assertstep(this, IterationStep::INITIALIZATION);
     baseline_unit_commodity_costs_ = Price(0.0);
     for (auto& input_storage : firm->input_storages) {
-        baseline_unit_commodity_costs_ += Price(1.0) * input_storage->get_technology_coefficient();
+        baseline_unit_commodity_costs_ += Price(1.0) * input_storage->technology_coefficient();
     }
     assert(baseline_unit_commodity_costs_ > 0.0);
     assert(baseline_unit_commodity_costs_ <= 1);

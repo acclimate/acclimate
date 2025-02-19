@@ -39,7 +39,7 @@ void CapacityManager::debug_print_inputs() const {
             log::info("    ", is->name(), ":",                                                                     //
                       "  U_hat= ", std::setw(11), possible_use.get_quantity(),                                     //
                       "  n_hat= ", std::setw(11), possible_use.get_price(),                                        //
-                      "  n_hat*a= ", std::setw(11), (possible_use.get_price() * is->get_technology_coefficient())  //
+                      "  n_hat*a= ", std::setw(11), (possible_use.get_price() * is->technology_coefficient())  //
             );
         }
     }
@@ -59,9 +59,9 @@ auto CapacityManager::get_possible_production_intern(bool consider_transport_in_
         }
         if (consider_transport_in_production_costs) {
             Flow const transport_flow = input_storage->purchasing_manager->get_transport_flow();
-            unit_commodity_costs += (possible_use + transport_flow).get_price() * input_storage->get_technology_coefficient();
+            unit_commodity_costs += (possible_use + transport_flow).get_price() * input_storage->technology_coefficient();
         } else {
-            unit_commodity_costs += possible_use.get_price() * input_storage->get_technology_coefficient();
+            unit_commodity_costs += possible_use.get_price() * input_storage->technology_coefficient();
         }
         Ratio const tmp = possible_use / input_storage->baseline_used_flow();
         if (tmp < possible_production_capacity) {

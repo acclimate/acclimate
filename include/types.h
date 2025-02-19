@@ -21,9 +21,6 @@
 #include "options.h"
 // IWYU pragma: end_exports
 
-// TODO replace by comments of respective parameter names
-#define UNUSED(x) (void)(x)
-
 namespace acclimate {
 
 #ifdef DEBUG
@@ -482,6 +479,9 @@ class PricedQuantity {
     }
 
   public:
+    using QuantityType = Q;
+    using ValueType = V;
+
     constexpr PricedQuantity(Q quantity_p, V value_p) : quantity(std::move(quantity_p)), value(std::move(value_p)) {
         typeassert(!isnan(quantity));
         typeassert(!isnan(value));
@@ -649,6 +649,8 @@ class AnnotatedType {
     constexpr AnnotatedType(Current current_p, Baseline baseline_p) : current(current_p), baseline(baseline_p) {}
 
     constexpr explicit AnnotatedType(Baseline baseline_p) : current(baseline_p), baseline(baseline_p) {}
+
+    typename Current::QuantityType get_deficit() const { return current.get_quantity() - baseline; }
 };
 
 using AnnotatedFlow = AnnotatedType<Flow, FlowQuantity>;

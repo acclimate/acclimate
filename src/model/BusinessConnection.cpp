@@ -22,7 +22,7 @@ namespace acclimate {
 BusinessConnection::BusinessConnection(PurchasingManager* buyer_, SalesManager* seller_, const Flow& baseline_flow)
     : buyer(buyer_),
       baseline_flow_(baseline_flow),
-      last_delivery_(baseline_flow),
+      last_delivery_(baseline_flow, baseline_flow.get_quantity()),
       last_demand_request_(baseline_flow),
       seller(seller_),
       last_shipment_(baseline_flow),
@@ -69,7 +69,7 @@ auto BusinessConnection::get_domestic() const -> bool { return (buyer->storage->
 void BusinessConnection::push_flow(const Flow& flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     last_shipment_ = round(flow);
-    first_transport_link_->push_flow(last_shipment_, baseline_flow_.get_quantity());
+    first_transport_link_->push_flow(AnnotatedFlow(last_shipment_, baseline_flow_.get_quantity()));
     if (!get_domestic()) {
         seller->firm->region->add_export(last_shipment_);
     }
@@ -85,12 +85,12 @@ auto BusinessConnection::get_transport_delay() const -> TransportDelay {
     return res;
 }
 
-void BusinessConnection::deliver_flow(const Flow& flow) {
+void BusinessConnection::deliver_flow(const AnnotatedFlow& flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     buyer->storage->push_flow(flow);
     last_delivery_ = flow;
     if (!get_domestic()) {
-        buyer->storage->economic_agent->region->add_import(flow);
+        buyer->storage->economic_agent->region->add_import(flow.current);
     }
 }
 
@@ -115,7 +115,7 @@ void BusinessConnection::send_demand_request(const Demand& demand_request) {
 auto BusinessConnection::get_flow_mean() const -> Flow {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link_.get();
-    Flow res = last_delivery_;
+    Flow res = last_delivery_.current;
     TransportDelay delay = 0;
     while (link != nullptr) {
         res += link->get_total_flow();
@@ -128,7 +128,7 @@ auto BusinessConnection::get_flow_mean() const -> Flow {
 auto BusinessConnection::get_flow_deficit() const -> FlowQuantity {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     TransportChainLink* link = first_transport_link_.get();
-    FlowQuantity res = baseline_flow_.get_quantity() - last_delivery_.get_quantity();
+    FlowQuantity res = last_delivery_.get_deficit();
     while (link != nullptr) {
         res += link->get_flow_deficit();
         link = link->next_transport_chain_link_.get();
@@ -138,7 +138,7 @@ auto BusinessConnection::get_flow_deficit() const -> FlowQuantity {
 
 auto BusinessConnection::get_total_flow() const -> Flow {
     debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
-    return round(get_transport_flow() + last_delivery_);
+    return round(get_transport_flow() + last_delivery_.current);
 }
 
 auto BusinessConnection::get_transport_flow() const -> Flow {
@@ -195,7 +195,7 @@ auto BusinessConnection::last_delivery(const SalesManager* caller) const -> cons
             debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
         }
     }
-    return last_delivery_;
+    return last_delivery_.current;
 }
 
 auto BusinessConnection::last_demand_request(const PurchasingManager* caller) const -> const Demand& {

@@ -39,12 +39,12 @@ TransportChainLink::~TransportChainLink() {
 
 auto TransportChainLink::get_passage() const -> FloatType { return forcing_; }
 
-void TransportChainLink::push_flow(const Flow& flow, const FlowQuantity& baseline_flow) {
+void TransportChainLink::push_flow(const AnnotatedFlow& flow) {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     outflow_ = Flow(0.0);
     if (!transport_queue_.empty()) {
         auto front_flow = transport_queue_[pos_];
-        transport_queue_[pos_] = AnnotatedFlow(flow, baseline_flow);
+        transport_queue_[pos_] = flow;
         pos_ = (pos_ + 1) % transport_queue_.size();
 
         if (forcing_ < 0) {
@@ -54,21 +54,21 @@ void TransportChainLink::push_flow(const Flow& flow, const FlowQuantity& baselin
         }
         overflow_ = overflow_ + front_flow.current - outflow_;
         if (next_transport_chain_link_) {
-            next_transport_chain_link_->push_flow(outflow_, front_flow.baseline);
+            next_transport_chain_link_->push_flow(AnnotatedFlow(outflow_, front_flow.baseline));
         } else {
-            business_connection->deliver_flow(outflow_);
+            business_connection->deliver_flow(AnnotatedFlow(outflow_, front_flow.baseline));
         }
     } else {
         if (forcing_ < 0) {
-            outflow_ = overflow_ + flow;
+            outflow_ = overflow_ + flow.current;
         } else {
-            outflow_ = std::min(overflow_ + flow, Flow(forcing_ * baseline_flow, flow.get_price()));
+            outflow_ = std::min(overflow_ + flow.current, Flow(forcing_ * flow.baseline, flow.current.get_price()));
         }
-        overflow_ = overflow_ + flow - outflow_;
+        overflow_ = overflow_ + flow.current - outflow_;
         if (next_transport_chain_link_) {
-            next_transport_chain_link_->push_flow(outflow_, baseline_flow);
+            next_transport_chain_link_->push_flow(AnnotatedFlow(outflow_, flow.baseline));
         } else {
-            business_connection->deliver_flow(outflow_);
+            business_connection->deliver_flow(AnnotatedFlow(outflow_, flow.baseline));
         }
     }
 }

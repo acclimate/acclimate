@@ -19,7 +19,7 @@ namespace acclimate {
 
 NetCDFOutput::NetCDFOutput(Model* model, const settings::SettingsNode& settings) : ArrayOutput(model, settings, true) {
     flush_freq_ = settings["flush"].as<TimeStep>(1);
-    if (const auto& filename_node = settings["file_"]; !filename_node.empty()) {
+    if (const auto& filename_node = settings["file"]; !filename_node.empty()) {
         filename_ = filename_node.as<std::string>();
     } else {  // no filename_ given, use timestamp instead
         std::ostringstream ss;

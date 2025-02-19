@@ -38,6 +38,8 @@ class Storage final {
     Flow baseline_input_flow_ = Flow(0.0);                   /** I^* = U^* */
     Flow used_flow_ = Flow(0.0);                             /** U */
     Flow desired_used_flow_ = Flow(0.0);                     /** \tilde{U} */
+    Ratio technology_coefficient_ = Ratio(1.0);              /** \alpha */
+    FlowQuantity last_delivery_baseline_ = FlowQuantity(0.0);
     openmp::Lock input_flow_lock_;
     Parameters parameters_;
 
@@ -60,20 +62,21 @@ class Storage final {
     const Flow& baseline_input_flow() const { return baseline_input_flow_; }
     const Flow& baseline_used_flow() const { return baseline_input_flow_; }  // baseline_used_flow == baseline_input_flow_
     const Parameters& parameters() const { return parameters_; }
+    Ratio technology_coefficient() const { return technology_coefficient_; }
     void set_desired_used_flow(const Flow& desired_used_flow_p);
     void use_content(const Flow& flow);
     Flow last_possible_use() const;
     Flow estimate_possible_use() const;
     Flow get_possible_use() const;
-    void push_flow(const Flow& flow);
+    void push_flow(const AnnotatedFlow& flow);
     const Flow& current_input_flow() const;
     const Flow& last_input_flow() const;
     const Flow& next_input_flow() const;
-    Ratio get_technology_coefficient() const;
     Ratio get_input_share() const;
     void add_baseline_flow(const Flow& flow);
     bool subtract_baseline_flow(const Flow& flow);
     void iterate_consumption_and_production();
+    void calculate_and_set_technological_coefficient();
 
     Model* model();
     const Model* model() const;
@@ -88,6 +91,10 @@ class Storage final {
     template<typename Observer, typename H>
     bool observe(Observer& o) const {
         return true  //
+               && o.set(H::hash("baseline_content"),
+                        [this]() {  //
+                            return baseline_content_;
+                        })
                && o.set(H::hash("business_connections"),
                         [this]() {  //
                             return purchasing_manager->business_connections.size();
