@@ -106,7 +106,7 @@ auto ExternalScenario::next_forcing_file() -> bool {
 void ExternalScenario::start() {
     internal_start();
 
-    const settings::SettingsNode& forcing_node = scenario_node_["forcing_"];
+    const settings::SettingsNode& forcing_node = scenario_node_["forcing"];
     variable_name_ = forcing_node["variable"].as<std::string>();
     forcing_file_ = forcing_node["file"].as<std::string>();
 
@@ -115,8 +115,8 @@ void ExternalScenario::start() {
     file_index_to_ = forcing_node["index_to"].as<int>(file_index_from_);
     file_index_ = file_index_from_;
 
-    if (forcing_node.has("expression_")) {
-        expression_ = forcing_node["expression_"].as<std::string>();
+    if (forcing_node.has("expression")) {
+        expression_ = forcing_node["expression"].as<std::string>();
         if (system(nullptr) == 0) {
             throw log::error(this, "Cannot invoke system commands");
         }
@@ -125,7 +125,7 @@ void ExternalScenario::start() {
     }
 
     if (!next_forcing_file()) {
-        throw log::error(this, "Empty forcing_");
+        throw log::error(this, "Empty forcing");
     }
 }
 

@@ -559,7 +559,7 @@ void Consumer::debug_print_distribution() {
             std::cout << model()->run()->timeinfo() << ", " << name() << ": demand distribution for " << input_storages.size() << " inputs :\n";
             print_row("inequality value", inequality_constraint(optimizer_consumption_.data(), grad_constraint.data()));
             print_row("objective value", max_objective(optimizer_consumption_.data(), grad_objective.data()));
-            print_row("current utility_", utility_);
+            print_row("current utility", utility_);
             print_row("current total budget", consumption_budget_);
             print_row("substitution coefficient", inter_basket_substitution_coefficient_);
             std::cout << '\n';

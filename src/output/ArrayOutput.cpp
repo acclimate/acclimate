@@ -158,7 +158,7 @@ void ArrayOutput::resize_data(Observable<dim>& obs) {
 
 ArrayOutput::ArrayOutput(Model* model_p, const settings::SettingsNode& settings, bool only_current_timestep_p)
     : Output(model_p), only_current_timestep_(only_current_timestep_p) {
-    include_events_ = settings["events_"].as<bool>(false);
+    include_events_ = settings["events"].as<bool>(false);
 
     // model
     if (const auto& obs_node = settings["model"]; !obs_node.empty()) {

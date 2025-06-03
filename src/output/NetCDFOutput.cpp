@@ -80,7 +80,7 @@ void NetCDFOutput::start() {
     event_t.add_compound_field<decltype(ArrayOutput::Event::index1)>("index1", offsetof(ArrayOutput::Event, index1));
     event_t.add_compound_field<decltype(ArrayOutput::Event::index2)>("index2", offsetof(ArrayOutput::Event, index2));
     event_t.add_compound_field<decltype(ArrayOutput::Event::value)>("value", offsetof(ArrayOutput::Event, value));
-    var_events_ = std::make_unique<netCDF::Variable>(file_->add_variable("events_", event_t, {dim_event}));
+    var_events_ = std::make_unique<netCDF::Variable>(file_->add_variable("events", event_t, {dim_event}));
 
     var_time_ = std::make_unique<netCDF::Variable>(file_->add_variable<int>("time", {dim_time}));
     var_time_->set_compression(false, compression_level_);
