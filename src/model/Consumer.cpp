@@ -355,12 +355,12 @@ std::pair<std::vector<Flow>, FloatType> Consumer::utilitarian_consumption_optimi
             upper_bounds[index] = 0.0;
         } else {
             // affordable_quantity given by theoretically spending all budget for this good
-            FloatType scaled_affordable_quantity = scale_quantity_to_double(to_float(consumption_budget / to_float(consumption_prices[index])), baseline_consumption[index].get_quantity());
+            FloatType scaled_affordable_quantity = scale_quantity_to_double(consumption_budget / consumption_prices[index], baseline_consumption[index].get_quantity());
             // scaled possible consumption quantity
-            FloatType scaled_possible_consumption_quantity = scale_quantity_to_double(possible_consumption_quantity,baseline_consumption[index].get_quantity())
+            FloatType scaled_possible_consumption_quantity = scale_quantity_to_double(possible_consumption_quantity,baseline_consumption[index].get_quantity());
             lower_bounds[index] = 0.0; // no lower bound on consumption in case of empty storage
             upper_bounds[index] = std::min(1.5, std::min(scaled_affordable_quantity,scaled_possible_consumption_quantity));  // constrain consumption by possible consumption, affordable consumption, and maximum 50% increase
-        }
+        }     
     }
     // utility optimization
     // set parameters
