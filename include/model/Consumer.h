@@ -34,9 +34,7 @@ class Consumer final : public EconomicAgent {
     std::vector<FloatType> intra_basket_substitution_exponent_;
 
     std::vector<FloatType> basket_share_factors_;
-    std::vector<FloatType> exponent_basket_share_factors_;
     std::vector<FloatType> share_factors_;
-    std::vector<FloatType> exponent_share_factors_;
 
     // optimization parameters
     std::vector<double> optimizer_consumption_;
@@ -48,7 +46,6 @@ class Consumer final : public EconomicAgent {
     std::vector<Price> consumption_prices_;  // prices to be considered in optimization
     std::vector<Flow> previous_consumption_;
 
-    FloatType baseline_utility_ = 0;  // baseline utility for scaling
     std::vector<Flow> baseline_consumption_;
     // field to store utility
     FloatType utility_ = 0;
@@ -56,7 +53,6 @@ class Consumer final : public EconomicAgent {
 
     // variables for utility function , pre-allocated to increase efficiency
     autodiff::Value<FloatType> autodiff_consumption_utility_ = autodiff::Value<FloatType>(0, 0.0);
-    autodiff::Value<FloatType> autodiff_basket_consumption_utility_ = autodiff::Value<FloatType>(0, 0.0);
     autodiff::Value<FloatType> autodiffutility_ = autodiff::Value<FloatType>(0, 0.0);
 
     autodiff::Variable<FloatType> var_optimizer_consumption_ = autodiff::Variable<FloatType>(0, 0.0);
@@ -111,7 +107,7 @@ class Consumer final : public EconomicAgent {
     void consume_optimisation_result(std::vector<Flow> consumption);
 
     // function for constrained optimization
-    void consumption_optimize(optimization::Optimization& optimizer);
+    void consumption_optimize(optimization::Optimization& optimizer, const std::vector<double>& scaling_factors);
 
     // scaling functions
     static FlowQuantity invert_scaling_double_to_quantity(double scaling_factor, FlowQuantity scaling_quantity);

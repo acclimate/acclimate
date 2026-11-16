@@ -69,14 +69,14 @@ class Model final {
         // parameters for local optimization in consumption
         int utility_optimization_algorithm;
         int utility_optimization_maxiter;               // maximal iteration for utility
-        int utility_optimization_precision_adjustment;  // factor for precision of utility algorithms
+        float utility_optimization_precision_adjustment;  // factor for precision of utility algorithms
         unsigned int utility_optimization_timeout;      // timeout in sec
 
         // parameters for global optimization in consumption
         bool global_utility_optimization;
         int global_utility_optimization_algorithm;
         int global_utility_optimization_maxiter;               // maximal iteration of global utility algorithms
-        int global_utility_optimization_precision_adjustment;  // factor for precision of global utility algorithms
+        float global_utility_optimization_precision_adjustment;  // factor for precision of global utility algorithms
         unsigned int global_utility_optimization_random_points;
         unsigned int global_utility_optimization_timeout;  // timeout in sec
 
