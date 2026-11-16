@@ -213,15 +213,21 @@ auto Consumer::inequality_constraint(const double* x, double* grad) -> FloatType
     for (auto& input_storage : input_storages) {
         int const index = input_storage->id.index();
         assert(!std::isnan(x[index]));
+        if (baseline_consumption_[index].get_quantity() <= 0.0) {
+            if (grad != nullptr) {
+                grad[index] = 0.0;
+            }
+            continue;
+        }
         double price = NAN;
         if (model()->parameters().elastic_budget) {
-            price = x[index] * std::pow(to_float(consumption_prices_[index]), -1 * input_storage->parameters().consumption_price_elasticity);
+            price = std::pow(to_float(consumption_prices_[index]), -1 * input_storage->parameters().consumption_price_elasticity);
         } else {
-            price = x[index] * to_float(consumption_prices_[index]);
+            price = to_float(consumption_prices_[index]);
         }
         scaled_budget -= invert_scaling_double_to_double(x[index], baseline_consumption_[index].get_quantity()) * price / to_float(consumption_budget_);
         if (grad != nullptr) {
-            grad[index] = invert_scaling_double_to_double(x[index], baseline_consumption_[index].get_quantity()) * price / to_float(consumption_budget_);
+            grad[index] = to_float(baseline_consumption_[index].get_quantity()) * price / to_float(consumption_budget_);
             if constexpr (Options::OPTIMIZATION_WARNINGS) {
                 assert(!std::isnan(grad[index]));
                 if (grad[index] > MAX_GRADIENT) {
