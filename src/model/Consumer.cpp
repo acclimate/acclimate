@@ -30,7 +30,12 @@ Consumer::Consumer(id_t id,
       utilitarian_(utilitarian),
       consumer_baskets_(std::move(consumer_baskets)),
       inter_basket_substitution_coefficient_(inter_basket_substitution_coefficient),
-      inter_basket_substitution_exponent_((inter_basket_substitution_coefficient_ - 1) / inter_basket_substitution_coefficient_) {}
+      inter_basket_substitution_exponent_(0.0) {
+    if (!std::isfinite(inter_basket_substitution_coefficient_) || inter_basket_substitution_coefficient_ <= 0.0) {
+        throw log::error(this, "Inter-basket substitution coefficient must be positive and finite");
+    }
+    inter_basket_substitution_exponent_ = (inter_basket_substitution_coefficient_ - 1) / inter_basket_substitution_coefficient_;
+}
 
 /**
  * initializes parameters of utility_ function depending on current input storages and
@@ -47,20 +52,39 @@ void Consumer::initialize() {
 
     share_factors_ = std::vector<FloatType>(input_storages.size());
     exponent_share_factors_ = std::vector<FloatType>(input_storages.size());
-    previous_consumption_.reserve(input_storages.size());
-    baseline_consumption_.reserve(input_storages.size());
+    previous_consumption_.assign(input_storages.size(), Flow(0.0));
+    baseline_consumption_.assign(input_storages.size(), Flow(0.0));
 
     consumption_budget_ = FlowValue(0.0);
     not_spent_budget_ = FlowValue(0.0);
 
     for (auto& input_storage : input_storages) {
-        previous_consumption_.push_back(input_storage->baseline_used_flow());
-        baseline_consumption_.push_back(input_storage->baseline_used_flow());
+        previous_consumption_[input_storage->id.index()] = input_storage->baseline_used_flow();
+        baseline_consumption_[input_storage->id.index()] = input_storage->baseline_used_flow();
         consumption_budget_ += input_storage->baseline_used_flow().get_value();
     }
 
     if constexpr (VERBOSE_CONSUMER) {
         log::info("budget: ", consumption_budget_);
+    }
+
+    consumer_baskets_.erase(std::remove_if(consumer_baskets_.begin(), consumer_baskets_.end(),
+                                           [this](const auto& basket) {
+                                               for (const auto* sector : basket.first) {
+                                                   for (const auto& storage : input_storages) {
+                                                       if (storage->sector == sector && storage->baseline_used_flow().get_value() > 0.0) {
+                                                           return false;
+                                                       }
+                                                   }
+                                               }
+                                               return true;
+                                           }),
+                            consumer_baskets_.end());
+
+    if (consumer_baskets_.empty()) {
+        previous_consumption_.assign(input_storages.size(), Flow(0.0));
+        baseline_consumption_.assign(input_storages.size(), Flow(0.0));
+        return;
     }
 
     intra_basket_substitution_coefficient_ = std::vector<FloatType>(consumer_baskets_.size(), 0);
@@ -70,6 +94,9 @@ void Consumer::initialize() {
     consumer_basket_indizes_ = std::vector<std::vector<int>>(consumer_baskets_.size());
     for (int basket = 0; basket < static_cast<int>(consumer_baskets_.size()); ++basket) {
         intra_basket_substitution_coefficient_[basket] = (consumer_baskets_[basket].second);
+        if (!std::isfinite(intra_basket_substitution_coefficient_[basket]) || intra_basket_substitution_coefficient_[basket] <= 0.0) {
+            throw log::error(this, "Intra-basket substitution coefficient must be positive and finite");
+        }
         intra_basket_substitution_exponent_[basket] = (intra_basket_substitution_coefficient_[basket] - 1) / intra_basket_substitution_coefficient_[basket];
         for (auto& sector : consumer_baskets_[basket].first) {
             for (auto& i_storage : input_storages) {
@@ -77,15 +104,6 @@ void Consumer::initialize() {
                     basket_share_factors_[basket] += to_float(i_storage->baseline_used_flow().get_value()) / to_float(consumption_budget_);
                 }
             }
-        }
-    }
-    // edge case of no consumption in this basket - remove basket from optimization
-    auto original_basket_number = consumer_baskets_.size();
-    log::info(this, "basketnumber: ", original_basket_number);
-    for (int basket = original_basket_number; basket >= 0; basket--) {
-        if (basket_share_factors_[basket] == 0) {
-            log::info(this, "basket: ", basket, " removed");
-            consumer_baskets_.erase(std::remove(consumer_baskets_.begin(), consumer_baskets_.end(), consumer_baskets_[basket]), consumer_baskets_.end());
         }
     }
     auto consumption_in_relevant_baskets = FlowValue(0.0);
@@ -101,10 +119,10 @@ void Consumer::initialize() {
 
     std::vector<Sector*> all_relevant_sectors;
     for (int basket = 0; basket < static_cast<int>(consumer_baskets_.size()); ++basket) {
+        basket_share_factors_[basket] *= to_float(consumption_budget_ / consumption_in_relevant_baskets);
         for (auto& sector : consumer_baskets_[basket].first) {
             for (auto& i_storage : input_storages) {
                 if (i_storage->sector == sector) {
-                    basket_share_factors_[basket] = basket_share_factors_[basket] * to_float(consumption_budget_ / consumption_in_relevant_baskets);
                     all_relevant_sectors.push_back(sector);
                 }
             }
@@ -130,7 +148,7 @@ void Consumer::initialize() {
     for (int basket = 0; basket < static_cast<int>(consumer_baskets_.size()); ++basket) {
         for (auto& sector : consumer_baskets_[basket].first) {
             for (auto& i_storage : input_storages) {
-                if (i_storage->sector == sector) {
+                if (i_storage->sector == sector && i_storage->baseline_used_flow().get_quantity() > 0.0) {
                     consumer_basket_indizes_[basket].push_back(i_storage->id.index());
                     share_factors_[i_storage->id.index()] =
                         share_factors_[i_storage->id.index()] / basket_share_factors_[basket];  // normalize share factors of a basket to 1
@@ -154,6 +172,9 @@ void Consumer::initialize() {
  * @return auto-differentiable value of the utility_ function
  */
 auto Consumer::autodiff_nested_CES_utility_function(const autodiff::Variable<FloatType>& baseline_relative_consumption) -> autodiff::Value<FloatType> {
+    if (consumer_baskets_.empty()) {
+        return {input_storages.size(), 0.0};
+    }
     autodiff_consumption_utility_ = {input_storages.size(), 0.0};  // reset to 0 without new call
     for (int basket = 0; basket < static_cast<int>(consumer_baskets_.size()); ++basket) {
         autodiff_basket_consumption_utility_ = {input_storages.size(), 0.0};
