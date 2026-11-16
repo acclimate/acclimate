@@ -51,6 +51,7 @@ class Firm final : public EconomicAgent {
     const BusinessConnection* self_supply_connection() const;
     void self_supply_connection(std::shared_ptr<BusinessConnection> self_supply_connection_p);
     const Flow& production() const;
+    Flow export_flow() const;
     const Flow& baseline_production() const { return baseline_production_; }
     FloatType total_factor_productivity() const { return total_factor_productivity_; }
     void set_total_factor_productivity(FloatType total_factor_productivity);
@@ -67,6 +68,7 @@ class Firm final : public EconomicAgent {
     template<typename Observer, typename H>
     bool observe(Observer& o) const {
         return EconomicAgent::observe<Observer, H>(o)  //
+               && o.set(H::hash("export"), [this]() { return export_flow(); })
                && o.set(H::hash("total_factor_productivity"), [this]() { return total_factor_productivity(); })
                && o.set(H::hash("baseline_production"),
                         [this]() {  //

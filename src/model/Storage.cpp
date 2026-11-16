@@ -6,6 +6,7 @@
 
 #include "ModelRun.h"
 #include "acclimate.h"
+#include "model/BusinessConnection.h"
 #include "model/EconomicAgent.h"
 #include "model/Firm.h"
 #include "model/Model.h"
@@ -18,6 +19,17 @@ Storage::Storage(Sector* sector_, EconomicAgent* economic_agent_)
     : sector(sector_), economic_agent(economic_agent_), purchasing_manager(new PurchasingManager(this)), id(sector->name() + "->" + economic_agent->name()) {}
 
 Storage::~Storage() = default;  // needed to use forward declares for std::unique_ptr
+
+Flow Storage::import_flow() const {
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    Flow result(0.0);
+    for (const auto& connection : purchasing_manager->business_connections) {
+        if (!connection->get_domestic()) {
+            result += connection->last_delivery();
+        }
+    }
+    return result;
+}
 
 Ratio Storage::technology_coefficient() const {
     return economic_agent->is_firm() ? technology_coefficient_ / economic_agent->as_firm()->total_factor_productivity() : technology_coefficient_;

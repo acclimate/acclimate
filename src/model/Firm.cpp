@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include "acclimate.h"
+#include "model/BusinessConnection.h"
 #include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
 #include "model/PurchasingManager.h"
@@ -15,6 +16,17 @@
 #include "model/Storage.h"
 
 namespace acclimate {
+
+Flow Firm::export_flow() const {
+    debug::assertstepnot(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
+    Flow result(0.0);
+    for (const auto& connection : sales_manager->business_connections) {
+        if (!connection->get_domestic()) {
+            result += connection->last_shipment();
+        }
+    }
+    return result;
+}
 
 Firm::Firm(id_t id, Sector* sector_, Region* region, const Ratio& possible_overcapacity_ratio_beta)
     : EconomicAgent(std::move(id), region, EconomicAgent::type_t::FIRM),

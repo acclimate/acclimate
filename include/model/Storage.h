@@ -71,6 +71,7 @@ class Storage final {
     void push_flow(const AnnotatedFlow& flow);
     const Flow& current_input_flow() const;
     const Flow& last_input_flow() const;
+    Flow import_flow() const;
     const Flow& next_input_flow() const;
     Ratio get_input_share() const;
     void add_baseline_flow(const Flow& flow);
@@ -91,6 +92,7 @@ class Storage final {
     template<typename Observer, typename H>
     bool observe(Observer& o) const {
         return true  //
+               && o.set(H::hash("import"), [this]() { return import_flow(); })
                && o.set(H::hash("technology_coefficient"), [this]() { return technology_coefficient(); })
                && o.set(H::hash("baseline_content"),
                         [this]() {  //
