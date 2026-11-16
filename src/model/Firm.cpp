@@ -51,9 +51,8 @@ void Firm::iterate_consumption_and_production() {
 void Firm::iterate_expectation() {
     debug::assertstep(this, IterationStep::EXPECTATION);
     sales_manager->iterate_expectation();
+    const auto desired_production = sales_manager->communicated_parameters().expected_production.get_quantity();
     for (const auto& is : input_storages) {
-        const FlowQuantity& desired_production =
-            std::max(sales_manager->communicated_parameters().expected_production.get_quantity(), sales_manager->sum_demand_requests().get_quantity());
         is->set_desired_used_flow(round(desired_production * is->technology_coefficient()));
     }
 }

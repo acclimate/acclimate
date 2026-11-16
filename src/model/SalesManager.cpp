@@ -587,6 +587,7 @@ void SalesManager::iterate_expectation() {
         estimated_possible_production_.set_price(estimated_possible_production_.get_price()
                                                  / (1 - tax_));  // tax is applied here (1-tax_) because tax is on revenue!
     }
+    communicated_parameters_.possible_production = estimated_possible_production_;
     std::tie(communicated_parameters_.expected_production, communicated_parameters_.offer_price) =
         calc_expected_supply_distribution_scenario(estimated_possible_production_);
     sum_demand_requests_ = Flow(0.0);
