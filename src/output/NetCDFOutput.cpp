@@ -12,6 +12,7 @@
 #include "model/Region.h"
 #include "model/Sector.h"
 #include "netcdfpp.h"
+#include "nlopt.h"
 #include "settingsnode.h"
 #include "version.h"
 
@@ -86,8 +87,6 @@ void NetCDFOutput::start() {
     var_time_->set_compression(false, compression_level_);
     var_time_->add_attribute("calendar").set<std::string>(model()->run()->calendar());
     var_time_->add_attribute("units").set<std::string>(std::string("days since ") + model()->run()->basedate());
-
-    include_events_ = false;
 
     {
         auto event_type_var = file_->add_variable<std::string>("event_type", {dim_event_type});
@@ -185,6 +184,11 @@ void NetCDFOutput::start() {
     file_->add_attribute("settings").set<std::string>(model()->run()->settings_string());
     file_->add_attribute("start_time").set<std::string>(model()->run()->now());
     file_->add_attribute("max_threads").set<int>(model()->run()->thread_count());
+    int nlopt_major, nlopt_minor, nlopt_patch;
+    nlopt_version(&nlopt_major, &nlopt_minor, &nlopt_patch);
+    file_->add_attribute("nlopt_version").set<std::string>(std::to_string(nlopt_major) + "." + std::to_string(nlopt_minor) + "."
+                                                        + std::to_string(nlopt_patch));
+    file_->add_attribute("compiler").set<std::string>(__VERSION__);
     file_->add_attribute("version").set<std::string>(Version::version);
     if (Version::has_diff) {
         file_->add_attribute("diff").set<std::string>(Version::git_diff);
@@ -248,6 +252,7 @@ void NetCDFOutput::iterate() {
     if (!events_.empty()) {
         var_events_->set<Event, 1>(events_, {event_cnt_}, {events_.size()});
         event_cnt_ += events_.size();
+        events_.clear();
     }
 
     if (flush_freq_ > 0) {
