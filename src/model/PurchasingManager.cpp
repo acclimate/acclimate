@@ -213,7 +213,7 @@ auto PurchasingManager::max_objective(const double* x, double* grad) const -> Fl
 
 auto PurchasingManager::expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const -> FloatType {
     const auto X_expected = expected_production(business_connection);
-    auto X_new = D_r + expected_additional_production(business_connection);
+    auto X_new = D_r + expected_production_for_others(business_connection);
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production.get_quantity())) {
         if constexpr (Options::OPTIMIZATION_WARNINGS) {
@@ -247,12 +247,20 @@ auto PurchasingManager::expected_average_price_E_n_r(FloatType D_r, const Busine
 
 auto PurchasingManager::n_r(FloatType D_r, const BusinessConnection* business_connection) const -> FloatType {
     assert(D_r >= 0.0);
+    const auto other_expected_production = expected_production_for_others(business_connection);
+    const auto E_n_r = expected_average_price_E_n_r(D_r, business_connection);
+    if (model()->parameters().purchasing_markup_discount_by_supplier_utilization) {
+        const auto baseline = business_connection->seller->firm->forced_baseline_production_quantity_float();
+        const auto expected_total_production = other_expected_production + D_r;
+        const auto markup_discount_fraction = baseline > 0.0 ? std::max(0.0, 1.0 - expected_total_production / baseline) : 0.0;
+        const auto discount = to_float(storage->sector->parameters().baseline_markup) * markup_discount_fraction;
+        const auto base_cost = business_connection->seller->communicated_parameters().possible_production.get_price_float();
+        return std::max(base_cost, E_n_r - discount);
+    }
     const auto n_bar = to_float(business_connection->seller->communicated_parameters().offer_price);
     const auto X_expected = expected_production(business_connection);
-    const auto additional_X_expected = expected_additional_production(business_connection);
-    const auto E_n_r = expected_average_price_E_n_r(D_r, business_connection);
-    const auto D_r_min = std::max(0.0, business_connection->seller->firm->forced_baseline_production_quantity_float() - additional_X_expected);
-    const auto X_new_min = D_r_min + additional_X_expected;
+    const auto D_r_min = std::max(0.0, business_connection->seller->firm->forced_baseline_production_quantity_float() - other_expected_production);
+    const auto X_new_min = D_r_min + other_expected_production;
     assert(X_new_min > 0.0);
     const auto npe_at_X_expected = (X_expected > 0.0) ? estimate_production_extension_penalty(business_connection, X_expected) / X_expected : 0.0;
     const auto npe_at_X_new_min = (X_new_min > 0.0) ? estimate_production_extension_penalty(business_connection, X_new_min) / X_new_min : 0.0;
@@ -274,7 +282,7 @@ auto PurchasingManager::n_r(FloatType D_r, const BusinessConnection* business_co
 }
 
 auto PurchasingManager::grad_expected_average_price_E_n_r(FloatType D_r, const BusinessConnection* business_connection) const -> FloatType {
-    auto X_new = D_r + expected_additional_production(business_connection);
+    auto X_new = D_r + expected_production_for_others(business_connection);
     assert(round(FlowQuantity(X_new)) <= business_connection->seller->communicated_parameters().possible_production.get_quantity());
     if (X_new > to_float(business_connection->seller->communicated_parameters().possible_production.get_quantity())) {
         if constexpr (Options::OPTIMIZATION_WARNINGS) {
@@ -311,7 +319,7 @@ inline auto PurchasingManager::expected_production(const BusinessConnection* bus
     }
 }
 
-inline auto PurchasingManager::expected_additional_production(const BusinessConnection* business_connection) -> FloatType {
+inline auto PurchasingManager::expected_production_for_others(const BusinessConnection* business_connection) -> FloatType {
     const auto X = to_float(business_connection->seller->communicated_parameters().production.get_quantity());
     const auto X_expected = expected_production(business_connection);
     const auto Z_last = to_float(business_connection->last_shipment().get_quantity());
@@ -320,16 +328,27 @@ inline auto PurchasingManager::expected_additional_production(const BusinessConn
 }
 
 auto PurchasingManager::grad_n_r(FloatType D_r, const BusinessConnection* business_connection) const -> FloatType {
-    const auto n_bar = to_float(business_connection->seller->communicated_parameters().offer_price);
-    const auto X_expected = expected_production(business_connection);
-    const auto additional_X_expected = expected_additional_production(business_connection);
+    const auto other_expected_production = expected_production_for_others(business_connection);
     const auto grad_E_n_r = grad_expected_average_price_E_n_r(D_r, business_connection);
     const auto E_n_r = expected_average_price_E_n_r(D_r, business_connection);
+    if (model()->parameters().purchasing_markup_discount_by_supplier_utilization) {
+        const auto baseline = business_connection->seller->firm->forced_baseline_production_quantity_float();
+        const auto expected_total_production = other_expected_production + D_r;
+        const auto markup = to_float(storage->sector->parameters().baseline_markup);
+        const auto markup_discount_fraction = baseline > 0.0 ? std::max(0.0, 1.0 - expected_total_production / baseline) : 0.0;
+        const auto base_cost = business_connection->seller->communicated_parameters().possible_production.get_price_float();
+        if (E_n_r - markup * markup_discount_fraction <= base_cost) {
+            return 0.0;
+        }
+        return grad_E_n_r + (baseline > 0.0 && expected_total_production < baseline ? markup / baseline : 0.0);
+    }
+    const auto n_bar = to_float(business_connection->seller->communicated_parameters().offer_price);
+    const auto X_expected = expected_production(business_connection);
     const auto D_r_min = std::max(0.0,
                                   business_connection->seller->firm->forced_baseline_production_quantity_float()
-                                      - additional_X_expected);  // note: D_r_star is the demand request for X_new=lambda * X_star
+                                      - other_expected_production);  // note: D_r_star is the demand request for X_new=lambda * X_star
     assert(D_r_min >= 0.0);
-    const auto X_new_min = D_r_min + additional_X_expected;
+    const auto X_new_min = D_r_min + other_expected_production;
     assert(X_new_min > 0.0);
     const auto npe_at_X_expected = (X_expected > 0.0) ? estimate_production_extension_penalty(business_connection, X_expected) / X_expected : 0.0;
     const auto npe_at_X_new_min = (X_new_min > 0.0) ? estimate_production_extension_penalty(business_connection, X_new_min) / X_new_min : 0.0;
@@ -568,7 +587,7 @@ void PurchasingManager::iterate_purchase() {
             // assumption, we cannot crowd out other purchasers given that our maximum offer price is n_max, calculate analytical approximation for maximal
             // deliverable amount of purchaser X_max(n_max) and consider boundary conditions
             const auto X_expected = expected_production(bc.get());
-            const auto additional_X_expected = expected_additional_production(bc.get());
+            const auto other_expected_production = expected_production_for_others(bc.get());
             auto X_max = to_float(calc_analytical_approximation_X_max(bc.get()));
             if constexpr (Options::USE_MIN_PASSAGE_IN_EXPECTATION) {
                 X_max *= bc->get_minimum_passage();
@@ -579,10 +598,10 @@ void PurchasingManager::iterate_purchase() {
                 (void)X_hat;
             }
             const FloatType lower_limit = 0.0;
-            const FloatType upper_limit = X_max - additional_X_expected;
+            const FloatType upper_limit = X_max - other_expected_production;
             const auto D_r_max = round(FlowQuantity(upper_limit));
             if (D_r_max > 0.0) {
-                auto initial_value_unbound = X_expected - additional_X_expected;
+                auto initial_value_unbound = X_expected - other_expected_production;
                 if (model()->parameters().start_purchasing_at_baseline) {
                     // experimental starting value based on baseline state
                     initial_value_unbound = to_float(bc->baseline_flow().get_quantity());
@@ -592,7 +611,7 @@ void PurchasingManager::iterate_purchase() {
                     // experimental starting value based on baseline state
                     auto baseline_value = to_float(bc->baseline_flow().get_quantity());
                     // TODO: try more complex interploation scheme if  weighting baseline and current point with 0.5 to simplistic
-                    initial_value_unbound = (baseline_value + (X_expected - additional_X_expected))
+                    initial_value_unbound = (baseline_value + (X_expected - other_expected_production))
                                             / 2;  // equal weighted interpolation between current expected value and starting value
                 }
                 const auto initial_value = std::min(upper_limit, std::max(lower_limit, initial_value_unbound));

@@ -43,6 +43,7 @@ class Model final {
         Ratio min_storage;
         bool naive_expectations;  // incoming demand is never extended
         bool purchasing_halfway_baseline;
+        bool purchasing_markup_discount_by_supplier_utilization;
         bool quadratic_transport_penalty;  // quadratic instead of linear transport penalty
         bool relative_transport_penalty;
         bool respect_markup_in_production_extension;
@@ -126,6 +127,12 @@ class Model final {
             global_optimization_maxiter = f("global_optimization_maxiter").template as<int>(optimization_maxiter);
             global_optimization_precision_adjustment = f("global_optimization_precision_adjustment").template as<float>(1.0);
             global_optimization_timeout = f("global_optimization_timeout").template as<unsigned int>(optimization_timeout);
+
+            purchasing_markup_discount_by_supplier_utilization = f("purchasing_markup_discount_by_supplier_utilization").template as<bool>(false);
+            if (purchasing_markup_discount_by_supplier_utilization
+                && (!local_purchasing_optimization || global_purchasing_optimization || maximal_decrease_reservation_price_limited_by_markup)) {
+                throw log::error("purchasing_markup_discount_by_supplier_utilization requires local purchasing optimization, no global purchasing optimization and no markup limiter");
+            }
 
             // parameters for local optimization in consumption
             utility_optimization_algorithm = optimization::get_algorithm(f("utility_optimization_algorithm").template as<hashed_string>("slsqp"));
