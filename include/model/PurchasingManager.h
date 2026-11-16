@@ -29,7 +29,7 @@ class PurchasingManager final {
     Demand demand_ = Demand(0.0); /** D */
     FloatType optimized_value_ = 0.0;
     Demand purchase_ = Demand(0.0);
-    FlowQuantity desired_purchase_ = FlowQuantity(0.0);
+    FloatType desired_purchase_ = 0.0;  // A capacity-capped target need not lie on the order quantity grid.
     FlowValue expected_costs_ = FlowValue(0.0);
     FlowValue total_transport_penalty_ = FlowValue(0.0);
     std::vector<BusinessConnection*> purchasing_connections;

@@ -55,6 +55,7 @@ class Model final {
         bool local_purchasing_optimization;
         int optimization_algorithm;
         int optimization_maxiter;               // maximal iteration
+        FloatType purchasing_constraint_tolerance;  // normalized equality tolerance for local purchasing
         int optimization_precision_adjustment;  // factor for precision of global algorithms
         bool optimization_restart_baseline;
         unsigned int optimization_timeout;  // timeout in sec
@@ -108,6 +109,10 @@ class Model final {
             local_purchasing_optimization = f("local_purchasing_optimization").template as<bool>(true);
             optimization_algorithm = optimization::get_algorithm(f("optimization_algorithm").template as<hashed_string>("slsqp"));
             optimization_maxiter = f("optimization_maxiter").template as<int>();
+            purchasing_constraint_tolerance = f("purchasing_constraint_tolerance").template as<FloatType>(FlowQuantity::precision);
+            if (!std::isfinite(purchasing_constraint_tolerance) || purchasing_constraint_tolerance <= 0.0) {
+                throw log::error("purchasing_constraint_tolerance must be positive and finite");
+            }
             optimization_precision_adjustment = f("optimization_precision_adjustment").template as<float>(1.0);
             optimization_restart_baseline = f("optimization_restart_baseline").template as<bool>(false);
             optimization_timeout = f("optimization_timeout").template as<unsigned int>();

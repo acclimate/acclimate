@@ -181,7 +181,7 @@ auto PurchasingManager::equality_constraint(const double* x, double* grad) const
         if (grad != nullptr) {
             grad[r] = -partial_D_r_scaled_D_r(purchasing_connections[r]) / partial_use_scaled_use();
             if constexpr (Options::OPTIMIZATION_WARNINGS) {
-                if (grad[r] > MAX_GRADIENT) {
+                if (std::abs(grad[r]) > MAX_GRADIENT) {
                     log::warning(this, purchasing_connections[r]->name(), ": large gradient of ", grad[r]);
                 }
             }
@@ -202,7 +202,7 @@ auto PurchasingManager::max_objective(const double* x, double* grad) const -> Fl
                          + partial_D_r_transport_penalty(D_r, purchasing_connections[r]))
                       / partial_objective_scaled_objective();
             if constexpr (Options::OPTIMIZATION_WARNINGS) {
-                if (grad[r] > MAX_GRADIENT) {
+                if (std::abs(grad[r]) > MAX_GRADIENT) {
                     log::warning(this, purchasing_connections[r]->name(), ": large gradient of ", grad[r]);
                 }
             }
@@ -281,7 +281,7 @@ auto PurchasingManager::grad_expected_average_price_E_n_r(FloatType D_r, const B
             log::warning(this, "X_new > X_hat: X_new = ", FlowQuantity(X_new),
                          " X_hat = ", business_connection->seller->communicated_parameters().possible_production.get_quantity());
         }
-        X_new = to_float(business_connection->seller->communicated_parameters().possible_production.get_quantity());
+        return 0.0;
     }
     if (X_new <= 0.0) {
         return 0.0;
@@ -369,12 +369,8 @@ auto PurchasingManager::transport_penalty(FloatType D_r, const BusinessConnectio
             if (target > FlowQuantity::precision) {
                 return (D_r - target) * ((D_r - target) * to_float(model()->parameters().transport_penalty_large) / (target * target) / 2 + marg_penalty);
             }
-            return D_r * D_r * to_float(model()->parameters().transport_penalty_large / 2 + Price(marg_penalty));
         }
         return (D_r - target) * ((D_r - target) * to_float(model()->parameters().transport_penalty_large) / 2 + marg_penalty);
-    }
-    if (model()->parameters().relative_transport_penalty) {
-        return partial_D_r_transport_penalty(D_r, business_connection) * (D_r - target) / target;
     }
     return partial_D_r_transport_penalty(D_r, business_connection) * (D_r - target);
 }
@@ -399,11 +395,10 @@ auto PurchasingManager::partial_D_r_transport_penalty(FloatType D_r, const Busin
             if (target > FlowQuantity::precision) {
                 return (D_r - target) * to_float(model()->parameters().transport_penalty_large) / (target * target) + marg_penalty;
             }
-            return D_r * to_float(model()->parameters().transport_penalty_large) + marg_penalty;
         }
         return (D_r - target) * to_float(model()->parameters().transport_penalty_large) + marg_penalty;
     }
-    if (model()->parameters().relative_transport_penalty) {
+    if (model()->parameters().relative_transport_penalty && target > FlowQuantity::precision) {
         if (D_r < target) {
             return -to_float(model()->parameters().transport_penalty_small) / target;
         }
@@ -457,16 +452,11 @@ auto PurchasingManager::run_optimizer(optimization::Optimization& opt) -> FloatT
                 // optional restart at baseline demand levels (setting non-available suppliers to 0)
                 if (model()->parameters().optimization_restart_baseline) {
                     demand_requests_.clear();
-                    demand_requests_.reserve(business_connections.size());
-                    int index_bc = 0;
-                    for (auto& bc : business_connections) {
-                        if (bc->seller->communicated_parameters().possible_production.get_quantity() <= 0.0) {
-                            bc->send_demand_request(Demand(0.0));
-                        } else {  // this supplier can deliver a non-zero amount
-                            // try setting the demand request as in baseline case (if not exceeding upper bound)
-                            demand_requests_.push_back(std::min(scaled_D_r(to_float(bc->baseline_flow().get_quantity()), bc.get()), upper_bounds[index_bc]));
-                        }
-                        index_bc += 1;
+                    demand_requests_.reserve(purchasing_connections.size());
+                    for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
+                        const auto* bc = purchasing_connections[r];
+                        demand_requests_.push_back(
+                            std::min(upper_bounds[r], std::max(lower_bounds[r], scaled_D_r(to_float(bc->baseline_flow().get_quantity()), bc))));
                     }
                 }
                 opt.reset_last_result();
@@ -556,20 +546,21 @@ void PurchasingManager::iterate_purchase() {
 
     const auto S_shortage = get_flow_deficit() * model()->delta_t() + storage->baseline_content().get_quantity() - storage->content().get_quantity();
 
-    desired_purchase_ = storage->desired_used_flow().get_quantity()  // desired used flow is either last or expected flow
-                        + S_shortage
-                              / (S_shortage > 0.0 ? storage->sector->parameters().target_storage_refill_time    // storage level low
-                                                  : storage->sector->parameters().target_storage_withdraw_time  // storage level high
-                              );
+    const auto desired_purchase = storage->desired_used_flow().get_quantity()  // desired used flow is either last or expected flow
+                                  + S_shortage
+                                        / (S_shortage > 0.0 ? storage->sector->parameters().target_storage_refill_time    // storage level low
+                                                            : storage->sector->parameters().target_storage_withdraw_time  // storage level high
+                                        );
 
-    if (round(desired_purchase_) <= 0.0) {
+    desired_purchase_ = to_float(desired_purchase);
+    if (round(desired_purchase) <= 0.0) {
         for (auto& bc : business_connections) {
             bc->send_demand_request(Demand(0.0));
         }
         return;
     }
 
-    FlowQuantity maximal_possible_purchase(0.0);
+    long double maximal_possible_purchase = 0.0L;
     for (auto& bc : business_connections) {
         if (bc->seller->communicated_parameters().possible_production.get_quantity() <= 0.0) {
             bc->send_demand_request(Demand(0.0));
@@ -612,7 +603,8 @@ void PurchasingManager::iterate_purchase() {
                 xtol_abs.push_back(scaled_D_r(FlowQuantity::precision * model()->parameters().optimization_precision_adjustment, bc.get()));
                 pre_xtol_abs.push_back(scaled_D_r(FlowQuantity::precision * model()->parameters().global_optimization_precision_adjustment, bc.get()));
                 demand_requests_.push_back(scaled_D_r(initial_value, bc.get()));
-                maximal_possible_purchase += D_r_max;
+                // Use the same physical bounds as the optimizer, not rounded order capacities.
+                maximal_possible_purchase += unscaled_D_r(upper_bounds.back(), bc.get());
             } else {
                 bc->send_demand_request(Demand(0.0));
             }
@@ -626,7 +618,7 @@ void PurchasingManager::iterate_purchase() {
     assert(maximal_possible_purchase > 0.0);
 
     if (desired_purchase_ > maximal_possible_purchase) {
-        desired_purchase_ = maximal_possible_purchase;
+        desired_purchase_ = static_cast<FloatType>(maximal_possible_purchase);
     }
 
     // experimental optimization setup: first use global optimizer DIRECT to get a reasonable result, polish the result with previous routine.
@@ -659,7 +651,7 @@ void PurchasingManager::iterate_purchase() {
     if (model()->parameters().local_purchasing_optimization) {
         optimization::Optimization local_optimizer(static_cast<nlopt_algorithm>(model()->parameters().optimization_algorithm),
                                                    purchasing_connections.size());  // TODO keep and only recreate when resize is needed
-        local_optimizer.add_equality_constraint(this, FlowQuantity::precision);
+        local_optimizer.add_equality_constraint(this, model()->parameters().purchasing_constraint_tolerance);
         local_optimizer.add_max_objective(this);
         local_optimizer.xtol(xtol_abs);
         local_optimizer.lower_bounds(lower_bounds);
