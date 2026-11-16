@@ -49,6 +49,7 @@ class Model final {
         bool start_purchasing_at_baseline;
         Price transport_penalty_large;
         Price transport_penalty_small;
+        bool include_transport_chain_in_cost_estimation;
         bool with_investment_dynamics;
 
         // parameters for local optimization in purchase
@@ -100,9 +101,11 @@ class Model final {
             purchasing_halfway_baseline = f("purchasing_halfway_baseline").template as<bool>(false);
             quadratic_transport_penalty = f("quadratic_transport_penalty").template as<bool>(true);
             relative_transport_penalty = f("relative_transport_penalty").template as<bool>(true);
+            respect_markup_in_production_extension = f("respect_markup_in_production_extension").template as<bool>(false);
             start_purchasing_at_baseline = f("start_purchasing_at_baseline").template as<bool>(false);
             transport_penalty_large = f("transport_penalty_large").template as<Price>();
             transport_penalty_small = f("transport_penalty_small").template as<Price>();
+            include_transport_chain_in_cost_estimation = f("include_transport_chain_in_cost_estimation").template as<bool>(true);
             with_investment_dynamics = f("with_investment_dynamics").template as<bool>(false);
 
             // parameters for local optimization in purchase

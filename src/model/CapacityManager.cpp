@@ -6,6 +6,7 @@
 
 #include "acclimate.h"
 #include "model/Firm.h"
+#include "model/Model.h"
 #include "model/PurchasingManager.h"
 #include "model/SalesManager.h"
 #include "model/Storage.h"
@@ -85,7 +86,7 @@ auto CapacityManager::get_possible_production() const -> Flow {
 
 auto CapacityManager::estimate_possible_production() const -> Flow {
     debug::assertstep(this, IterationStep::EXPECTATION);
-    bool const consider_transport_in_production_costs = true;
+    bool const consider_transport_in_production_costs = model()->parameters().include_transport_chain_in_cost_estimation;
     return get_possible_production_intern(consider_transport_in_production_costs, true);
 }
 
