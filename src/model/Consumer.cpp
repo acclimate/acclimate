@@ -537,13 +537,54 @@ std::pair<std::vector<Flow>, FloatType> Consumer::utilitarian_consumption_optimi
     if (!std::isfinite(optimized_utility)) {
         throw log::error(this, "nonfinite optimized consumption utility");
     }
+    FloatType expenditure = 0.0;
+    FloatType rounded_expenditure = 0.0;
+    FloatType rounding_allowance = 0.0;
     std::vector<Flow> consumption;
     consumption.reserve(input_storages.size());
     for (auto& input_storage : input_storages) {
         int const index = input_storage->id.index();
+        const auto baseline_quantity = to_float(baseline_consumption_[index].get_quantity());
+        const auto quantity = optimizer_consumption_[index] * baseline_quantity;
+        if (!std::isfinite(optimizer_consumption_[index]) || !std::isfinite(quantity)) {
+            throw log::error(this, input_storage->name(), ": nonfinite optimized consumption quantity");
+        }
+        const auto lower_quantity = lower_bounds[index] * baseline_quantity;
+        const auto upper_quantity = upper_bounds[index] * baseline_quantity;
+        const auto bound_tolerance = FlowQuantity::precision;
+        const auto bound_violation = std::max(lower_quantity - quantity, quantity - upper_quantity);
+        if (bound_violation > bound_tolerance) {
+            model()->run()->event(EventType::CONSUMER_BOUND_VIOLATION, input_storage->sector, this, bound_violation);
+            log::warning_always(this, input_storage->name(), ": CONSUMER_BOUND_VIOLATION = ", bound_violation);
+        }
         consumption.emplace_back(invert_scaling_double_to_quantity(optimizer_consumption_[index], baseline_consumption_[index].get_quantity()),
                                  consumption_prices_[index]);
+        const auto rounded_quantity = to_float(consumption.back().get_quantity());
+        const auto rounded_bound_violation = std::max(lower_quantity - rounded_quantity, rounded_quantity - upper_quantity);
+        if (rounded_bound_violation > bound_tolerance + FlowQuantity::precision / 2) {
+            model()->run()->event(EventType::CONSUMER_ROUNDED_BOUND_VIOLATION, input_storage->sector, this, rounded_bound_violation);
+            log::warning_always(this, input_storage->name(), ": CONSUMER_ROUNDED_BOUND_VIOLATION = ", rounded_bound_violation);
+        }
+        if (baseline_quantity > 0.0) {
+            const auto price = to_float(consumption_prices_[index]);
+            const auto budget_weight = model()->parameters().elastic_budget
+                                           ? std::pow(price, -input_storage->parameters().consumption_price_elasticity)
+                                           : price;
+            expenditure += quantity * budget_weight;
+            rounded_expenditure += rounded_quantity * budget_weight;
+            rounding_allowance += FlowQuantity::precision / 2 * budget_weight;
+        }
     }
+    const auto budget_tolerance = FlowValue::precision;
+    const auto record_budget_violation = [&](EventType type, FloatType spending, FloatType tolerance) {
+        const auto residual = spending - available_budget;
+        if ((budget_inequality_constrained ? residual : std::abs(residual)) > tolerance) {
+            model()->run()->event(type, this, residual);
+            log::warning_always(this, EVENT_NAMES[static_cast<int>(type)], " = ", residual);
+        }
+    };
+    record_budget_violation(EventType::CONSUMER_BUDGET_VIOLATION, expenditure, budget_tolerance);
+    record_budget_violation(EventType::CONSUMER_ROUNDED_BUDGET_VIOLATION, rounded_expenditure, budget_tolerance + rounding_allowance);
     return std::pair<std::vector<Flow>, FloatType>(consumption, optimized_utility);
 }
 

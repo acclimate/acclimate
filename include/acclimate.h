@@ -88,13 +88,18 @@ inline acclimate::exception error(Arg&& arg, Args&&... args) {
 }
 
 template<typename Arg, typename... Args>
+inline void warning_always(Arg&& arg, Args&&... args) {
+    if constexpr (std::is_pointer<Arg>::value && detail::has_model_and_name<typename std::remove_pointer<Arg>::type>::value) {
+        detail::output(timeinfo(*arg->model()), ", ", arg->name(), " Warning: ", std::forward<Args>(args)...);
+    } else {
+        detail::output("Warning: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
+    }
+}
+
+template<typename Arg, typename... Args>
 inline void warning(Arg&& arg, Args&&... args) {
     if constexpr (Options::DEBUGGING) {
-        if constexpr (std::is_pointer<Arg>::value && detail::has_model_and_name<typename std::remove_pointer<Arg>::type>::value) {
-            detail::output(timeinfo(*arg->model()), ", ", arg->name(), " Warning: ", std::forward<Args>(args)...);
-        } else {
-            detail::output("Warning: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
-        }
+        warning_always(std::forward<Arg>(arg), std::forward<Args>(args)...);
     }
 }
 
