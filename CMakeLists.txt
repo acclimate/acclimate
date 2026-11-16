@@ -148,7 +148,7 @@ const std::array<Options::Option, ${ACCLIMATE_OPTIONS_LENGTH}> Options::options 
 )
 target_sources(acclimate PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/src/options.cpp)
 
-include_nlopt(acclimate ON GIT_TAG "v2.8.0")
+include_nlopt(acclimate ON GIT_TAG "v2.11.0")
 
 include(lib/netcdfpp/netcdfpp.cmake)
 include_netcdfpp(acclimate)
