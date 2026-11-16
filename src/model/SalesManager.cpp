@@ -103,10 +103,6 @@ auto SalesManager::calc_production() -> Flow {
         });
 
     Flow possible_production = firm->capacity_manager->possible_production();
-    if (estimated_possible_production_.get_quantity() > 0.0) {
-        // price (unit_production_costs) has been calculated already in estimation step
-        possible_production.set_price(estimated_possible_production_.get_price());
-    }
     std::tie(communicated_parameters_.production, communicated_parameters_.offer_price) = calc_supply_distribution_scenario(possible_production);
     communicated_parameters_.possible_production = possible_production;
 
