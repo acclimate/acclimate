@@ -742,7 +742,7 @@ void ModelInitializer::build_artificial_network() {
         Region* region = add_region("RG" + std::to_string(i));
         add_consumer("FCON:RG" + std::to_string(i), region);
         for (std::size_t j = 0; j < sectors_cnt; ++j) {
-            auto* sector = model()->sectors[j + 1];
+            auto* sector = model()->sectors[j];
             add_firm(sector->name() + ":RG" + std::to_string(i), sector, region);
         }
     }
@@ -751,11 +751,11 @@ void ModelInitializer::build_artificial_network() {
     const Flow double_flow = Flow(FlowQuantity(2.0), Price(1.0));
     for (std::size_t r = 0; r < regions_cnt; ++r) {
         for (std::size_t i = 0; i < sectors_cnt; ++i) {
-            auto* firm = model()->sectors[i + 1]->firms[r];
+            auto* firm = model()->sectors[i]->firms[r];
             auto* region = model()->regions[r];
             auto* consumer = model()->economic_agents.find("FCON:" + region->name())->as_consumer();
-            log::info(this, firm->name(), "->", model()->sectors[(i + 1) % sectors_cnt + 1]->firms[r]->name(), " = ", flow.get_quantity());
-            initialize_connection(firm, model()->sectors[(i + 1) % sectors_cnt + 1]->firms[r], flow);
+            log::info(this, firm->name(), "->", model()->sectors[(i + 1) % sectors_cnt]->firms[r]->name(), " = ", flow.get_quantity());
+            initialize_connection(firm, model()->sectors[(i + 1) % sectors_cnt]->firms[r], flow);
             if (!closed && r == regions_cnt - 1) {
                 log::info(this, firm->name(), "->", consumer->name(), " = ", double_flow.get_quantity());
                 initialize_connection(firm, consumer, double_flow);
@@ -764,9 +764,9 @@ void ModelInitializer::build_artificial_network() {
                 initialize_connection(firm, consumer, flow);
             }
             if (closed || r < regions_cnt - 1) {
-                log::info(this, firm->name(), "->", model()->sectors[(i + skewness) % sectors_cnt + 1]->firms[(r + 1) % regions_cnt]->name(), " = ",
+                log::info(this, firm->name(), "->", model()->sectors[(i + skewness) % sectors_cnt]->firms[(r + 1) % regions_cnt]->name(), " = ",
                           flow.get_quantity());
-                initialize_connection(firm, model()->sectors[(i + skewness) % sectors_cnt + 1]->firms[(r + 1) % regions_cnt], flow);
+                initialize_connection(firm, model()->sectors[(i + skewness) % sectors_cnt]->firms[(r + 1) % regions_cnt], flow);
             }
         }
     }
