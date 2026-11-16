@@ -155,6 +155,6 @@ include_netcdfpp(acclimate)
 
 include(lib/settingsnode/settingsnode.cmake)
 include_settingsnode(acclimate)
-include_yaml_cpp(acclimate ON GIT_TAG "0.8.0")
+include_yaml_cpp(acclimate ON GIT_TAG "yaml-cpp-0.9.0")
 
 add_cpp_tools(acclimate STD c++17)
