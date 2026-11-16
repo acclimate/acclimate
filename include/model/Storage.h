@@ -93,6 +93,8 @@ class Storage final {
     bool observe(Observer& o) const {
         return true  //
                && o.set(H::hash("import"), [this]() { return import_flow(); })
+               && o.set(H::hash("baseline_input_flow"), [this]() { return baseline_input_flow_; })
+               && o.set(H::hash("transport_flow_deficit"), [this]() { return purchasing_manager->get_flow_deficit(); })
                && o.set(H::hash("technology_coefficient"), [this]() { return technology_coefficient(); })
                && o.set(H::hash("baseline_content"),
                         [this]() {  //
