@@ -686,6 +686,9 @@ void PurchasingManager::iterate_purchase() {
     // distribute demand requests
     for (std::size_t r = 0; r < purchasing_connections.size(); ++r) {
         const auto D_r = unscaled_D_r(demand_requests_[r], purchasing_connections[r]);
+        if (!std::isfinite(D_r)) {
+            throw log::error(this, "nonfinite optimized purchasing quantity");
+        }
         Demand demand_request = Demand(FlowQuantity(D_r), FlowValue(D_r));
         assert(!std::isnan(n_r(D_r, purchasing_connections[r])));
         demand_request.set_price(round(Price(n_r(D_r, purchasing_connections[r]))));
@@ -702,14 +705,26 @@ void PurchasingManager::iterate_purchase() {
         }
         purchasing_connections[r]->send_demand_request(round(demand_request));
 
-        if constexpr (Options::DEBUGGING) {
-            use += D_r;
-        }
+        use += D_r;
         demand_ += round(demand_request);
         costs += n_r(D_r, purchasing_connections[r]) * D_r + transport_penalty(D_r, purchasing_connections[r]);
         total_transport_penalty_ += FlowValue(transport_penalty(D_r, purchasing_connections[r]));
     }
     expected_costs_ = FlowValue(costs);
+    const auto target = to_float(desired_purchase_);
+    const auto normalized_tolerance = model()->parameters().global_purchasing_optimization && !model()->parameters().local_purchasing_optimization
+                                          ? FlowValue::precision
+                                          : model()->parameters().purchasing_constraint_tolerance;
+    const auto tolerance = partial_use_scaled_use() * normalized_tolerance;
+    const auto record_violation = [&](EventType type, FloatType residual, FloatType allowance) {
+        if (std::abs(residual) > allowance) {
+            model()->run()->event(type, storage->sector, storage->economic_agent, residual);
+            log::warning_always(this, EVENT_NAMES[static_cast<int>(type)], " = ", residual, " (tolerance ", allowance, ")");
+        }
+    };
+    record_violation(EventType::PURCHASING_CONSTRAINT_VIOLATION, use - target, tolerance);
+    record_violation(EventType::PURCHASING_ROUNDED_CONSTRAINT_VIOLATION, to_float(demand_.get_quantity()) - target,
+                     tolerance + purchasing_connections.size() * FlowQuantity::precision / 2);
     if constexpr (Options::DEBUGGING) {
         assert(FlowQuantity(use) >= 0.0);
     } else {
