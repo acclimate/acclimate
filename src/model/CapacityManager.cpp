@@ -48,7 +48,7 @@ void CapacityManager::debug_print_inputs() const {
 
 auto CapacityManager::get_possible_production_intern(bool consider_transport_in_production_costs, bool estimate) const -> Flow {
     debug::assertstepor(this, IterationStep::CONSUMPTION_AND_PRODUCTION, IterationStep::EXPECTATION);
-    Ratio possible_production_capacity = firm->forcing() * possible_overcapacity_ratio_beta;
+    Ratio possible_production_capacity = firm->production_scale() * possible_overcapacity_ratio_beta;
     auto unit_commodity_costs = Price(0.0);
 
     for (const auto& input_storage : firm->input_storages) {
@@ -64,7 +64,7 @@ auto CapacityManager::get_possible_production_intern(bool consider_transport_in_
         } else {
             unit_commodity_costs += possible_use.get_price() * input_storage->technology_coefficient();
         }
-        Ratio const tmp = possible_use / input_storage->baseline_used_flow();
+        Ratio const tmp = possible_use / input_storage->baseline_used_flow() * firm->total_factor_productivity();
         if (tmp < possible_production_capacity) {
             possible_production_capacity = tmp;
         }
@@ -73,7 +73,7 @@ auto CapacityManager::get_possible_production_intern(bool consider_transport_in_
     Flow result = round(firm->baseline_production() * possible_production_capacity);
     // note: if result.get_quantity() == 0.0 price is NAN
     if (result.get_quantity() > 0.0) {
-        result.set_price(round(unit_commodity_costs + firm->sales_manager->get_baseline_unit_variable_production_costs()));
+        result.set_price(round(unit_commodity_costs + firm->sales_manager->get_baseline_unit_variable_production_costs() / firm->total_factor_productivity()));
     }
     return result;
 }

@@ -24,6 +24,7 @@ class Model;
 
 class EventSeriesScenario : public ExternalScenario {
   private:
+    bool total_factor_productivity_forcing_;
     class EventForcing : public ExternalForcing {
         friend class EventSeriesScenario;
 

@@ -126,7 +126,7 @@ auto PurchasingManager::estimate_production_extension_penalty(const BusinessConn
         return 0.0;
     }
     // in production extension
-    return std::max(0.0, to_float(bc->seller->firm->sector->parameters().estimated_price_increase_production_extension)
+    return std::max(0.0, (to_float(bc->seller->firm->sector->parameters().estimated_price_increase_production_extension) / bc->seller->firm->total_factor_productivity())
                              / (2 * bc->seller->firm->forced_baseline_production_quantity_float())
                              * (production_quantity_X - bc->seller->firm->forced_baseline_production_quantity_float())
                              * (production_quantity_X - bc->seller->firm->forced_baseline_production_quantity_float()));
@@ -149,7 +149,7 @@ auto PurchasingManager::estimate_marginal_production_extension_penalty(const Bus
         return 0.0;
     }
     // in production extension
-    return to_float(bc->seller->firm->sector->parameters().estimated_price_increase_production_extension)
+    return (to_float(bc->seller->firm->sector->parameters().estimated_price_increase_production_extension) / bc->seller->firm->total_factor_productivity())
            / bc->seller->firm->forced_baseline_production_quantity_float()
            * (production_quantity_X - bc->seller->firm->forced_baseline_production_quantity_float());
 }

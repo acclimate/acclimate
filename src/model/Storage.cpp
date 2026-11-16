@@ -19,6 +19,10 @@ Storage::Storage(Sector* sector_, EconomicAgent* economic_agent_)
 
 Storage::~Storage() = default;  // needed to use forward declares for std::unique_ptr
 
+Ratio Storage::technology_coefficient() const {
+    return economic_agent->is_firm() ? technology_coefficient_ / economic_agent->as_firm()->total_factor_productivity() : technology_coefficient_;
+}
+
 void Storage::iterate_consumption_and_production() {
     debug::assertstep(this, IterationStep::CONSUMPTION_AND_PRODUCTION);
     calc_content();

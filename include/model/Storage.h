@@ -62,7 +62,7 @@ class Storage final {
     const Flow& baseline_input_flow() const { return baseline_input_flow_; }
     const Flow& baseline_used_flow() const { return baseline_input_flow_; }  // baseline_used_flow == baseline_input_flow_
     const Parameters& parameters() const { return parameters_; }
-    Ratio technology_coefficient() const { return technology_coefficient_; }
+    Ratio technology_coefficient() const;
     void set_desired_used_flow(const Flow& desired_used_flow_p);
     void use_content(const Flow& flow);
     Flow last_possible_use() const;
@@ -91,6 +91,7 @@ class Storage final {
     template<typename Observer, typename H>
     bool observe(Observer& o) const {
         return true  //
+               && o.set(H::hash("technology_coefficient"), [this]() { return technology_coefficient(); })
                && o.set(H::hash("baseline_content"),
                         [this]() {  //
                             return baseline_content_;

@@ -195,16 +195,18 @@ struct ConsumerScaling {
     double max_objective(const double* z, double* gradient) {
         decode(z);
         const auto value = consumer.max_objective(raw.data(), gradient);
-        if (gradient)
+        if (gradient) {
             for (std::size_t i = 0; i < raw.size(); ++i) gradient[i] /= scale[i];
+        }
         return value;
     }
 
     double inequality_constraint(const double* z, double* gradient) {
         decode(z);
         const auto residual = consumer.inequality_constraint(raw.data(), gradient);
-        if (gradient)
+        if (gradient) {
             for (std::size_t i = 0; i < raw.size(); ++i) gradient[i] /= scale[i];
+        }
         return residual;
     }
 
@@ -417,8 +419,9 @@ std::pair<std::vector<Flow>, FloatType> Consumer::utilitarian_consumption_optimi
         }
         if (scaled_local) {
             const auto coefficient = baseline_quantity * budget_weight / to_float(consumption_budget_);
-            if (!std::isfinite(coefficient) || coefficient <= 0.0)
+            if (!std::isfinite(coefficient) || coefficient <= 0.0) {
                 throw log::error(this, input_storage->name(), ": invalid normalized consumption budget coefficient");
+            }
             scaling_factors[index] = std::sqrt(coefficient);
         }
         upper_bounds[index] =
@@ -455,8 +458,9 @@ std::pair<std::vector<Flow>, FloatType> Consumer::utilitarian_consumption_optimi
             xtol_abs_global[index] = scale_double_to_double(xtol_abs_global[index], baseline_consumption_[index].get_quantity());
         }
         optimizer_consumption_[index] = std::min(scaled_starting_value[index], upper_bounds[index]);
-        if (scaled_local && baseline_consumption_[index].get_quantity() > 0.0)
+        if (scaled_local && baseline_consumption_[index].get_quantity() > 0.0) {
             xtol_abs[index] = std::min(xtol_abs[index], 1e-10 * std::max(1.0, std::abs(optimizer_consumption_[index])));
+        }
     }
     if constexpr (VERBOSE_CONSUMER) {
         log::info(this, "upper bounds");

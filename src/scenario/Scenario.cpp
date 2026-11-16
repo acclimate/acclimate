@@ -30,6 +30,8 @@ void Scenario::set_firm_property(Firm* firm, const settings::SettingsNode& node,
             firm->set_forcing(reset ? 1.0 : it.as<Forcing>() / firm->capacity_manager->possible_overcapacity_ratio_beta);
         } else if (name == "forcing") {
             firm->set_forcing(reset ? static_cast<Forcing>(1.0) : it.as<Forcing>());
+        } else if (name == "total_factor_productivity") {
+            firm->set_total_factor_productivity(reset ? 1.0 : it.as<FloatType>());
         }
     }
 }

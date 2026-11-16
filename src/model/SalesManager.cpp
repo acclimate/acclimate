@@ -122,7 +122,7 @@ void SalesManager::distribute() {
         assert(!isnan(supply_distribution_scenario.price_cheapest_buyer_accepted_in_optimization));
         Price cheapest_price_range_half_width(0.0);
         if (model()->parameters().cheapest_price_range_generic_size) {
-            cheapest_price_range_half_width = firm->sector->parameters().price_increase_production_extension / 2
+            cheapest_price_range_half_width = (firm->sector->parameters().price_increase_production_extension / firm->total_factor_productivity()) / 2
                                               * (firm->capacity_manager->possible_overcapacity_ratio_beta - 1)
                                               * (firm->capacity_manager->possible_overcapacity_ratio_beta - 1)
                                               / firm->capacity_manager->possible_overcapacity_ratio_beta;  // = maximal penalty per unit
@@ -636,7 +636,7 @@ auto SalesManager::calc_production_extension_penalty(const FlowQuantity& product
         log::info(this, firm->forced_maximal_production_quantity());
     }
     assert(production_quantity <= firm->forced_maximal_production_quantity());
-    return firm->sector->parameters().price_increase_production_extension / (2 * firm->forced_baseline_production_quantity())
+    return (firm->sector->parameters().price_increase_production_extension / firm->total_factor_productivity()) / (2 * firm->forced_baseline_production_quantity())
            * (production_quantity - firm->forced_baseline_production_quantity()) * (production_quantity - firm->forced_baseline_production_quantity());
 
     // maximal penalty per unit: price_increase_production_extension / 2 * (possible_overcapacity_ratio - 1)^2 / possible_overcapacity_ratio
@@ -648,7 +648,7 @@ auto SalesManager::calc_marginal_production_extension_penalty(const FlowQuantity
         return Price{0.0};
     }
     // in production extension
-    return firm->sector->parameters().price_increase_production_extension / firm->forced_baseline_production_quantity()
+    return (firm->sector->parameters().price_increase_production_extension / firm->total_factor_productivity()) / firm->forced_baseline_production_quantity()
            * (production_quantity - firm->forced_baseline_production_quantity());
     // maximal: price_increase_production_extension * (possible_overcapacity_ratio - 1)
 }
@@ -669,7 +669,8 @@ auto SalesManager::analytic_solution_in_production_extension(const Price& unit_p
     assert(price_demand_request_not_served_completely >= unit_production_costs);
     return round(
         firm->forced_baseline_production_quantity()
-        * (1.0 + (price_demand_request_not_served_completely - unit_production_costs) / firm->sector->parameters().price_increase_production_extension));
+        * (1.0 + (price_demand_request_not_served_completely - unit_production_costs)
+                     / (firm->sector->parameters().price_increase_production_extension / firm->total_factor_productivity())));
 }
 
 auto SalesManager::calc_additional_revenue_expectation(const FlowQuantity& production_quantity_X, const Price& n_min) const -> FlowValue {

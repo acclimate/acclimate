@@ -23,6 +23,8 @@ class Firm final : public EconomicAgent {
     Flow baseline_production_ = Flow(0.0); /** X^* */
     Flow baseline_use_ = Flow(0.0);        /** U^* */
     Flow production_ = Flow(0.0);          /** X */
+    // Gross-output TFP multiplier A: input requirements and variable unit costs scale with 1/A.
+    FloatType total_factor_productivity_ = 1.0;
     std::shared_ptr<BusinessConnection> self_supply_connection_;
 
   public:
@@ -50,10 +52,13 @@ class Firm final : public EconomicAgent {
     void self_supply_connection(std::shared_ptr<BusinessConnection> self_supply_connection_p);
     const Flow& production() const;
     const Flow& baseline_production() const { return baseline_production_; }
-    Flow forced_baseline_production() const { return round(baseline_production_ * forcing_); }
+    FloatType total_factor_productivity() const { return total_factor_productivity_; }
+    void set_total_factor_productivity(FloatType total_factor_productivity);
+    FloatType production_scale() const { return forcing_ * total_factor_productivity_; }
+    Flow forced_baseline_production() const { return round(baseline_production_ * production_scale()); }
     Flow maximal_production() const; /** \beta * X^* */
-    FlowQuantity forced_baseline_production_quantity() const { return round(baseline_production_.get_quantity() * forcing_); }
-    FloatType forced_baseline_production_quantity_float() const { return to_float(baseline_production_.get_quantity() * forcing_); }
+    FlowQuantity forced_baseline_production_quantity() const { return round(baseline_production_.get_quantity() * production_scale()); }
+    FloatType forced_baseline_production_quantity_float() const { return to_float(baseline_production_.get_quantity() * production_scale()); }
     FlowQuantity forced_maximal_production_quantity() const;
     const Flow& baseline_use() const { return baseline_use_; }
 
@@ -62,6 +67,7 @@ class Firm final : public EconomicAgent {
     template<typename Observer, typename H>
     bool observe(Observer& o) const {
         return EconomicAgent::observe<Observer, H>(o)  //
+               && o.set(H::hash("total_factor_productivity"), [this]() { return total_factor_productivity(); })
                && o.set(H::hash("baseline_production"),
                         [this]() {  //
                             return baseline_production();

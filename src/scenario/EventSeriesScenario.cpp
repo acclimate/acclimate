@@ -15,7 +15,13 @@
 namespace acclimate {
 
 EventSeriesScenario::EventSeriesScenario(const settings::SettingsNode& settings, settings::SettingsNode scenario_node, Model* model)
-    : ExternalScenario(settings, std::move(scenario_node), model) {}
+    : ExternalScenario(settings, std::move(scenario_node), model) {
+    const auto kind = scenario_node_["forcing"]["kind"].as<std::string>("capacity");
+    if (kind != "capacity" && kind != "total_factor_productivity") {
+        throw log::error(this, "forcing.kind must be capacity or total_factor_productivity");
+    }
+    total_factor_productivity_forcing_ = kind == "total_factor_productivity";
+}
 
 auto EventSeriesScenario::read_forcing_file(const std::string& filename, const std::string& variable_name) -> ExternalForcing* {
     return new EventForcing(filename, variable_name, model());
@@ -26,6 +32,18 @@ void EventSeriesScenario::read_forcings() {
         auto* forcing_l = static_cast<EventForcing*>(forcing_.get());  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
         for (std::size_t i = 0; i < forcing_l->agents_.size(); ++i) {
             if (forcing_l->agents_[i] != nullptr) {
+                if (total_factor_productivity_forcing_) {
+                    if (!forcing_l->agents_[i]->is_firm()) {
+                        if (!std::isnan(forcing_l->forcings_[i]) && forcing_l->forcings_[i] != 1.0) {
+                            throw log::error(this, "total_factor_productivity forcing requires firm targets; non-neutral entry for ", forcing_l->agents_[i]->name(),
+                                             ": ", forcing_l->forcings_[i]);
+                        }
+                        continue;
+                    }
+                    auto* firm = forcing_l->agents_[i]->as_firm();
+                    firm->set_total_factor_productivity(std::isnan(forcing_l->forcings_[i]) ? 1.0 : forcing_l->forcings_[i]);
+                    continue;
+                }
                 if (std::isnan(forcing_l->forcings_[i])) {
                     forcing_l->agents_[i]->set_forcing(1.0);
                 } else {
@@ -36,6 +54,9 @@ void EventSeriesScenario::read_forcings() {
     }
     {
         auto* forcing_l = static_cast<EventForcing*>(forcing_.get());  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+        if (total_factor_productivity_forcing_ && !forcing_l->locations_.empty()) {
+            throw log::error(this, "total_factor_productivity forcing does not support sea routes");
+        }
         for (std::size_t i = 0; i < forcing_l->locations_.size(); ++i) {
             if (forcing_l->locations_[i] != nullptr) {
                 if (forcing_l->forcings_[i] < 0.0) {

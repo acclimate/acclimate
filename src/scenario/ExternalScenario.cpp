@@ -6,6 +6,7 @@
 
 #include "acclimate.h"
 #include "model/EconomicAgent.h"
+#include "model/Firm.h"
 #include "model/Model.h"
 #include "model/Region.h"
 #include "scenario/ExternalForcing.h"
@@ -152,6 +153,9 @@ void ExternalScenario::iterate() {
             for (const auto& region : model()->regions) {
                 for (const auto& ea : region->economic_agents) {
                     ea->set_forcing(static_cast<Forcing>(1.0));
+                    if (ea->is_firm()) {
+                        ea->as_firm()->set_total_factor_productivity(1.0);
+                    }
                 }
             }
             return;

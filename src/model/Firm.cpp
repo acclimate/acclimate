@@ -4,6 +4,8 @@
 
 #include "model/Firm.h"
 
+#include <cmath>
+
 #include "acclimate.h"
 #include "model/CapacityManager.h"
 #include "model/EconomicAgent.h"
@@ -19,6 +21,14 @@ Firm::Firm(id_t id, Sector* sector_, Region* region, const Ratio& possible_overc
       sector(sector_),
       capacity_manager(new CapacityManager(this, possible_overcapacity_ratio_beta)),
       sales_manager(new SalesManager(this)) {}
+
+void Firm::set_total_factor_productivity(FloatType total_factor_productivity) {
+    debug::assertstep(this, IterationStep::SCENARIO);
+    if (!std::isfinite(total_factor_productivity) || total_factor_productivity <= 0.0) {
+        throw log::error(this, "total_factor_productivity must be finite and positive");
+    }
+    total_factor_productivity_ = total_factor_productivity;
+}
 
 void Firm::initialize() {
     for (const auto& is : input_storages) {
@@ -105,7 +115,7 @@ void Firm::iterate_investment() {
 auto Firm::maximal_production() const -> Flow { return round(baseline_production_ * capacity_manager->possible_overcapacity_ratio_beta); }
 
 auto Firm::forced_maximal_production_quantity() const -> FlowQuantity {
-    return round(baseline_production_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * forcing_));
+    return round(baseline_production_.get_quantity() * (capacity_manager->possible_overcapacity_ratio_beta * production_scale()));
 }
 
 auto Firm::self_supply_connection() const -> const BusinessConnection* {
