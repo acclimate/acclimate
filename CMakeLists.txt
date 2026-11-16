@@ -156,5 +156,23 @@ include_netcdfpp(acclimate)
 include(lib/settingsnode/settingsnode.cmake)
 include_settingsnode(acclimate)
 include_yaml_cpp(acclimate ON GIT_TAG "yaml-cpp-0.9.0")
+if(INTERNAL_YAML_CPP)
+  file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/yaml-cpp-cstdint.cmake" CONTENT [=[
+set(path "${SOURCE_DIR}/src/emitterutils.cpp")
+file(READ "${path}" content)
+string(FIND "${content}" "#include <cstdint>" position)
+if(position EQUAL -1)
+  file(WRITE "${path}" "#include <cstdint>\n${content}")
+endif()
+]=])
+  ExternalProject_Add_Step(yaml-cpp fix_cstdint_include
+    COMMAND "${CMAKE_COMMAND}"
+      "-DSOURCE_DIR=<SOURCE_DIR>"
+      -P "${CMAKE_CURRENT_BINARY_DIR}/yaml-cpp-cstdint.cmake"
+    DEPENDEES update
+    DEPENDERS configure
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/yaml-cpp-cstdint.cmake"
+  )
+endif()
 
 add_cpp_tools(acclimate STD c++17)
